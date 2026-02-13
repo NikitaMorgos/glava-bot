@@ -1,0 +1,24 @@
+# Переменные окружения (содержат секреты!)
+.env
+
+# Виртуальное окружение
+venv/
+.venv/
+env/
+
+# Кэш моделей (Whisper, torch и т.д.)
+.cache/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Экспорт (локальные папки клиентов)
+exports/

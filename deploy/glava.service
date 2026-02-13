@@ -1,0 +1,16 @@
+[Unit]
+Description=GLAVA Telegram Bot
+After=network.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/opt/glava
+ExecStart=/opt/glava/venv/bin/python main.py
+Restart=always
+RestartSec=10
+EnvironmentFile=/opt/glava/.env
+
+[Install]
+WantedBy=multi-user.target

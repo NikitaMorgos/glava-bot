@@ -1,0 +1,22 @@
+# Telegram Bot API
+python-telegram-bot>=22.0,<23.0
+
+# База данных PostgreSQL
+psycopg2-binary>=2.9.9
+
+# S3-совместимое облачное хранилище (AWS S3, MinIO, Yandex Cloud и т.д.)
+boto3>=1.34.0
+
+# Загрузка переменных окружения из .env файла
+python-dotenv>=1.0.0
+
+# Генерация PDF (для инструкций)
+reportlab>=4.0.0
+
+# Транскрибация голосовых (нужен ffmpeg в системе)
+openai-whisper>=20231117
+
+# Диаризация (разделение по спикерам) — опционально
+# pip install librosa scikit-learn
+librosa>=0.10.0
+scikit-learn>=1.0.0
