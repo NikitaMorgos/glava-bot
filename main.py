@@ -35,7 +35,8 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "Привет! Я бот GLAVA.\n\n"
         "Голосовые — отправь голосовое или аудио-файл (.ogg, .mp3, .m4a, .wav), я сохраню в облаке.\n"
         "Фото — отправь фото, затем напиши подпись (1–2 предложения).\n"
-        "Команда /list — покажет твои голосовые и фото с подписями."
+        "Команда /list — покажет твои голосовые и фото с подписями.\n"
+        "Команда /cabinet — настройка входа в личный кабинет на glava.family."
     )
 
 
@@ -180,10 +181,54 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         await message.reply_text(f"Ошибка при сохранении: {e}")
 
 
+async def cmd_cabinet(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """
+    Команда /cabinet — настройка пароля для входа в личный кабинет.
+    /cabinet — запросить пароль следующим сообщением
+    /cabinet пароль — установить пароль сразу (менее безопасно)
+    """
+    user = update.effective_user
+    if not user:
+        return
+
+    args = (context.args or [])
+    if args:
+        password = " ".join(args).strip()
+        if len(password) < 6:
+            await update.message.reply_text("Пароль должен быть не менее 6 символов.")
+            return
+        await _set_cabinet_password(update, user.id, password)
+    else:
+        context.user_data["awaiting_cabinet_password"] = True
+        await update.message.reply_text(
+            "Отправь пароль для входа в личный кабинет (от 6 символов). "
+            "Логин: твой @username или ID в Telegram.\n"
+            "Кабинет: cabinet.glava.family"
+        )
+
+
+async def _set_cabinet_password(update: Update, telegram_id: int, password: str) -> None:
+    """Сохраняет пароль для личного кабинета."""
+    from passlib.hash import bcrypt
+
+    try:
+        db_user = db.get_or_create_user(telegram_id, update.effective_user.username)
+        pwd_hash = bcrypt.hash(password)
+        db.set_web_password(db_user["id"], pwd_hash)
+        login_hint = f"@{update.effective_user.username}" if update.effective_user.username else str(telegram_id)
+        await update.message.reply_text(
+            f"Пароль сохранён. Вход: cabinet.glava.family\n"
+            f"Логин: {login_hint}\n"
+            f"Пароль: тот, что указал."
+        )
+    except Exception as e:
+        logger.exception("Ошибка при сохранении пароля")
+        await update.message.reply_text(f"Ошибка: {e}")
+
+
 async def handle_caption_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
-    Обработчик текста — подпись к последнему фото.
-    Если у пользователя есть фото без подписи, текст становится подписью.
+    Обработчик текста — подпись к последнему фото или пароль для кабинета.
     """
     message = update.message
     if not message.text or message.text.startswith("/"):
@@ -195,6 +240,14 @@ async def handle_caption_text(update: Update, context: ContextTypes.DEFAULT_TYPE
 
     text = message.text.strip()
     if not text:
+        return
+
+    # Ожидаем пароль для кабинета
+    if context.user_data.pop("awaiting_cabinet_password", None):
+        if len(text) < 6:
+            await message.reply_text("Пароль должен быть не менее 6 символов. Попробуй снова: /cabinet")
+            return
+        await _set_cabinet_password(update, user.id, text)
         return
 
     try:
@@ -289,6 +342,7 @@ def main() -> None:
         await application.bot.set_my_commands([
             BotCommand("start", "Начать / приветствие"),
             BotCommand("list", "Список голосовых и фото"),
+            BotCommand("cabinet", "Личный кабинет"),
         ])
         # Явно включаем кнопку меню команд (по умолчанию для всех чатов)
         await application.bot.set_chat_menu_button(menu_button=MenuButtonCommands())
@@ -298,6 +352,7 @@ def main() -> None:
     # Регистрируем обработчики
     application.add_handler(CommandHandler("start", cmd_start))
     application.add_handler(CommandHandler("list", cmd_list))
+    application.add_handler(CommandHandler("cabinet", cmd_cabinet))
     application.add_handler(MessageHandler(filters.VOICE, handle_voice))
     application.add_handler(MessageHandler(filters.AUDIO, handle_audio))
     application.add_handler(MessageHandler(filters.Document.ALL, handle_audio_document))

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Мои материалы{% endblock %}
+{% block content %}
+<p style="margin-bottom: 1.5rem;"><a href="{{ url_for('logout') }}">Выйти</a></p>
+<h1 style="margin-bottom: 1.5rem;">Мои материалы</h1>
+
+<section style="margin-bottom: 2.5rem;">
+    <h2 style="font-size: 1.2rem; margin-bottom: 1rem;">Голосовые</h2>
+    {% if voices %}
+    <ul style="list-style: none;">
+        {% for v in voices %}
+        <li style="padding: 0.6rem 0; border-bottom: 1px solid rgba(0,0,0,0.08);">
+            {{ v.created_at.strftime('%d.%m.%Y %H:%M') if v.created_at else '' }}
+            {% if v.duration %} ({{ v.duration }} сек){% endif %}
+            — <a href="{{ v.download_url }}" target="_blank">скачать</a>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="muted">Пока нет. Отправь голосовое в боте @glava_voice_bot</p>
+    {% endif %}
+</section>
+
+<section style="margin-bottom: 2.5rem;">
+    <h2 style="font-size: 1.2rem; margin-bottom: 1rem;">Фото с подписями</h2>
+    {% if photos %}
+    <ul style="list-style: none;">
+        {% for p in photos %}
+        <li style="padding: 0.6rem 0; border-bottom: 1px solid rgba(0,0,0,0.08);">
+            {{ p.created_at.strftime('%d.%m.%Y %H:%M') if p.created_at else '' }}
+            <br><span class="muted">{{ (p.caption or '')[:80] }}{% if (p.caption or '')|length > 80 %}...{% endif %}</span>
+            <br><a href="{{ p.download_url }}" target="_blank">открыть</a>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="muted">Пока нет. Отправь фото в боте и напиши подпись</p>
+    {% endif %}
+</section>
+
+<section style="margin-bottom: 2.5rem;">
+    <h2 style="font-size: 1.2rem; margin-bottom: 1rem;">Материалы для работы</h2>
+    <ul style="list-style: none;">
+        <li style="padding: 0.5rem 0;"><a href="{{ url_for('questions') }}">Список вопросов для интервью</a></li>
+    </ul>
+</section>
+{% endblock %}

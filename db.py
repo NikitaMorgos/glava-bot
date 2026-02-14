@@ -123,6 +123,16 @@ def update_photo_caption(photo_id: int, caption: str) -> None:
             cur.execute("UPDATE photos SET caption = %s WHERE id = %s", (caption, photo_id))
 
 
+def set_web_password(user_id: int, password_hash: str) -> None:
+    """Устанавливает хэш пароля для входа в личный кабинет."""
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE users SET web_password_hash = %s WHERE id = %s",
+                (password_hash, user_id),
+            )
+
+
 def get_user_photos(telegram_id: int, limit: int = 15) -> list[dict]:
     """
     Возвращает последние N фото с подписями (только те, у которых есть подпись).

@@ -42,6 +42,7 @@ sqls = [
     "CREATE INDEX IF NOT EXISTS idx_photos_user_id ON photos(user_id)",
     "CREATE INDEX IF NOT EXISTS idx_photos_created_at ON photos(created_at DESC)",
     "ALTER TABLE voice_messages ADD COLUMN IF NOT EXISTS transcript TEXT",
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS web_password_hash TEXT",
 ]
 
 for i, sql in enumerate(sqls):

@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Вопросы для интервью{% endblock %}
+{% block content %}
+<p style="margin-bottom: 1.5rem;"><a href="{{ url_for('dashboard') }}">← Назад в кабинет</a></p>
+<h1 style="margin-bottom: 1rem;">Вопросы для интервью</h1>
+<p class="muted" style="margin-bottom: 2rem;">Используй эти темы и вопросы, чтобы не теряться в разговоре.</p>
+{% for title, qs in blocks %}
+<section style="margin-bottom: 2rem;">
+    <h2 style="font-size: 1.15rem; margin-bottom: 0.75rem; color: var(--accent);">{{ title }}</h2>
+    <ul style="padding-left: 1.2rem;">
+        {% for q in qs %}
+        <li style="margin-bottom: 0.5rem;">{{ q }}</li>
+        {% endfor %}
+    </ul>
+</section>
+{% endfor %}
+{% endblock %}
