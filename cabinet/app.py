@@ -118,8 +118,14 @@ def dashboard():
         user=user,
         voices=voices,
         photos=photos,
+        pdf_docs=PDF_DOCUMENTS,
     )
 
+
+# PDF-документы в cabinet/static/pdfs/ (добавь файлы при деплое)
+PDF_DOCUMENTS = [
+    {"title": "One-pager Glava", "filename": "pdfs/one-pager.pdf"},
+]
 
 INTERVIEW_QUESTIONS = [
     ("О семье и происхождении", [

@@ -42,6 +42,9 @@
     <h2 style="font-size: 1.2rem; margin-bottom: 1rem;">Материалы для работы</h2>
     <ul style="list-style: none;">
         <li style="padding: 0.5rem 0;"><a href="{{ url_for('questions') }}">Список вопросов для интервью</a></li>
+        {% for doc in pdf_docs %}
+        <li style="padding: 0.5rem 0;"><a href="{{ url_for('static', filename=doc.filename) }}" target="_blank">{{ doc.title }}</a></li>
+        {% endfor %}
     </ul>
 </section>
 {% endblock %}

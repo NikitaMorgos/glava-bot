@@ -53,7 +53,16 @@ nginx -t && systemctl reload nginx
 certbot --nginx -d cabinet.glava.family
 ```
 
-## 5. Пользователи
+## 5. PDF-документы
+
+Чтобы в кабинете отображались ссылки на PDF (one-pager и др.):
+
+1. Создай PDF (например, через `scripts/add_logo_to_pdf.py` для one-pager)
+2. Положи в `cabinet/static/pdfs/`:
+   - `one-pager.pdf` — краткое описание Glava
+3. Список документов настраивается в `cabinet/app.py` → `PDF_DOCUMENTS`
+
+## 6. Пользователи
 
 1. Пользователь пишет боту: `/cabinet` → вводит пароль
 2. Заходит на cabinet.glava.family с логином (@username или telegram_id) и паролем
