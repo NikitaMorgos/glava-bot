@@ -151,7 +151,8 @@ def transcribe_via_speechkit(storage_key: str, audio_path: str | None = None) ->
         raise ValueError("SpeechKit: нет id операции")
 
     try:
-        for _ in range(60):
+        # Длинные файлы (40+ мин) требуют до ~20 мин обработки
+        for _ in range(600):
             time.sleep(2)
             status = requests.get(SPEECHKIT_OPERATIONS_URL + op_id, headers=headers, timeout=30)
             status.raise_for_status()

@@ -9,6 +9,7 @@ GLAVA — Telegram-бот для приёма и хранения голосов
 3. Настрой S3-хранилище и заполни .env
 """
 
+import html
 import logging
 import tempfile
 from pathlib import Path
@@ -235,6 +236,11 @@ async def cmd_list(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         )
         return
 
+    def _link(url: str, label: str) -> str:
+        """Короткая кликабельная ссылка для Telegram HTML."""
+        safe_url = url.replace("&", "&amp;")
+        return f'<a href="{safe_url}">{label}</a>'
+
     parts = []
 
     if voice_messages:
@@ -243,26 +249,26 @@ async def cmd_list(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             url = storage.get_presigned_download_url(msg["storage_key"])
             duration_str = f" ({msg['duration']} сек)" if msg.get("duration") else ""
             created = msg["created_at"].strftime("%d.%m.%Y %H:%M") if msg.get("created_at") else ""
-            parts.append(f"{i}. {created}{duration_str}\n{url}")
+            parts.append(f"{i}. {created}{duration_str} — {_link(url, 'скачать')}")
         parts.append("")
 
     if photos:
         parts.append(f"Фото с подписями ({len(photos)}):\n")
         for i, p in enumerate(photos, 1):
             url = storage.get_presigned_download_url(p["storage_key"])
-            caption = (p.get("caption") or "")[:100]
+            caption = html.escape((p.get("caption") or "")[:100])
             created = p["created_at"].strftime("%d.%m.%Y %H:%M") if p.get("created_at") else ""
-            parts.append(f"{i}. {created}\n{caption}\n{url}")
+            parts.append(f"{i}. {created}\n{caption}\n{_link(url, 'открыть')}")
         parts.append("")
 
     text = "\n\n".join(parts).strip()
     if len(text) > 4000:
-        await update.message.reply_text(parts[0])
+        await update.message.reply_text(parts[0], parse_mode="HTML")
         for p in parts[1:]:
             if p:
-                await update.message.reply_text(p)
+                await update.message.reply_text(p, parse_mode="HTML")
     else:
-        await update.message.reply_text(text)
+        await update.message.reply_text(text, parse_mode="HTML")
 
 
 def main() -> None:
