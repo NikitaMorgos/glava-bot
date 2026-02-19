@@ -47,3 +47,19 @@ YANDEX_API_KEY = os.getenv("YANDEX_API_KEY", "")
 # HuggingFace (опционально, для диаризации — pyannote speaker-diarization-3.0)
 # Токен: https://hf.co/settings/tokens ; принять условия pyannote/segmentation-3.0 и speaker-diarization-3.0
 HUGGINGFACE_TOKEN = os.getenv("HUGGINGFACE_TOKEN", "")
+
+# Транскрибер: mymeet | plaud | speechkit (по умолчанию первый с валидным ключом)
+TRANSCRIBER = os.getenv("TRANSCRIBER", "").strip().lower() or None
+
+# mymeet.ai — транскрипция (research-interview), API: mymeet.ai/contact
+MYMEET_API_KEY = os.getenv("MYMEET_API_KEY", "")
+
+# Plaud AI — транскрипция с диаризацией
+PLAUD_API_TOKEN = os.getenv("PLAUD_API_TOKEN", "")
+PLAUD_OWNER_ID = os.getenv("PLAUD_OWNER_ID", "glava_default")
+
+# OpenAI — обработка транскрипта в биографический текст
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+
+# Pre-pay: цена за 1 персонажа (в копейках). 990 руб = 99000
+PRICE_PER_CHARACTER = int(os.getenv("PRICE_PER_CHARACTER", "99000"))

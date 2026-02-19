@@ -1,46 +1,376 @@
+# -*- coding: utf-8 -*-
 """
-GLAVA — Telegram-бот для приёма и хранения голосовых сообщений.
+GLAVA — Telegram-бот. Pre-pay flow: навигация до оплаты.
 
 Запуск: python main.py
-
-Перед запуском:
-1. Создай бота через @BotFather и получи BOT_TOKEN
-2. Создай БД PostgreSQL и выполни sql/init_db.sql
-3. Настрой S3-хранилище и заполни .env
+Перед первым запуском: psql -d your_db -f sql/add_draft_orders.sql
 """
 
 import html
 import logging
+import re
 import tempfile
 from pathlib import Path
 
 from telegram import BotCommand, MenuButtonCommands, Update
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+from telegram.ext import Application, CallbackQueryHandler, CommandHandler, MessageHandler, filters, ContextTypes
 
 import config
 import db
 import storage
-
-# Настройка логирования (чтобы видеть, что происходит)
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    level=logging.INFO,
+import db_draft
+from payment_adapter import create_payment, check_payment
+from prepay.messages import (
+    INTRO_MAIN_MSG, INTRO_EXAMPLE_MSG, INTRO_PRICE_MSG,
+    CONFIG_CHARACTERS_MSG, CONFIG_CHARACTERS_LIST_MSG,
+    EMAIL_INPUT_MSG, EMAIL_ERROR_MSG, ORDER_SUMMARY_MSG,
+    PAYMENT_INIT_MSG, PAYMENT_WAIT_MSG, PAYMENT_STILL_PENDING_MSG,
+    RESUME_DRAFT_MSG, RESUME_PAYMENT_MSG, BLOCKED_MEDIA_MSG,
 )
+from prepay.keyboards import (
+    kb_intro_main, kb_intro_example, kb_intro_price,
+    kb_config_characters, kb_config_edit_list, kb_email_back,
+    kb_order_summary, kb_payment, kb_resume_draft, kb_resume_payment, kb_blocked_start,
+)
+
+logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+AUDIO_EXTENSIONS = {".ogg", ".mp3", ".m4a", ".wav", ".opus", ".oga"}
+EMAIL_RE = re.compile(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
+
+
+def _format_characters(characters: list[dict]) -> str:
+    if not characters:
+        return "(пусто)"
+    return "\n".join(f"• {c.get('name', '?')} ({c.get('relation', '')})" for c in characters)
+
+
+def _format_price(kopecks: int) -> str:
+    return str(kopecks // 100)
+
+
+def _run_transcription_pipeline(
+    voice_id: int, storage_key: str, telegram_id: int, username: str | None
+) -> None:
+    """Выбирает пайплайн по TRANSCRIBER и ключам: mymeet → plaud → speechkit."""
+    transcriber = getattr(config, "TRANSCRIBER", None)
+    if transcriber == "mymeet" and config.MYMEET_API_KEY:
+        from pipeline_mymeet_bio import run_pipeline_background
+        run_pipeline_background(voice_id, storage_key, telegram_id, username)
+    elif transcriber == "plaud" and config.PLAUD_API_TOKEN:
+        from pipeline_plaud_bio import run_pipeline_background
+        run_pipeline_background(voice_id, storage_key, telegram_id, username)
+    elif config.PLAUD_API_TOKEN:
+        from pipeline_plaud_bio import run_pipeline_background
+        run_pipeline_background(voice_id, storage_key, telegram_id, username)
+    elif config.MYMEET_API_KEY:
+        from pipeline_mymeet_bio import run_pipeline_background
+        run_pipeline_background(voice_id, storage_key, telegram_id, username)
+    else:
+        from pipeline_transcribe_bio import run_pipeline_background
+        run_pipeline_background(voice_id, storage_key, telegram_id, username, use_diarization=False)
+
+
+def _user_has_paid(telegram_id: int) -> bool:
+    draft = db_draft.get_draft_by_telegram_id(telegram_id)
+    return draft and draft.get("status") == "paid"
 
 
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Обработчик команды /start — приветствие."""
-    await update.message.reply_text(
-        "Привет! Я бот GLAVA.\n\n"
-        "Голосовые — отправь голосовое или аудио-файл (.ogg, .mp3, .m4a, .wav), я сохраню в облаке.\n"
-        "Фото — отправь фото, затем напиши подпись (1–2 предложения).\n"
-        "Команда /list — покажет твои голосовые и фото с подписями.\n"
-        "Команда /cabinet — настройка входа в личный кабинет на glava.family."
+    """START — только приветствие и главное меню (ТЗ 4.1–4.2)."""
+    user = update.effective_user
+    if not user:
+        return
+
+    context.user_data.clear()
+    await update.message.reply_text(INTRO_MAIN_MSG, reply_markup=kb_intro_main())
+
+
+async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    query = update.callback_query
+    await query.answer()
+    user = update.effective_user
+    if not user:
+        return
+    data = query.data or ""
+
+    if data == "intro_main":
+        await query.edit_message_text(INTRO_MAIN_MSG, reply_markup=kb_intro_main())
+        return
+
+    if data == "intro_example":
+        logger.info("event: example_viewed")
+        await query.edit_message_text(INTRO_EXAMPLE_MSG, reply_markup=kb_intro_example())
+        return
+
+    if data == "intro_price":
+        logger.info("event: price_viewed")
+        await query.edit_message_text(INTRO_PRICE_MSG, reply_markup=kb_intro_price())
+        return
+
+    if data == "intro_start":
+        draft = db_draft.get_or_create_draft(user.id, user.username)
+        if not draft:
+            return
+        logger.info("event: draft_created")
+        status = draft.get("status", "")
+        if status == "payment_pending":
+            await query.edit_message_text(
+                PAYMENT_WAIT_MSG,
+                reply_markup=kb_payment(draft["id"], draft.get("payment_url") or "https://example.com"),
+            )
+            return
+        if status == "paid":
+            await query.edit_message_text("Оплата прошла! Можете отправлять голосовые и фото. /list")
+            return
+        chars = draft.get("characters") or []
+        if not chars:
+            await _show_config_characters_callback(query, context, user.id)
+        elif not draft.get("email"):
+            await _show_email_input_callback(query, context, draft["id"])
+        else:
+            await _show_order_summary_callback(query, context, draft)
+        return
+
+    if data == "resume_continue":
+        draft = db_draft.get_draft_by_telegram_id(user.id)
+        if draft:
+            chars = draft.get("characters") or []
+            if not draft.get("email"):
+                await _show_email_input_callback(query, context, draft["id"])
+            else:
+                await _show_order_summary_callback(query, context, draft)
+        return
+
+    if data == "resume_check":
+        draft = db_draft.get_draft_by_telegram_id(user.id)
+        if draft and draft.get("status") == "payment_pending" and draft.get("payment_id"):
+            status = check_payment(draft["payment_id"])
+            logger.info("event: payment_status_checked status=%s", status)
+            if status == "paid":
+                db_draft.set_draft_paid(draft["id"])
+                await query.edit_message_text("Оплата прошла! Теперь можете отправлять голосовые и фото. /list")
+            else:
+                await query.answer(PAYMENT_STILL_PENDING_MSG, show_alert=True)
+        return
+
+    if data.startswith("cfg_add:"):
+        draft_id = int(data.split(":")[1])
+        context.user_data["prepay_awaiting"] = "character_name"
+        context.user_data["prepay_draft_id"] = draft_id
+        await query.edit_message_text("Введите имя персонажа:")
+        return
+
+    if data.startswith("cfg_continue:"):
+        draft_id = int(data.split(":")[1])
+        draft = db_draft.get_draft_by_telegram_id(user.id)
+        if not draft or draft["id"] != draft_id:
+            await query.answer("Заказ не найден.", show_alert=True)
+            return
+        chars = draft.get("characters") or []
+        if len(chars) < 1:
+            await query.answer("Добавьте хотя бы одного персонажа.", show_alert=True)
+            return
+        await _show_email_input_callback(query, context, draft_id)
+        return
+
+    if data.startswith("cfg_edit:"):
+        draft_id = int(data.split(":")[1])
+        draft = db_draft.get_draft_by_telegram_id(user.id)
+        if not draft or draft["id"] != draft_id:
+            return
+        chars = draft.get("characters") or []
+        if not chars:
+            await _show_config_characters_callback(query, context, user.id)
+            return
+        await query.edit_message_text(
+            "Выберите персонажа для удаления:",
+            reply_markup=kb_config_edit_list(chars, draft_id),
+        )
+        return
+
+    if data.startswith("cfg_del:"):
+        parts = data.split(":")
+        draft_id = int(parts[1])
+        idx = int(parts[2])
+        db_draft.remove_character(draft_id, idx)
+        logger.info("event: character_deleted")
+        draft = db_draft.get_draft_by_telegram_id(user.id)
+        if draft:
+            chars = draft.get("characters") or []
+            if not chars:
+                await _show_config_characters_callback(query, context, user.id)
+            else:
+                await query.edit_message_text(
+                    "Выберите для удаления:",
+                    reply_markup=kb_config_edit_list(chars, draft_id),
+                )
+        return
+
+    if data.startswith("cfg_back:"):
+        draft_id = int(data.split(":")[1])
+        await _show_config_characters_callback(query, context, user.id)
+        return
+
+    if data.startswith("email_back:"):
+        draft_id = int(data.split(":")[1])
+        await _show_config_characters_callback(query, context, user.id)
+        return
+
+    if data.startswith("order_pay:"):
+        draft_id = int(data.split(":")[1])
+        draft = db_draft.get_draft_by_telegram_id(user.id)
+        if not draft or draft["id"] != draft_id or draft.get("status") != "draft":
+            await query.answer("Заказ не найден.", show_alert=True)
+            return
+        result = create_payment(draft)
+        payment_id = result.get("payment_id")
+        payment_url = result.get("payment_url")
+        if payment_id and payment_url:
+            db_draft.set_draft_payment_pending(draft_id, payment_id, payment_url)
+            logger.info("event: payment_created draft_id=%s", draft_id)
+            await query.edit_message_text(
+                PAYMENT_INIT_MSG.format(payment_url=payment_url),
+                reply_markup=kb_payment(draft_id, payment_url),
+            )
+        return
+
+    if data.startswith("order_edit:"):
+        draft_id = int(data.split(":")[1])
+        await _show_config_characters_callback(query, context, user.id)
+        return
+
+    if data.startswith("order_back:"):
+        draft_id = int(data.split(":")[1])
+        draft = db_draft.get_draft_by_telegram_id(user.id)
+        if draft:
+            await _show_email_input_callback(query, context, draft_id)
+        return
+
+    if data.startswith("payment_check:"):
+        draft_id = int(data.split(":")[1])
+        draft = db_draft.get_draft_by_telegram_id(user.id)
+        if not draft or draft["id"] != draft_id:
+            return
+        if draft.get("payment_id"):
+            status = check_payment(draft["payment_id"])
+            logger.info("event: payment_status_checked status=%s", status)
+            if status == "paid":
+                db_draft.set_draft_paid(draft_id)
+                await query.edit_message_text("Оплата прошла! Можете отправлять голосовые и фото. /list")
+            else:
+                await query.answer(PAYMENT_STILL_PENDING_MSG, show_alert=True)
+        return
+
+    if data.startswith("payment_back:"):
+        draft_id = int(data.split(":")[1])
+        draft = db_draft.get_draft_by_telegram_id(user.id)
+        if draft:
+            await _show_order_summary_callback(query, context, draft)
+        return
+
+
+async def _show_config_characters(update: Update, context: ContextTypes.DEFAULT_TYPE, telegram_id: int) -> None:
+    draft = db_draft.get_or_create_draft(telegram_id, update.effective_user and update.effective_user.username)
+    if not draft:
+        return
+    chars = draft.get("characters") or []
+    msg = CONFIG_CHARACTERS_MSG
+    if chars:
+        msg = CONFIG_CHARACTERS_LIST_MSG.format(characters=_format_characters(chars))
+    await update.message.reply_text(msg, reply_markup=kb_config_characters(draft["id"], len(chars) >= 1))
+
+
+async def _show_config_characters_callback(query, context, telegram_id: int) -> None:
+    draft = db_draft.get_or_create_draft(telegram_id, None)
+    if not draft:
+        return
+    chars = draft.get("characters") or []
+    msg = CONFIG_CHARACTERS_MSG
+    if chars:
+        msg = CONFIG_CHARACTERS_LIST_MSG.format(characters=_format_characters(chars))
+    await query.edit_message_text(msg, reply_markup=kb_config_characters(draft["id"], len(chars) >= 1))
+
+
+async def _show_email_input(update: Update, context: ContextTypes.DEFAULT_TYPE, draft_id: int) -> None:
+    await update.message.reply_text(EMAIL_INPUT_MSG, reply_markup=kb_email_back(draft_id))
+
+
+async def _show_email_input_callback(query, context, draft_id: int) -> None:
+    context.user_data.pop("prepay_awaiting", None)
+    context.user_data.pop("prepay_char_name", None)
+    context.user_data["prepay_awaiting"] = "email"
+    context.user_data["prepay_draft_id"] = draft_id
+    await query.edit_message_text(EMAIL_INPUT_MSG, reply_markup=kb_email_back(draft_id))
+
+
+async def _show_order_summary(update: Update, context: ContextTypes.DEFAULT_TYPE, draft: dict) -> None:
+    chars = draft.get("characters") or []
+    total = _format_price(draft.get("total_price", 0))
+    email = draft.get("email") or ""
+    msg = ORDER_SUMMARY_MSG.format(
+        characters=_format_characters(chars),
+        total=total,
+        email=email,
     )
+    await update.message.reply_text(msg, reply_markup=kb_order_summary(draft["id"]))
 
 
-AUDIO_EXTENSIONS = {".ogg", ".mp3", ".m4a", ".wav", ".opus", ".oga"}
+async def _show_order_summary_callback(query, context, draft: dict) -> None:
+    chars = draft.get("characters") or []
+    total = _format_price(draft.get("total_price", 0))
+    email = draft.get("email") or ""
+    msg = ORDER_SUMMARY_MSG.format(
+        characters=_format_characters(chars),
+        total=total,
+        email=email,
+    )
+    await query.edit_message_text(msg, reply_markup=kb_order_summary(draft["id"]))
+
+
+async def _handle_prepay_text(update: Update, context: ContextTypes.DEFAULT_TYPE, text: str, user) -> bool:
+    """Обработка текста для prepay. Возвращает True если обработано."""
+    awaiting = context.user_data.get("prepay_awaiting")
+    draft_id = context.user_data.get("prepay_draft_id")
+
+    if awaiting == "character_name":
+        context.user_data["prepay_char_name"] = text
+        context.user_data["prepay_awaiting"] = "character_relation"
+        await update.message.reply_text("Введите родство (например: мама, дедушка, бабушка):")
+        return True
+
+    if awaiting == "character_relation":
+        name = context.user_data.pop("prepay_char_name", "")
+        context.user_data.pop("prepay_awaiting", None)
+        if draft_id and name:
+            db_draft.add_character(draft_id, name, text)
+            logger.info("event: character_added name=%s", name)
+        draft = db_draft.get_draft_by_telegram_id(user.id)
+        if draft:
+            await _show_config_characters(update, context, user.id)
+        return True
+
+    if awaiting == "email":
+        if not EMAIL_RE.match(text):
+            await update.message.reply_text(EMAIL_ERROR_MSG, reply_markup=kb_email_back(draft_id or 0))
+            return True
+        if draft_id:
+            db_draft.update_draft_email(draft_id, text)
+            logger.info("event: email_submitted")
+            context.user_data.pop("prepay_awaiting", None)
+            context.user_data.pop("prepay_draft_id", None)
+            draft = db_draft.get_draft_by_telegram_id(user.id)
+            if draft:
+                await _show_order_summary(update, context, draft)
+        return True
+
+    return False
+
+
+async def handle_blocked_media(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Голосовые/фото/файлы до оплаты."""
+    await update.message.reply_text(BLOCKED_MEDIA_MSG, reply_markup=kb_blocked_start())
 
 
 async def _save_audio_file(
@@ -50,322 +380,195 @@ async def _save_audio_file(
     suffix: str,
     duration: int | None,
 ) -> None:
-    """Общая логика сохранения аудио (голосовое, audio, document)."""
     user = update.message.from_user
     if not user:
-        await update.message.reply_text("Не удалось определить отправителя.")
         return
-
-    telegram_id = user.id
-    username = user.username
-
     try:
-        db_user = db.get_or_create_user(telegram_id, username)
-        user_id = db_user["id"]
-
+        db_user = db.get_or_create_user(user.id, user.username)
         tg_file = await context.bot.get_file(file_id)
         with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
             tmp_path = tmp.name
         await tg_file.download_to_drive(tmp_path)
-
         try:
-            storage_key = storage.upload_file(tmp_path, user_id)
-            db.save_voice_message(
-                user_id=user_id,
+            storage_key = storage.upload_file(tmp_path, db_user["id"])
+            voice = db.save_voice_message(
+                user_id=db_user["id"],
                 telegram_file_id=file_id,
                 storage_key=storage_key,
                 duration=duration,
             )
             await update.message.reply_text("Аудио сохранено.")
+            if voice:
+                _run_transcription_pipeline(voice["id"], storage_key, user.id, user.username)
         finally:
             Path(tmp_path).unlink(missing_ok=True)
-
     except Exception as e:
-        logger.exception("Ошибка при сохранении аудио")
-        await update.message.reply_text(f"Ошибка при сохранении: {e}")
+        logger.exception("Ошибка сохранения аудио")
+        await update.message.reply_text(f"Ошибка: {e}")
 
 
 async def handle_voice(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Обработчик голосовых сообщений (кнопка микрофона)."""
-    message = update.message
-    if not message.voice:
-        return
-    await _save_audio_file(
-        update, context,
-        message.voice.file_id,
-        ".ogg",
-        message.voice.duration,
-    )
+    if _user_has_paid(update.effective_user.id if update.effective_user else 0):
+        await _save_audio_file(update, context, update.message.voice.file_id, ".ogg", update.message.voice.duration)
+    else:
+        await handle_blocked_media(update, context)
 
 
 async def handle_audio(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Обработчик аудио-файлов (отправленных как «Аудио»)."""
-    message = update.message
-    if not message.audio:
+    if not _user_has_paid(update.effective_user.id if update.effective_user else 0):
+        await handle_blocked_media(update, context)
         return
-    ext = Path(message.audio.file_name or "").suffix or ".mp3"
+    ext = Path(update.message.audio.file_name or "").suffix or ".mp3"
     if ext.lower() not in AUDIO_EXTENSIONS:
         ext = ".mp3"
     await _save_audio_file(
         update, context,
-        message.audio.file_id,
-        ext,
-        message.audio.duration,
+        update.message.audio.file_id, ext,
+        update.message.audio.duration,
     )
 
 
 async def handle_audio_document(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Обработчик аудио, отправленных как файл (Документ)."""
-    message = update.message
-    if not message.document:
+    if not _user_has_paid(update.effective_user.id if update.effective_user else 0):
+        await handle_blocked_media(update, context)
         return
-    name = (message.document.file_name or "").lower()
+    name = (update.message.document.file_name or "").lower()
     ext = Path(name).suffix
     if ext not in AUDIO_EXTENSIONS:
-        await message.reply_text(
-            "Принимаю только аудио: .ogg, .mp3, .m4a, .wav, .opus. "
-            "Голосовые — нажми кнопку микрофона."
-        )
+        await update.message.reply_text("Принимаю только аудио: .ogg, .mp3, .m4a, .wav, .opus")
         return
-    await _save_audio_file(
-        update, context,
-        message.document.file_id,
-        ext,
-        None,
-    )
+    await _save_audio_file(update, context, update.message.document.file_id, ext, None)
 
 
 async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """
-    Обработчик фото.
-    Сохраняет фото в облако. Следующее текстовое сообщение от пользователя
-    будет считаться подписью к этому фото.
-    """
-    message = update.message
-    if not message.photo:
+    if not _user_has_paid(update.effective_user.id if update.effective_user else 0):
+        await handle_blocked_media(update, context)
         return
-
-    user = message.from_user
+    user = update.message.from_user
     if not user:
-        await message.reply_text("Не удалось определить отправителя.")
         return
-
-    telegram_id = user.id
-    username = user.username
-
     try:
-        db_user = db.get_or_create_user(telegram_id, username)
-        user_id = db_user["id"]
-
-        # Берём фото в наибольшем качестве (последнее в списке)
-        photo = message.photo[-1]
+        db_user = db.get_or_create_user(user.id, user.username)
+        photo = update.message.photo[-1]
         photo_file = await context.bot.get_file(photo.file_id)
-
-        suffix = ".jpg"
-        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
+        with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tmp:
             tmp_path = tmp.name
         await photo_file.download_to_drive(tmp_path)
-
         try:
-            storage_key = storage.upload_file(tmp_path, user_id)
-            db.save_photo(user_id=user_id, telegram_file_id=photo.file_id, storage_key=storage_key)
-            await message.reply_text(
-                "Фото сохранено. Теперь напиши подпись к нему (1–2 предложения), "
-                "например: «Мама в 1987, первый год работы в школе»."
-            )
+            storage_key = storage.upload_file(tmp_path, db_user["id"])
+            db.save_photo(db_user["id"], photo.file_id, storage_key)
+            await update.message.reply_text("Фото сохранено. Напиши подпись к нему (1-2 предложения).")
         finally:
             Path(tmp_path).unlink(missing_ok=True)
-
     except Exception as e:
-        logger.exception("Ошибка при сохранении фото")
-        await message.reply_text(f"Ошибка при сохранении: {e}")
-
-
-async def cmd_cabinet(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """
-    Команда /cabinet — настройка пароля для входа в личный кабинет.
-    /cabinet — запросить пароль следующим сообщением
-    /cabinet пароль — установить пароль сразу (менее безопасно)
-    """
-    user = update.effective_user
-    if not user:
-        return
-
-    args = (context.args or [])
-    if args:
-        password = " ".join(args).strip()
-        if len(password) < 6:
-            await update.message.reply_text("Пароль должен быть не менее 6 символов.")
-            return
-        await _set_cabinet_password(update, user.id, password)
-    else:
-        context.user_data["awaiting_cabinet_password"] = True
-        await update.message.reply_text(
-            "Отправь пароль для входа в личный кабинет (от 6 символов). "
-            "Логин: твой @username или ID в Telegram.\n"
-            "Кабинет: cabinet.glava.family"
-        )
-
-
-async def _set_cabinet_password(update: Update, telegram_id: int, password: str) -> None:
-    """Сохраняет пароль для личного кабинета."""
-    from passlib.hash import bcrypt
-
-    try:
-        db_user = db.get_or_create_user(telegram_id, update.effective_user.username)
-        pwd_hash = bcrypt.hash(password)
-        db.set_web_password(db_user["id"], pwd_hash)
-        login_hint = f"@{update.effective_user.username}" if update.effective_user.username else str(telegram_id)
-        await update.message.reply_text(
-            f"Пароль сохранён. Вход: cabinet.glava.family\n"
-            f"Логин: {login_hint}\n"
-            f"Пароль: тот, что указал."
-        )
-    except Exception as e:
-        logger.exception("Ошибка при сохранении пароля")
+        logger.exception("Ошибка сохранения фото")
         await update.message.reply_text(f"Ошибка: {e}")
 
 
 async def handle_caption_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """
-    Обработчик текста — подпись к последнему фото или пароль для кабинета.
-    """
-    message = update.message
-    if not message.text or message.text.startswith("/"):
-        return
-
     user = update.effective_user
     if not user:
         return
-
-    text = message.text.strip()
-    if not text:
+    text = (update.message.text or "").strip()
+    if not text or text.startswith("/"):
         return
-
-    # Ожидаем пароль для кабинета
     if context.user_data.pop("awaiting_cabinet_password", None):
         if len(text) < 6:
-            await message.reply_text("Пароль должен быть не менее 6 символов. Попробуй снова: /cabinet")
+            await update.message.reply_text("Пароль от 6 символов. /cabinet")
             return
-        await _set_cabinet_password(update, user.id, text)
+        from passlib.hash import bcrypt
+        db_user = db.get_or_create_user(user.id, user.username)
+        db.set_web_password(db_user["id"], bcrypt.hash(text))
+        await update.message.reply_text("Пароль сохранён. cabinet.glava.family")
         return
-
-    try:
-        pending = db.get_pending_photo(user.id)
-        if pending:
-            db.update_photo_caption(pending["id"], text)
-            await message.reply_text("Подпись сохранена.")
-        else:
-            await message.reply_text(
-                "Сначала отправь фото, затем напиши подпись к нему."
-            )
-    except Exception as e:
-        logger.exception("Ошибка при сохранении подписи")
-        await message.reply_text(f"Ошибка: {e}")
+    pending = db.get_pending_photo(user.id)
+    if pending:
+        db.update_photo_caption(pending["id"], text)
+        await update.message.reply_text("Подпись сохранена.")
+    elif await _handle_prepay_text(update, context, text, user):
+        pass
+    else:
+        await update.message.reply_text("Используйте кнопки меню или /start")
 
 
 async def cmd_list(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """
-    Команда /list — показывает голосовые и фото с подписями.
-    """
     user = update.effective_user
     if not user:
-        await update.message.reply_text("Не удалось определить пользователя.")
         return
-
-    limit = config.LIST_LIMIT
-
     try:
-        voice_messages = db.get_user_voice_messages(user.id, limit=limit)
-        photos = db.get_user_photos(user.id, limit=15)
+        voices = db.get_user_voice_messages(user.id, config.LIST_LIMIT)
+        photos = db.get_user_photos(user.id, 15)
     except Exception as e:
-        logger.exception("Ошибка при получении списка")
+        logger.exception("Ошибка /list")
         await update.message.reply_text(f"Ошибка: {e}")
         return
-
-    if not voice_messages and not photos:
-        await update.message.reply_text(
-            "Пока ничего нет. Отправь голосовое или фото с подписью."
-        )
+    if not voices and not photos:
+        await update.message.reply_text("Пока ничего нет. Отправь голосовое или фото после оплаты.")
         return
-
-    def _link(url: str, label: str) -> str:
-        """Короткая кликабельная ссылка для Telegram HTML."""
-        safe_url = url.replace("&", "&amp;")
-        return f'<a href="{safe_url}">{label}</a>'
-
     parts = []
-
-    if voice_messages:
-        parts.append(f"Голосовые ({len(voice_messages)}):\n")
-        for i, msg in enumerate(voice_messages, 1):
-            url = storage.get_presigned_download_url(msg["storage_key"])
-            duration_str = f" ({msg['duration']} сек)" if msg.get("duration") else ""
-            created = msg["created_at"].strftime("%d.%m.%Y %H:%M") if msg.get("created_at") else ""
-            parts.append(f"{i}. {created}{duration_str} — {_link(url, 'скачать')}")
-        parts.append("")
-
+    if voices:
+        parts.append("Голосовые:\n")
+        for i, v in enumerate(voices, 1):
+            url = storage.get_presigned_download_url(v["storage_key"])
+            dur = f" ({v['duration']} сек)" if v.get("duration") else ""
+            created = v["created_at"].strftime("%d.%m %H:%M") if v.get("created_at") else ""
+            parts.append(f"{i}. {created}{dur} — <a href=\"{url}\">скачать</a>")
     if photos:
-        parts.append(f"Фото с подписями ({len(photos)}):\n")
+        parts.append("\nФото:\n")
         for i, p in enumerate(photos, 1):
             url = storage.get_presigned_download_url(p["storage_key"])
-            caption = html.escape((p.get("caption") or "")[:100])
-            created = p["created_at"].strftime("%d.%m.%Y %H:%M") if p.get("created_at") else ""
-            parts.append(f"{i}. {created}\n{caption}\n{_link(url, 'открыть')}")
-        parts.append("")
-
-    text = "\n\n".join(parts).strip()
+            cap = html.escape((p.get("caption") or "")[:80])
+            parts.append(f"{i}. {cap} — <a href=\"{url}\">открыть</a>")
+    text = "\n".join(parts)
     if len(text) > 4000:
-        await update.message.reply_text(parts[0], parse_mode="HTML")
-        for p in parts[1:]:
-            if p:
-                await update.message.reply_text(p, parse_mode="HTML")
-    else:
-        await update.message.reply_text(text, parse_mode="HTML")
+        text = text[:3990] + "..."
+    await update.message.reply_text(text, parse_mode="HTML")
+
+
+async def cmd_cabinet(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    context.user_data["awaiting_cabinet_password"] = True
+    await update.message.reply_text("Отправь пароль для входа в кабинет (от 6 символов). Логин: @username. cabinet.glava.family")
+
+
+async def _post_init(app: Application) -> None:
+    await app.bot.delete_webhook(drop_pending_updates=True)
+    await app.bot.set_my_commands([
+        BotCommand("start", "Начать"),
+        BotCommand("list", "Мои материалы"),
+        BotCommand("cabinet", "Кабинет"),
+    ])
+    await app.bot.set_chat_menu_button(menu_button=MenuButtonCommands())
+    try:
+        await app.bot.set_my_description(
+            "Создай живую книгу о близких. Нажми /start чтобы начать."
+        )
+    except Exception as e:
+        logger.debug("set_my_description: %s", e)
 
 
 def main() -> None:
-    """Запуск бота."""
-    # Проверяем конфиг при старте
     config.BOT_TOKEN
     config.DATABASE_URL
     config.S3_BUCKET_NAME
-
-    # Создаём бакет, если его нет (для MinIO и др.)
     try:
         storage.ensure_bucket_exists()
     except Exception as e:
-        logger.warning("Не удалось создать/проверить бакет: %s. Убедись, что бакет существует.", e)
+        logger.warning("Бакет: %s", e)
 
-    # Меню команд (синяя кнопка слева от поля ввода)
-    async def set_commands(application: Application) -> None:
-        await application.bot.set_my_commands([
-            BotCommand("start", "Начать / приветствие"),
-            BotCommand("list", "Список голосовых и фото"),
-            BotCommand("cabinet", "Личный кабинет"),
-        ])
-        # Явно включаем кнопку меню команд (по умолчанию для всех чатов)
-        await application.bot.set_chat_menu_button(menu_button=MenuButtonCommands())
+    app = Application.builder().token(config.BOT_TOKEN).post_init(_post_init).build()
 
-    application = Application.builder().token(config.BOT_TOKEN).post_init(set_commands).build()
+    app.add_handler(CommandHandler("start", cmd_start))
+    app.add_handler(CommandHandler("list", cmd_list))
+    app.add_handler(CommandHandler("cabinet", cmd_cabinet))
+    app.add_handler(CallbackQueryHandler(handle_callback))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_caption_text))
+    app.add_handler(MessageHandler(filters.VOICE, handle_voice))
+    app.add_handler(MessageHandler(filters.AUDIO, handle_audio))
+    app.add_handler(MessageHandler(filters.Document.ALL, handle_audio_document))
+    app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
 
-    # Регистрируем обработчики
-    application.add_handler(CommandHandler("start", cmd_start))
-    application.add_handler(CommandHandler("list", cmd_list))
-    application.add_handler(CommandHandler("cabinet", cmd_cabinet))
-    application.add_handler(MessageHandler(filters.VOICE, handle_voice))
-    application.add_handler(MessageHandler(filters.AUDIO, handle_audio))
-    application.add_handler(MessageHandler(filters.Document.ALL, handle_audio_document))
-    application.add_handler(MessageHandler(filters.PHOTO, handle_photo))
-    # Текст как подпись к фото (не команда)
-    application.add_handler(
-        MessageHandler(filters.TEXT & ~filters.COMMAND, handle_caption_text)
-    )
-
-    # Запускаем бота (polling — бот сам опрашивает Telegram на новые сообщения)
-    # drop_pending_updates — сбрасывает старые сообщения при старте, помогает избежать Conflict
-    logger.info("Бот запущен. Нажми Ctrl+C для остановки.")
-    application.run_polling(allowed_updates=Update.ALL_TYPES, drop_pending_updates=True)
+    logger.info("GLAVA бот запущен (Pre-pay flow). Ctrl+C — остановка.")
+    app.run_polling(allowed_updates=Update.ALL_TYPES, drop_pending_updates=True)
 
 
 if __name__ == "__main__":

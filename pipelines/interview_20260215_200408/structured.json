@@ -1,0 +1,254 @@
+{
+  "source": "C:\\Users\\user\\Dropbox\\Public\\Cursor\\GLAVA\\pipelines\\interview_input\\voice_6.mp3",
+  "chunks": [
+    {
+      "chunk_id": "chunk_000",
+      "start_time": 0.0,
+      "end_time": 240.0,
+      "raw_transcript": "",
+      "clean_transcript": "",
+      "utterances": [
+        {
+          "speaker": "unknown",
+          "start_time": "0:00",
+          "end_time": "4:00",
+          "text": "",
+          "confidence": "low"
+        }
+      ]
+    },
+    {
+      "chunk_id": "chunk_001",
+      "start_time": 240.0,
+      "end_time": 480.0,
+      "raw_transcript": "",
+      "clean_transcript": "",
+      "utterances": [
+        {
+          "speaker": "unknown",
+          "start_time": "4:00",
+          "end_time": "8:00",
+          "text": "",
+          "confidence": "low"
+        }
+      ]
+    },
+    {
+      "chunk_id": "chunk_002",
+      "start_time": 480.0,
+      "end_time": 720.0,
+      "raw_transcript": "",
+      "clean_transcript": "",
+      "utterances": [
+        {
+          "speaker": "unknown",
+          "start_time": "8:00",
+          "end_time": "12:00",
+          "text": "",
+          "confidence": "low"
+        }
+      ]
+    },
+    {
+      "chunk_id": "chunk_003",
+      "start_time": 720.0,
+      "end_time": 960.0,
+      "raw_transcript": "",
+      "clean_transcript": "",
+      "utterances": [
+        {
+          "speaker": "unknown",
+          "start_time": "12:00",
+          "end_time": "16:00",
+          "text": "",
+          "confidence": "low"
+        }
+      ]
+    },
+    {
+      "chunk_id": "chunk_004",
+      "start_time": 960.0,
+      "end_time": 1200.0,
+      "raw_transcript": "",
+      "clean_transcript": "",
+      "utterances": [
+        {
+          "speaker": "unknown",
+          "start_time": "16:00",
+          "end_time": "20:00",
+          "text": "",
+          "confidence": "low"
+        }
+      ]
+    },
+    {
+      "chunk_id": "chunk_005",
+      "start_time": 1200.0,
+      "end_time": 1440.0,
+      "raw_transcript": "",
+      "clean_transcript": "",
+      "utterances": [
+        {
+          "speaker": "unknown",
+          "start_time": "20:00",
+          "end_time": "24:00",
+          "text": "",
+          "confidence": "low"
+        }
+      ]
+    },
+    {
+      "chunk_id": "chunk_006",
+      "start_time": 1440.0,
+      "end_time": 1680.0,
+      "raw_transcript": "",
+      "clean_transcript": "",
+      "utterances": [
+        {
+          "speaker": "unknown",
+          "start_time": "24:00",
+          "end_time": "28:00",
+          "text": "",
+          "confidence": "low"
+        }
+      ]
+    },
+    {
+      "chunk_id": "chunk_007",
+      "start_time": 1680.0,
+      "end_time": 1920.0,
+      "raw_transcript": "",
+      "clean_transcript": "",
+      "utterances": [
+        {
+          "speaker": "unknown",
+          "start_time": "28:00",
+          "end_time": "32:00",
+          "text": "",
+          "confidence": "low"
+        }
+      ]
+    },
+    {
+      "chunk_id": "chunk_008",
+      "start_time": 1920.0,
+      "end_time": 2160.0,
+      "raw_transcript": "",
+      "clean_transcript": "",
+      "utterances": [
+        {
+          "speaker": "unknown",
+          "start_time": "32:00",
+          "end_time": "36:00",
+          "text": "",
+          "confidence": "low"
+        }
+      ]
+    },
+    {
+      "chunk_id": "chunk_009",
+      "start_time": 2160.0,
+      "end_time": 2393.344036,
+      "raw_transcript": "",
+      "clean_transcript": "",
+      "utterances": [
+        {
+          "speaker": "unknown",
+          "start_time": "36:00",
+          "end_time": "39:53",
+          "text": "",
+          "confidence": "low"
+        }
+      ]
+    }
+  ],
+  "blocks": [
+    {
+      "block_id": "block_00",
+      "title": "прочее",
+      "start_time": 0.0,
+      "end_time": 2393.344036,
+      "chunks": [
+        "chunk_000",
+        "chunk_001",
+        "chunk_002",
+        "chunk_003",
+        "chunk_004",
+        "chunk_005",
+        "chunk_006",
+        "chunk_007",
+        "chunk_008",
+        "chunk_009"
+      ],
+      "dialogue": [
+        {
+          "speaker": "unknown",
+          "start_time": "0:00",
+          "end_time": "4:00",
+          "text": ""
+        },
+        {
+          "speaker": "unknown",
+          "start_time": "4:00",
+          "end_time": "8:00",
+          "text": ""
+        },
+        {
+          "speaker": "unknown",
+          "start_time": "8:00",
+          "end_time": "12:00",
+          "text": ""
+        },
+        {
+          "speaker": "unknown",
+          "start_time": "12:00",
+          "end_time": "16:00",
+          "text": ""
+        },
+        {
+          "speaker": "unknown",
+          "start_time": "16:00",
+          "end_time": "20:00",
+          "text": ""
+        },
+        {
+          "speaker": "unknown",
+          "start_time": "20:00",
+          "end_time": "24:00",
+          "text": ""
+        },
+        {
+          "speaker": "unknown",
+          "start_time": "24:00",
+          "end_time": "28:00",
+          "text": ""
+        },
+        {
+          "speaker": "unknown",
+          "start_time": "28:00",
+          "end_time": "32:00",
+          "text": ""
+        },
+        {
+          "speaker": "unknown",
+          "start_time": "32:00",
+          "end_time": "36:00",
+          "text": ""
+        },
+        {
+          "speaker": "unknown",
+          "start_time": "36:00",
+          "end_time": "39:53",
+          "text": ""
+        }
+      ],
+      "facts": [
+        {
+          "type": "нет данных",
+          "value": "факты не извлечены автоматически"
+        }
+      ],
+      "stories": []
+    }
+  ]
+}

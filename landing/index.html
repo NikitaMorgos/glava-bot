@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Glava — живая книга о ваших близких</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --cream: #faf8f5;
+            --paper: #f5f2ed;
+            --ink: #2c2419;
+            --accent: #5b7a9e;
+            --accent-soft: #7a95b5;
+            --muted: #6b5d4d;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Manrope', sans-serif;
+            background: var(--cream);
+            color: var(--ink);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        .section {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 4rem 1.5rem;
+        }
+        .section-title {
+            font-size: clamp(1.5rem, 3vw, 2rem);
+            font-weight: 600;
+            color: var(--ink);
+            margin-bottom: 2.5rem;
+            line-height: 1.3;
+        }
+        /* Hero */
+        .hero {
+            padding: 3rem 1.5rem 4rem;
+        }
+        .hero-inner {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            align-items: center;
+        }
+        @media (max-width: 768px) {
+            .hero-inner { grid-template-columns: 1fr; }
+        }
+        .hero-image {
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 24px 64px rgba(44, 36, 25, 0.1);
+        }
+        .hero-image img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        .hero-content h1 {
+            font-size: clamp(1.75rem, 4vw, 2.5rem);
+            font-weight: 600;
+            color: var(--ink);
+            line-height: 1.25;
+            margin-bottom: 1rem;
+        }
+        .hero-content .subtitle {
+            font-size: 1.05rem;
+            color: var(--muted);
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+        .hero-content .cta-wrap {
+            margin-bottom: 1rem;
+        }
+        .hero-content .cta-note {
+            font-size: 0.9rem;
+            color: var(--muted);
+        }
+        .cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1rem 2rem;
+            background: var(--accent);
+            color: #fff !important;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 1.05rem;
+            border-radius: 8px;
+            transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+        }
+        .cta:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(91, 122, 158, 0.3);
+            background: var(--accent-soft);
+        }
+        .cta svg {
+            width: 20px;
+            height: 20px;
+        }
+        /* How it works */
+        .how-section {
+            background: var(--paper);
+        }
+        .steps {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+        .step {
+            flex: 1 1 280px;
+            display: flex;
+            gap: 1rem;
+            padding: 1.25rem;
+            background: var(--cream);
+            border-radius: 8px;
+        }
+        .step-icon {
+            flex-shrink: 0;
+            width: 40px;
+            height: 40px;
+            background: rgba(91, 122, 158, 0.12);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+        .step-title {
+            font-weight: 600;
+            color: var(--ink);
+            margin-bottom: 0.35rem;
+        }
+        .step-desc {
+            font-size: 0.95rem;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+        /* What inside */
+        .inside-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+        }
+        .inside-card {
+            padding: 1.5rem;
+            background: var(--paper);
+            border-radius: 8px;
+        }
+        .inside-card h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--ink);
+            margin-bottom: 0.5rem;
+        }
+        .inside-card p {
+            font-size: 0.95rem;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+        /* Who for */
+        .who-section {
+            background: var(--paper);
+        }
+        .who-list {
+            list-style: none;
+        }
+        .who-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid rgba(107, 93, 77, 0.12);
+        }
+        .who-list li:last-child { border-bottom: none; }
+        .who-list .bullet {
+            flex-shrink: 0;
+            width: 8px;
+            height: 8px;
+            background: var(--accent);
+            border-radius: 50%;
+            margin-top: 0.6rem;
+        }
+        .who-list .text {
+            font-size: 1rem;
+            color: var(--ink);
+            line-height: 1.5;
+        }
+        /* Footer CTA */
+        .footer-cta {
+            text-align: center;
+            padding: 4rem 1.5rem;
+        }
+        .footer-cta .cta {
+            margin-bottom: 1rem;
+        }
+        .footer-cta .note {
+            font-size: 0.9rem;
+            color: var(--muted);
+        }
+        /* Личный кабинет — скромно сбоку */
+        .cabinet-link {
+            position: fixed;
+            top: 1.25rem;
+            right: 1.25rem;
+            font-size: 0.9rem;
+            color: var(--muted);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        .cabinet-link:hover { color: var(--accent); }
+    </style>
+</head>
+<body>
+    <a href="https://cabinet.glava.family" class="cabinet-link">Личный кабинет</a>
+    <section class="hero">
+        <div class="hero-inner">
+            <div class="hero-image">
+                <img src="hero.png" alt="Семейная история — книга с фотографиями и архивными документами">
+            </div>
+            <div class="hero-content">
+                <h1>Glava — живая книга о ваших близких</h1>
+                <p class="subtitle">Помогаем детям и внукам записывать истории родителей и бабушек в современную семейную книгу — от первых разговоров до готовой библиотеки.</p>
+                <div class="cta-wrap">
+                    <a href="https://t.me/glava_voice_bot" class="cta">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/></svg>
+                        Создать свою главу
+                    </a>
+                </div>
+                <p class="cta-note">Первые проекты — в ручном пилоте, помогаем лично.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="section how-section">
+        <h2 class="section-title">Как из разговоров рождается книга</h2>
+        <div class="steps">
+            <div class="step">
+                <span class="step-icon">1</span>
+                <div>
+                    <div class="step-title">Возьмите сценарии для разговора</div>
+                    <p class="step-desc">Мы даём готовые вопросы и темы, чтобы не теряться и не задавать только «Как ты работал?»</p>
+                </div>
+            </div>
+            <div class="step">
+                <span class="step-icon">2</span>
+                <div>
+                    <div class="step-title">Проведите несколько бесед</div>
+                    <p class="step-desc">Записывайте голосом или текстом разговоры с бабушкой, дедушкой, родителями.</p>
+                </div>
+            </div>
+            <div class="step">
+                <span class="step-icon">3</span>
+                <div>
+                    <div class="step-title">Добавьте фотографии и артефакты</div>
+                    <p class="step-desc">Подгрузите семейные фото, сканы документов, письма, вырезки.</p>
+                </div>
+            </div>
+            <div class="step">
+                <span class="step-icon">4</span>
+                <div>
+                    <div class="step-title">Получите полноценную книгу</div>
+                    <p class="step-desc">Мы собираем всё в вычитанную, красиво сверстанную книгу — в PDF или с печатью на бумаге.</p>
+                </div>
+            </div>
+            <div class="step">
+                <span class="step-icon">5</span>
+                <div>
+                    <div class="step-title">Повторите и соберите семейную библиотеку</div>
+                    <p class="step-desc">Можно делать историю для каждого члена семьи и собрать целую полку «Семейная история».</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section">
+        <h2 class="section-title">Что получится в итоге</h2>
+        <div class="inside-grid">
+            <div class="inside-card">
+                <h3>Линия жизни</h3>
+                <p>Хронология, ключевые вехи, география — всё в одном месте, чтобы легко ориентироваться в судьбе близкого.</p>
+            </div>
+            <div class="inside-card">
+                <h3>Истории и эпизоды</h3>
+                <p>Рассказы, воспоминания, смешные и тяжёлые моменты — то, что хочется сохранить и передать дальше.</p>
+            </div>
+            <div class="inside-card">
+                <h3>Фото и документы</h3>
+                <p>Встроенные фотографии, архивные бумаги, карты — визуальная история семьи в одной книге.</p>
+            </div>
+            <div class="inside-card">
+                <h3>Цифровой и бумажный формат</h3>
+                <p>PDF-версия для семьи и печатный вариант в твёрдом переплёте — как подарок или память.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="section who-section">
+        <h2 class="section-title">Кому подойдёт Glava</h2>
+        <ul class="who-list">
+            <li><span class="bullet"></span><span class="text">Тем, кто хочет успеть расспросить бабушку или дедушку</span></li>
+            <li><span class="bullet"></span><span class="text">Тем, кто думает о необычном подарке родителям</span></li>
+            <li><span class="bullet"></span><span class="text">Тем, кто уже собирает семейный архив и хочет привести его в порядок</span></li>
+        </ul>
+    </section>
+
+    <section class="footer-cta">
+        <a href="https://t.me/glava_voice_bot" class="cta">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/></svg>
+            Создать свою главу
+        </a>
+        <p class="note">Расскажите немного о своём близком — и мы предложим формат первой главы.</p>
+    </section>
+</body>
+</html>
