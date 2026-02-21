@@ -27,13 +27,19 @@ if os.environ.get("TRUST_PROXY", "").lower() in ("1", "true", "yes"):
 
 
 def verify_password(user: dict, password: str) -> bool:
-    """Проверяет пароль пользователя."""
-    from passlib.hash import bcrypt
+    """Проверяет пароль пользователя (bcrypt, совместимо с ботом)."""
+    import bcrypt
 
     h = user.get("web_password_hash")
     if not h:
         return False
-    return bcrypt.verify(password, h)
+    try:
+        return bcrypt.checkpw(
+            password.encode("utf-8", errors="replace")[:72],
+            h.encode("ascii") if isinstance(h, str) else h,
+        )
+    except Exception:
+        return False
 
 
 def get_user_by_login(login: str) -> dict | None:
