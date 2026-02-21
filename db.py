@@ -41,7 +41,13 @@ def get_or_create_user(telegram_id: int, username: str | None) -> dict:
             )
             row = cur.fetchone()
             if row:
-                return dict(row)
+                # Обновляем username, чтобы вход по @username работал
+                cur.execute(
+                    "UPDATE users SET username = %s WHERE telegram_id = %s",
+                    (username or "", telegram_id),
+                )
+                conn.commit()
+                return dict(row) | {"username": username or row.get("username") or ""}
 
             # Не нашли — создаём
             cur.execute(
