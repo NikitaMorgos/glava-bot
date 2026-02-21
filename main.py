@@ -478,8 +478,11 @@ async def handle_caption_text(update: Update, context: ContextTypes.DEFAULT_TYPE
             return
         try:
             from passlib.hash import bcrypt
+            # bcrypt limit 72 bytes — обрезаем при необходимости
+            pwd_bytes = text.encode("utf-8")[:72]
+            pwd_str = pwd_bytes.decode("utf-8", errors="ignore")
             db_user = db.get_or_create_user(user.id, user.username)
-            db.set_web_password(db_user["id"], bcrypt.hash(text))
+            db.set_web_password(db_user["id"], bcrypt.hash(pwd_str))
             await update.message.reply_text("Пароль сохранён. Вход: cabinet.glava.family или 72.56.121.94")
         except Exception as e:
             logger.exception("Ошибка сохранения пароля кабинета")
