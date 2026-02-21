@@ -476,10 +476,14 @@ async def handle_caption_text(update: Update, context: ContextTypes.DEFAULT_TYPE
         if len(text) < 6:
             await update.message.reply_text("Пароль от 6 символов. /cabinet")
             return
-        from passlib.hash import bcrypt
-        db_user = db.get_or_create_user(user.id, user.username)
-        db.set_web_password(db_user["id"], bcrypt.hash(text))
-        await update.message.reply_text("Пароль сохранён. cabinet.glava.family")
+        try:
+            from passlib.hash import bcrypt
+            db_user = db.get_or_create_user(user.id, user.username)
+            db.set_web_password(db_user["id"], bcrypt.hash(text))
+            await update.message.reply_text("Пароль сохранён. Вход: cabinet.glava.family или 72.56.121.94")
+        except Exception as e:
+            logger.exception("Ошибка сохранения пароля кабинета")
+            await update.message.reply_text(f"Ошибка: {e}. Попробуй ещё раз /cabinet")
         return
     pending = db.get_pending_photo(user.id)
     if pending:
@@ -526,8 +530,12 @@ async def cmd_list(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 
 async def cmd_cabinet(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    user = update.effective_user
     context.user_data["awaiting_cabinet_password"] = True
-    await update.message.reply_text("Отправь пароль для входа в кабинет (от 6 символов). Логин: @username. cabinet.glava.family")
+    login_hint = f"@{user.username}" if user and user.username else "ID"
+    await update.message.reply_text(
+        f"Отправь пароль для входа в кабинет (от 6 символов). Логин: {login_hint}"
+    )
 
 
 async def _post_init(app: Application) -> None:
