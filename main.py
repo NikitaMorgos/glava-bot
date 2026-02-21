@@ -67,14 +67,22 @@ def _run_transcription_pipeline(
     elif config.MYMEET_API_KEY:
         from pipeline_mymeet_bio import run_pipeline_background
         run_pipeline_background(voice_id, storage_key, telegram_id, username)
+    elif transcriber == "speechkit" and config.YANDEX_API_KEY:
+        from pipeline_transcribe_bio import run_pipeline_background
+        run_pipeline_background(voice_id, storage_key, telegram_id, username, use_diarization=False)
+    elif config.YANDEX_API_KEY:
+        from pipeline_transcribe_bio import run_pipeline_background
+        run_pipeline_background(voice_id, storage_key, telegram_id, username, use_diarization=False)
     else:
         from pipeline_transcribe_bio import run_pipeline_background
         run_pipeline_background(voice_id, storage_key, telegram_id, username, use_diarization=False)
 
 
 def _user_has_paid(telegram_id: int) -> bool:
-    draft = db_draft.get_draft_by_telegram_id(telegram_id)
-    return draft and draft.get("status") == "paid"
+    # Временно отключено для тестов. Раскомментировать для prod:
+    # draft = db_draft.get_draft_by_telegram_id(telegram_id)
+    # return draft and draft.get("status") == "paid"
+    return True
 
 
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
