@@ -241,22 +241,23 @@ def extract_transcript_from_result(result: dict) -> str:
             res = task.get("result") or {}
             if isinstance(res, str):
                 return res
-            # Структура может быть: transcript, text, segments, dialogue
-            text = res.get("transcript") or res.get("text") or ""
-            if text:
-                return text
+            # Сначала берём сегменты/диалог (спикеры), иначе сплошной текст
             segments = res.get("segments") or res.get("dialogue") or []
             if segments:
                 lines = []
-                for seg in segments:
+                for i, seg in enumerate(segments):
                     if isinstance(seg, dict):
-                        spk = seg.get("speaker") or seg.get("Speaker") or "Спикер"
+                        spk = seg.get("speaker") or seg.get("Speaker") or f"Спикер {i + 1}"
                         txt = seg.get("text") or seg.get("Text") or ""
                         if txt:
                             lines.append(f"{spk}: {txt}")
                     elif isinstance(seg, str):
                         lines.append(seg)
-                return "\n".join(lines) if lines else ""
+                if lines:
+                    return "\n".join(lines)
+            text = res.get("transcript") or res.get("text") or ""
+            if text:
+                return text
     return ""
 
 

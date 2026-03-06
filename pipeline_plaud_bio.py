@@ -87,9 +87,9 @@ def run_pipeline_sync(
         # Обновляем БД
         db.update_voice_transcript(voice_id, transcript)
 
-        # LLM — биографический текст (если есть ключ)
+        # LLM — биографический текст и уточняющие вопросы (если есть ключ)
         if openai_key:
-            from llm_bio import process_transcript_to_bio
+            from llm_bio import process_transcript_to_bio, generate_clarifying_questions
 
             bio_text = process_transcript_to_bio(transcript, api_key=openai_key)
             if bio_text:
@@ -98,6 +98,13 @@ def run_pipeline_sync(
                 block = f"\n\n--- Обработка от {datetime.now().strftime('%Y-%m-%d %H:%M')} ---\n{bio_text}"
                 bio_path.write_text((prev + block).strip(), encoding="utf-8")
                 logger.info("Биография сохранена: %s", bio_path)
+                questions_text = generate_clarifying_questions(bio_text, api_key=openai_key)
+                if questions_text:
+                    q_path = client_dir / "clarifying_questions.txt"
+                    prev_q = q_path.read_text(encoding="utf-8") if q_path.exists() else ""
+                    q_block = f"\n\n--- От {datetime.now().strftime('%Y-%m-%d %H:%M')} ---\n{questions_text}"
+                    q_path.write_text((prev_q + q_block).strip(), encoding="utf-8")
+                    logger.info("Уточняющие вопросы сохранены: %s", q_path)
         else:
             logger.info("OPENAI_API_KEY не задан, биография не генерируется")
 

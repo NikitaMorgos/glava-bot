@@ -103,6 +103,86 @@ def upload_audio(
     return None
 
 
+# Источники для record-meeting (бот подключается по ссылке)
+SOURCE_GMEET = "gmeet"
+SOURCE_ZOOM = "zoom"
+SOURCE_YANDEX_TELEMOST = "yandextelemost"
+SOURCE_JITSI = "jitsi"
+SOURCE_MSTEAMS = "msteams"
+
+
+def _detect_meeting_source(link: str) -> str:
+    """Определяет платформу по URL встречи."""
+    link_lower = link.lower()
+    if "meet.google.com" in link_lower or "google.com" in link_lower:
+        return SOURCE_GMEET
+    if "zoom.us" in link_lower or "zoom.com" in link_lower:
+        return SOURCE_ZOOM
+    if "telemost" in link_lower or "yandex" in link_lower:
+        return SOURCE_YANDEX_TELEMOST
+    if "jitsi" in link_lower or "meet.jit.si" in link_lower:
+        return SOURCE_JITSI
+    if "teams.microsoft.com" in link_lower or "teams.live.com" in link_lower:
+        return SOURCE_MSTEAMS
+    return SOURCE_JITSI  # дефолт для неизвестных
+
+
+def record_meeting(
+    link: str,
+    api_key: str,
+    title: str = "GLAVA интервью",
+    source: str | None = None,
+    template_name: str = TEMPLATE_RESEARCH,
+    local_date_time: str | None = None,
+    meeting_password: str | None = None,
+) -> str | None:
+    """
+    Подключает бота MyMeet к онлайн-встрече по ссылке (запись и транскрипция).
+    Поддерживаются: Google Meet, Zoom, Yandex Telemost, Jitsi, MS Teams.
+    Возвращает meeting_id для опроса статуса или None при ошибке.
+    """
+    if not link or not link.strip():
+        logger.error("record_meeting: пустая ссылка")
+        return None
+    link = link.strip()
+    if source is None:
+        source = _detect_meeting_source(link)
+    if local_date_time is None:
+        local_date_time = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S+00:00")
+    payload = {
+        "api_key": api_key,
+        "link": link,
+        "title": title,
+        "source": source,
+        "template_name": template_name,
+        "local_date_time": local_date_time,
+    }
+    if meeting_password:
+        payload["meeting_password"] = meeting_password
+    try:
+        resp = requests.post(
+            f"{MYMEET_BASE_URL}/api/record-meeting",
+            json=payload,
+            timeout=30,
+        )
+    except requests.RequestException as e:
+        logger.warning("mymeet record-meeting error: %s", e)
+        return None
+    if not resp.ok:
+        logger.warning("mymeet record-meeting: %s %s", resp.status_code, resp.text[:500])
+        return None
+    try:
+        j = resp.json()
+        meeting_id = j.get("meeting_id") or j.get("meetingId")
+        if meeting_id:
+            logger.info("mymeet record-meeting OK, meeting_id=%s", meeting_id)
+            return meeting_id
+        logger.warning("mymeet record-meeting: нет meeting_id в ответе: %s", j)
+    except Exception as e:
+        logger.warning("mymeet record-meeting response: %s", e)
+    return None
+
+
 def get_meeting_status(meeting_id: str, api_key: str) -> str | None:
     """Возвращает статус: processing, processed, failed, queued, new."""
     try:
@@ -150,35 +230,47 @@ def _extract_transcript_from_report(report: dict) -> str:
         if isinstance(val, str) and val.strip():
             return val.strip()
 
-    # Вложенные структуры
+    # Вложенные структуры — форматируем как диалог с указанием спикера
     segments = report.get("segments") or report.get("transcript_segments") or []
     if isinstance(segments, list):
         parts = []
-        for s in segments:
+        for i, s in enumerate(segments):
             if isinstance(s, dict):
                 text = s.get("text") or s.get("content") or s.get("phrase") or ""
+                spk = (
+                    s.get("speaker") or s.get("speaker_id") or s.get("role")
+                    or f"Спикер {i + 1}"
+                )
+                if isinstance(spk, int):
+                    spk = f"Спикер {spk}"
             elif isinstance(s, str):
-                text = s
+                text, spk = s, f"Спикер {i + 1}"
             else:
-                text = str(s) if s else ""
+                text, spk = str(s) if s else "", f"Спикер {i + 1}"
             if text:
-                parts.append(text.strip())
+                parts.append(f"{spk}: {text.strip()}")
         if parts:
             return "\n".join(parts)
 
-    # speakers / turns
+    # speakers / turns — диалог по репликам
     speakers = report.get("speakers") or report.get("turns") or []
     if isinstance(speakers, list):
         parts = []
-        for sp in speakers:
+        for i, sp in enumerate(speakers):
             if isinstance(sp, dict):
                 text = sp.get("text") or sp.get("content") or sp.get("phrase") or ""
+                spk = (
+                    sp.get("speaker") or sp.get("speaker_id") or sp.get("role")
+                    or f"Спикер {i + 1}"
+                )
+                if isinstance(spk, int):
+                    spk = f"Спикер {spk}"
             elif isinstance(sp, str):
-                text = sp
+                text, spk = sp, f"Спикер {i + 1}"
             else:
-                text = str(sp) if sp else ""
+                text, spk = str(sp) if sp else "", f"Спикер {i + 1}"
             if text:
-                parts.append(text.strip())
+                parts.append(f"{spk}: {text.strip()}")
         if parts:
             return "\n".join(parts)
 

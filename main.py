@@ -12,7 +12,7 @@ import re
 import tempfile
 from pathlib import Path
 
-from telegram import BotCommand, MenuButtonCommands, Update
+from telegram import BotCommand, InlineKeyboardMarkup, MenuButtonCommands, Update
 from telegram.ext import Application, CallbackQueryHandler, CommandHandler, MessageHandler, filters, ContextTypes
 
 import config
@@ -26,11 +26,14 @@ from prepay.messages import (
     EMAIL_INPUT_MSG, EMAIL_ERROR_MSG, ORDER_SUMMARY_MSG,
     PAYMENT_INIT_MSG, PAYMENT_WAIT_MSG, PAYMENT_STILL_PENDING_MSG,
     RESUME_DRAFT_MSG, RESUME_PAYMENT_MSG, BLOCKED_MEDIA_MSG,
+    ONLINE_MEETING_INTRO_MSG, ONLINE_MEETING_LINK_SENT_MSG,
+    ONLINE_MEETING_TELEMOST_SENT_MSG, ONLINE_MEETING_BAD_LINK_MSG, ONLINE_MEETING_ERROR_MSG,
 )
 from prepay.keyboards import (
     kb_intro_main, kb_intro_example, kb_intro_price,
     kb_config_characters, kb_config_edit_list, kb_email_back,
     kb_order_summary, kb_payment, kb_resume_draft, kb_resume_payment, kb_blocked_start,
+    kb_online_meeting,
 )
 
 logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
@@ -53,7 +56,7 @@ def _format_price(kopecks: int) -> str:
 def _run_transcription_pipeline(
     voice_id: int, storage_key: str, telegram_id: int, username: str | None
 ) -> None:
-    """Выбирает пайплайн по TRANSCRIBER и ключам: mymeet → plaud → speechkit."""
+    """Выбирает пайплайн по TRANSCRIBER и ключам: mymeet → plaud → assemblyai → speechkit."""
     transcriber = getattr(config, "TRANSCRIBER", None)
     if transcriber == "mymeet" and config.MYMEET_API_KEY:
         from pipeline_mymeet_bio import run_pipeline_background
@@ -61,28 +64,33 @@ def _run_transcription_pipeline(
     elif transcriber == "plaud" and config.PLAUD_API_TOKEN:
         from pipeline_plaud_bio import run_pipeline_background
         run_pipeline_background(voice_id, storage_key, telegram_id, username)
+    elif transcriber == "assemblyai" and config.ASSEMBLYAI_API_KEY:
+        from pipeline_assemblyai_bio import run_pipeline_background
+        run_pipeline_background(voice_id, storage_key, telegram_id, username)
+    elif transcriber == "speechkit" and config.YANDEX_API_KEY:
+        from pipeline_transcribe_bio import run_pipeline_background
+        run_pipeline_background(voice_id, storage_key, telegram_id, username, use_diarization=True)
     elif config.PLAUD_API_TOKEN:
         from pipeline_plaud_bio import run_pipeline_background
         run_pipeline_background(voice_id, storage_key, telegram_id, username)
     elif config.MYMEET_API_KEY:
         from pipeline_mymeet_bio import run_pipeline_background
         run_pipeline_background(voice_id, storage_key, telegram_id, username)
-    elif transcriber == "speechkit" and config.YANDEX_API_KEY:
-        from pipeline_transcribe_bio import run_pipeline_background
-        run_pipeline_background(voice_id, storage_key, telegram_id, username, use_diarization=False)
+    elif config.ASSEMBLYAI_API_KEY:
+        from pipeline_assemblyai_bio import run_pipeline_background
+        run_pipeline_background(voice_id, storage_key, telegram_id, username)
     elif config.YANDEX_API_KEY:
         from pipeline_transcribe_bio import run_pipeline_background
-        run_pipeline_background(voice_id, storage_key, telegram_id, username, use_diarization=False)
+        run_pipeline_background(voice_id, storage_key, telegram_id, username, use_diarization=True)
     else:
         from pipeline_transcribe_bio import run_pipeline_background
-        run_pipeline_background(voice_id, storage_key, telegram_id, username, use_diarization=False)
+        run_pipeline_background(voice_id, storage_key, telegram_id, username, use_diarization=True)
 
 
 def _user_has_paid(telegram_id: int) -> bool:
-    # Временно отключено для тестов. Раскомментировать для prod:
-    # draft = db_draft.get_draft_by_telegram_id(telegram_id)
-    # return draft and draft.get("status") == "paid"
-    return True
+    """Проверяет, оплатил ли пользователь заказ. Пайплайн (голосовые/фото) запускается только после оплаты."""
+    draft = db_draft.get_draft_by_telegram_id(telegram_id)
+    return draft is not None and draft.get("status") == "paid"
 
 
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -134,8 +142,12 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             return
         chars = draft.get("characters") or []
         if not chars:
-            await _show_config_characters_callback(query, context, user.id)
-        elif not draft.get("email"):
+            # По сценарию: при 0 персонажах — сразу ввод имени без кнопок (без экрана конфига)
+            context.user_data["prepay_awaiting"] = "character_name"
+            context.user_data["prepay_draft_id"] = draft["id"]
+            await query.edit_message_text("Введите имя персонажа:", reply_markup=InlineKeyboardMarkup([]))
+            return
+        if not draft.get("email"):
             await _show_email_input_callback(query, context, draft["id"])
         else:
             await _show_order_summary_callback(query, context, draft)
@@ -232,16 +244,25 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         if not draft or draft["id"] != draft_id or draft.get("status") != "draft":
             await query.answer("Заказ не найден.", show_alert=True)
             return
-        result = create_payment(draft)
+        try:
+            import asyncio
+            result = await asyncio.get_event_loop().run_in_executor(None, lambda: create_payment(draft))
+        except Exception as e:
+            logger.exception("create_payment error: %s", e)
+            await query.answer("Ошибка создания платежа. Попробуйте позже.", show_alert=True)
+            return
         payment_id = result.get("payment_id")
         payment_url = result.get("payment_url")
+        provider = result.get("provider", "stub")
         if payment_id and payment_url:
-            db_draft.set_draft_payment_pending(draft_id, payment_id, payment_url)
+            db_draft.set_draft_payment_pending(draft_id, payment_id, payment_url, provider)
             logger.info("event: payment_created draft_id=%s", draft_id)
             await query.edit_message_text(
                 PAYMENT_INIT_MSG.format(payment_url=payment_url),
                 reply_markup=kb_payment(draft_id, payment_url),
             )
+        else:
+            await query.answer("Не удалось создать платёж. Проверьте настройки ЮKassa.", show_alert=True)
         return
 
     if data.startswith("order_edit:"):
@@ -271,11 +292,43 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
                 await query.answer(PAYMENT_STILL_PENDING_MSG, show_alert=True)
         return
 
+    if data.startswith("payment_new_order:"):
+        draft_id = int(data.split(":")[1])
+        draft = db_draft.get_draft_by_telegram_id(user.id)
+        if draft and draft["id"] == draft_id:
+            db_draft.cancel_draft(draft_id)
+        new_draft = db_draft.get_or_create_draft(user.id, user.username)
+        if new_draft:
+            await _show_config_characters_callback(query, context, user.id)
+        return
+
     if data.startswith("payment_back:"):
         draft_id = int(data.split(":")[1])
         draft = db_draft.get_draft_by_telegram_id(user.id)
         if draft:
             await _show_order_summary_callback(query, context, draft)
+        return
+
+    if data == "online_use_telemost":
+        context.user_data.pop("awaiting_meeting_link", None)
+        link = getattr(config, "TELEMOST_MEETING_LINK", "") or ""
+        if not link or not config.MYMEET_API_KEY:
+            await query.answer("Ссылка на встречу не настроена.", show_alert=True)
+            return
+        from mymeet_client import record_meeting
+        from pipeline_mymeet_bio import run_online_meeting_background
+        meeting_id = record_meeting(
+            link, config.MYMEET_API_KEY,
+            title="GLAVA интервью",
+            template_name="research-interview",
+        )
+        if meeting_id:
+            run_online_meeting_background(meeting_id, user.id, user.username)
+            await query.edit_message_text(
+                f"{link}\n\n{ONLINE_MEETING_TELEMOST_SENT_MSG}",
+            )
+        else:
+            await query.answer(ONLINE_MEETING_ERROR_MSG, show_alert=True)
         return
 
 
@@ -491,7 +544,7 @@ async def handle_caption_text(update: Update, context: ContextTypes.DEFAULT_TYPE
             hashed = bcrypt.hashpw(pwd_bytes, bcrypt.gensalt()).decode("ascii")
             db_user = db.get_or_create_user(user.id, user.username)
             db.set_web_password(db_user["id"], hashed)
-            await update.message.reply_text("Пароль сохранён. Вход: cabinet.glava.family или 72.56.121.94")
+            await update.message.reply_text("Пароль сохранён. Вход: cabinet.glava.family")
         except Exception as e:
             logger.exception("Ошибка сохранения пароля кабинета")
             await update.message.reply_text(f"Ошибка: {e}. Попробуй ещё раз /cabinet")
@@ -549,11 +602,45 @@ async def cmd_cabinet(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     )
 
 
+async def cmd_online(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Записать онлайн-встречу: пользователь отправляет ссылку или получает ссылку из телемоста."""
+    try:
+        if not update.message:
+            return
+        user = update.effective_user
+        if not user:
+            await update.message.reply_text("Не удалось определить пользователя.")
+            return
+        allow_without_payment = getattr(config, "ALLOW_ONLINE_WITHOUT_PAYMENT", False)
+        if not allow_without_payment and not _user_has_paid(user.id):
+            await update.message.reply_text(
+                "Запись онлайн-встреч доступна после оплаты. Оформите заказ через /start.",
+                reply_markup=kb_blocked_start(),
+            )
+            return
+        mymeet_key = getattr(config, "MYMEET_API_KEY", "") or ""
+        if not mymeet_key:
+            await update.message.reply_text("Запись онлайн-встреч временно недоступна.")
+            return
+        context.user_data["awaiting_meeting_link"] = True
+        has_telemost = bool(getattr(config, "TELEMOST_MEETING_LINK", "") or "")
+        reply_markup = kb_online_meeting(has_telemost)
+        await update.message.reply_text(
+            ONLINE_MEETING_INTRO_MSG,
+            reply_markup=reply_markup,
+        )
+    except Exception as e:
+        logger.exception("cmd_online: %s", e)
+        if update.message:
+            await update.message.reply_text("Ошибка. Попробуйте позже или напишите в поддержку.")
+
+
 async def _post_init(app: Application) -> None:
     await app.bot.delete_webhook(drop_pending_updates=True)
     await app.bot.set_my_commands([
         BotCommand("start", "Начать"),
         BotCommand("list", "Мои материалы"),
+        BotCommand("online", "Записать онлайн-встречу"),
         BotCommand("cabinet", "Кабинет"),
     ])
     await app.bot.set_chat_menu_button(menu_button=MenuButtonCommands())
@@ -578,6 +665,7 @@ def main() -> None:
 
     app.add_handler(CommandHandler("start", cmd_start))
     app.add_handler(CommandHandler("list", cmd_list))
+    app.add_handler(CommandHandler("online", cmd_online))
     app.add_handler(CommandHandler("cabinet", cmd_cabinet))
     app.add_handler(CallbackQueryHandler(handle_callback))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_caption_text))

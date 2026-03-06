@@ -65,6 +65,7 @@ def kb_payment(draft_id: int, payment_url: str) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup([
         [InlineKeyboardButton("Открыть оплату", url=payment_url)],
         [InlineKeyboardButton("Проверить оплату", callback_data=f"payment_check:{draft_id}")],
+        [InlineKeyboardButton("🔄 Начать новый заказ", callback_data=f"payment_new_order:{draft_id}")],
         [InlineKeyboardButton("← Назад", callback_data=f"payment_back:{draft_id}")],
     ])
 
@@ -75,14 +76,25 @@ def kb_resume_draft() -> InlineKeyboardMarkup:
     ])
 
 
-def kb_resume_payment(payment_url: str) -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup([
+def kb_resume_payment(payment_url: str, draft_id: int | None = None) -> InlineKeyboardMarkup:
+    buttons = [
         [InlineKeyboardButton("Открыть оплату", url=payment_url)],
         [InlineKeyboardButton("Проверить оплату", callback_data="resume_check")],
-    ])
+    ]
+    if draft_id is not None:
+        buttons.append([InlineKeyboardButton("🔄 Начать новый заказ", callback_data=f"payment_new_order:{draft_id}")])
+    return InlineKeyboardMarkup(buttons)
 
 
 def kb_blocked_start() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup([
         [InlineKeyboardButton("Начать", callback_data="intro_start")],
     ])
+
+
+def kb_online_meeting(has_telemost_link: bool) -> InlineKeyboardMarkup:
+    """Клавиатура для записи онлайн-встречи: при наличии TELEMOST_MEETING_LINK — кнопка «Получить ссылку»."""
+    buttons = []
+    if has_telemost_link:
+        buttons.append([InlineKeyboardButton("🔗 Получить ссылку на встречу", callback_data="online_use_telemost")])
+    return InlineKeyboardMarkup(buttons) if buttons else None

@@ -11,6 +11,7 @@
 """
 
 import logging
+import re
 import time
 from pathlib import Path
 
@@ -154,7 +155,7 @@ def transcribe_via_speechkit(storage_key: str, audio_path: str | None = None) ->
         # Длинные файлы (40+ мин) требуют до ~20 мин обработки
         for _ in range(600):
             time.sleep(2)
-            status = requests.get(SPEECHKIT_OPERATIONS_URL + op_id, headers=headers, timeout=30)
+            status = requests.get(SPEECHKIT_OPERATIONS_URL + op_id, headers=headers, timeout=120)
             status.raise_for_status()
             data = status.json()
             if data.get("done"):
@@ -173,6 +174,125 @@ def transcribe_via_speechkit(storage_key: str, audio_path: str | None = None) ->
                 storage.delete_object(use_uri_key)
             except Exception as e:
                 logger.debug("Не удалось удалить временный объект %s: %s", use_uri_key, e)
+
+
+def _parse_speechkit_time(s: str | float) -> float:
+    """Парсит длительность из формата SpeechKit: '1.5s', '0.001234s' или число -> секунды."""
+    if s is None:
+        return 0.0
+    if isinstance(s, (int, float)):
+        return float(s)
+    s = str(s).strip().rstrip("s")
+    try:
+        return float(s)
+    except ValueError:
+        return 0.0
+
+
+def _split_text_to_utterances(text: str, min_parts: int = 5, max_parts: int = 80) -> list[str]:
+    """
+    Разбивает текст на реплики по предложениям/фразам для распределения по спикерам.
+    Возвращает список непустых строк.
+    """
+    if not (text or "").strip():
+        return []
+    text = text.strip()
+    # Разбить по концу предложения или по переносам
+    parts = re.split(r"(?<=[.!?])\s+|\n+", text)
+    parts = [p.strip() for p in parts if p.strip()]
+    if not parts:
+        parts = [text]
+    # Одна длинная часть — режем по запятым/точке с запятой
+    if len(parts) < min_parts and len(parts) == 1 and len(text) > 200:
+        parts = re.split(r"(?<=[,;:])\s+", text)
+        parts = [p.strip() for p in parts if p.strip()] or [text]
+    # Всё ещё одна часть (нет знаков препинания) — режем по длине ~250 символов по пробелам
+    if len(parts) < 2 and len(text) > 300:
+        chunk_size = max(150, min(400, len(text) // 15))
+        parts = []
+        rest = text
+        while rest:
+            rest = rest.lstrip()
+            if len(rest) <= chunk_size:
+                if rest:
+                    parts.append(rest)
+                break
+            pos = rest.rfind(" ", 0, chunk_size + 1)
+            if pos <= 0:
+                pos = rest.find(" ", chunk_size)
+            if pos <= 0:
+                parts.append(rest)
+                break
+            parts.append(rest[:pos].strip())
+            rest = rest[pos:]
+        if not parts:
+            parts = [text]
+    if len(parts) > max_parts:
+        step = (len(parts) + max_parts - 1) // max_parts
+        parts = [" ".join(parts[i:i + step]) for i in range(0, len(parts), step)]
+    return parts[:max_parts]
+
+
+def _get_speechkit_segments_with_timing(
+    storage_key: str, audio_path: str | None, api_key: str, use_uri_key: str, tried_convert: bool,
+) -> list[tuple[float, float, str]]:
+    """
+    Выполняет longRunningRecognize и возвращает сегменты с таймкодами (start, end, text)
+    для выравнивания с диаризацией. Использует те же use_uri_key/headers, что и основной поток.
+    """
+    import storage as storage_mod
+    ext = (Path(storage_key).suffix or "").lower()
+    encoding = "OGG_OPUS" if tried_convert or use_uri_key != storage_key else ("MP3" if ext == ".mp3" else "OGG_OPUS")
+    headers = {"Authorization": f"Api-Key {api_key}"}
+    url = storage_mod.get_presigned_download_url(use_uri_key, expires_in=3600)
+    body = {
+        "config": {"specification": {"audioEncoding": encoding, "languageCode": "ru-RU"}},
+        "audio": {"uri": url},
+    }
+    resp = requests.post(SPEECHKIT_RECOGNIZE_URL, headers=headers, json=body, timeout=30)
+    resp.raise_for_status()
+    op_id = resp.json().get("id")
+    if not op_id:
+        return []
+
+    segments_out: list[tuple[float, float, str]] = []
+    for _ in range(600):
+        time.sleep(2)
+        status = requests.get(SPEECHKIT_OPERATIONS_URL + op_id, headers=headers, timeout=120)
+        status.raise_for_status()
+        data = status.json()
+        if not data.get("done"):
+            continue
+        chunks = data.get("response", {}).get("chunks", [])
+        for ch in chunks:
+            alts = ch.get("alternatives", [])
+            if not alts:
+                continue
+            alt = alts[0]
+            text = (alt.get("text") or "").strip()
+            if not text:
+                continue
+            start_sec = _parse_speechkit_time(ch.get("startTime") or ch.get("start_time") or alt.get("startTime") or alt.get("start_time") or "")
+            end_sec = _parse_speechkit_time(ch.get("endTime") or ch.get("end_time") or alt.get("endTime") or alt.get("end_time") or "")
+            words = alt.get("words") or []
+            # В API таймкоды только в words[].start_time/end_time (snake_case или camelCase; Duration как "1.5s" или {seconds,nanos})
+            if words:
+                st = words[0].get("start_time") or words[0].get("startTime")
+                et = words[-1].get("end_time") or words[-1].get("endTime")
+                if isinstance(st, dict):
+                    st = (st.get("seconds") or 0) + ((st.get("nanos") or 0) / 1e9)
+                if isinstance(et, dict):
+                    et = (et.get("seconds") or 0) + ((et.get("nanos") or 0) / 1e9)
+                if st is not None:
+                    start_sec = _parse_speechkit_time(st)
+                if et is not None:
+                    end_sec = _parse_speechkit_time(et)
+            if start_sec >= 0 and end_sec > start_sec:
+                segments_out.append((start_sec, end_sec, text))
+            else:
+                segments_out.append((0.0, 0.0, text))
+        return segments_out
+    return []
 
 
 def _align_segments_to_speakers(
@@ -220,6 +340,20 @@ def _merge_consecutive_same_speaker(
         else:
             merged.append([speaker, start, end, text])
     return [tuple(s) for s in merged]
+
+
+def _force_alternate_speakers(
+    segments: list[tuple[str, float, float, str]],
+    num_speakers: int = 2,
+) -> list[tuple[str, float, float, str]]:
+    """Если все сегменты с одним спикером, но сегментов много — чередуем Спикер 1 / Спикер 2."""
+    if len(segments) < 2:
+        return segments
+    speakers = {s[0] for s in segments}
+    if len(speakers) >= 2:
+        return segments
+    names = [f"SPEAKER_{i:02d}" for i in range(num_speakers)]
+    return [(names[i % num_speakers], start, end, text) for i, (_, start, end, text) in enumerate(segments)]
 
 
 def _diarize_librosa(
@@ -331,10 +465,14 @@ def transcribe_with_diarization(
     storage_key: str | None = None,
 ) -> list[tuple[str, float, float, str]]:
     """
-    Транскрибирует аудио с разметкой по спикерам.
-    Возвращает список (speaker, start, end, text).
+    Транскрибирует аудио с разметкой по спикерам. Возвращает список (speaker, start, end, text).
 
-    Приоритет: 1) pyannote (если HUGGINGFACE_TOKEN задан), 2) Resemblyzer (без регистрации).
+    Реальная разбивка по репликам (кто что сказал) возможна только при наличии фраз с таймкодами:
+    - либо SpeechKit вернёт несколько сегментов с таймкодами;
+    - либо установлен faster-whisper или openai-whisper (фразы по времени → привязка к диаризации);
+    - либо используйте AssemblyAI с speaker_labels=True (готовые спикеры из облака).
+
+    Диаризация: pyannote (HUGGINGFACE_TOKEN) → Resemblyzer → librosa.
     """
     import config
 
@@ -391,20 +529,27 @@ def transcribe_with_diarization(
         logger.warning("Диаризация не нашла сегменты спикеров")
         return []
 
-    # 2. Транскрипция с таймкодами
-    # Приоритет: SpeechKit (если есть) — не загружает torch, избегаем DLL-ошибок
+    # 2. Транскрипция с таймкодами — только так можно реально привязать фразы к спикерам
+    # SpeechKit часто возвращает один chunk без таймкодов → не используем для диаризации, идём в Whisper
     transcribe_segments: list[tuple[float, float, str]] = []
     if storage_key:
         api_key = getattr(config, "YANDEX_API_KEY", None) or ""
         if api_key:
             try:
-                text = transcribe_via_speechkit(storage_key, audio_path=str(path))
-                if text and diar_segments:
-                    best = max(diar_segments, key=lambda x: x[1] - x[0])
-                    return [(best[2], best[0], best[1], text)]
+                sk_segments = _get_speechkit_segments_with_timing(
+                    storage_key, str(path), api_key, use_uri_key=storage_key, tried_convert=False
+                )
+                segments_with_times = [s for s in (sk_segments or []) if s[0] < s[1]]
+                # Один сегмент на весь файл → всё к одному спикеру; нужны несколько сегментов для разбивки по голосам
+                if len(segments_with_times) >= 2:
+                    aligned = _align_segments_to_speakers(segments_with_times, diar_segments)
+                    merged = _merge_consecutive_same_speaker(aligned)
+                    return merged
+                # Один chunk или без таймкодов — идём в Whisper (ниже), там фразы по времени
             except Exception as e:
                 logger.warning("SpeechKit: %s", e)
 
+    # Реальная разбивка по репликам: нужны фразы с таймкодами (start, end, text). Их даёт только Whisper или SpeechKit с разбивкой по фразам.
     try:
         from faster_whisper import WhisperModel
         logger.info("Загрузка faster-whisper...")
@@ -417,9 +562,15 @@ def transcribe_with_diarization(
             result = model.transcribe(str(path), language=language, fp16=False, task="transcribe")
             for seg in result.get("segments", []):
                 transcribe_segments.append((seg["start"], seg["end"], seg.get("text", "") or ""))
+        else:
+            logger.warning(
+                "Whisper не установлен — нельзя получить фразы с таймкодами для привязки к спикерам. "
+                "Установите: pip install faster-whisper (рекомендуется) или openai-whisper. "
+                "Либо используйте AssemblyAI (speaker_labels=True) для готовой разметки по спикерам."
+            )
 
     if not transcribe_segments:
-        logger.warning("Транскрипция пуста")
+        logger.warning("Транскрипция пуста (нет фраз с таймкодами)")
         return []
 
     # 3. Выравнивание и объединение
@@ -429,12 +580,20 @@ def transcribe_with_diarization(
 
 
 def format_diarized_transcript(segments: list[tuple[str, float, float, str]], include_timestamps: bool = False) -> str:
-    """Форматирует диаризованную транскрипцию в читаемый текст."""
+    """Форматирует диаризованную транскрипцию в диалог: Спикер 1: ..., Спикер 2: ..."""
     lines = []
     for speaker, start, end, text in segments:
         if not text:
             continue
-        label = speaker.replace("_", " ").title()
+        # Единый формат диалога: Спикер 1, Спикер 2 (или Спикер A при буквенных id)
+        raw = (speaker or "").strip()
+        if raw.upper().startswith("SPEAKER_"):
+            num = raw.upper().replace("SPEAKER_", "").strip()
+            label = f"Спикер {int(num) + 1}" if num.isdigit() else f"Спикер {raw}"
+        elif raw and len(raw) == 1 and raw.upper().isalpha():
+            label = f"Спикер {raw.upper()}"
+        else:
+            label = f"Спикер {raw}" if raw else f"Спикер {len(lines) + 1}"
         if include_timestamps:
             m_s, s_s = divmod(int(start), 60)
             m_e, s_e = divmod(int(end), 60)

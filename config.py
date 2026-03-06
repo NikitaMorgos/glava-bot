@@ -48,11 +48,18 @@ YANDEX_API_KEY = os.getenv("YANDEX_API_KEY", "")
 # Токен: https://hf.co/settings/tokens ; принять условия pyannote/segmentation-3.0 и speaker-diarization-3.0
 HUGGINGFACE_TOKEN = os.getenv("HUGGINGFACE_TOKEN", "")
 
-# Транскрибер: mymeet | plaud | speechkit (по умолчанию первый с валидным ключом)
+# Транскрибер: mymeet | plaud | speechkit | assemblyai (по умолчанию первый с валидным ключом)
 TRANSCRIBER = os.getenv("TRANSCRIBER", "").strip().lower() or None
 
-# mymeet.ai — транскрипция (research-interview), API: mymeet.ai/contact
+# AssemblyAI — транскрипция, API key: dashboard.assemblyai.com
+ASSEMBLYAI_API_KEY = os.getenv("ASSEMBLYAI_API_KEY", "")
+
+# mymeet.ai — транскрипция и запись онлайн-встреч, API: mymeet.ai/contact
 MYMEET_API_KEY = os.getenv("MYMEET_API_KEY", "")
+# Опционально: ссылка на встречу Телемост для выдачи пользователю
+TELEMOST_MEETING_LINK = os.getenv("TELEMOST_MEETING_LINK", "").strip()
+# Временно: разрешить /online без оплаты (для теста). Удалить или 0 после теста.
+ALLOW_ONLINE_WITHOUT_PAYMENT = os.getenv("ALLOW_ONLINE_WITHOUT_PAYMENT", "").strip().lower() in ("1", "true", "yes")
 
 # Plaud AI — транскрипция с диаризацией
 PLAUD_API_TOKEN = os.getenv("PLAUD_API_TOKEN", "")
@@ -60,6 +67,18 @@ PLAUD_OWNER_ID = os.getenv("PLAUD_OWNER_ID", "glava_default")
 
 # OpenAI — обработка транскрипта в биографический текст
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+# Модель для bio: gpt-4o (рекомендуется), gpt-4-turbo, gpt-4. Не использовать облегчённые (gpt-4o-mini) для качественной биографии.
+OPENAI_BIO_MODEL = os.getenv("OPENAI_BIO_MODEL", "gpt-4o")
+
+# Anthropic Claude — верстальщик PDF (текст + фото по образцу)
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 
 # Pre-pay: цена за 1 персонажа (в копейках). 990 руб = 99000
 PRICE_PER_CHARACTER = int(os.getenv("PRICE_PER_CHARACTER", "99000"))
+
+# ЮKassa (YooKassa) — приём платежей. shop_id и secret_key: yookassa.ru → Магазины
+YOOKASSA_SHOP_ID = os.getenv("YOOKASSA_SHOP_ID", "")
+YOOKASSA_SECRET_KEY = os.getenv("YOOKASSA_SECRET_KEY", "")
+
+# Куда вернуть пользователя после оплаты (return_url). По умолчанию — ссылка на бота
+PAYMENT_RETURN_URL = os.getenv("PAYMENT_RETURN_URL", "https://t.me/glava_voice_bot")
