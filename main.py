@@ -154,6 +154,15 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not user:
         return
 
+    # Устанавливаем кнопку меню WebApp для этого конкретного чата
+    try:
+        await context.bot.set_chat_menu_button(
+            chat_id=update.effective_chat.id,
+            menu_button=MenuButtonWebApp(text="📱 Кабинет", web_app=WebAppInfo(url=TMA_URL)),
+        )
+    except Exception as e:
+        logger.debug("set_chat_menu_button for chat: %s", e)
+
     context.user_data.clear()
     markup = kb_intro_main()
     if _user_has_paid(user.id):
