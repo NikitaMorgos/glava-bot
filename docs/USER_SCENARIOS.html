@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Пользовательские сценарии GLAVA</title>
+  <style>
+    @media print { body { margin: 0; } }
+    body { font-family: system-ui, -apple-system, sans-serif; max-width: 800px; margin: 0 auto; padding: 2rem; line-height: 1.6; color: #333; }
+    h1 { font-size: 1.5rem; border-bottom: 1px solid #ccc; padding-bottom: 0.5rem; }
+    h2 { font-size: 1.2rem; margin-top: 1.5rem; }
+    h3 { font-size: 1rem; margin-top: 1rem; }
+    pre { background: #f5f5f5; padding: 1rem; overflow-x: auto; font-size: 0.85rem; }
+    table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
+    th, td { border: 1px solid #ccc; padding: 0.4rem 0.6rem; text-align: left; }
+    th { background: #eee; }
+    .updated { background: #e8f5e9; padding: 0.3rem 0.5rem; font-size: 0.9rem; }
+    ul { margin: 0.5rem 0; }
+  </style>
+</head>
+<body>
+  <h1>Пользовательские сценарии бота GLAVA (изменённая версия)</h1>
+  <p class="updated"><strong>Обновлено:</strong> сценарий персонажей и оформления заказа приведён в соответствие с ТЗ</p>
+
+  <h2>1. Основные изменения</h2>
+  <ul>
+    <li><strong>Персонажи при 0:</strong> бот сразу просит ввести имя (без кнопок). После имени — родство. Только когда первый персонаж сохранён (имя+родство), появляются кнопки: «Добавить ещё», «Продолжить», «Удалить».</li>
+    <li><strong>Оформление заказа:</strong> Начать → (бот просит имя) → имя → (бот просит родство) → родство → (появляются кнопки) → Продолжить → email → Итого</li>
+    <li><strong>Возобновление черновика:</strong> если draft есть, но characters=[], при resume — возврат в режим ввода имени (без кнопок), а не на список с кнопками</li>
+    <li><strong>Произвольный текст:</strong> текст принимается как имя/родство/email только в соответствующих state'ах FSM, иначе — «Используйте кнопки»</li>
+  </ul>
+
+  <h2>2. Схема потока (изменённый фрагмент)</h2>
+  <pre>
+[черновик создан]
+       │
+       ▼
+Персонажи (0)
+→ Ввод имени (без кнопок)
+→ Ввод родства
+       │
+       ▼
+Персонажи (список) + кнопки [Добавить ещё, Продолжить, Удалить]
+       │
+       ▼
+Email для чека → Итого заказ → Перейти к оплате
+  </pre>
+
+  <h2>3. Ключевые сценарии</h2>
+  <table>
+    <tr><th>№</th><th>Сценарий</th><th>Шаги</th></tr>
+    <tr><td>4</td><td>Оформление заказа (новый)</td><td>Начать → (бот просит имя) → имя → (бот просит родство) → родство → (появляются кнопки) → Продолжить → email → Итого</td></tr>
+    <tr><td>19</td><td>Произвольный текст</td><td>Текст вне state'ов имя/родство/email → «Используйте кнопки»</td></tr>
+    <tr><td>21</td><td>Возобновление черновика</td><td>characters=[] → режим ввода имени (без кнопок); иначе — список с кнопками или email/итого</td></tr>
+  </table>
+
+  <h2>4. До оплаты</h2>
+  <ul>
+    <li>Голос/аудио/фото → «Сначала оформите заказ» + кнопка «Начать»</li>
+    <li>Текст принимается как имя/родство/email только в соответствующих state'ах FSM</li>
+  </ul>
+
+  <p style="margin-top: 2rem; font-size: 0.9rem; color: #666;">Полная версия: docs/USER_SCENARIOS.md. Для печати в PDF: Файл → Печать → Сохранить как PDF</p>
+</body>
+</html>

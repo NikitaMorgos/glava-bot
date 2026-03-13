@@ -16,6 +16,10 @@ reportlab>=4.0.0
 # Транскрибация голосовых (нужен ffmpeg в системе)
 openai-whisper>=20231117
 faster-whisper>=1.0.0
+assemblyai>=0.28.0
+
+# ЮKassa — приём платежей
+yookassa>=3.0.0
 
 # Личный кабинет (веб)
 Flask>=3.0.0
@@ -24,6 +28,11 @@ passlib[bcrypt]>=1.7.4
 
 # LLM для обработки транскрипта (биография)
 openai>=1.0.0
+
+# Claude (Anthropic) — верстальщик PDF из текста и фото по образцу
+anthropic>=0.39.0
+# Ресайз фото перед отправкой в Claude (опционально для typesetter)
+Pillow>=10.0.0
 
 # Диаризация (разделение по спикерам) — опционально
 # pip install librosa scikit-learn

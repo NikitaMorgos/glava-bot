@@ -48,7 +48,8 @@ YANDEX_API_KEY = os.getenv("YANDEX_API_KEY", "")
 # Токен: https://hf.co/settings/tokens ; принять условия pyannote/segmentation-3.0 и speaker-diarization-3.0
 HUGGINGFACE_TOKEN = os.getenv("HUGGINGFACE_TOKEN", "")
 
-# Транскрибер: mymeet | plaud | speechkit | assemblyai (по умолчанию первый с валидным ключом)
+# Транскрибер: recall | mymeet | plaud | speechkit | assemblyai
+# (по умолчанию первый с валидным ключом)
 TRANSCRIBER = os.getenv("TRANSCRIBER", "").strip().lower() or None
 
 # AssemblyAI — транскрипция, API key: dashboard.assemblyai.com
@@ -56,6 +57,12 @@ ASSEMBLYAI_API_KEY = os.getenv("ASSEMBLYAI_API_KEY", "")
 
 # mymeet.ai — транскрипция и запись онлайн-встреч, API: mymeet.ai/contact
 MYMEET_API_KEY = os.getenv("MYMEET_API_KEY", "")
+
+# Recall.ai — запись онлайн-встреч по URL, транскрипция через AssemblyAI
+# Ключ: https://www.recall.ai/ → Settings → API Keys
+RECALL_API_KEY = os.getenv("RECALL_API_KEY", "")
+# Регион: us-east-1 (по умолчанию), eu-west-2, us-west-2
+RECALL_REGION = os.getenv("RECALL_REGION", "us-east-1")
 # Опционально: ссылка на встречу Телемост для выдачи пользователю
 TELEMOST_MEETING_LINK = os.getenv("TELEMOST_MEETING_LINK", "").strip()
 # Временно: разрешить /online без оплаты (для теста). Удалить или 0 после теста.

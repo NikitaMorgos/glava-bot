@@ -18,6 +18,7 @@ import db
 import storage
 
 app = Flask(__name__)
+app.config["JSON_AS_ASCII"] = False
 app.secret_key = os.environ.get("CABINET_SECRET_KEY", "glava-cabinet-dev-change-in-prod")
 # Для работы за nginx (HTTPS)
 app.config["PREFERRED_URL_SCHEME"] = "https"
@@ -172,6 +173,10 @@ def questions():
     if "user_id" not in session:
         return redirect(url_for("login"))
     return render_template("questions.html", blocks=INTERVIEW_QUESTIONS)
+
+
+from cabinet.tma_api import tma_api
+app.register_blueprint(tma_api)
 
 
 if __name__ == "__main__":

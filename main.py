@@ -12,8 +12,10 @@ import re
 import tempfile
 from pathlib import Path
 
-from telegram import BotCommand, InlineKeyboardMarkup, MenuButtonCommands, Update
+from telegram import BotCommand, InlineKeyboardButton, InlineKeyboardMarkup, MenuButtonWebApp, MenuButtonCommands, Update, WebAppInfo
 from telegram.ext import Application, CallbackQueryHandler, CommandHandler, MessageHandler, filters, ContextTypes
+
+TMA_URL = "https://app.glava.family"
 
 import config
 import db
@@ -53,10 +55,63 @@ def _format_price(kopecks: int) -> str:
     return str(kopecks // 100)
 
 
+def _online_meeting_api_key() -> tuple[str, str]:
+    """
+    Возвращает (provider, api_key) для записи онлайн-встреч.
+    Приоритет: recall → mymeet.
+    """
+    recall_key = getattr(config, "RECALL_API_KEY", "") or ""
+    mymeet_key = getattr(config, "MYMEET_API_KEY", "") or ""
+    if recall_key:
+        return "recall", recall_key
+    if mymeet_key:
+        return "mymeet", mymeet_key
+    return "", ""
+
+
+async def _start_online_meeting_recording(
+    link: str, provider: str, api_key: str
+) -> str | None:
+    """
+    Запускает запись встречи через Recall.ai или MyMeet.
+    Возвращает bot_id / meeting_id или None.
+    """
+    if provider == "recall":
+        from recall_client import create_bot
+        assemblyai_key = getattr(config, "ASSEMBLYAI_API_KEY", "") or ""
+        region = getattr(config, "RECALL_REGION", "us-east-1") or "us-east-1"
+        return create_bot(
+            meeting_url=link,
+            api_key=api_key,
+            region=region,
+            assemblyai_api_key=assemblyai_key,
+        )
+    if provider == "mymeet":
+        from mymeet_client import record_meeting
+        return record_meeting(
+            link, api_key,
+            title="GLAVA интервью",
+            template_name="research-interview",
+        )
+    return None
+
+
+def _run_online_meeting_background(
+    bot_id: str, provider: str, telegram_id: int, username: str | None
+) -> None:
+    """Запускает фоновую обработку онлайн-встречи через нужный провайдер."""
+    if provider == "recall":
+        from pipeline_recall_bio import run_online_meeting_background
+        run_online_meeting_background(bot_id, telegram_id, username)
+    elif provider == "mymeet":
+        from pipeline_mymeet_bio import run_online_meeting_background
+        run_online_meeting_background(bot_id, telegram_id, username)
+
+
 def _run_transcription_pipeline(
     voice_id: int, storage_key: str, telegram_id: int, username: str | None
 ) -> None:
-    """Выбирает пайплайн по TRANSCRIBER и ключам: mymeet → plaud → assemblyai → speechkit."""
+    """Выбирает пайплайн по TRANSCRIBER и ключам: recall → mymeet → plaud → assemblyai → speechkit."""
     transcriber = getattr(config, "TRANSCRIBER", None)
     if transcriber == "mymeet" and config.MYMEET_API_KEY:
         from pipeline_mymeet_bio import run_pipeline_background
@@ -100,7 +155,15 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         return
 
     context.user_data.clear()
-    await update.message.reply_text(INTRO_MAIN_MSG, reply_markup=kb_intro_main())
+    markup = kb_intro_main()
+    if _user_has_paid(user.id):
+        # Для оплативших — добавляем кнопку Mini App кабинета
+        markup = InlineKeyboardMarkup(
+            markup.inline_keyboard + [[
+                InlineKeyboardButton("📱 Мой кабинет", web_app=WebAppInfo(url=TMA_URL))
+            ]]
+        )
+    await update.message.reply_text(INTRO_MAIN_MSG, reply_markup=markup)
 
 
 async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -312,18 +375,13 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     if data == "online_use_telemost":
         context.user_data.pop("awaiting_meeting_link", None)
         link = getattr(config, "TELEMOST_MEETING_LINK", "") or ""
-        if not link or not config.MYMEET_API_KEY:
+        provider, api_key = _online_meeting_api_key()
+        if not link or not provider:
             await query.answer("Ссылка на встречу не настроена.", show_alert=True)
             return
-        from mymeet_client import record_meeting
-        from pipeline_mymeet_bio import run_online_meeting_background
-        meeting_id = record_meeting(
-            link, config.MYMEET_API_KEY,
-            title="GLAVA интервью",
-            template_name="research-interview",
-        )
-        if meeting_id:
-            run_online_meeting_background(meeting_id, user.id, user.username)
+        bot_id = await _start_online_meeting_recording(link, provider, api_key)
+        if bot_id:
+            _run_online_meeting_background(bot_id, provider, user.id, user.username)
             await query.edit_message_text(
                 f"{link}\n\n{ONLINE_MEETING_TELEMOST_SENT_MSG}",
             )
@@ -533,6 +591,22 @@ async def handle_caption_text(update: Update, context: ContextTypes.DEFAULT_TYPE
     text = (update.message.text or "").strip()
     if not text or text.startswith("/"):
         return
+    if context.user_data.pop("awaiting_meeting_link", None):
+        if not text.startswith("http"):
+            await update.message.reply_text(ONLINE_MEETING_BAD_LINK_MSG)
+            return
+        provider, api_key = _online_meeting_api_key()
+        if not provider:
+            await update.message.reply_text("Запись онлайн-встреч временно недоступна.")
+            return
+        bot_id = await _start_online_meeting_recording(text, provider, api_key)
+        if bot_id:
+            _run_online_meeting_background(bot_id, provider, user.id, user.username)
+            await update.message.reply_text(ONLINE_MEETING_LINK_SENT_MSG)
+        else:
+            await update.message.reply_text(ONLINE_MEETING_ERROR_MSG)
+        return
+
     if context.user_data.pop("awaiting_cabinet_password", None):
         if len(text) < 6:
             await update.message.reply_text("Пароль от 6 символов. /cabinet")
@@ -618,8 +692,8 @@ async def cmd_online(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
                 reply_markup=kb_blocked_start(),
             )
             return
-        mymeet_key = getattr(config, "MYMEET_API_KEY", "") or ""
-        if not mymeet_key:
+        provider, _ = _online_meeting_api_key()
+        if not provider:
             await update.message.reply_text("Запись онлайн-встреч временно недоступна.")
             return
         context.user_data["awaiting_meeting_link"] = True
@@ -643,7 +717,14 @@ async def _post_init(app: Application) -> None:
         BotCommand("online", "Записать онлайн-встречу"),
         BotCommand("cabinet", "Кабинет"),
     ])
-    await app.bot.set_chat_menu_button(menu_button=MenuButtonCommands())
+    # Кнопка меню слева — открывает Mini App кабинет
+    try:
+        await app.bot.set_chat_menu_button(
+            menu_button=MenuButtonWebApp(text="📱 Кабинет", web_app=WebAppInfo(url=TMA_URL))
+        )
+    except Exception as e:
+        logger.debug("set_chat_menu_button WebApp: %s", e)
+        await app.bot.set_chat_menu_button(menu_button=MenuButtonCommands())
     try:
         await app.bot.set_my_description(
             "Создай живую книгу о близких. Нажми /start чтобы начать."
