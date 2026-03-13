@@ -165,13 +165,14 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     context.user_data.clear()
     markup = kb_intro_main()
-    if _user_has_paid(user.id):
-        # Для оплативших — добавляем кнопку Mini App кабинета
-        markup = InlineKeyboardMarkup(
-            markup.inline_keyboard + [[
-                InlineKeyboardButton("📱 Мой кабинет", web_app=WebAppInfo(url=TMA_URL))
-            ]]
-        )
+    # WebApp-кнопка добавляется всем — она отображается как «Open» в списке чатов Telegram.
+    # Для неоплативших TMA покажет информационный экран; для оплативших — полный кабинет.
+    btn_label = "📱 Мой кабинет" if _user_has_paid(user.id) else "📱 Открыть кабинет"
+    markup = InlineKeyboardMarkup(
+        markup.inline_keyboard + [[
+            InlineKeyboardButton(btn_label, web_app=WebAppInfo(url=TMA_URL))
+        ]]
+    )
     await update.message.reply_text(INTRO_MAIN_MSG, reply_markup=markup)
 
 
