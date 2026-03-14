@@ -5,9 +5,7 @@ services:
     image: n8nio/n8n:latest
     container_name: glava-n8n
     restart: always
-    network_mode: host          # видит localhost PostgreSQL и Flask
-    ports:
-      - "127.0.0.1:5678:5678"   # только localhost; Nginx проксирует при необходимости
+    network_mode: host          # видит localhost PostgreSQL и Flask; порт 5678 доступен напрямую
     environment:
       - N8N_HOST=localhost
       - N8N_PORT=5678
