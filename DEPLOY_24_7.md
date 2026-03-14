@@ -34,10 +34,19 @@ ssh root@IP_СЕРВЕРА
 **Не закрывая сервер**, открой второй терминал на своём ПК и выполни:
 
 ```powershell
-scp -r "C:\Users\user\Dropbox\Public\Cursor\GLAVA" root@IP_СЕРВЕРА:/opt/glava
+# Первый деплой (папки /opt/glava ещё нет):
+scp -r "C:\Users\user\Dropbox\Public\Cursor\GLAVA\." root@IP_СЕРВЕРА:/opt/glava
+
+# При обновлениях (папка уже есть) — используй rsync, иначе файлы уйдут в подпапку:
+rsync -avz --exclude=venv --exclude=__pycache__ --exclude=.git `
+  "C:\Users\user\Dropbox\Public\Cursor\GLAVA/" root@IP_СЕРВЕРА:/opt/glava/
 ```
 
-Папка `venv` и `.env` могут не скопироваться — нормально. На сервере нужен свой `.env`.
+> **Важно:** `scp -r DIR host:/opt/glava` при повторном запуске создаёт
+> `/opt/glava/GLAVA/main.py` вместо `/opt/glava/main.py`. Systemd читает
+> `/opt/glava/main.py` — без rsync бот запустится со старым кодом.
+
+Папка `venv` и `.env` не копируются — нормально. На сервере нужен свой `.env`.
 
 ---
 
@@ -91,31 +100,6 @@ systemctl status glava-cabinet
 ```
 
 Должно быть `active (running)`.
-
----
-
-## Шаг 3. Установка
-
-**На сервере выполни:**
-
-```bash
-apt update && apt install -y python3 python3-venv python3-pip git ffmpeg
-cd /opt/glava
-python3 -m venv venv
-./venv/bin/pip install -r requirements.txt
-```
-
-**Systemd-сервисы (бот + кабинет):**
-
-```bash
-cp /opt/glava/deploy/glava.service /etc/systemd/system/
-cp /opt/glava/deploy/glava-cabinet.service /etc/systemd/system/
-systemctl daemon-reload
-systemctl enable glava glava-cabinet
-systemctl start glava glava-cabinet
-```
-
-Логи бота в реальном времени: `journalctl -u glava -f`.
 
 ---
 
@@ -200,8 +184,30 @@ journalctl -u glava -f          # логи в реальном времени
 ```
 
 **Обновление после изменений в коде:**
+
+Если проект задеплоен через git:
 ```bash
-# Скопируй новые файлы на сервер (scp/rsync), затем:
+cd /opt/glava && git pull
 systemctl restart glava
 systemctl restart glava-cabinet
+```
+
+Если проект задеплоен через rsync (без git):
+```bash
+# На своём ПК (PowerShell):
+rsync -avz --exclude=venv --exclude=__pycache__ --exclude=.git `
+  "C:\Users\user\Dropbox\Public\Cursor\GLAVA/" root@IP_СЕРВЕРА:/opt/glava/
+
+# На сервере:
+systemctl restart glava
+systemctl restart glava-cabinet
+```
+
+> **Никогда не используй `scp -r ПАПКА ...` для обновления** — при существующем
+> `/opt/glava` файлы скопируются в `/opt/glava/GLAVA/` и бот увидит старый код.
+
+Проверка что обновление применилось:
+```bash
+journalctl -u glava -n 30     # последние 30 строк лога
+systemctl status glava         # должно быть active (running) с новым временем старта
 ```

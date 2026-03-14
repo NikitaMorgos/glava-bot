@@ -13,6 +13,7 @@ Telegram Mini App API — Blueprint для Flask.
 import hashlib
 import hmac
 import json
+import logging
 import os
 import time
 from functools import wraps
@@ -22,6 +23,8 @@ from flask import Blueprint, jsonify, request
 
 import db
 import storage
+
+logger = logging.getLogger(__name__)
 
 tma_api = Blueprint("tma_api", __name__, url_prefix="/api/tma")
 
@@ -39,6 +42,7 @@ def _verify_init_data(init_data_raw: str, bot_token: str) -> dict | None:
         params = dict(parse_qsl(init_data_raw, keep_blank_values=True))
         received_hash = params.pop("hash", None)
         if not received_hash:
+            logger.warning("tma_auth: no hash in init_data")
             return None
 
         # Формируем data_check_string: отсортированные пары key=value через \n
@@ -57,16 +61,25 @@ def _verify_init_data(init_data_raw: str, bot_token: str) -> dict | None:
         ).hexdigest()
 
         if not hmac.compare_digest(expected_hash, received_hash):
+            logger.warning(
+                "tma_auth: hash mismatch. token_prefix=%s expected=%s received=%s",
+                bot_token[:8] + "...",
+                expected_hash[:16],
+                received_hash[:16],
+            )
             return None
 
         # Проверка свежести (не старше 24 часов)
         auth_date = int(params.get("auth_date", 0))
-        if time.time() - auth_date > 86400:
+        age = time.time() - auth_date
+        if age > 86400:
+            logger.warning("tma_auth: initData too old: %.0f seconds", age)
             return None
 
         user_json = params.get("user", "{}")
         return json.loads(user_json)
-    except Exception:
+    except Exception as e:
+        logger.exception("tma_auth: exception in _verify_init_data: %s", e)
         return None
 
 

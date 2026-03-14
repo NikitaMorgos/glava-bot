@@ -11,8 +11,18 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import config
 import db
 
-# Выбор пайплайна по ключам (как в main.py)
-if config.YANDEX_API_KEY:
+# Выбор пайплайна: TRANSCRIBER или первый с ключом (mymeet → plaud → assemblyai → speechkit)
+_transcriber = getattr(config, "TRANSCRIBER", None)
+if _transcriber == "mymeet" and config.MYMEET_API_KEY:
+    from pipeline_mymeet_bio import run_pipeline_sync
+    print("Пайплайн: mymeet + ChatGPT")
+elif _transcriber == "plaud" and config.PLAUD_API_TOKEN:
+    from pipeline_plaud_bio import run_pipeline_sync
+    print("Пайплайн: Plaud + ChatGPT")
+elif _transcriber == "assemblyai" and config.ASSEMBLYAI_API_KEY:
+    from pipeline_assemblyai_bio import run_pipeline_sync
+    print("Пайплайн: AssemblyAI + ChatGPT")
+elif _transcriber == "speechkit" and config.YANDEX_API_KEY:
     from pipeline_transcribe_bio import run_pipeline_sync
     print("Пайплайн: Yandex SpeechKit + ChatGPT")
 elif config.MYMEET_API_KEY:
@@ -21,8 +31,14 @@ elif config.MYMEET_API_KEY:
 elif config.PLAUD_API_TOKEN:
     from pipeline_plaud_bio import run_pipeline_sync
     print("Пайплайн: Plaud + ChatGPT")
+elif config.ASSEMBLYAI_API_KEY:
+    from pipeline_assemblyai_bio import run_pipeline_sync
+    print("Пайплайн: AssemblyAI + ChatGPT")
+elif config.YANDEX_API_KEY:
+    from pipeline_transcribe_bio import run_pipeline_sync
+    print("Пайплайн: Yandex SpeechKit + ChatGPT")
 else:
-    print("Нет ключа транскрипции (YANDEX_API_KEY, MYMEET_API_KEY или PLAUD_API_TOKEN)")
+    print("Нет ключа транскрипции (YANDEX_API_KEY, MYMEET_API_KEY, PLAUD_API_TOKEN, ASSEMBLYAI_API_KEY)")
     sys.exit(1)
 
 row = None
