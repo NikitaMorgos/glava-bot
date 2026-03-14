@@ -160,8 +160,9 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             chat_id=update.effective_chat.id,
             menu_button=MenuButtonWebApp(text="📱 Кабинет", web_app=WebAppInfo(url=TMA_URL)),
         )
+        logger.info("set_chat_menu_button per-chat OK: chat_id=%s", update.effective_chat.id)
     except Exception as e:
-        logger.debug("set_chat_menu_button for chat: %s", e)
+        logger.error("set_chat_menu_button per-chat FAILED: chat_id=%s err=%s", update.effective_chat.id, e)
 
     context.user_data.clear()
     markup = kb_intro_main()
@@ -732,9 +733,9 @@ async def _post_init(app: Application) -> None:
         await app.bot.set_chat_menu_button(
             menu_button=MenuButtonWebApp(text="📱 Кабинет", web_app=WebAppInfo(url=TMA_URL))
         )
+        logger.info("set_chat_menu_button WebApp OK: %s", TMA_URL)
     except Exception as e:
-        logger.debug("set_chat_menu_button WebApp: %s", e)
-        await app.bot.set_chat_menu_button(menu_button=MenuButtonCommands())
+        logger.error("set_chat_menu_button WebApp FAILED: %s", e)
     try:
         await app.bot.set_my_description(
             "Создай живую книгу о близких. Нажми /start чтобы начать."
