@@ -1,0 +1,103 @@
+"""Панель Даши (Product Manager) — /dasha/."""
+import os
+from datetime import datetime
+
+from flask import Blueprint, flash, redirect, render_template, request, url_for
+
+from admin.auth import role_required
+from admin import db_admin as dba
+
+bp = Blueprint("dasha", __name__, url_prefix="/dasha")
+
+AGENT_ROLES = [
+    ("transcriber",       "01 · Транскрибатор"),
+    ("fact_extractor",    "02 · Фактолог"),
+    ("ghostwriter",       "03 · Писатель"),
+    ("fact_checker",      "04 · Фактчекер"),
+    ("literary_editor",   "05 · Литредактор"),
+    ("proofreader",       "06 · Корректор"),
+    ("photo_editor",      "07 · Фоторедактор"),
+    ("layout_designer",   "08 · Верстальщик"),
+    ("layout_qa",         "09 · Контролёр вёрстки"),
+    ("producer",          "10 · Продюсер"),
+    ("interview_architect","11 · Интервьюер"),
+    ("triage",            "T · Триажер"),
+]
+
+
+# ── Промпты агентов ───────────────────────────────────────────────
+@bp.route("/")
+@role_required("dev", "dasha")
+def index():
+    return redirect(url_for("dasha.prompts"))
+
+
+@bp.route("/prompts")
+@role_required("dev", "dasha")
+def prompts():
+    rows = dba.get_all_prompts()
+    role_map = dict(AGENT_ROLES)
+    return render_template("dasha/prompts.html", prompts=rows,
+                           agent_roles=AGENT_ROLES, role_map=role_map)
+
+
+@bp.route("/prompts/<role>", methods=["GET", "POST"])
+@role_required("dev", "dasha")
+def prompt_edit(role: str):
+    role_map = dict(AGENT_ROLES)
+    if role not in role_map:
+        flash("Неизвестная роль", "error")
+        return redirect(url_for("dasha.prompts"))
+
+    if request.method == "POST":
+        text = request.form.get("prompt_text", "").strip()
+        if text:
+            author = request.headers.get("X-Session-User", "dasha")
+            from flask import session
+            author = session.get("username", "dasha")
+            dba.save_prompt(role, text, author)
+            flash(f"Промпт «{role_map[role]}» сохранён", "success")
+        return redirect(url_for("dasha.prompts"))
+
+    current = dba.get_prompt(role)
+    history = dba.get_prompt_history(role)
+    return render_template("dasha/prompt_edit.html",
+                           role=role, role_name=role_map[role],
+                           current=current, history=history)
+
+
+# ── Заказы / пайплайн ────────────────────────────────────────────
+@bp.route("/orders")
+@role_required("dev", "dasha")
+def orders():
+    rows = dba.get_pipeline_jobs()
+    return render_template("dasha/orders.html", orders=rows)
+
+
+@bp.route("/orders/<int:telegram_id>")
+@role_required("dev", "dasha")
+def order_detail(telegram_id: int):
+    job = dba.get_pipeline_job(telegram_id)
+    return render_template("dasha/order_detail.html", job=job, telegram_id=telegram_id)
+
+
+@bp.route("/orders/<int:telegram_id>/start", methods=["POST"])
+@role_required("dev", "dasha")
+def pipeline_start(telegram_id: int):
+    """Запустить Phase A для клиента через n8n webhook."""
+    import requests as req
+    n8n_url = os.environ.get("N8N_WEBHOOK_PHASE_A", "http://localhost:5678/webhook/start-pipeline")
+    try:
+        r = req.post(n8n_url, json={"telegram_id": telegram_id}, timeout=10)
+        flash(f"Пайплайн запущен (HTTP {r.status_code})", "success")
+    except Exception as e:
+        flash(f"Ошибка запуска: {e}", "error")
+    return redirect(url_for("dasha.order_detail", telegram_id=telegram_id))
+
+
+# ── Отчёты ───────────────────────────────────────────────────────
+@bp.route("/reports")
+@role_required("dev", "dasha")
+def reports():
+    stats = dba.get_pipeline_stats()
+    return render_template("dasha/reports.html", stats=stats)

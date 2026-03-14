@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% block title %}Dev Dashboard — GLAVA Admin{% endblock %}
+{% block content %}
+
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-2xl font-bold text-gray-900">Дашборд разработчика</h1>
+  <span class="text-sm text-gray-400">{{ now }}</span>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+
+  <!-- Сервисы -->
+  <div class="bg-white rounded-xl shadow-sm p-5 col-span-1">
+    <div class="font-semibold text-gray-700 mb-3">⚙️ Сервисы</div>
+    <div class="space-y-2">
+      {% for svc in services %}
+      <div class="flex items-center justify-between">
+        <span class="text-sm text-gray-600 font-mono">{{ svc.name }}</span>
+        <div class="flex items-center gap-2">
+          <span class="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full
+            {{ 'bg-green-100 text-green-700' if svc.active else 'bg-red-100 text-red-700' }}">
+            <span class="w-1.5 h-1.5 rounded-full {{ 'bg-green-500' if svc.active else 'bg-red-500' }}"></span>
+            {{ 'active' if svc.active else 'inactive' }}
+          </span>
+          <button onclick="restartService('{{ svc.name }}')"
+            class="text-xs text-gray-400 hover:text-gray-700 px-2 py-0.5 border border-gray-200 rounded hover:border-gray-400 transition-colors">
+            restart
+          </button>
+        </div>
+      </div>
+      {% endfor %}
+      <!-- n8n -->
+      <div class="flex items-center justify-between">
+        <span class="text-sm text-gray-600 font-mono">n8n (docker)</span>
+        <div class="flex items-center gap-2">
+          <span class="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full
+            {{ 'bg-green-100 text-green-700' if n8n_ok else 'bg-red-100 text-red-700' }}">
+            <span class="w-1.5 h-1.5 rounded-full {{ 'bg-green-500' if n8n_ok else 'bg-red-500' }}"></span>
+            {{ 'running' if n8n_ok else 'down' }}
+          </span>
+          <button onclick="restartService('glava-n8n')"
+            class="text-xs text-gray-400 hover:text-gray-700 px-2 py-0.5 border border-gray-200 rounded hover:border-gray-400 transition-colors">
+            restart
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- БД метрики -->
+  <div class="bg-white rounded-xl shadow-sm p-5">
+    <div class="font-semibold text-gray-700 mb-3">🗄️ База данных</div>
+    {% if db_metrics.get('error') %}
+      <div class="text-sm text-red-600">{{ db_metrics.error }}</div>
+    {% else %}
+      <div class="grid grid-cols-2 gap-3">
+        {% for key, val in db_metrics.items() %}
+        <div class="bg-gray-50 rounded-lg p-3 text-center">
+          <div class="text-2xl font-bold text-gray-800">{{ val }}</div>
+          <div class="text-xs text-gray-500 mt-1">{{ key }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- S3 -->
+  <div class="bg-white rounded-xl shadow-sm p-5">
+    <div class="font-semibold text-gray-700 mb-3">☁️ Хранилище S3</div>
+    {% if s3_metrics.get('error') %}
+      <div class="text-sm text-red-600">{{ s3_metrics.error }}</div>
+    {% else %}
+      <div class="grid grid-cols-2 gap-3">
+        <div class="bg-gray-50 rounded-lg p-3 text-center">
+          <div class="text-2xl font-bold text-gray-800">{{ s3_metrics.count }}</div>
+          <div class="text-xs text-gray-500 mt-1">объектов</div>
+        </div>
+        <div class="bg-gray-50 rounded-lg p-3 text-center">
+          <div class="text-2xl font-bold text-gray-800">{{ s3_metrics.size_mb }}</div>
+          <div class="text-xs text-gray-500 mt-1">МБ</div>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Git -->
+  <div class="bg-white rounded-xl shadow-sm p-5">
+    <div class="font-semibold text-gray-700 mb-3">🔧 Деплой</div>
+    <div class="space-y-2">
+      <div class="flex gap-2 text-sm">
+        <span class="font-mono bg-gray-100 px-2 py-0.5 rounded text-gray-700">{{ git.hash }}</span>
+        <span class="text-gray-600 truncate">{{ git.message }}</span>
+      </div>
+      <div class="text-xs text-gray-400">{{ git.date }}</div>
+    </div>
+  </div>
+
+  <!-- Конфиг -->
+  <div class="bg-white rounded-xl shadow-sm p-5">
+    <div class="font-semibold text-gray-700 mb-3">🔑 Конфиг-ключи</div>
+    <div class="space-y-1.5 max-h-48 overflow-y-auto">
+      {% for item in config %}
+      <div class="flex items-center justify-between text-xs">
+        <span class="font-mono text-gray-600">{{ item.key }}</span>
+        <span class="{{ 'text-green-600' if item.set else 'text-red-500 font-medium' }}">
+          {{ '✓' if item.set else '✗ не задан' }}
+        </span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Ошибки -->
+  <div class="bg-white rounded-xl shadow-sm p-5 col-span-1 lg:col-span-2 xl:col-span-3">
+    <div class="font-semibold text-gray-700 mb-3">🚨 Последние ошибки (journalctl)</div>
+    {% if errors %}
+      <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto max-h-64">
+        {% for line in errors %}
+          <div class="text-xs font-mono text-red-300 whitespace-nowrap">{{ line }}</div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="text-sm text-gray-400">Ошибок нет 🎉</div>
+    {% endif %}
+  </div>
+
+</div>
+
+<script>
+async function restartService(name) {
+  if (!confirm(`Перезапустить ${name}?`)) return;
+  const btn = event.target;
+  btn.textContent = '...';
+  btn.disabled = true;
+  try {
+    const r = await fetch(`/dev/restart/${name}`, { method: 'POST' });
+    const d = await r.json();
+    btn.textContent = d.ok ? 'ok ✓' : 'err ✗';
+    setTimeout(() => { btn.textContent = 'restart'; btn.disabled = false; }, 3000);
+  } catch(e) {
+    btn.textContent = 'err';
+    btn.disabled = false;
+  }
+}
+</script>
+{% endblock %}

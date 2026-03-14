@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: glava-n8n
+    restart: always
+    network_mode: host          # видит localhost PostgreSQL и Flask
+    ports:
+      - "127.0.0.1:5678:5678"   # только localhost; Nginx проксирует при необходимости
+    environment:
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - N8N_EDITOR_BASE_URL=http://localhost:5678
+      - WEBHOOK_URL=http://localhost:5678/
+      # Хранение данных n8n в отдельной БД
+      - DB_TYPE=sqlite            # упрощённый старт; можно переключить на postgresdb
+      - N8N_USER_FOLDER=/data/n8n
+      # Базовая аутентификация n8n-редактора
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=${N8N_BASIC_AUTH_USER:-admin}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_BASIC_AUTH_PASSWORD:-changeme}
+      # Ключи для нод n8n (берёт из .env через env_file)
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - DATABASE_URL=${DATABASE_URL}
+      - BOT_TOKEN=${BOT_TOKEN}
+    env_file:
+      - /opt/glava/.env
+    volumes:
+      - n8n_data:/data/n8n
+
+volumes:
+  n8n_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/glava/n8n-data   # данные n8n на диске сервера

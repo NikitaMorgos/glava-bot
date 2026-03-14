@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Рассылки — GLAVA Admin{% endblock %}
+{% block content %}
+
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-2xl font-bold text-gray-900">📨 Рассылки</h1>
+  <a href="/lena/mailings/new" class="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-700 transition-colors">
+    + Новая рассылка
+  </a>
+</div>
+
+<div class="bg-white rounded-xl shadow-sm overflow-hidden">
+  <table class="w-full text-sm">
+    <thead class="bg-gray-50 border-b border-gray-100">
+      <tr>
+        <th class="px-4 py-3 text-left font-medium text-gray-600">Название</th>
+        <th class="px-4 py-3 text-left font-medium text-gray-600">Сегмент</th>
+        <th class="px-4 py-3 text-left font-medium text-gray-600">Отправлено</th>
+        <th class="px-4 py-3 text-left font-medium text-gray-600">Дата</th>
+        <th class="px-4 py-3 text-left font-medium text-gray-600">Автор</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-50">
+      {% for m in mailings %}
+      <tr class="hover:bg-gray-50">
+        <td class="px-4 py-3 font-medium text-gray-800">{{ m.name or '(без названия)' }}</td>
+        <td class="px-4 py-3 text-gray-500">{{ m.segment }}</td>
+        <td class="px-4 py-3">
+          {% if m.sent_at %}
+            <span class="text-green-600 font-medium">{{ m.sent_count }} чел.</span>
+          {% else %}
+            <span class="text-gray-400">черновик</span>
+          {% endif %}
+        </td>
+        <td class="px-4 py-3 text-xs text-gray-400">{{ m.created_at.strftime('%d.%m.%Y %H:%M') if m.created_at else '—' }}</td>
+        <td class="px-4 py-3 text-gray-500">{{ m.created_by }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="5" class="px-4 py-8 text-center text-gray-400">Рассылок пока нет</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Заказы — GLAVA Admin{% endblock %}
+{% block content %}
+
+<h1 class="text-2xl font-bold text-gray-900 mb-6">📋 Заказы и пайплайн</h1>
+
+<div class="bg-white rounded-xl shadow-sm overflow-hidden">
+  <table class="w-full text-sm">
+    <thead class="bg-gray-50 border-b border-gray-100">
+      <tr>
+        <th class="px-4 py-3 text-left font-medium text-gray-600">Клиент</th>
+        <th class="px-4 py-3 text-left font-medium text-gray-600">Telegram ID</th>
+        <th class="px-4 py-3 text-left font-medium text-gray-600">Фаза</th>
+        <th class="px-4 py-3 text-left font-medium text-gray-600">Этап</th>
+        <th class="px-4 py-3 text-left font-medium text-gray-600">Статус</th>
+        <th class="px-4 py-3 text-left font-medium text-gray-600">Начало</th>
+        <th class="px-4 py-3"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-50">
+      {% for o in orders %}
+      <tr class="hover:bg-gray-50">
+        <td class="px-4 py-3 font-medium text-gray-800">@{{ o.username or '—' }}</td>
+        <td class="px-4 py-3 font-mono text-gray-500 text-xs">{{ o.telegram_id }}</td>
+        <td class="px-4 py-3">
+          <span class="px-2 py-0.5 rounded text-xs font-medium
+            {{ 'bg-blue-100 text-blue-700' if o.phase == 'A' else 'bg-purple-100 text-purple-700' }}">
+            Phase {{ o.phase }}
+          </span>
+        </td>
+        <td class="px-4 py-3 text-gray-600 font-mono text-xs">{{ o.current_step or '—' }}</td>
+        <td class="px-4 py-3">
+          {% set sc = {'pending': 'gray', 'running': 'blue', 'done': 'green', 'error': 'red', 'paused': 'yellow'} %}
+          {% set c = sc.get(o.status, 'gray') %}
+          <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-{{ c }}-100 text-{{ c }}-700">
+            {{ o.status }}
+          </span>
+        </td>
+        <td class="px-4 py-3 text-xs text-gray-400">
+          {{ o.started_at.strftime('%d.%m %H:%M') if o.started_at else '—' }}
+        </td>
+        <td class="px-4 py-3">
+          <a href="/dasha/orders/{{ o.telegram_id }}"
+            class="text-xs text-blue-600 hover:underline">Детали →</a>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="7" class="px-4 py-8 text-center text-gray-400">Нет заказов</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Скрипты агентов — GLAVA Admin{% endblock %}
+{% block content %}
+
+<h1 class="text-2xl font-bold text-gray-900 mb-6">🤖 Скрипты агентов</h1>
+
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+  {% set prompt_map = {} %}
+  {% for p in prompts %}{% set _ = prompt_map.update({p.role: p}) %}{% endfor %}
+
+  {% for role_id, role_name in agent_roles %}
+  {% set p = prompt_map.get(role_id) %}
+  <div class="bg-white rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">
+    <div class="flex items-start justify-between mb-3">
+      <div>
+        <div class="font-semibold text-gray-800">{{ role_name }}</div>
+        {% if p %}
+          <div class="text-xs text-gray-400 mt-0.5">v{{ p.version }} · {{ p.updated_by }} · {{ p.updated_at.strftime('%d.%m %H:%M') if p.updated_at else '—' }}</div>
+        {% else %}
+          <div class="text-xs text-orange-500 mt-0.5">промпт не задан</div>
+        {% endif %}
+      </div>
+      <a href="/dasha/prompts/{{ role_id }}"
+        class="text-xs px-3 py-1 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors">
+        Редактировать
+      </a>
+    </div>
+    {% if p %}
+      <div class="text-xs text-gray-500 line-clamp-3 font-mono bg-gray-50 rounded p-2">{{ p.prompt_text[:200] }}{% if p.prompt_text|length > 200 %}…{% endif %}</div>
+    {% else %}
+      <div class="text-xs text-gray-300 italic">Нет промпта</div>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

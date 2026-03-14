@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}GLAVA Admin{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .sidebar-link { @apply flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors; }
+    .sidebar-link:hover { @apply bg-white/10; }
+    .sidebar-link.active { @apply bg-white/20; }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex">
+
+  <!-- Sidebar -->
+  <aside class="w-56 bg-gray-900 text-white flex flex-col min-h-screen fixed">
+    <div class="p-4 border-b border-white/10">
+      <div class="text-lg font-bold">GLAVA Admin</div>
+      <div class="text-xs text-gray-400 mt-1">{{ session.username }} · {{ session.role }}</div>
+    </div>
+
+    <nav class="flex-1 p-3 space-y-1">
+      {% if session.role == 'dev' %}
+      <div class="text-xs text-gray-500 uppercase px-3 py-2">Разработчик</div>
+      <a href="/dev/" class="sidebar-link {% if request.path.startswith('/dev') %}active{% endif %}">
+        📊 Дашборд
+      </a>
+      <div class="text-xs text-gray-500 uppercase px-3 pt-4 pb-2">Продакт</div>
+      {% endif %}
+
+      {% if session.role in ('dev', 'dasha') %}
+      <a href="/dasha/prompts" class="sidebar-link {% if request.path.startswith('/dasha/prompt') %}active{% endif %}">
+        🤖 Скрипты агентов
+      </a>
+      <a href="/dasha/orders" class="sidebar-link {% if request.path.startswith('/dasha/order') %}active{% endif %}">
+        📋 Заказы
+      </a>
+      <a href="/dasha/reports" class="sidebar-link {% if request.path.startswith('/dasha/report') %}active{% endif %}">
+        📈 Отчёты
+      </a>
+      {% endif %}
+
+      {% if session.role == 'dev' %}
+      <div class="text-xs text-gray-500 uppercase px-3 pt-4 pb-2">Маркетинг</div>
+      {% endif %}
+
+      {% if session.role in ('dev', 'lena') %}
+      <a href="/lena/users" class="sidebar-link {% if request.path.startswith('/lena/user') %}active{% endif %}">
+        👥 Пользователи
+      </a>
+      <a href="/lena/mailings" class="sidebar-link {% if request.path.startswith('/lena/mailing') %}active{% endif %}">
+        📨 Рассылки
+      </a>
+      <a href="/lena/triggers" class="sidebar-link {% if request.path.startswith('/lena/trigger') %}active{% endif %}">
+        ⚡ Триггеры
+      </a>
+      {% endif %}
+    </nav>
+
+    <div class="p-3 border-t border-white/10">
+      <a href="/logout" class="sidebar-link text-gray-400 hover:text-white">
+        🚪 Выйти
+      </a>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="ml-56 flex-1 p-6">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, msg in messages %}
+        <div class="mb-4 px-4 py-3 rounded-lg text-sm font-medium
+          {% if category == 'error' %}bg-red-100 text-red-800
+          {% else %}bg-green-100 text-green-800{% endif %}">
+          {{ msg }}
+        </div>
+      {% endfor %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+</body>
+</html>
