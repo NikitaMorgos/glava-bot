@@ -169,7 +169,7 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     # Для неоплативших TMA покажет информационный экран; для оплативших — полный кабинет.
     btn_label = "📱 Мой кабинет" if _user_has_paid(user.id) else "📱 Открыть кабинет"
     markup = InlineKeyboardMarkup(
-        markup.inline_keyboard + [[
+        list(markup.inline_keyboard) + [[
             InlineKeyboardButton(btn_label, web_app=WebAppInfo(url=TMA_URL))
         ]]
     )
