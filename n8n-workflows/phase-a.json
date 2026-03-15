@@ -3,6 +3,7 @@
   "nodes": [
     {
       "parameters": {
+        "httpMethod": "POST",
         "path": "glava/phase-a",
         "responseMode": "onReceived",
         "options": {}
@@ -16,7 +17,7 @@
     },
     {
       "parameters": {
-        "url": "={{ $json.body.admin_api_url }}/prompts/fact_extractor",
+        "url": "http://127.0.0.1:5001/api/prompts/fact_extractor",
         "options": { "timeout": 10000 }
       },
       "id": "node-get-prompt-fe",
@@ -50,7 +51,7 @@
     },
     {
       "parameters": {
-        "url": "={{ $('Webhook').item.json.body.admin_api_url }}/prompts/ghostwriter",
+        "url": "http://127.0.0.1:5001/api/prompts/ghostwriter",
         "options": { "timeout": 10000 }
       },
       "id": "node-get-prompt-gw",
@@ -73,7 +74,7 @@
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "application/json",
-        "body": "={{ JSON.stringify({ model: 'gpt-4o', messages: [ { role: 'system', content: $('Get Prompt: Ghostwriter').item.json.text || 'Ты опытный литературный призрак-писатель. На основе фактов из интервью напиши живую, тёплую главу семейной книги от первого лица. Стиль: личный, образный, с деталями и диалогами. Объём: 600-900 слов.' }, { role: 'user', content: 'Факты для главы:\\n\\n' + $(\\'Fact Extractor\\').item.json.choices[0].message.content } ], temperature: 0.8, max_tokens: 3000 }) }}",
+        "body": "={{ JSON.stringify({ model: 'gpt-4o', messages: [ { role: 'system', content: $('Get Prompt: Ghostwriter').item.json.text || 'Ты опытный литературный призрак-писатель. На основе фактов из интервью напиши живую, тёплую главу семейной книги от первого лица. Стиль: личный, образный, с деталями и диалогами. Объём: 600-900 слов.' }, { role: 'user', content: 'Факты для главы:\\n\\n' + $('Fact Extractor').item.json.choices[0].message.content } ], temperature: 0.8, max_tokens: 3000 }) }}",
         "options": { "timeout": 180000 }
       },
       "id": "node-ghostwriter",
@@ -84,7 +85,7 @@
     },
     {
       "parameters": {
-        "url": "={{ $('Webhook').item.json.body.admin_api_url }}/prompts/fact_checker",
+        "url": "http://127.0.0.1:5001/api/prompts/fact_checker",
         "options": { "timeout": 10000 }
       },
       "id": "node-get-prompt-fc",
@@ -107,7 +108,7 @@
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "application/json",
-        "body": "={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [ { role: 'system', content: $('Get Prompt: Fact Checker').item.json.text || 'Ты фактчекер. Сверь текст главы с исходными фактами. Исправь фактические ошибки, сохрани стиль. Если всё верно — верни текст без изменений. Выведи только готовый текст, без пояснений.' }, { role: 'user', content: 'Исходные факты:\\n\\n' + $(\\'Fact Extractor\\').item.json.choices[0].message.content + '\\n\\n---\\n\\nТекст для проверки:\\n\\n' + $(\\'Ghostwriter\\').item.json.choices[0].message.content } ], temperature: 0.2, max_tokens: 3000 }) }}",
+        "body": "={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [ { role: 'system', content: $('Get Prompt: Fact Checker').item.json.text || 'Ты фактчекер. Сверь текст главы с исходными фактами. Исправь фактические ошибки, сохрани стиль. Если всё верно — верни текст без изменений. Выведи только готовый текст, без пояснений.' }, { role: 'user', content: 'Исходные факты:\\n\\n' + $('Fact Extractor').item.json.choices[0].message.content + '\\n\\n---\\n\\nТекст для проверки:\\n\\n' + $('Ghostwriter').item.json.choices[0].message.content } ], temperature: 0.2, max_tokens: 3000 }) }}",
         "options": { "timeout": 120000 }
       },
       "id": "node-fact-checker",
@@ -118,7 +119,7 @@
     },
     {
       "parameters": {
-        "url": "={{ $('Webhook').item.json.body.admin_api_url }}/prompts/literary_editor",
+        "url": "http://127.0.0.1:5001/api/prompts/literary_editor",
         "options": { "timeout": 10000 }
       },
       "id": "node-get-prompt-le",
@@ -141,7 +142,7 @@
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "application/json",
-        "body": "={{ JSON.stringify({ model: 'gpt-4o', messages: [ { role: 'system', content: $('Get Prompt: Literary Editor').item.json.text || 'Ты литературный редактор. Улучши ритм, образность и эмоциональность текста. Убери штампы, добавь живые детали там где нужно. Сохрани голос рассказчика и все факты. Выведи только готовый текст.' }, { role: 'user', content: $(\\'Fact Checker\\').item.json.choices[0].message.content } ], temperature: 0.7, max_tokens: 3000 }) }}",
+        "body": "={{ JSON.stringify({ model: 'gpt-4o', messages: [ { role: 'system', content: $('Get Prompt: Literary Editor').item.json.text || 'Ты литературный редактор. Улучши ритм, образность и эмоциональность текста. Убери штампы, добавь живые детали там где нужно. Сохрани голос рассказчика и все факты. Выведи только готовый текст.' }, { role: 'user', content: $('Fact Checker').item.json.choices[0].message.content } ], temperature: 0.7, max_tokens: 3000 }) }}",
         "options": { "timeout": 180000 }
       },
       "id": "node-literary-editor",
@@ -152,7 +153,7 @@
     },
     {
       "parameters": {
-        "url": "={{ $('Webhook').item.json.body.admin_api_url }}/prompts/proofreader",
+        "url": "http://127.0.0.1:5001/api/prompts/proofreader",
         "options": { "timeout": 10000 }
       },
       "id": "node-get-prompt-pr",
@@ -175,7 +176,7 @@
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "application/json",
-        "body": "={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [ { role: 'system', content: $('Get Prompt: Proofreader').item.json.text || 'Ты корректор. Исправь грамматику, пунктуацию и опечатки. Не меняй стиль и содержание. Выведи только готовый текст.' }, { role: 'user', content: $(\\'Literary Editor\\').item.json.choices[0].message.content } ], temperature: 0.1, max_tokens: 3000 }) }}",
+        "body": "={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [ { role: 'system', content: $('Get Prompt: Proofreader').item.json.text || 'Ты корректор. Исправь грамматику, пунктуацию и опечатки. Не меняй стиль и содержание. Выведи только готовый текст.' }, { role: 'user', content: $('Literary Editor').item.json.choices[0].message.content } ], temperature: 0.1, max_tokens: 3000 }) }}",
         "options": { "timeout": 120000 }
       },
       "id": "node-proofreader",
@@ -186,7 +187,7 @@
     },
     {
       "parameters": {
-        "url": "={{ $('Webhook').item.json.body.admin_api_url }}/prompts/interview_architect",
+        "url": "http://127.0.0.1:5001/api/prompts/interview_architect",
         "options": { "timeout": 10000 }
       },
       "id": "node-get-prompt-ia",
@@ -209,7 +210,7 @@
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "application/json",
-        "body": "={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [ { role: 'system', content: $('Get Prompt: Interview Architect').item.json.text || 'Ты интервьюер-архитектор. На основе готовой главы составь 5-7 уточняющих вопросов, которые помогут дополнить историю яркими деталями, датами и эмоциями. Вопросы должны быть конкретными и тёплыми.' }, { role: 'user', content: 'Готовая глава:\\n\\n' + $(\\'Proofreader\\').item.json.choices[0].message.content } ], temperature: 0.6, max_tokens: 1000 }) }}",
+        "body": "={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [ { role: 'system', content: $('Get Prompt: Interview Architect').item.json.text || 'Ты интервьюер-архитектор. На основе готовой главы составь 5-7 уточняющих вопросов, которые помогут дополнить историю яркими деталями, датами и эмоциями. Вопросы должны быть конкретными и тёплыми.' }, { role: 'user', content: 'Готовая глава:\\n\\n' + $('Proofreader').item.json.choices[0].message.content } ], temperature: 0.6, max_tokens: 1000 }) }}",
         "options": { "timeout": 60000 }
       },
       "id": "node-interview-architect",
@@ -231,7 +232,7 @@
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "application/json",
-        "body": "={{ JSON.stringify({ chat_id: $('Webhook').item.json.body.telegram_id, text: '📖 <b>Черновик главы готов!</b>\\n\\n' + $(\\'Proofreader\\').item.json.choices[0].message.content, parse_mode: 'HTML' }) }}",
+        "body": "={{ JSON.stringify({ chat_id: $('Webhook').item.json.body.telegram_id, text: '📖 Черновик главы готов!\\n\\n' + $('Proofreader').item.json.choices[0].message.content }) }}",
         "options": { "timeout": 30000 }
       },
       "id": "node-send-bio",
@@ -253,7 +254,7 @@
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "application/json",
-        "body": "={{ JSON.stringify({ chat_id: $('Webhook').item.json.body.telegram_id, text: '❓ <b>Уточняющие вопросы для следующего интервью:</b>\\n\\n' + $(\\'Interview Architect\\').item.json.choices[0].message.content, parse_mode: 'HTML' }) }}",
+        "body": "={{ JSON.stringify({ chat_id: $('Webhook').item.json.body.telegram_id, text: '❓ Уточняющие вопросы для следующего интервью:\\n\\n' + $('Interview Architect').item.json.choices[0].message.content }) }}",
         "options": { "timeout": 30000 }
       },
       "id": "node-send-questions",
@@ -265,7 +266,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $('Webhook').item.json.body.admin_api_url }}/jobs/update",
+        "url": "http://127.0.0.1:5001/api/jobs/update",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -314,13 +315,13 @@
       "main": [[{ "node": "Get Prompt: Proofreader", "type": "main", "index": 0 }]]
     },
     "Get Prompt: Proofreader": {
-      "main": [
-        [{ "node": "Proofreader", "type": "main", "index": 0 }],
-        [{ "node": "Get Prompt: Interview Architect", "type": "main", "index": 0 }]
-      ]
+      "main": [[{ "node": "Proofreader", "type": "main", "index": 0 }]]
     },
     "Proofreader": {
-      "main": [[{ "node": "Send Bio to Telegram", "type": "main", "index": 0 }]]
+      "main": [
+        [{ "node": "Send Bio to Telegram", "type": "main", "index": 0 }],
+        [{ "node": "Get Prompt: Interview Architect", "type": "main", "index": 0 }]
+      ]
     },
     "Get Prompt: Interview Architect": {
       "main": [[{ "node": "Interview Architect", "type": "main", "index": 0 }]]
