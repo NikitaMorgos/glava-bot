@@ -65,8 +65,8 @@ def get_prompt_history(role: str, limit: int = 10) -> list[dict]:
 def save_prompt(role: str, text: str, author: str) -> None:
     with _conn() as conn:
         cur = conn.cursor()
-        cur.execute("SELECT COALESCE(MAX(version), 0) FROM prompts WHERE role = %s", (role,))
-        max_ver = cur.fetchone()[0]
+        cur.execute("SELECT COALESCE(MAX(version), 0) AS max_ver FROM prompts WHERE role = %s", (role,))
+        max_ver = cur.fetchone()["max_ver"]
         cur.execute("""
             INSERT INTO prompts (role, version, prompt_text, is_active, updated_at, updated_by)
             VALUES (%s, %s, %s, TRUE, NOW(), %s)
@@ -107,10 +107,10 @@ def get_pipeline_stats() -> dict:
         cur.execute("SELECT status, COUNT(*) FROM pipeline_jobs GROUP BY status")
         by_status = {r["status"]: r["count"] for r in cur.fetchall()}
         cur.execute("""
-            SELECT AVG(EXTRACT(EPOCH FROM (finished_at - started_at))/3600)
+            SELECT AVG(EXTRACT(EPOCH FROM (finished_at - started_at))/3600) AS avg_hours
             FROM pipeline_jobs WHERE status = 'done'
         """)
-        avg_hours = cur.fetchone()[0]
+        avg_hours = (cur.fetchone() or {}).get("avg_hours")
         return {"by_status": by_status, "avg_hours": round(avg_hours or 0, 1)}
 
 
@@ -130,7 +130,7 @@ def create_mailing(name: str, text: str, segment: str, author: str) -> int:
             INSERT INTO mailings (name, template_text, segment, created_by, created_at)
             VALUES (%s, %s, %s, %s, NOW()) RETURNING id
         """, (name, text, segment, author))
-        mailing_id = cur.fetchone()[0]
+        mailing_id = cur.fetchone()["id"]
         # Добавляем получателей
         users = get_users_by_segment(segment)
         for u in users:
