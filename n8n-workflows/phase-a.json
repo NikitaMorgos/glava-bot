@@ -1,5 +1,5 @@
 {
-  "name": "GLAVA · Phase A — Book Pipeline",
+  "name": "GLAVA · Phase A — Book Pipeline v3",
   "nodes": [
     {
       "parameters": {
@@ -12,8 +12,19 @@
       "name": "Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
-      "position": [200, 300],
+      "position": [0, 300],
       "webhookId": "glava-phase-a"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body; return [{ json: { wrapped_input: JSON.stringify({ phase: 'A', project_id: String(body.draft_id || body.telegram_id), subject: { name: body.character_name || 'Герой книги', known_birth_year: null, known_details: null }, interview: { id: 'int_001', speaker: { name: 'Рассказчик', relation_to_subject: 'родственник' }, transcript: body.transcript }, existing_facts: null }) }}];",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "node-wrap-fe",
+      "name": "Wrap for Fact Extractor",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [250, 300]
     },
     {
       "parameters": {
@@ -24,7 +35,7 @@
       "name": "Get Prompt: Fact Extractor",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
-      "position": [450, 300]
+      "position": [500, 300]
     },
     {
       "parameters": {
@@ -34,20 +45,42 @@
         "headerParameters": {
           "parameters": [
             { "name": "Authorization", "value": "={{ 'Bearer ' + $env.OPENAI_API_KEY }}" },
-            { "name": "Content-Type",  "value": "application/json" }
+            { "name": "Content-Type", "value": "application/json" }
           ]
         },
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "application/json",
-        "body": "={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [ { role: 'system', content: $('Get Prompt: Fact Extractor').item.json.text || 'Извлеки ключевые факты из транскрипта интервью. Выведи структурированный список: имена, даты, места, события, цитаты. Только факты, без интерпретаций.' }, { role: 'user', content: $('Webhook').item.json.body.transcript } ], temperature: 0.3, max_tokens: 2000 }) }}",
-        "options": { "timeout": 120000 }
+        "body": "={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [ { role: 'system', content: $('Get Prompt: Fact Extractor').item.json.text || 'Извлеки все факты из транскрипта. Верни валидный JSON с полями: project_id, subject, persons, timeline, relationships, locations, character_traits, quotes, conflicts, gaps, processing_notes.' }, { role: 'user', content: $('Wrap for Fact Extractor').item.json.wrapped_input } ], temperature: 0.1, max_tokens: 8000 }) }}",
+        "options": { "timeout": 180000 }
       },
       "id": "node-fact-extractor",
       "name": "Fact Extractor",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
-      "position": [700, 300]
+      "position": [750, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.choices[0].message.content; let fact_map = {}; const t = raw.trim(); const s = t.indexOf('{'); const e = t.lastIndexOf('}'); if (s !== -1 && e > s) { try { fact_map = JSON.parse(t.slice(s, e + 1)); } catch(err) {} } if (!fact_map.subject) { try { fact_map = JSON.parse(t); } catch(err) {} } return [{ json: { fact_map } }];",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "node-extract-fm",
+      "name": "Extract Fact Map",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1000, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $('Webhook').first().json.body; const fact_map = $('Extract Fact Map').first().json.fact_map; return [{ json: { wrapped_input: JSON.stringify({ phase: 'A', project_id: String(body.draft_id || body.telegram_id), subject: { name: body.character_name || (fact_map.subject && fact_map.subject.name) || 'Герой книги' }, fact_map: fact_map, transcripts: [{ interview_id: 'int_001', speaker_name: 'Рассказчик', relation_to_subject: 'родственник', text: body.transcript }] }) }}];",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "node-wrap-gw",
+      "name": "Wrap for Ghostwriter",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1250, 300]
     },
     {
       "parameters": {
@@ -58,7 +91,7 @@
       "name": "Get Prompt: Ghostwriter",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
-      "position": [950, 300]
+      "position": [1500, 300]
     },
     {
       "parameters": {
@@ -68,20 +101,42 @@
         "headerParameters": {
           "parameters": [
             { "name": "Authorization", "value": "={{ 'Bearer ' + $env.OPENAI_API_KEY }}" },
-            { "name": "Content-Type",  "value": "application/json" }
+            { "name": "Content-Type", "value": "application/json" }
           ]
         },
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "application/json",
-        "body": "={{ JSON.stringify({ model: 'gpt-4o', messages: [ { role: 'system', content: $('Get Prompt: Ghostwriter').item.json.text || 'Ты опытный литературный призрак-писатель. На основе фактов из интервью напиши живую, тёплую главу семейной книги от первого лица. Стиль: личный, образный, с деталями и диалогами. Объём: 600-900 слов.' }, { role: 'user', content: 'Факты для главы:\\n\\n' + $('Fact Extractor').item.json.choices[0].message.content } ], temperature: 0.8, max_tokens: 3000 }) }}",
-        "options": { "timeout": 180000 }
+        "body": "={{ JSON.stringify({ model: 'gpt-4o', messages: [ { role: 'system', content: $('Get Prompt: Ghostwriter').item.json.text || 'Ты биограф. На основе карты фактов напиши книгу из 4 глав. Верни валидный JSON с полями: project_id, chapters (id, title, order, content, facts_used, is_modified), callouts, historical_notes, writing_notes.' }, { role: 'user', content: $('Wrap for Ghostwriter').item.json.wrapped_input } ], temperature: 0.5, max_tokens: 12000 }) }}",
+        "options": { "timeout": 300000 }
       },
       "id": "node-ghostwriter",
       "name": "Ghostwriter",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
-      "position": [1200, 300]
+      "position": [1750, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.choices[0].message.content; let book_draft = { chapters: [], callouts: [], historical_notes: [] }; const t = raw.trim(); const s = t.indexOf('{'); const e = t.lastIndexOf('}'); if (s !== -1 && e > s) { try { const p = JSON.parse(t.slice(s, e + 1)); if (p.chapters) book_draft = p; } catch(err) {} } return [{ json: { book_draft } }];",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "node-extract-bd",
+      "name": "Extract Book Draft",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2000, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $('Webhook').first().json.body; const fact_map = $('Extract Fact Map').first().json.fact_map; const book_draft = $('Extract Book Draft').first().json.book_draft; const chapters = (book_draft.chapters || []).map(ch => ({ id: ch.id, title: ch.title, content: ch.content, facts_used: ch.facts_used || [] })); return [{ json: { wrapped_input: JSON.stringify({ phase: 'A', project_id: String(body.draft_id || body.telegram_id), iteration: 1, max_iterations: 3, book_draft: { chapters }, fact_map: fact_map, transcripts: [{ interview_id: 'int_001', speaker_name: 'Рассказчик', relation_to_subject: 'родственник', text: body.transcript }] }) }}];",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "node-wrap-fc",
+      "name": "Wrap for Fact Checker",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2250, 300]
     },
     {
       "parameters": {
@@ -92,7 +147,7 @@
       "name": "Get Prompt: Fact Checker",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
-      "position": [1450, 300]
+      "position": [2500, 300]
     },
     {
       "parameters": {
@@ -102,31 +157,42 @@
         "headerParameters": {
           "parameters": [
             { "name": "Authorization", "value": "={{ 'Bearer ' + $env.OPENAI_API_KEY }}" },
-            { "name": "Content-Type",  "value": "application/json" }
+            { "name": "Content-Type", "value": "application/json" }
           ]
         },
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "application/json",
-        "body": "={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [ { role: 'system', content: $('Get Prompt: Fact Checker').item.json.text || 'Ты фактчекер. Сверь текст главы с исходными фактами. Исправь фактические ошибки, сохрани стиль. Если всё верно — верни текст без изменений. Выведи только готовый текст, без пояснений.' }, { role: 'user', content: 'Исходные факты:\\n\\n' + $('Fact Extractor').item.json.choices[0].message.content + '\\n\\n---\\n\\nТекст для проверки:\\n\\n' + $('Ghostwriter').item.json.choices[0].message.content } ], temperature: 0.2, max_tokens: 3000 }) }}",
-        "options": { "timeout": 120000 }
+        "body": "={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [ { role: 'system', content: $('Get Prompt: Fact Checker').item.json.text || 'Ты фактчекер. Проверь текст книги на соответствие карте фактов. Верни JSON с полями: project_id, iteration, verdict (pass/fail), errors, warnings, completeness_check, summary.' }, { role: 'user', content: $('Wrap for Fact Checker').item.json.wrapped_input } ], temperature: 0.0, max_tokens: 4000 }) }}",
+        "options": { "timeout": 180000 }
       },
       "id": "node-fact-checker",
       "name": "Fact Checker",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
-      "position": [1700, 300]
+      "position": [2750, 300]
     },
     {
       "parameters": {
-        "jsCode": "// Оборачиваем проверенный текст в JSON-формат для Literary Editor (Дашин промпт ожидает book_draft)\nconst factCheckedText = $input.first().json.choices[0].message.content;\nconst webhookBody = $('Webhook').first().json.body;\n\nconst wrappedInput = {\n  phase: 'A',\n  project_id: String(webhookBody.draft_id || webhookBody.telegram_id),\n  iteration: 1,\n  max_iterations: 2,\n  book_draft: {\n    chapters: [\n      {\n        id: 'ch_01',\n        title: 'Глава 1',\n        content: factCheckedText,\n        facts_used: []\n      }\n    ],\n    callouts: [],\n    historical_notes: []\n  },\n  fact_checker_warnings: []\n};\n\nreturn [{ json: { wrapped_input: JSON.stringify(wrappedInput) } }];",
+        "jsCode": "const raw = $input.first().json.choices[0].message.content; let result = { verdict: 'pass', warnings: [] }; const t = raw.trim(); const s = t.indexOf('{'); const e = t.lastIndexOf('}'); if (s !== -1 && e > s) { try { const p = JSON.parse(t.slice(s, e + 1)); if (p.verdict) result = p; } catch(err) {} } const book_draft = $('Extract Book Draft').first().json.book_draft; return [{ json: { verdict: result.verdict || 'pass', warnings: result.warnings || [], book_draft } }];",
         "mode": "runOnceForAllItems"
       },
-      "id": "node-wrap-literary-editor",
+      "id": "node-extract-fcr",
+      "name": "Extract Fact Checker Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3000, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $('Webhook').first().json.body; const fcr = $('Extract Fact Checker Result').first().json; const book_draft = fcr.book_draft; const warnings = (fcr.warnings || []).slice(0, 5); const chapters = (book_draft.chapters || []).map(ch => ({ id: ch.id, title: ch.title, content: ch.content, facts_used: ch.facts_used || [] })); return [{ json: { wrapped_input: JSON.stringify({ phase: 'A', project_id: String(body.draft_id || body.telegram_id), iteration: 1, max_iterations: 2, book_draft: { chapters: chapters, callouts: book_draft.callouts || [], historical_notes: book_draft.historical_notes || [] }, fact_checker_warnings: warnings }) }}];",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "node-wrap-le",
       "name": "Wrap for Literary Editor",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1950, 300]
+      "position": [3250, 300]
     },
     {
       "parameters": {
@@ -137,7 +203,7 @@
       "name": "Get Prompt: Literary Editor",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
-      "position": [2200, 300]
+      "position": [3500, 300]
     },
     {
       "parameters": {
@@ -147,42 +213,42 @@
         "headerParameters": {
           "parameters": [
             { "name": "Authorization", "value": "={{ 'Bearer ' + $env.OPENAI_API_KEY }}" },
-            { "name": "Content-Type",  "value": "application/json" }
+            { "name": "Content-Type", "value": "application/json" }
           ]
         },
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "application/json",
-        "body": "={{ JSON.stringify({ model: 'gpt-4o', messages: [ { role: 'system', content: $('Get Prompt: Literary Editor').item.json.text || 'Ты литературный редактор. Улучши ритм, образность и эмоциональность текста. Убери штампы, добавь живые детали там где нужно. Сохрани голос рассказчика и все факты. Выведи только готовый текст.' }, { role: 'user', content: $('Wrap for Literary Editor').item.json.wrapped_input } ], temperature: 0.7, max_tokens: 3000 }) }}",
-        "options": { "timeout": 180000 }
+        "body": "={{ JSON.stringify({ model: 'gpt-4o', messages: [ { role: 'system', content: $('Get Prompt: Literary Editor').item.json.text || 'Ты литературный редактор. Отшлифуй текст книги. Верни JSON с полями: project_id, verdict, chapters (id, title, content, is_modified), callouts, historical_notes, edits_log, style_assessment.' }, { role: 'user', content: $('Wrap for Literary Editor').item.json.wrapped_input } ], temperature: 0.4, max_tokens: 12000 }) }}",
+        "options": { "timeout": 300000 }
       },
       "id": "node-literary-editor",
       "name": "Literary Editor",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
-      "position": [2450, 300]
+      "position": [3750, 300]
     },
     {
       "parameters": {
-        "jsCode": "// Извлекаем текст из ответа Literary Editor (JSON или plain text)\nconst rawContent = $input.first().json.choices[0].message.content;\n\nlet extracted_text = rawContent;\n\ntry {\n  const cleaned = rawContent.replace(/^```json\\s*/i, '').replace(/```\\s*$/, '').trim();\n  const parsed = JSON.parse(cleaned);\n  if (parsed.chapters && parsed.chapters.length > 0) {\n    extracted_text = parsed.chapters.map(ch => ch.content || '').join('\\n\\n');\n  }\n} catch (e) {\n  extracted_text = rawContent;\n}\n\nreturn [{ json: { extracted_text } }];",
+        "jsCode": "const raw = $input.first().json.choices[0].message.content; let result = { chapters: [], callouts: [], historical_notes: [] }; const t = raw.trim(); const s = t.indexOf('{'); const e = t.lastIndexOf('}'); if (s !== -1 && e > s) { try { const p = JSON.parse(t.slice(s, e + 1)); if (p.chapters) result = p; } catch(err) {} } return [{ json: { chapters: result.chapters || [], callouts: result.callouts || [], historical_notes: result.historical_notes || [] } }];",
         "mode": "runOnceForAllItems"
       },
-      "id": "node-extract-literary-editor",
+      "id": "node-extract-le",
       "name": "Extract from Literary Editor",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [2700, 300]
+      "position": [4000, 300]
     },
     {
       "parameters": {
-        "jsCode": "// Оборачиваем текст Literary Editor в JSON-формат для Proofreader\nconst literaryText = $input.first().json.extracted_text;\nconst webhookBody = $('Webhook').first().json.body;\n\nconst wrappedInput = {\n  phase: 'A',\n  project_id: String(webhookBody.draft_id || webhookBody.telegram_id),\n  book_text: {\n    chapters: [\n      {\n        id: 'ch_01',\n        title: 'Глава 1',\n        content: literaryText\n      }\n    ],\n    callouts: [],\n    historical_notes: []\n  }\n};\n\nreturn [{ json: { wrapped_input: JSON.stringify(wrappedInput) } }];",
+        "jsCode": "const body = $('Webhook').first().json.body; const le = $('Extract from Literary Editor').first().json; return [{ json: { wrapped_input: JSON.stringify({ phase: 'A', project_id: String(body.draft_id || body.telegram_id), book_text: { chapters: le.chapters, callouts: le.callouts || [], historical_notes: le.historical_notes || [] } }) }}];",
         "mode": "runOnceForAllItems"
       },
-      "id": "node-wrap-proofreader",
+      "id": "node-wrap-pr",
       "name": "Wrap for Proofreader",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [2950, 300]
+      "position": [4250, 300]
     },
     {
       "parameters": {
@@ -193,7 +259,7 @@
       "name": "Get Prompt: Proofreader",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
-      "position": [3200, 300]
+      "position": [4500, 300]
     },
     {
       "parameters": {
@@ -203,31 +269,31 @@
         "headerParameters": {
           "parameters": [
             { "name": "Authorization", "value": "={{ 'Bearer ' + $env.OPENAI_API_KEY }}" },
-            { "name": "Content-Type",  "value": "application/json" }
+            { "name": "Content-Type", "value": "application/json" }
           ]
         },
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "application/json",
-        "body": "={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [ { role: 'system', content: $('Get Prompt: Proofreader').item.json.text || 'Ты корректор. Исправь грамматику, пунктуацию и опечатки. Не меняй стиль и содержание. Верни JSON с полем chapters[0].content содержащим исправленный текст.' }, { role: 'user', content: $('Wrap for Proofreader').item.json.wrapped_input } ], temperature: 0.0, max_tokens: 8000 }) }}",
+        "body": "={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [ { role: 'system', content: $('Get Prompt: Proofreader').item.json.text || 'Ты корректор. Исправь орфографию и пунктуацию. Верни JSON с полями: project_id, chapters (id, title, content, is_modified), corrections, style_passport, summary.' }, { role: 'user', content: $('Wrap for Proofreader').item.json.wrapped_input } ], temperature: 0.0, max_tokens: 12000 }) }}",
         "options": { "timeout": 180000 }
       },
       "id": "node-proofreader",
       "name": "Proofreader",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
-      "position": [3450, 300]
+      "position": [4750, 300]
     },
     {
       "parameters": {
-        "jsCode": "// Извлекаем текст из JSON-ответа Proofreader\nconst rawContent = $input.first().json.choices[0].message.content;\n\nlet bio_text = rawContent;\nlet style_passport = null;\nlet corrections_count = 0;\n\ntry {\n  const cleaned = rawContent.replace(/^```json\\s*/i, '').replace(/```\\s*$/, '').trim();\n  const parsed = JSON.parse(cleaned);\n\n  if (parsed.chapters && parsed.chapters.length > 0) {\n    bio_text = parsed.chapters.map(ch => ch.content || '').join('\\n\\n');\n  }\n\n  style_passport = parsed.style_passport || null;\n  corrections_count = (parsed.summary && parsed.summary.total_corrections) ? parsed.summary.total_corrections : 0;\n} catch (e) {\n  bio_text = rawContent;\n}\n\nreturn [{ json: { bio_text, style_passport, corrections_count } }];",
+        "jsCode": "const raw = $input.first().json.choices[0].message.content; let bio_text = raw; const t = raw.trim(); const s = t.indexOf('{'); const e = t.lastIndexOf('}'); if (s !== -1 && e > s) { try { const p = JSON.parse(t.slice(s, e + 1)); if (p.chapters && p.chapters.length > 0) { bio_text = p.chapters.map(ch => ch.content || '').filter(Boolean).join('\\n\\n'); } } catch(err) {} } return [{ json: { bio_text } }];",
         "mode": "runOnceForAllItems"
       },
-      "id": "node-extract-proofreader",
+      "id": "node-extract-pr",
       "name": "Extract from Proofreader",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [3700, 300]
+      "position": [5000, 300]
     },
     {
       "parameters": {
@@ -249,7 +315,7 @@
       "name": "Send Bio to Telegram",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
-      "position": [3950, 300]
+      "position": [5250, 300]
     },
     {
       "parameters": {
@@ -271,7 +337,18 @@
       "name": "Update Job Status",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
-      "position": [4200, 300]
+      "position": [5500, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $('Webhook').first().json.body; const fact_map = $('Extract Fact Map').first().json.fact_map; const book_draft = $('Extract Book Draft').first().json.book_draft; const subject = fact_map.subject || {}; const chapters_summary = (book_draft.chapters || []).map(ch => ({ id: ch.id, title: ch.title || '', covers_period: '', brief_content: (ch.content || '').slice(0, 300) + '...' })); return [{ json: { wrapped_input: JSON.stringify({ project_id: String(body.draft_id || body.telegram_id), subject: { name: body.character_name || subject.name || 'Герой книги', birth_year: subject.birth_year || null, death_year: subject.death_year || null, birth_place: subject.birth_place || null }, gaps: fact_map.gaps || [], timeline: (fact_map.timeline || []).map(ev => ({ id: ev.id, date: ev.date, title: ev.title, life_period: ev.life_period, confidence: ev.confidence })), persons: (fact_map.persons || []).map(p => ({ id: p.id, name: p.name, relation_to_subject: p.relation_to_subject })), locations: (fact_map.locations || []).map(l => ({ id: l.id, name: l.name, period: l.period || null })), conflicts: fact_map.conflicts || [], book_chapters_summary: chapters_summary, transcripts_summary: { count: 1, speakers: ['Рассказчик'], total_topics_covered: 'Биографические факты из интервью' } }) }}];",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "node-wrap-ia",
+      "name": "Wrap for Interview Architect",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2000, 600]
     },
     {
       "parameters": {
@@ -282,7 +359,7 @@
       "name": "Get Prompt: Interview Architect",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
-      "position": [3950, 500]
+      "position": [2250, 600]
     },
     {
       "parameters": {
@@ -292,31 +369,31 @@
         "headerParameters": {
           "parameters": [
             { "name": "Authorization", "value": "={{ 'Bearer ' + $env.OPENAI_API_KEY }}" },
-            { "name": "Content-Type",  "value": "application/json" }
+            { "name": "Content-Type", "value": "application/json" }
           ]
         },
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "application/json",
-        "body": "={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [ { role: 'system', content: $('Get Prompt: Interview Architect').item.json.text || 'Ты интервьюер-архитектор. На основе готовой главы составь 5-7 уточняющих вопросов, которые помогут дополнить историю яркими деталями, датами и эмоциями. Вопросы должны быть конкретными и тёплыми.' }, { role: 'user', content: 'Готовая глава:\\n\\n' + $('Extract from Proofreader').item.json.bio_text } ], temperature: 0.6, max_tokens: 1000 }) }}",
-        "options": { "timeout": 60000 }
+        "body": "={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [ { role: 'system', content: $('Get Prompt: Interview Architect').item.json.text || 'Ты интервьюер. На основе пробелов в биографии составь 12-18 уточняющих вопросов для клиента. Верни JSON с полями: project_id, questions (id, text, category, priority), question_groups (theme, question_ids, intro_for_client), summary.' }, { role: 'user', content: $('Wrap for Interview Architect').item.json.wrapped_input } ], temperature: 0.5, max_tokens: 4000 }) }}",
+        "options": { "timeout": 120000 }
       },
       "id": "node-interview-architect",
       "name": "Interview Architect",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
-      "position": [4200, 500]
+      "position": [2500, 600]
     },
     {
       "parameters": {
-        "jsCode": "// Извлекаем вопросы из JSON-ответа Interview Architect (или plain text)\nconst rawContent = $input.first().json.choices[0].message.content;\n\nlet questions_text = rawContent;\n\ntry {\n  const cleaned = rawContent.replace(/^```json\\s*/i, '').replace(/```\\s*$/, '').trim();\n  const parsed = JSON.parse(cleaned);\n\n  const allQuestions = [];\n\n  // Формат: {questions: [{text: '...', category: '...'}, ...]}\n  if (parsed.questions && parsed.questions.length > 0) {\n    parsed.questions.forEach((q, i) => {\n      const qText = q.text || q.question || q;\n      allQuestions.push(`${i + 1}. ${qText}`);\n    });\n  }\n  // Формат: {question_groups: [{questions: [...]}, ...]}\n  else if (parsed.question_groups && parsed.question_groups.length > 0) {\n    let idx = 1;\n    parsed.question_groups.forEach(group => {\n      (group.questions || []).forEach(q => {\n        const qText = q.text || q.question || q;\n        allQuestions.push(`${idx}. ${qText}`);\n        idx++;\n      });\n    });\n  }\n\n  if (allQuestions.length > 0) {\n    questions_text = allQuestions.join('\\n');\n  }\n} catch (e) {\n  questions_text = rawContent;\n}\n\nreturn [{ json: { questions_text } }];",
+        "jsCode": "const raw = $input.first().json.choices[0].message.content; let questions_text = raw; const t = raw.trim(); const s = t.indexOf('{'); const e = t.lastIndexOf('}'); if (s !== -1 && e > s) { try { const p = JSON.parse(t.slice(s, e + 1)); const lines = []; if (p.question_groups && p.question_groups.length > 0) { p.question_groups.forEach(group => { lines.push(''); lines.push(group.theme); if (group.intro_for_client) lines.push(group.intro_for_client); (group.question_ids || []).forEach((qid, i) => { const q = (p.questions || []).find(q2 => q2.id === qid); if (q) lines.push((i + 1) + '. ' + q.text); }); }); if (lines.length > 0) questions_text = lines.join('\\n'); } else if (p.questions && p.questions.length > 0) { questions_text = p.questions.map((q, i) => (i + 1) + '. ' + q.text).join('\\n'); } } catch(err) {} } return [{ json: { questions_text } }];",
         "mode": "runOnceForAllItems"
       },
-      "id": "node-extract-interview-architect",
+      "id": "node-extract-ia",
       "name": "Extract from Interview Architect",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [4450, 500]
+      "position": [2750, 600]
     },
     {
       "parameters": {
@@ -338,29 +415,52 @@
       "name": "Send Questions to Telegram",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
-      "position": [4700, 500]
+      "position": [3000, 600]
     }
   ],
   "connections": {
     "Webhook": {
+      "main": [[{ "node": "Wrap for Fact Extractor", "type": "main", "index": 0 }]]
+    },
+    "Wrap for Fact Extractor": {
       "main": [[{ "node": "Get Prompt: Fact Extractor", "type": "main", "index": 0 }]]
     },
     "Get Prompt: Fact Extractor": {
       "main": [[{ "node": "Fact Extractor", "type": "main", "index": 0 }]]
     },
     "Fact Extractor": {
+      "main": [[{ "node": "Extract Fact Map", "type": "main", "index": 0 }]]
+    },
+    "Extract Fact Map": {
+      "main": [[{ "node": "Wrap for Ghostwriter", "type": "main", "index": 0 }]]
+    },
+    "Wrap for Ghostwriter": {
       "main": [[{ "node": "Get Prompt: Ghostwriter", "type": "main", "index": 0 }]]
     },
     "Get Prompt: Ghostwriter": {
       "main": [[{ "node": "Ghostwriter", "type": "main", "index": 0 }]]
     },
     "Ghostwriter": {
+      "main": [[{ "node": "Extract Book Draft", "type": "main", "index": 0 }]]
+    },
+    "Extract Book Draft": {
+      "main": [
+        [
+          { "node": "Wrap for Fact Checker", "type": "main", "index": 0 },
+          { "node": "Wrap for Interview Architect", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Wrap for Fact Checker": {
       "main": [[{ "node": "Get Prompt: Fact Checker", "type": "main", "index": 0 }]]
     },
     "Get Prompt: Fact Checker": {
       "main": [[{ "node": "Fact Checker", "type": "main", "index": 0 }]]
     },
     "Fact Checker": {
+      "main": [[{ "node": "Extract Fact Checker Result", "type": "main", "index": 0 }]]
+    },
+    "Extract Fact Checker Result": {
       "main": [[{ "node": "Wrap for Literary Editor", "type": "main", "index": 0 }]]
     },
     "Wrap for Literary Editor": {
@@ -385,12 +485,13 @@
       "main": [[{ "node": "Extract from Proofreader", "type": "main", "index": 0 }]]
     },
     "Extract from Proofreader": {
-      "main": [
-        [
-          { "node": "Send Bio to Telegram", "type": "main", "index": 0 },
-          { "node": "Get Prompt: Interview Architect", "type": "main", "index": 0 }
-        ]
-      ]
+      "main": [[{ "node": "Send Bio to Telegram", "type": "main", "index": 0 }]]
+    },
+    "Send Bio to Telegram": {
+      "main": [[{ "node": "Update Job Status", "type": "main", "index": 0 }]]
+    },
+    "Wrap for Interview Architect": {
+      "main": [[{ "node": "Get Prompt: Interview Architect", "type": "main", "index": 0 }]]
     },
     "Get Prompt: Interview Architect": {
       "main": [[{ "node": "Interview Architect", "type": "main", "index": 0 }]]
@@ -400,9 +501,6 @@
     },
     "Extract from Interview Architect": {
       "main": [[{ "node": "Send Questions to Telegram", "type": "main", "index": 0 }]]
-    },
-    "Send Bio to Telegram": {
-      "main": [[{ "node": "Update Job Status", "type": "main", "index": 0 }]]
     },
     "Send Questions to Telegram": {
       "main": [[{ "node": "Update Job Status", "type": "main", "index": 0 }]]
