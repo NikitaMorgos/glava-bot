@@ -403,7 +403,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const raw = $input.first().json.choices[0].message.content; let intro_message = raw; const t = raw.trim(); const s = t.indexOf('{'); const e = t.lastIndexOf('}'); if (s !== -1 && e > s) { try { const p = JSON.parse(t.slice(s, e + 1)); intro_message = p.telegram_message || p.intro || p.message || raw; } catch(err) {} } return [{ json: { intro_message } }];",
+        "jsCode": "const raw = $input.first().json.choices[0].message.content; let intro_message = raw; const t = raw.trim(); const s = t.indexOf('{'); const e = t.lastIndexOf('}'); if (s !== -1 && e > s) { try { const p = JSON.parse(t.slice(s, e + 1)); intro_message = p.client_note || p.telegram_message || p.intro || p.message || (p.delivery_package && p.delivery_package.client_note) || raw; } catch(err) {} } return [{ json: { intro_message } }];",
         "mode": "runOnceForAllItems"
       },
       "id": "node-extract-producer",
