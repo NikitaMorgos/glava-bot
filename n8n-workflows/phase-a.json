@@ -119,6 +119,17 @@
     },
     {
       "parameters": {
+        "jsCode": "// Оборачиваем проверенный текст в JSON-формат для Literary Editor\nconst factCheckedText = $input.first().json.choices[0].message.content;\nconst webhookBody = $('Webhook').first().json.body;\n\nconst wrappedInput = {\n  phase: 'A',\n  project_id: String(webhookBody.draft_id || webhookBody.telegram_id),\n  book_text: {\n    chapters: [\n      {\n        id: 'ch_01',\n        title: 'Глава 1',\n        content: factCheckedText\n      }\n    ],\n    callouts: [],\n    historical_notes: []\n  }\n};\n\nreturn [{ json: { wrapped_input: JSON.stringify(wrappedInput) } }];",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "node-wrap-literary-editor",
+      "name": "Wrap for Literary Editor",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1950, 300]
+    },
+    {
+      "parameters": {
         "url": "http://127.0.0.1:5001/api/prompts/literary_editor",
         "options": { "timeout": 10000 }
       },
@@ -126,7 +137,7 @@
       "name": "Get Prompt: Literary Editor",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
-      "position": [1950, 300]
+      "position": [2200, 300]
     },
     {
       "parameters": {
@@ -142,14 +153,36 @@
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "application/json",
-        "body": "={{ JSON.stringify({ model: 'gpt-4o', messages: [ { role: 'system', content: $('Get Prompt: Literary Editor').item.json.text || 'Ты литературный редактор. Улучши ритм, образность и эмоциональность текста. Убери штампы, добавь живые детали там где нужно. Сохрани голос рассказчика и все факты. Выведи только готовый текст.' }, { role: 'user', content: $('Fact Checker').item.json.choices[0].message.content } ], temperature: 0.7, max_tokens: 3000 }) }}",
+        "body": "={{ JSON.stringify({ model: 'gpt-4o', messages: [ { role: 'system', content: $('Get Prompt: Literary Editor').item.json.text || 'Ты литературный редактор. Улучши ритм, образность и эмоциональность текста. Убери штампы, добавь живые детали там где нужно. Сохрани голос рассказчика и все факты. Выведи только готовый текст.' }, { role: 'user', content: $('Wrap for Literary Editor').item.json.wrapped_input } ], temperature: 0.7, max_tokens: 3000 }) }}",
         "options": { "timeout": 180000 }
       },
       "id": "node-literary-editor",
       "name": "Literary Editor",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
-      "position": [2200, 300]
+      "position": [2450, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Извлекаем текст из ответа Literary Editor (JSON или plain text)\nconst rawContent = $input.first().json.choices[0].message.content;\n\nlet extracted_text = rawContent;\n\ntry {\n  const cleaned = rawContent.replace(/^```json\\s*/i, '').replace(/```\\s*$/, '').trim();\n  const parsed = JSON.parse(cleaned);\n  if (parsed.chapters && parsed.chapters.length > 0) {\n    extracted_text = parsed.chapters.map(ch => ch.content || '').join('\\n\\n');\n  }\n} catch (e) {\n  extracted_text = rawContent;\n}\n\nreturn [{ json: { extracted_text } }];",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "node-extract-literary-editor",
+      "name": "Extract from Literary Editor",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2700, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Оборачиваем текст Literary Editor в JSON-формат для Proofreader\nconst literaryText = $input.first().json.extracted_text;\nconst webhookBody = $('Webhook').first().json.body;\n\nconst wrappedInput = {\n  phase: 'A',\n  project_id: String(webhookBody.draft_id || webhookBody.telegram_id),\n  book_text: {\n    chapters: [\n      {\n        id: 'ch_01',\n        title: 'Глава 1',\n        content: literaryText\n      }\n    ],\n    callouts: [],\n    historical_notes: []\n  }\n};\n\nreturn [{ json: { wrapped_input: JSON.stringify(wrappedInput) } }];",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "node-wrap-proofreader",
+      "name": "Wrap for Proofreader",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2950, 300]
     },
     {
       "parameters": {
@@ -160,7 +193,7 @@
       "name": "Get Prompt: Proofreader",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
-      "position": [2450, 300]
+      "position": [3200, 300]
     },
     {
       "parameters": {
@@ -176,48 +209,25 @@
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "application/json",
-        "body": "={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [ { role: 'system', content: $('Get Prompt: Proofreader').item.json.text || 'Ты корректор. Исправь грамматику, пунктуацию и опечатки. Не меняй стиль и содержание. Выведи только готовый текст.' }, { role: 'user', content: $('Literary Editor').item.json.choices[0].message.content } ], temperature: 0.1, max_tokens: 3000 }) }}",
-        "options": { "timeout": 120000 }
+        "body": "={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [ { role: 'system', content: $('Get Prompt: Proofreader').item.json.text || 'Ты корректор. Исправь грамматику, пунктуацию и опечатки. Не меняй стиль и содержание. Верни JSON с полем chapters[0].content содержащим исправленный текст.' }, { role: 'user', content: $('Wrap for Proofreader').item.json.wrapped_input } ], temperature: 0.0, max_tokens: 8000 }) }}",
+        "options": { "timeout": 180000 }
       },
       "id": "node-proofreader",
       "name": "Proofreader",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
-      "position": [2700, 300]
+      "position": [3450, 300]
     },
     {
       "parameters": {
-        "url": "http://127.0.0.1:5001/api/prompts/interview_architect",
-        "options": { "timeout": 10000 }
+        "jsCode": "// Извлекаем текст из JSON-ответа Proofreader\nconst rawContent = $input.first().json.choices[0].message.content;\n\nlet bio_text = rawContent;\nlet style_passport = null;\nlet corrections_count = 0;\n\ntry {\n  const cleaned = rawContent.replace(/^```json\\s*/i, '').replace(/```\\s*$/, '').trim();\n  const parsed = JSON.parse(cleaned);\n\n  if (parsed.chapters && parsed.chapters.length > 0) {\n    bio_text = parsed.chapters.map(ch => ch.content || '').join('\\n\\n');\n  }\n\n  style_passport = parsed.style_passport || null;\n  corrections_count = (parsed.summary && parsed.summary.total_corrections) ? parsed.summary.total_corrections : 0;\n} catch (e) {\n  bio_text = rawContent;\n}\n\nreturn [{ json: { bio_text, style_passport, corrections_count } }];",
+        "mode": "runOnceForAllItems"
       },
-      "id": "node-get-prompt-ia",
-      "name": "Get Prompt: Interview Architect",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4,
-      "position": [2700, 500]
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "https://api.openai.com/v1/chat/completions",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            { "name": "Authorization", "value": "={{ 'Bearer ' + $env.OPENAI_API_KEY }}" },
-            { "name": "Content-Type",  "value": "application/json" }
-          ]
-        },
-        "sendBody": true,
-        "contentType": "raw",
-        "rawContentType": "application/json",
-        "body": "={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [ { role: 'system', content: $('Get Prompt: Interview Architect').item.json.text || 'Ты интервьюер-архитектор. На основе готовой главы составь 5-7 уточняющих вопросов, которые помогут дополнить историю яркими деталями, датами и эмоциями. Вопросы должны быть конкретными и тёплыми.' }, { role: 'user', content: 'Готовая глава:\\n\\n' + $('Proofreader').item.json.choices[0].message.content } ], temperature: 0.6, max_tokens: 1000 }) }}",
-        "options": { "timeout": 60000 }
-      },
-      "id": "node-interview-architect",
-      "name": "Interview Architect",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4,
-      "position": [2950, 500]
+      "id": "node-extract-proofreader",
+      "name": "Extract from Proofreader",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3700, 300]
     },
     {
       "parameters": {
@@ -232,36 +242,14 @@
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "application/json",
-        "body": "={{ JSON.stringify({ chat_id: $('Webhook').item.json.body.telegram_id, text: '📖 Черновик главы готов!\\n\\n' + $('Proofreader').item.json.choices[0].message.content }) }}",
+        "body": "={{ JSON.stringify({ chat_id: $('Webhook').item.json.body.telegram_id, text: '📖 Черновик главы готов!\\n\\n' + $('Extract from Proofreader').item.json.bio_text }) }}",
         "options": { "timeout": 30000 }
       },
       "id": "node-send-bio",
       "name": "Send Bio to Telegram",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
-      "position": [2950, 300]
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "={{ 'https://api.telegram.org/bot' + $('Webhook').item.json.body.bot_token + '/sendMessage' }}",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            { "name": "Content-Type", "value": "application/json" }
-          ]
-        },
-        "sendBody": true,
-        "contentType": "raw",
-        "rawContentType": "application/json",
-        "body": "={{ JSON.stringify({ chat_id: $('Webhook').item.json.body.telegram_id, text: '❓ Уточняющие вопросы для следующего интервью:\\n\\n' + $('Interview Architect').item.json.choices[0].message.content }) }}",
-        "options": { "timeout": 30000 }
-      },
-      "id": "node-send-questions",
-      "name": "Send Questions to Telegram",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4,
-      "position": [3200, 500]
+      "position": [3950, 300]
     },
     {
       "parameters": {
@@ -283,7 +271,74 @@
       "name": "Update Job Status",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
-      "position": [3450, 300]
+      "position": [4200, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://127.0.0.1:5001/api/prompts/interview_architect",
+        "options": { "timeout": 10000 }
+      },
+      "id": "node-get-prompt-ia",
+      "name": "Get Prompt: Interview Architect",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [3950, 500]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "={{ 'Bearer ' + $env.OPENAI_API_KEY }}" },
+            { "name": "Content-Type",  "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [ { role: 'system', content: $('Get Prompt: Interview Architect').item.json.text || 'Ты интервьюер-архитектор. На основе готовой главы составь 5-7 уточняющих вопросов, которые помогут дополнить историю яркими деталями, датами и эмоциями. Вопросы должны быть конкретными и тёплыми.' }, { role: 'user', content: 'Готовая глава:\\n\\n' + $('Extract from Proofreader').item.json.bio_text } ], temperature: 0.6, max_tokens: 1000 }) }}",
+        "options": { "timeout": 60000 }
+      },
+      "id": "node-interview-architect",
+      "name": "Interview Architect",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [4200, 500]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Извлекаем вопросы из JSON-ответа Interview Architect (или plain text)\nconst rawContent = $input.first().json.choices[0].message.content;\n\nlet questions_text = rawContent;\n\ntry {\n  const cleaned = rawContent.replace(/^```json\\s*/i, '').replace(/```\\s*$/, '').trim();\n  const parsed = JSON.parse(cleaned);\n\n  const allQuestions = [];\n\n  // Формат: {questions: [{text: '...', category: '...'}, ...]}\n  if (parsed.questions && parsed.questions.length > 0) {\n    parsed.questions.forEach((q, i) => {\n      const qText = q.text || q.question || q;\n      allQuestions.push(`${i + 1}. ${qText}`);\n    });\n  }\n  // Формат: {question_groups: [{questions: [...]}, ...]}\n  else if (parsed.question_groups && parsed.question_groups.length > 0) {\n    let idx = 1;\n    parsed.question_groups.forEach(group => {\n      (group.questions || []).forEach(q => {\n        const qText = q.text || q.question || q;\n        allQuestions.push(`${idx}. ${qText}`);\n        idx++;\n      });\n    });\n  }\n\n  if (allQuestions.length > 0) {\n    questions_text = allQuestions.join('\\n');\n  }\n} catch (e) {\n  questions_text = rawContent;\n}\n\nreturn [{ json: { questions_text } }];",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "node-extract-interview-architect",
+      "name": "Extract from Interview Architect",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [4450, 500]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://api.telegram.org/bot' + $('Webhook').item.json.body.bot_token + '/sendMessage' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ chat_id: $('Webhook').item.json.body.telegram_id, text: '❓ Уточняющие вопросы для следующего интервью:\\n\\n' + $('Extract from Interview Architect').item.json.questions_text }) }}",
+        "options": { "timeout": 30000 }
+      },
+      "id": "node-send-questions",
+      "name": "Send Questions to Telegram",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [4700, 500]
     }
   ],
   "connections": {
@@ -306,27 +361,44 @@
       "main": [[{ "node": "Fact Checker", "type": "main", "index": 0 }]]
     },
     "Fact Checker": {
+      "main": [[{ "node": "Wrap for Literary Editor", "type": "main", "index": 0 }]]
+    },
+    "Wrap for Literary Editor": {
       "main": [[{ "node": "Get Prompt: Literary Editor", "type": "main", "index": 0 }]]
     },
     "Get Prompt: Literary Editor": {
       "main": [[{ "node": "Literary Editor", "type": "main", "index": 0 }]]
     },
     "Literary Editor": {
+      "main": [[{ "node": "Extract from Literary Editor", "type": "main", "index": 0 }]]
+    },
+    "Extract from Literary Editor": {
+      "main": [[{ "node": "Wrap for Proofreader", "type": "main", "index": 0 }]]
+    },
+    "Wrap for Proofreader": {
       "main": [[{ "node": "Get Prompt: Proofreader", "type": "main", "index": 0 }]]
     },
     "Get Prompt: Proofreader": {
       "main": [[{ "node": "Proofreader", "type": "main", "index": 0 }]]
     },
     "Proofreader": {
+      "main": [[{ "node": "Extract from Proofreader", "type": "main", "index": 0 }]]
+    },
+    "Extract from Proofreader": {
       "main": [
-        [{ "node": "Send Bio to Telegram", "type": "main", "index": 0 }],
-        [{ "node": "Get Prompt: Interview Architect", "type": "main", "index": 0 }]
+        [
+          { "node": "Send Bio to Telegram", "type": "main", "index": 0 },
+          { "node": "Get Prompt: Interview Architect", "type": "main", "index": 0 }
+        ]
       ]
     },
     "Get Prompt: Interview Architect": {
       "main": [[{ "node": "Interview Architect", "type": "main", "index": 0 }]]
     },
     "Interview Architect": {
+      "main": [[{ "node": "Extract from Interview Architect", "type": "main", "index": 0 }]]
+    },
+    "Extract from Interview Architect": {
       "main": [[{ "node": "Send Questions to Telegram", "type": "main", "index": 0 }]]
     },
     "Send Bio to Telegram": {
