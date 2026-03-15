@@ -195,5 +195,5 @@ def cancel_draft(draft_id: int) -> None:
 
 def _calc_total(characters_count: int) -> int:
     """Цена в копейках."""
-    price_per_char = getattr(config, "PRICE_PER_CHARACTER", 99000)
+    price_per_char = getattr(config, "PRICE_PER_CHARACTER", 1000)
     return characters_count * price_per_char

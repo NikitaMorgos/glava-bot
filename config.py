@@ -80,8 +80,8 @@ OPENAI_BIO_MODEL = os.getenv("OPENAI_BIO_MODEL", "gpt-4o")
 # Anthropic Claude — верстальщик PDF (текст + фото по образцу)
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 
-# Pre-pay: цена за 1 персонажа (в копейках). 990 руб = 99000
-PRICE_PER_CHARACTER = int(os.getenv("PRICE_PER_CHARACTER", "99000"))
+# Pre-pay: цена за 1 персонажа (в копейках). Тестовый период: 10 руб = 1000. Боевое: 990 руб = 99000
+PRICE_PER_CHARACTER = int(os.getenv("PRICE_PER_CHARACTER", "1000"))
 
 # ЮKassa (YooKassa) — приём платежей. shop_id и secret_key: yookassa.ru → Магазины
 YOOKASSA_SHOP_ID = os.getenv("YOOKASSA_SHOP_ID", "")
