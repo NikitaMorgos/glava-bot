@@ -88,8 +88,20 @@ def run_pipeline_sync(
         # Обновляем БД
         db.update_voice_transcript(voice_id, transcript)
 
-        # LLM — биографический текст и уточняющие вопросы (если есть ключ)
-        if openai_key:
+        # LLM — если задан n8n webhook, передаём транскрипт туда (полная цепочка агентов).
+        # Иначе — прямой вызов OpenAI (fallback, упрощённый пайплайн).
+        from pipeline_n8n import trigger_phase_a_background
+        n8n_configured = bool(os.getenv("N8N_WEBHOOK_PHASE_A", "").strip())
+
+        if n8n_configured:
+            trigger_phase_a_background(
+                telegram_id=telegram_id,
+                transcript=transcript,
+                username=username or "",
+                draft_id=voice_id,
+            )
+            logger.info("Транскрипт передан в n8n Phase A (telegram_id=%s)", telegram_id)
+        elif openai_key:
             from llm_bio import process_transcript_to_bio, generate_clarifying_questions
 
             bio_text = process_transcript_to_bio(transcript, api_key=openai_key)
@@ -99,7 +111,6 @@ def run_pipeline_sync(
                 block = f"\n\n--- Обработка от {datetime.now().strftime('%Y-%m-%d %H:%M')} ---\n{bio_text}"
                 bio_path.write_text((prev + block).strip(), encoding="utf-8")
                 logger.info("Биография сохранена: %s", bio_path)
-                # Уточняющие вопросы по обработанному интервью (промпт из WEEEK)
                 questions_text = generate_clarifying_questions(bio_text, api_key=openai_key)
                 if questions_text:
                     q_path = client_dir / "clarifying_questions.txt"
@@ -108,7 +119,7 @@ def run_pipeline_sync(
                     q_path.write_text((prev_q + q_block).strip(), encoding="utf-8")
                     logger.info("Уточняющие вопросы сохранены: %s", q_path)
         else:
-            logger.info("OPENAI_API_KEY не задан, биография не генерируется")
+            logger.info("OPENAI_API_KEY не задан и N8N не настроен — биография пропущена")
 
         logger.info("Пайплайн (SpeechKit/Whisper) завершён: %s", client_dir)
         return True

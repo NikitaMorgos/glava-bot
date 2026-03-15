@@ -1,0 +1,91 @@
+"""
+Триггер n8n пайплайна Phase A.
+
+После успешной транскрипции Python отправляет данные в n8n webhook.
+n8n запускает полную цепочку агентов и отправляет результат напрямую в Telegram.
+
+Если N8N_WEBHOOK_PHASE_A не задан — модуль ничего не делает (graceful fallback).
+"""
+import logging
+import os
+import threading
+
+import requests as _requests
+
+logger = logging.getLogger(__name__)
+
+
+def trigger_phase_a(
+    telegram_id: int,
+    transcript: str,
+    character_name: str = "",
+    draft_id: int = 0,
+    username: str = "",
+) -> bool:
+    """
+    Отправляет транскрипт в n8n webhook для обработки цепочкой агентов Phase A.
+    Возвращает True если запрос принят (2xx), False при любой ошибке.
+    Вызов синхронный — используй trigger_phase_a_background для неблокирующего запуска.
+    """
+    webhook_url = os.environ.get("N8N_WEBHOOK_PHASE_A", "").strip()
+    if not webhook_url:
+        logger.info("N8N_WEBHOOK_PHASE_A не задан — n8n пайплайн пропущен")
+        return False
+
+    bot_token = os.environ.get("BOT_TOKEN", "")
+    admin_api_url = os.environ.get(
+        "ADMIN_API_BASE_URL", "http://127.0.0.1:5001/api"
+    )
+
+    payload = {
+        "telegram_id": telegram_id,
+        "transcript": transcript,
+        "character_name": character_name,
+        "draft_id": draft_id,
+        "username": username,
+        "bot_token": bot_token,
+        "admin_api_url": admin_api_url,
+    }
+
+    try:
+        r = _requests.post(webhook_url, json=payload, timeout=30)
+        if r.status_code < 400:
+            logger.info(
+                "n8n Phase A запущен: HTTP %s, telegram_id=%s",
+                r.status_code,
+                telegram_id,
+            )
+            return True
+        else:
+            logger.error(
+                "n8n webhook вернул ошибку: HTTP %s, body=%s",
+                r.status_code,
+                r.text[:200],
+            )
+            return False
+    except Exception as e:
+        logger.error("n8n trigger_phase_a ошибка: %s", e)
+        return False
+
+
+def trigger_phase_a_background(
+    telegram_id: int,
+    transcript: str,
+    character_name: str = "",
+    draft_id: int = 0,
+    username: str = "",
+) -> None:
+    """Запускает trigger_phase_a в фоновом потоке (не блокирует бота)."""
+
+    def _run():
+        trigger_phase_a(
+            telegram_id=telegram_id,
+            transcript=transcript,
+            character_name=character_name,
+            draft_id=draft_id,
+            username=username,
+        )
+
+    t = threading.Thread(target=_run, daemon=True)
+    t.start()
+    logger.info("n8n Phase A триггер отправлен в фон для telegram_id=%s", telegram_id)

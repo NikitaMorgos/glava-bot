@@ -91,6 +91,32 @@ MIGRATIONS = [
     )
     """,
 
+    # Добавляем колонку step и уникальный индекс (если их ещё нет)
+    """
+    DO $$
+    BEGIN
+        IF NOT EXISTS (
+            SELECT 1 FROM information_schema.columns
+            WHERE table_name='pipeline_jobs' AND column_name='step'
+        ) THEN
+            ALTER TABLE pipeline_jobs ADD COLUMN step VARCHAR(50);
+        END IF;
+    END $$
+    """,
+    """
+    DO $$
+    BEGIN
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_constraint
+            WHERE conname = 'pipeline_jobs_telegram_phase_unique'
+        ) THEN
+            ALTER TABLE pipeline_jobs
+                ADD CONSTRAINT pipeline_jobs_telegram_phase_unique
+                UNIQUE (telegram_id, phase);
+        END IF;
+    END $$
+    """,
+
     # Базовые триггеры
     """
     INSERT INTO mailing_triggers (name, description, event_type, template_text, delay_hours, is_active)

@@ -101,6 +101,29 @@ def get_pipeline_job(telegram_id: int) -> dict | None:
         return dict(row) if row else None
 
 
+def upsert_pipeline_job(telegram_id: int, phase: str, step: str, status: str, error=None) -> None:
+    """Создаёт или обновляет запись о выполнении пайплайна для telegram_id + phase."""
+    with _conn() as conn:
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO pipeline_jobs (telegram_id, phase, step, status, started_at, finished_at, error)
+            VALUES (%s, %s, %s, %s, NOW(),
+                CASE WHEN %s IN ('done', 'error') THEN NOW() ELSE NULL END,
+                %s)
+            ON CONFLICT (telegram_id, phase) DO UPDATE
+                SET step       = EXCLUDED.step,
+                    status     = EXCLUDED.status,
+                    finished_at = CASE
+                        WHEN EXCLUDED.status IN ('done', 'error') THEN NOW()
+                        ELSE pipeline_jobs.finished_at END,
+                    error      = EXCLUDED.error,
+                    started_at = CASE
+                        WHEN pipeline_jobs.status NOT IN ('running') THEN NOW()
+                        ELSE pipeline_jobs.started_at END
+        """, (telegram_id, phase, step, status, status, error))
+        conn.commit()
+
+
 def get_pipeline_stats() -> dict:
     with _conn() as conn:
         cur = conn.cursor()
