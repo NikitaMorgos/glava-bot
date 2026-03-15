@@ -119,7 +119,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Оборачиваем проверенный текст в JSON-формат для Literary Editor\nconst factCheckedText = $input.first().json.choices[0].message.content;\nconst webhookBody = $('Webhook').first().json.body;\n\nconst wrappedInput = {\n  phase: 'A',\n  project_id: String(webhookBody.draft_id || webhookBody.telegram_id),\n  book_text: {\n    chapters: [\n      {\n        id: 'ch_01',\n        title: 'Глава 1',\n        content: factCheckedText\n      }\n    ],\n    callouts: [],\n    historical_notes: []\n  }\n};\n\nreturn [{ json: { wrapped_input: JSON.stringify(wrappedInput) } }];",
+        "jsCode": "// Оборачиваем проверенный текст в JSON-формат для Literary Editor (Дашин промпт ожидает book_draft)\nconst factCheckedText = $input.first().json.choices[0].message.content;\nconst webhookBody = $('Webhook').first().json.body;\n\nconst wrappedInput = {\n  phase: 'A',\n  project_id: String(webhookBody.draft_id || webhookBody.telegram_id),\n  iteration: 1,\n  max_iterations: 2,\n  book_draft: {\n    chapters: [\n      {\n        id: 'ch_01',\n        title: 'Глава 1',\n        content: factCheckedText,\n        facts_used: []\n      }\n    ],\n    callouts: [],\n    historical_notes: []\n  },\n  fact_checker_warnings: []\n};\n\nreturn [{ json: { wrapped_input: JSON.stringify(wrappedInput) } }];",
         "mode": "runOnceForAllItems"
       },
       "id": "node-wrap-literary-editor",
