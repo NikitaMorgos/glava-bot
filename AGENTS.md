@@ -196,6 +196,52 @@ python scripts/run_diarized_compare.py
 
 ---
 
+## Разделение работы между агентами
+
+В проекте одновременно работают два AI-агента. Каждый отвечает за свою область.
+
+### Агент A — Бэкенд и пайплайн (этот чат)
+
+Отвечает за всё серверное и инфраструктурное:
+
+| Область | Файлы |
+|---------|-------|
+| Telegram-бот | `main.py`, `prepay/`, `config.py` |
+| Пайплайны обработки | `pipeline_*.py`, `pipeline_n8n.py` |
+| n8n workflow | `n8n-workflows/`, `docker/` |
+| Admin-панель (Flask) | `admin/` |
+| Личный кабинет — backend | `cabinet/app.py`, `cabinet/tma_api.py` |
+| БД и хранилище | `db.py`, `db_draft.py`, `storage.py` |
+| Транскрипция и LLM | `transcribe.py`, `llm_bio.py`, `*_client.py` |
+| Деплой и инфраструктура | `deploy/`, systemd, nginx, Docker |
+| Тесты | `tests/` |
+
+### Агент Б — Фронтенд и лендинг (отдельный чат, Sonnet)
+
+Отвечает за визуальную часть и публичные страницы:
+
+| Область | Файлы |
+|---------|-------|
+| Лендинг сайта | `landing/` (новая папка) |
+| Telegram Mini App (TMA) | `tma/index.html`, `tma/` |
+| Личный кабинет — UI | `cabinet/templates/` |
+| Статика | `static/` |
+
+**Правила для Агента Б:**
+- Не трогать Python-файлы, `main.py`, `pipeline_*.py`, `admin/blueprints/`
+- Не менять `deploy/` и systemd конфиги
+- Flask-маршруты в `cabinet/app.py` — только согласовывать с Агентом А
+- Лендинг размещать в папке `landing/` (отдельно от кабинета)
+- Домен лендинга: `glava.family` (основной), Nginx конфиг: `deploy/nginx-glava.conf`
+- Домен кабинета: `cabinet.glava.family`, TMA: открывается внутри Telegram
+
+**Текущий стек фронтенда:**
+- TMA: чистый HTML/CSS/JS (файл `tma/index.html`)
+- Кабинет: Jinja2 шаблоны (Flask)
+- Лендинг: на усмотрение Агента Б (статический HTML или простой Flask blueprint)
+
+---
+
 ## Соглашения для кода
 
 - Не отключать проверку оплаты (`_user_has_paid`) в production.
