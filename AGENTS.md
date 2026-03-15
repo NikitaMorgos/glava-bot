@@ -86,15 +86,16 @@ python scripts/run_diarized_compare.py
 | LLM: биография и вопросы | `llm_bio.py`, `biographical_prompt.py`, `clarifying_questions_prompt.py` |
 | Пайплайны (bio после транскрипта) | `pipeline_transcribe_bio.py`, `pipeline_assemblyai_bio.py`, `pipeline_plaud_bio.py`, `pipeline_mymeet_bio.py`, `pipeline_recall_bio.py` |
 | Клиенты онлайн-встреч | `recall_client.py` (Recall.ai, приоритет), `mymeet_client.py` (MyMeet, резерв) |
+| **Лендинг glava.family** | `landing/index.html` (HTML/CSS/JS, единый файл), `deploy/nginx-glava.conf` (создать) |
 | Telegram Mini App (кабинет) | `tma/index.html` (фронтенд), `cabinet/tma_api.py` (API Blueprint), `deploy/nginx-tma.conf` |
 | **Панель администратора** | `admin/app.py` (Flask, порт 5001), `admin/auth.py`, `admin/db_admin.py` |
 | Блюпринты панели | `admin/blueprints/dev.py` (разработчик), `admin/blueprints/dasha.py` (продакт), `admin/blueprints/lena.py` (маркетолог), `admin/blueprints/api.py` (внутренний API для n8n) |
 | Шаблоны панели | `admin/templates/` (Jinja2 + Tailwind CSS) |
 | БД миграция (admin) | `scripts/migrate_admin.py` — таблицы `prompts`, `pipeline_jobs`, `mailings`, `mailing_recipients`, `mailing_triggers` |
 | n8n (AI-пайплайн) | Запуск: `docker run` (см. команду в `tasks/admin-panel/status.md`), данные: `/opt/glava/n8n-data/`, доступ: `https://admin.glava.family/n8n/` |
-| n8n workflow Phase A | `n8n-workflows/phase-a.json` — импортируемый workflow: 6 агентов (Fact Extractor → Ghostwriter → Fact Checker → Literary Editor → Proofreader + Interview Architect параллельно) |
+| n8n workflow Phase A | `n8n-workflows/phase-a.json` — workflow v4, протестирован end-to-end. Архитектура: Webhook → Fact Extractor → Ghostwriter → [Fact Checker → Literary Editor → Proofreader] + [Interview Architect параллельно] → Merge → Producer → 3 сообщения в Telegram. Время выполнения ~1.5–2 мин. |
 | n8n триггер из Python | `pipeline_n8n.py` — `trigger_phase_a_background()` вызывается из `pipeline_transcribe_bio.py` после транскрипции |
-| Внутренний API для n8n | `GET /api/prompts/<role>` — промпт из БД; `POST /api/jobs/update` — статус джобы |
+| Внутренний API для n8n | `GET /api/prompts/<role>` — промпт из БД без кеша (читается при каждом запуске пайплайна, Даша может менять промпты в реальном времени); `POST /api/jobs/update` — статус джобы |
 | Деплой admin-панели | `deploy/glava-admin.service` (systemd), `deploy/nginx-admin.conf` (включает `/n8n/` proxy) |
 | Автотесты бота | `tests/test_bot_flows.py` |
 | Деплой, systemd | `deploy/deploy.sh` (основной скрипт), `deploy/glava.service`, `DEPLOY_24_7.md`, `DEPLOY_TIMEWEB.md`, `deploy/DEPLOY_GLAVA_FAMILY.md` |
@@ -105,13 +106,16 @@ python scripts/run_diarized_compare.py
 
 | Документ | Содержание |
 |----------|------------|
-| **docs/TESTING.md** | Система тестирования: тест-кейсы TC-01…TC-27, протокол запуска, отчёты, реагирование на падения. |
+| **docs/TESTING.md** | Система тестирования: тест-кейсы TC-01…TC-27, протокол запуска, отчёты, реагирование на падениях. |
 | **docs/OPENAI_ACCESS.md** | Доступ к OpenAI из РФ, запуск на сервере, копирование файлов, генерация bio и уточняющих вопросов. |
 | **docs/DIARIZATION.md** | Разбивка интервью по спикерам: SpeechKit, AssemblyAI, Whisper; рекомендации по длинным файлам. |
 | **docs/USER_SCENARIOS.md** | Пользовательские сценарии и таблица тест-кейсов для бота. |
 | **ARCHITECTURE.md** | Схема сервисов, бот, кабинет, БД, S3, деплой. |
 | **tasks/admin-panel/docs/ARCHITECTURE.md** | Схема admin-панели: роли, маршруты, таблицы БД, n8n интеграция. |
 | **tasks/admin-panel/plan.md** | Детальный план задачи Admin Panel + n8n. |
+| **tasks/landing/plan.md** | План задачи лендинга glava.family: фазы, блоки, дизайн-система, Nginx-конфиг. |
+| **tasks/landing/status.md** | Текущий статус лендинга: v3.0 MVP готов, ожидаем ассеты и деплой. |
+| **tasks/landing/docs/DESIGN_BRIEF.md** | Дизайн-бриф: палитра, шрифты, описание всех блоков, что нужно от клиента. |
 
 ---
 
@@ -196,6 +200,95 @@ python scripts/run_diarized_compare.py
   systemctl status glava            # active (running), время старта — свежее
   journalctl -u glava -n 20         # нет ошибок импорта
   ```
+
+---
+
+## n8n пайплайн — архитектура Phase A
+
+### Роли и порядок выполнения
+
+Пайплайн соответствует постановке Даши (продакт-менеджер). Все 12 ролей:
+
+| # | Роль | Slug в БД | В Phase A workflow | Статус |
+|---|------|-----------|-------------------|--------|
+| 01 | Транскрибатор | `transcriber` | Python (SpeechKit/AssemblyAI) до n8n | ✅ вне n8n |
+| 02 | Фактолог | `fact_extractor` | Нода n8n | ✅ |
+| 03 | Писатель | `ghostwriter` | Нода n8n | ✅ |
+| 04 | Фактчекер | `fact_checker` | Нода n8n (1 проход, без итераций) | ✅ |
+| 05 | Литредактор | `literary_editor` | Нода n8n (1 проход, без итераций) | ✅ |
+| 06 | Корректор | `proofreader` | Нода n8n | ✅ |
+| 07 | Фоторедактор | `photo_editor` | Не реализован (Phase B, отдельный трек) | 🔲 |
+| 08 | Верстальщик | `layout_designer` | Не реализован (PDF-трек) | 🔲 |
+| 09 | Контролёр вёрстки | `layout_qa` | Не реализован (PDF-трек) | 🔲 |
+| 10 | Продюсер | `producer` | Нода n8n, финальный оркестратор | ✅ |
+| 11 | Интервьюер | `interview_architect` | Нода n8n, параллельная ветка | ✅ |
+| Т | Триажер | `triage_agent` | Phase B (не реализован) | 🔲 |
+
+### Граф Phase A (реализован)
+
+```
+Webhook
+  └→ Fact Extractor (02)
+       └→ Ghostwriter (03)
+            ├→ Fact Checker (04) → Literary Editor (05) → Proofreader (06) → Extract Bio
+            └→ Interview Architect (11) ──────────────────────────────────→ Extract Questions
+                                                                                    ↓
+                                                                          Merge (ждёт оба)
+                                                                                    ↓
+                                                                       Producer (10)
+                                                                                    ↓
+                                                         ┌─ Send Intro (тёплое вступление)
+                                                         ├─ Send Bio (текст книги)
+                                                         └─ Send Questions (уточняющие вопросы)
+```
+
+### Формат данных между агентами (JSON-first)
+
+Каждый агент получает строго структурированный JSON и возвращает JSON:
+- **Fact Extractor** → выдаёт `fact_map` (persons, timeline, gaps, conflicts, locations…)
+- **Ghostwriter** → получает `fact_map` + `transcripts`; выдаёт `book_draft` (chapters, callouts)
+- **Fact Checker** → получает `book_draft` + `fact_map` + `transcripts`; выдаёт `verdict` + `warnings`
+- **Literary Editor** → получает `book_draft` + `fact_checker_warnings`; выдаёт отредактированные `chapters`
+- **Proofreader** → получает `book_text` (chapters); выдаёт исправленные `chapters`
+- **Interview Architect** → получает `gaps/timeline/persons` из fact_map + `book_chapters_summary`; выдаёт `questions` + `question_groups`
+- **Producer** → получает анонс о готовности + excerpt; выдаёт plain text для Telegram
+
+Между агентами стоят **Code-ноды** (`Wrap for X`, `Extract from X`) — они парсят JSON из LLM-ответа и упаковывают вход для следующего агента.
+
+### Как Даша управляет пайплайном
+
+**Промпты агентов (без перезапуска):**
+- Даша меняет текст в своей админке (`https://admin.glava.family`, роль dasha)
+- n8n при каждом запуске делает `GET http://127.0.0.1:5001/api/prompts/<slug>` — читает актуальный промпт из PostgreSQL
+- Изменение вступает в силу **немедленно** для следующего запуска
+
+**Логика флоу (через n8n editor):**
+- Даша заходит в `https://admin.glava.family/n8n/`
+- Добавляет/удаляет ноды, меняет связи
+- Нажимает **Publish** — изменения применяются для всех последующих запросов
+
+**Добавление новой роли:**
+1. Даша сохраняет промпт в админке с новым slug (например, `style_checker`)
+2. Разработчик добавляет 3 ноды в n8n: `Wrap for X` (Code) → `Get Prompt: X` (HTTP GET) → `X` (HTTP POST OpenAI)
+3. Связывает в нужное место флоу → Publish
+
+### Webhook и триггер
+
+- **URL (prod):** `https://admin.glava.family/n8n/webhook/glava/phase-a`
+- **Метод:** POST
+- **Payload:** `{telegram_id, transcript, character_name, draft_id, username, bot_token}`
+- **Триггер из Python:** `pipeline_n8n.trigger_phase_a_background()` в фоновом потоке после транскрипции
+- **Ответ n8n:** `{"message": "Workflow was started"}` — пайплайн работает асинхронно
+
+### Phase B (не реализован — следующая задача)
+
+Phase B включает Триажера (Triage Agent) и 6 маршрутов обработки правок клиента:
+- ① Фактическая поправка: Писатель → Корректор → Верстальщик → QA
+- ② Стилевой комментарий: Литредактор → Корректор → Верстальщик → QA
+- ③ Дополнение текстом: Фактолог → Писатель → Фактчекер → Литредактор → Корректор → Верстальщик → QA
+- ④ Новое интервью/аудио: Транскрибатор → полный цикл
+- ⑤ Новые фотографии: Фоторедактор → Верстальщик → QA
+- ⑥ Структурная правка: Писатель → Фактчекер → Литредактор → Корректор → Верстальщик → QA
 
 ---
 
