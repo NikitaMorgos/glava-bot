@@ -35,7 +35,9 @@
 
 - **Python:** 3.10+
 - **Зависимости:** `requirements.txt`, для тестов — `pytest`, `pytest-asyncio` (см. `requirements-dev.txt`).
-- **Конфиг:** `.env` (не коммитить), шаблон — `.env.example`. Ключи: `BOT_TOKEN`, БД (PostgreSQL), S3, `YANDEX_API_KEY`, `ASSEMBLYAI_API_KEY`, `OPENAI_API_KEY`, ЮKassa.
+- **Конфиг:** `.env` (не коммитить), шаблон — `.env.example`. Ключи: `BOT_TOKEN`, БД (PostgreSQL), S3, `YANDEX_API_KEY`, `ASSEMBLYAI_API_KEY`, `OPENAI_API_KEY`, ЮKassa, `ADMIN_SECRET_KEY`, `ADMIN_PASSWORD_DEV`, `ADMIN_PASSWORD_DASHA`, `ADMIN_PASSWORD_LENA`, `N8N_BASIC_AUTH_USER`, `N8N_BASIC_AUTH_PASSWORD`, `N8N_WEBHOOK_PHASE_A`, `N8N_WEBHOOK_PHASE_B`.
+- **Docker:** n8n запущен в контейнере через `docker-compose` (v1, команда `docker-compose`). Данные хранятся в `/opt/glava/n8n-data/` (владелец UID 1000). Swap 2GB включён для стабильной работы.
+- **Сервисы на VPS:** `glava` (бот), `glava-cabinet` (кабинет, порт 5000), `glava-admin` (панель, порт 5001), `glava-n8n` (Docker-контейнер, порт 5678).
 
 ---
 
@@ -85,6 +87,12 @@ python scripts/run_diarized_compare.py
 | Пайплайны (bio после транскрипта) | `pipeline_transcribe_bio.py`, `pipeline_assemblyai_bio.py`, `pipeline_plaud_bio.py`, `pipeline_mymeet_bio.py`, `pipeline_recall_bio.py` |
 | Клиенты онлайн-встреч | `recall_client.py` (Recall.ai, приоритет), `mymeet_client.py` (MyMeet, резерв) |
 | Telegram Mini App (кабинет) | `tma/index.html` (фронтенд), `cabinet/tma_api.py` (API Blueprint), `deploy/nginx-tma.conf` |
+| **Панель администратора** | `admin/app.py` (Flask, порт 5001), `admin/auth.py`, `admin/db_admin.py` |
+| Блюпринты панели | `admin/blueprints/dev.py` (разработчик), `admin/blueprints/dasha.py` (продакт), `admin/blueprints/lena.py` (маркетолог) |
+| Шаблоны панели | `admin/templates/` (Jinja2 + Tailwind CSS) |
+| БД миграция (admin) | `scripts/migrate_admin.py` — таблицы `prompts`, `pipeline_jobs`, `mailings`, `mailing_recipients`, `mailing_triggers` |
+| n8n (AI-пайплайн) | Docker Compose: `docker/docker-compose.yml`, данные: `/opt/glava/n8n-data/`, доступ: `admin.glava.family/n8n` (через Nginx) или `:5678` |
+| Деплой admin-панели | `deploy/glava-admin.service` (systemd), `deploy/nginx-admin.conf` |
 | Автотесты бота | `tests/test_bot_flows.py` |
 | Деплой, systemd | `deploy/deploy.sh` (основной скрипт), `deploy/glava.service`, `DEPLOY_24_7.md`, `DEPLOY_TIMEWEB.md`, `deploy/DEPLOY_GLAVA_FAMILY.md` |
 
@@ -99,6 +107,8 @@ python scripts/run_diarized_compare.py
 | **docs/DIARIZATION.md** | Разбивка интервью по спикерам: SpeechKit, AssemblyAI, Whisper; рекомендации по длинным файлам. |
 | **docs/USER_SCENARIOS.md** | Пользовательские сценарии и таблица тест-кейсов для бота. |
 | **ARCHITECTURE.md** | Схема сервисов, бот, кабинет, БД, S3, деплой. |
+| **tasks/admin-panel/docs/ARCHITECTURE.md** | Схема admin-панели: роли, маршруты, таблицы БД, n8n интеграция. |
+| **tasks/admin-panel/plan.md** | Детальный план задачи Admin Panel + n8n. |
 
 ---
 
