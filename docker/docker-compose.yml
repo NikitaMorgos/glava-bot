@@ -9,9 +9,10 @@ services:
     environment:
       - N8N_HOST=localhost
       - N8N_PORT=5678
-      - N8N_PROTOCOL=http
-      - N8N_EDITOR_BASE_URL=http://localhost:5678
-      - WEBHOOK_URL=http://localhost:5678/
+      - N8N_PROTOCOL=https
+      - N8N_PATH=/n8n/
+      - N8N_EDITOR_BASE_URL=https://admin.glava.family/n8n/
+      - WEBHOOK_URL=https://admin.glava.family/n8n/
       # Хранение данных n8n в отдельной БД
       - DB_TYPE=sqlite            # упрощённый старт; можно переключить на postgresdb
       - N8N_USER_FOLDER=/data/n8n
