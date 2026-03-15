@@ -36,8 +36,8 @@
 - **Python:** 3.10+
 - **Зависимости:** `requirements.txt`, для тестов — `pytest`, `pytest-asyncio` (см. `requirements-dev.txt`).
 - **Конфиг:** `.env` (не коммитить), шаблон — `.env.example`. Ключи: `BOT_TOKEN`, БД (PostgreSQL), S3, `YANDEX_API_KEY`, `ASSEMBLYAI_API_KEY`, `OPENAI_API_KEY`, ЮKassa, `ADMIN_SECRET_KEY`, `ADMIN_PASSWORD_DEV`, `ADMIN_PASSWORD_DASHA`, `ADMIN_PASSWORD_LENA`, `N8N_BASIC_AUTH_USER`, `N8N_BASIC_AUTH_PASSWORD`, `N8N_WEBHOOK_PHASE_A`, `N8N_WEBHOOK_PHASE_B`.
-- **Docker:** n8n запущен в контейнере через `docker-compose` (v1, команда `docker-compose`). Данные хранятся в `/opt/glava/n8n-data/` (владелец UID 1000). Swap 2GB включён для стабильной работы.
-- **Сервисы на VPS:** `glava` (бот), `glava-cabinet` (кабинет, порт 5000), `glava-admin` (панель, порт 5001), `glava-n8n` (Docker-контейнер, порт 5678).
+- **Docker:** n8n запущен через `docker run` напрямую (не `docker-compose` — баг v1.29.2). Данные: `/opt/glava/n8n-data/` (владелец UID 1000). Swap 2GB включён.
+- **Сервисы на VPS:** `glava` (бот), `glava-cabinet` (кабинет, порт 5000), `glava-admin` (панель, порт 5001), `glava-n8n` (Docker, порт 5678, доступен через Nginx `/n8n/`).
 
 ---
 
@@ -88,11 +88,14 @@ python scripts/run_diarized_compare.py
 | Клиенты онлайн-встреч | `recall_client.py` (Recall.ai, приоритет), `mymeet_client.py` (MyMeet, резерв) |
 | Telegram Mini App (кабинет) | `tma/index.html` (фронтенд), `cabinet/tma_api.py` (API Blueprint), `deploy/nginx-tma.conf` |
 | **Панель администратора** | `admin/app.py` (Flask, порт 5001), `admin/auth.py`, `admin/db_admin.py` |
-| Блюпринты панели | `admin/blueprints/dev.py` (разработчик), `admin/blueprints/dasha.py` (продакт), `admin/blueprints/lena.py` (маркетолог) |
+| Блюпринты панели | `admin/blueprints/dev.py` (разработчик), `admin/blueprints/dasha.py` (продакт), `admin/blueprints/lena.py` (маркетолог), `admin/blueprints/api.py` (внутренний API для n8n) |
 | Шаблоны панели | `admin/templates/` (Jinja2 + Tailwind CSS) |
 | БД миграция (admin) | `scripts/migrate_admin.py` — таблицы `prompts`, `pipeline_jobs`, `mailings`, `mailing_recipients`, `mailing_triggers` |
-| n8n (AI-пайплайн) | Docker Compose: `docker/docker-compose.yml`, данные: `/opt/glava/n8n-data/`, доступ: `admin.glava.family/n8n` (через Nginx) или `:5678` |
-| Деплой admin-панели | `deploy/glava-admin.service` (systemd), `deploy/nginx-admin.conf` |
+| n8n (AI-пайплайн) | Запуск: `docker run` (см. команду в `tasks/admin-panel/status.md`), данные: `/opt/glava/n8n-data/`, доступ: `https://admin.glava.family/n8n/` |
+| n8n workflow Phase A | `n8n-workflows/phase-a.json` — импортируемый workflow: 6 агентов (Fact Extractor → Ghostwriter → Fact Checker → Literary Editor → Proofreader + Interview Architect параллельно) |
+| n8n триггер из Python | `pipeline_n8n.py` — `trigger_phase_a_background()` вызывается из `pipeline_transcribe_bio.py` после транскрипции |
+| Внутренний API для n8n | `GET /api/prompts/<role>` — промпт из БД; `POST /api/jobs/update` — статус джобы |
+| Деплой admin-панели | `deploy/glava-admin.service` (systemd), `deploy/nginx-admin.conf` (включает `/n8n/` proxy) |
 | Автотесты бота | `tests/test_bot_flows.py` |
 | Деплой, systemd | `deploy/deploy.sh` (основной скрипт), `deploy/glava.service`, `DEPLOY_24_7.md`, `DEPLOY_TIMEWEB.md`, `deploy/DEPLOY_GLAVA_FAMILY.md` |
 
