@@ -209,6 +209,8 @@ python scripts/run_diarized_compare.py
 
 ## n8n пайплайн — архитектура Phase A
 
+> Версия: **v5** (март 2026). Обновлено по постановке Даши: добавлены Фоторедактор (07), Верстальщик (08), Контролёр вёрстки (09). Файл: `n8n-workflows/phase-a.json`.
+
 ### Роли и порядок выполнения
 
 Пайплайн соответствует постановке Даши (продакт-менеджер). Все 12 ролей:
@@ -218,46 +220,54 @@ python scripts/run_diarized_compare.py
 | 01 | Транскрибатор | `transcriber` | Python (SpeechKit/AssemblyAI) до n8n | ✅ вне n8n |
 | 02 | Фактолог | `fact_extractor` | Нода n8n | ✅ |
 | 03 | Писатель | `ghostwriter` | Нода n8n | ✅ |
-| 04 | Фактчекер | `fact_checker` | Нода n8n (1 проход, без итераций) | ✅ |
-| 05 | Литредактор | `literary_editor` | Нода n8n (1 проход, без итераций) | ✅ |
+| 04 | Фактчекер | `fact_checker` | Нода n8n (1 проход, итерации — Phase B) | ✅ |
+| 05 | Литредактор | `literary_editor` | Нода n8n (1 проход, итерации — Phase B) | ✅ |
 | 06 | Корректор | `proofreader` | Нода n8n | ✅ |
-| 07 | Фоторедактор | `photo_editor` | Не реализован (Phase B, отдельный трек) | 🔲 |
-| 08 | Верстальщик | `layout_designer` | Не реализован (PDF-трек) | 🔲 |
-| 09 | Контролёр вёрстки | `layout_qa` | Не реализован (PDF-трек) | 🔲 |
+| 07 | Фоторедактор | `photo_editor` | Нода n8n, параллельный трек от Fact Map | ✅ |
+| 08 | Верстальщик | `layout_designer` | Нода n8n, layout spec (PDF — задача #214) | ✅ |
+| 09 | Контролёр вёрстки | `layout_qa` | Нода n8n, gate перед Продюсером | ✅ |
 | 10 | Продюсер | `producer` | Нода n8n, финальный оркестратор | ✅ |
 | 11 | Интервьюер | `interview_architect` | Нода n8n, параллельная ветка | ✅ |
 | Т | Триажер | `triage_agent` | Phase B (не реализован) | 🔲 |
 
-### Граф Phase A (реализован)
+### Граф Phase A v5
 
 ```
 Webhook
   └→ Fact Extractor (02)
-       └→ Ghostwriter (03)
-            ├→ Fact Checker (04) → Literary Editor (05) → Proofreader (06) → Extract Bio
-            └→ Interview Architect (11) ──────────────────────────────────→ Extract Questions
-                                                                                    ↓
-                                                                          Merge (ждёт оба)
-                                                                                    ↓
-                                                                       Producer (10)
-                                                                                    ↓
-                                                         ┌─ Send Intro (тёплое вступление)
-                                                         ├─ Send Bio (текст книги)
-                                                         └─ Send Questions (уточняющие вопросы)
+       ├→ Ghostwriter (03)
+       │    ├→ Fact Checker (04) → Literary Editor (05) → Proofreader (06) ─────────→ Merge: Text+Photos
+       │    └→ Interview Architect (11) ──────────────────────────────────────────────→ Merge: Layout+Questions
+       └→ Photo Editor (07) ─────────────────────────────────────────────────────────→ Merge: Text+Photos
+                                                                                              ↓
+                                                                                   Layout Designer (08)
+                                                                                              ↓
+                                                                                    Layout QA (09) ──→ Merge: Layout+Questions
+                                                                                                              ↓
+                                                                                              Producer (10)
+                                                                                                    ↓
+                                                                         ┌─ Send Intro (тёплое вступление)
+                                                                         ├─ Send Bio (текст книги)
+                                                                         └─ Send Questions (уточняющие вопросы)
 ```
 
 ### Формат данных между агентами (JSON-first)
 
 Каждый агент получает строго структурированный JSON и возвращает JSON:
 - **Fact Extractor** → выдаёт `fact_map` (persons, timeline, gaps, conflicts, locations…)
+- **Photo Editor** → получает `fact_map`; выдаёт `photo_layout` (photos с captions, chapter_id, position)
 - **Ghostwriter** → получает `fact_map` + `transcripts`; выдаёт `book_draft` (chapters, callouts)
 - **Fact Checker** → получает `book_draft` + `fact_map` + `transcripts`; выдаёт `verdict` + `warnings`
 - **Literary Editor** → получает `book_draft` + `fact_checker_warnings`; выдаёт отредактированные `chapters`
-- **Proofreader** → получает `book_text` (chapters); выдаёт исправленные `chapters`
+- **Proofreader** → получает `book_text` (chapters); выдаёт исправленные `chapters` → `bio_text` (plain)
 - **Interview Architect** → получает `gaps/timeline/persons` из fact_map + `book_chapters_summary`; выдаёт `questions` + `question_groups`
-- **Producer** → получает анонс о готовности + excerpt; выдаёт plain text для Telegram
+- **Layout Designer** → получает `bio_text` + `photo_layout`; выдаёт `layout_spec` (структура PDF)
+- **Layout QA** → получает `layout_spec`; выдаёт `verdict` (pass/fail) + `issues`
+- **Producer** → получает анонс + excerpt + layout_qa_verdict; выдаёт plain text для Telegram
 
 Между агентами стоят **Code-ноды** (`Wrap for X`, `Extract from X`) — они парсят JSON из LLM-ответа и упаковывают вход для следующего агента.
+
+> **Примечание по Layout Designer/QA:** в текущей версии они производят JSON-спецификацию вёрстки. Фактическая генерация PDF — отдельная задача (#214, подключение Gamma/Claude). Нода `Layout Designer` задаёт метаданные, по которым внешний PDF-сервис построит книгу.
 
 ### Как Даша управляет пайплайном
 

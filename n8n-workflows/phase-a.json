@@ -1,5 +1,5 @@
 {
-  "name": "GLAVA · Phase A — Book Pipeline v4",
+  "name": "GLAVA · Phase A — Book Pipeline v5",
   "nodes": [
     {
       "parameters": {
@@ -69,6 +69,61 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [1000, 300]
+    },
+
+    {
+      "parameters": {
+        "jsCode": "const body = $('Webhook').first().json.body; const fact_map = $('Extract Fact Map').first().json.fact_map; return [{ json: { wrapped_input: JSON.stringify({ phase: 'A', project_id: String(body.draft_id || body.telegram_id), fact_map: { persons: fact_map.persons || [], timeline: fact_map.timeline || [], locations: fact_map.locations || [], subject: fact_map.subject || {} }, photos_available: body.photo_count || 0, note: 'Создай подписи к фотографиям и план их размещения в книге на основе карты фактов' }) }}];",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "node-wrap-pe",
+      "name": "Wrap for Photo Editor",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1250, 900]
+    },
+    {
+      "parameters": {
+        "url": "http://127.0.0.1:5001/api/prompts/photo_editor",
+        "options": { "timeout": 10000 }
+      },
+      "id": "node-get-prompt-pe",
+      "name": "Get Prompt: Photo Editor",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1500, 900]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [
+          { "name": "Authorization", "value": "={{ 'Bearer ' + $env.OPENAI_API_KEY }}" },
+          { "name": "Content-Type", "value": "application/json" }
+        ]},
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [ { role: 'system', content: $('Get Prompt: Photo Editor').item.json.text || 'Ты Фоторедактор. На основе карты фактов создай план размещения фотографий в книге. Для каждой фотографии определи подпись (кто изображён, когда и где снято), привязку к главе и порядок. Если фотографий нет — верни пустой массив. Верни только валидный JSON с полями: project_id, photos (id, caption, chapter_id, position, confidence_note), placement_notes.' }, { role: 'user', content: $('Wrap for Photo Editor').item.json.wrapped_input } ], temperature: 0.2, max_tokens: 2000 }) }}",
+        "options": { "timeout": 60000 }
+      },
+      "id": "node-photo-editor",
+      "name": "Photo Editor",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1750, 900]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.choices[0].message.content; let photo_layout = []; const t = raw.trim(); const s = t.indexOf('{'); const e = t.lastIndexOf('}'); if (s !== -1 && e > s) { try { const p = JSON.parse(t.slice(s, e + 1)); photo_layout = p.photos || []; } catch(err) {} } return [{ json: { photo_layout } }];",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "node-extract-pe",
+      "name": "Extract from Photo Editor",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2000, 900]
     },
 
     {
@@ -160,7 +215,7 @@
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "application/json",
-        "body": "={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [ { role: 'system', content: $('Get Prompt: Fact Checker').item.json.text || 'Ты Фактчекер. Проверь текст книги на соответствие карте фактов и транскрипту. Верни только валидный JSON с полями: project_id, iteration, verdict (pass/fail), errors, warnings, completeness_check, regression_check, summary.' }, { role: 'user', content: $('Wrap for Fact Checker').item.json.wrapped_input } ], temperature: 0.0, max_tokens: 4000 }) }}",
+        "body": "={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [ { role: 'system', content: $('Get Prompt: Fact Checker').item.json.text || 'Ты Фактчекер. Проверь текст книги на соответствие карте фактов и транскрипту. Ловишь искажения, ложные атрибуции и галлюцинации. Верни только валидный JSON с полями: project_id, iteration, verdict (pass/fail), errors, warnings, completeness_check, regression_check, summary.' }, { role: 'user', content: $('Wrap for Fact Checker').item.json.wrapped_input } ], temperature: 0.0, max_tokens: 4000 }) }}",
         "options": { "timeout": 180000 }
       },
       "id": "node-fact-checker",
@@ -215,7 +270,7 @@
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "application/json",
-        "body": "={{ JSON.stringify({ model: 'gpt-4o', messages: [ { role: 'system', content: $('Get Prompt: Literary Editor').item.json.text || 'Ты Литературный редактор. Отшлифуй текст книги: единый голос, переходы, устранение шаблонов. Верни только валидный JSON с полями: project_id, iteration, verdict, chapters (id, title, content, is_modified), callouts, historical_notes, edits_log, style_assessment.' }, { role: 'user', content: $('Wrap for Literary Editor').item.json.wrapped_input } ], temperature: 0.4, max_tokens: 12000 }) }}",
+        "body": "={{ JSON.stringify({ model: 'gpt-4o', messages: [ { role: 'system', content: $('Get Prompt: Literary Editor').item.json.text || 'Ты Литературный редактор. Отшлифуй текст: единый голос, плавные переходы, без шаблонных AI-формулировок и канцеляризмов. Книга тёплая, но не сентиментальная. Верни только валидный JSON с полями: project_id, iteration, verdict, chapters (id, title, content, is_modified), callouts, historical_notes, edits_log, style_assessment.' }, { role: 'user', content: $('Wrap for Literary Editor').item.json.wrapped_input } ], temperature: 0.4, max_tokens: 12000 }) }}",
         "options": { "timeout": 300000 }
       },
       "id": "node-literary-editor",
@@ -270,7 +325,7 @@
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "application/json",
-        "body": "={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [ { role: 'system', content: $('Get Prompt: Proofreader').item.json.text || 'Ты Корректор. Исправь орфографию, пунктуацию, типографику. Единообразие имён, дат, кавычек, тире. Верни только валидный JSON с полями: project_id, chapters (id, title, content, is_modified), corrections, style_passport, summary.' }, { role: 'user', content: $('Wrap for Proofreader').item.json.wrapped_input } ], temperature: 0.0, max_tokens: 12000 }) }}",
+        "body": "={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [ { role: 'system', content: $('Get Prompt: Proofreader').item.json.text || 'Ты Корректор. Исправь орфографию, пунктуацию, типографику. Единообразие имён, дат, кавычек, тире по всей книге. Нулевая терпимость к опечаткам. Верни только валидный JSON с полями: project_id, chapters (id, title, content, is_modified), corrections, style_passport, summary.' }, { role: 'user', content: $('Wrap for Proofreader').item.json.wrapped_input } ], temperature: 0.0, max_tokens: 12000 }) }}",
         "options": { "timeout": 180000 }
       },
       "id": "node-proofreader",
@@ -325,7 +380,7 @@
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "application/json",
-        "body": "={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [ { role: 'system', content: $('Get Prompt: Interview Architect').item.json.text || 'Ты Интервьюер. Составь 12-18 уточняющих вопросов для клиента на основе пробелов в биографии. Вопросы тёплые, конкретные. Верни только валидный JSON с полями: project_id, questions (id, text, category, priority, related_gap, suggested_respondent, what_it_unlocks), question_groups (theme, question_ids, intro_for_client), summary.' }, { role: 'user', content: $('Wrap for Interview Architect').item.json.wrapped_input } ], temperature: 0.5, max_tokens: 4000 }) }}",
+        "body": "={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [ { role: 'system', content: $('Get Prompt: Interview Architect').item.json.text || 'Ты Интервьюер. Составь 12-18 уточняющих вопросов для клиента на основе пробелов в биографии. Вопросы тёплые, конкретные — не технические. Группируй по темам. Рекомендуй кому задавать. Верни только валидный JSON с полями: project_id, questions (id, text, category, priority, related_gap, suggested_respondent, what_it_unlocks), question_groups (theme, question_ids, intro_for_client), summary.' }, { role: 'user', content: $('Wrap for Interview Architect').item.json.wrapped_input } ], temperature: 0.5, max_tokens: 4000 }) }}",
         "options": { "timeout": 120000 }
       },
       "id": "node-interview-architect",
@@ -351,23 +406,145 @@
         "mode": "append",
         "options": {}
       },
-      "id": "node-merge",
-      "name": "Merge: Bio + Questions",
+      "id": "node-merge-text-photos",
+      "name": "Merge: Text + Photos",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 2,
-      "position": [5250, 450]
+      "position": [5250, 600]
     },
 
     {
       "parameters": {
-        "jsCode": "const body = $('Webhook').first().json.body; const bio_text = $('Extract from Proofreader').first().json.bio_text || ''; const questions_text = $('Extract from Interview Architect').first().json.questions_text || ''; const character_name = body.character_name || 'Герой книги'; return [{ json: { wrapped_input: JSON.stringify({ phase: 'A', project_id: String(body.draft_id || body.telegram_id), character_name: character_name, book_status: 'ready', chapters_count: 4, book_excerpt: bio_text.slice(0, 400), delivery_type: 'phase_a_v1' }), bio_text: bio_text, questions_text: questions_text, character_name: character_name } }];",
+        "jsCode": "const body = $('Webhook').first().json.body; const bio_text = $('Extract from Proofreader').first().json.bio_text || ''; const photo_layout = $('Extract from Photo Editor').first().json.photo_layout || []; return [{ json: { wrapped_input: JSON.stringify({ phase: 'A', project_id: String(body.draft_id || body.telegram_id), bio_text_excerpt: bio_text.slice(0, 2000), chapters_count: 4, photo_placements: photo_layout, format: 'A5_print_ready', style: 'warm_book', note: 'Создай спецификацию вёрстки PDF: структуру страниц, расположение текста и фотографий, стиль оформления' }) }}];",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "node-wrap-ld",
+      "name": "Wrap for Layout Designer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [5500, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://127.0.0.1:5001/api/prompts/layout_designer",
+        "options": { "timeout": 10000 }
+      },
+      "id": "node-get-prompt-ld",
+      "name": "Get Prompt: Layout Designer",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [5750, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [
+          { "name": "Authorization", "value": "={{ 'Bearer ' + $env.OPENAI_API_KEY }}" },
+          { "name": "Content-Type", "value": "application/json" }
+        ]},
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [ { role: 'system', content: $('Get Prompt: Layout Designer').item.json.text || 'Ты Верстальщик-дизайнер. Создай спецификацию вёрстки семейной книги в формате PDF A5. Оформление: тёплое, книжное, аккуратное. Учти расположение фотографий. Верни только валидный JSON с полями: project_id, layout_spec (cover, chapters_layout, photo_placements, fonts, margins, callout_positions, page_size), estimated_pages, style_notes.' }, { role: 'user', content: $('Wrap for Layout Designer').item.json.wrapped_input } ], temperature: 0.3, max_tokens: 3000 }) }}",
+        "options": { "timeout": 120000 }
+      },
+      "id": "node-layout-designer",
+      "name": "Layout Designer",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [6000, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.choices[0].message.content; let layout_spec = {}; let estimated_pages = null; const t = raw.trim(); const s = t.indexOf('{'); const e = t.lastIndexOf('}'); if (s !== -1 && e > s) { try { const p = JSON.parse(t.slice(s, e + 1)); layout_spec = p.layout_spec || p; estimated_pages = p.estimated_pages || null; } catch(err) {} } const bio_text = $('Extract from Proofreader').first().json.bio_text || ''; return [{ json: { layout_spec, estimated_pages, bio_text } }];",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "node-extract-ld",
+      "name": "Extract from Layout Designer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [6250, 300]
+    },
+
+    {
+      "parameters": {
+        "jsCode": "const body = $('Webhook').first().json.body; const ld = $('Extract from Layout Designer').first().json; return [{ json: { wrapped_input: JSON.stringify({ project_id: String(body.draft_id || body.telegram_id), layout_spec: ld.layout_spec || {}, estimated_pages: ld.estimated_pages, checklist: ['cover_present', 'chapter_structure', 'photo_captions_match', 'page_numbering', 'toc_matches_pages', 'print_margins', 'font_readability', 'callouts_positioned'] }) }}];",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "node-wrap-lqa",
+      "name": "Wrap for Layout QA",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [6500, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://127.0.0.1:5001/api/prompts/layout_qa",
+        "options": { "timeout": 10000 }
+      },
+      "id": "node-get-prompt-lqa",
+      "name": "Get Prompt: Layout QA",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [6750, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [
+          { "name": "Authorization", "value": "={{ 'Bearer ' + $env.OPENAI_API_KEY }}" },
+          { "name": "Content-Type", "value": "application/json" }
+        ]},
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [ { role: 'system', content: $('Get Prompt: Layout QA').item.json.text || 'Ты Контролёр вёрстки. Проверь спецификацию вёрстки по чек-листу: висячие строки, обрезанные фото, пустые страницы, нумерация страниц, соответствие оглавления, поля для печати, читаемость шрифтов. Верни только валидный JSON с полями: project_id, verdict (pass/fail), issues (description, severity, location), checks_passed, checks_failed, qa_summary.' }, { role: 'user', content: $('Wrap for Layout QA').item.json.wrapped_input } ], temperature: 0.0, max_tokens: 2000 }) }}",
+        "options": { "timeout": 60000 }
+      },
+      "id": "node-layout-qa",
+      "name": "Layout QA",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [7000, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.choices[0].message.content; let result = { verdict: 'pass', issues: [], checks_passed: [] }; const t = raw.trim(); const s = t.indexOf('{'); const e = t.lastIndexOf('}'); if (s !== -1 && e > s) { try { const p = JSON.parse(t.slice(s, e + 1)); if (p.verdict) result = p; } catch(err) {} } const bio_text = $('Extract from Proofreader').first().json.bio_text || ''; const layout_spec = $('Extract from Layout Designer').first().json.layout_spec || {}; return [{ json: { verdict: result.verdict || 'pass', issues: result.issues || [], checks_passed: result.checks_passed || [], layout_spec, bio_text } }];",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "node-extract-lqa",
+      "name": "Extract from Layout QA",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [7250, 300]
+    },
+
+    {
+      "parameters": {
+        "mode": "append",
+        "options": {}
+      },
+      "id": "node-merge-layout-questions",
+      "name": "Merge: Layout + Questions",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2,
+      "position": [7500, 450]
+    },
+
+    {
+      "parameters": {
+        "jsCode": "const body = $('Webhook').first().json.body; const bio_text = $('Extract from Proofreader').first().json.bio_text || ''; const questions_text = $('Extract from Interview Architect').first().json.questions_text || ''; const lqa = $('Extract from Layout QA').first().json; const character_name = body.character_name || 'Герой книги'; return [{ json: { wrapped_input: JSON.stringify({ phase: 'A', project_id: String(body.draft_id || body.telegram_id), character_name: character_name, book_status: 'ready', chapters_count: 4, book_excerpt: bio_text.slice(0, 400), delivery_type: 'phase_a_v1', layout_qa_verdict: lqa.verdict || 'pass', estimated_pages: (lqa.layout_spec && lqa.layout_spec.estimated_pages) || null }), bio_text: bio_text, questions_text: questions_text, character_name: character_name } }];",
         "mode": "runOnceForAllItems"
       },
       "id": "node-wrap-producer",
       "name": "Wrap for Producer",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [5500, 450]
+      "position": [7750, 450]
     },
     {
       "parameters": {
@@ -378,7 +555,7 @@
       "name": "Get Prompt: Producer",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
-      "position": [5750, 450]
+      "position": [8000, 450]
     },
     {
       "parameters": {
@@ -399,7 +576,7 @@
       "name": "Producer",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
-      "position": [6000, 450]
+      "position": [8250, 450]
     },
     {
       "parameters": {
@@ -410,7 +587,7 @@
       "name": "Extract from Producer",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [6250, 450]
+      "position": [8500, 450]
     },
 
     {
@@ -431,7 +608,7 @@
       "name": "Send Intro to Telegram",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
-      "position": [6500, 300]
+      "position": [8750, 300]
     },
     {
       "parameters": {
@@ -451,7 +628,7 @@
       "name": "Send Bio to Telegram",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
-      "position": [6500, 450]
+      "position": [8750, 450]
     },
     {
       "parameters": {
@@ -471,7 +648,7 @@
       "name": "Send Questions to Telegram",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
-      "position": [6500, 600]
+      "position": [8750, 600]
     },
     {
       "parameters": {
@@ -491,7 +668,7 @@
       "name": "Update Job Status",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
-      "position": [6750, 450]
+      "position": [9000, 450]
     }
   ],
 
@@ -509,7 +686,22 @@
       "main": [[{ "node": "Extract Fact Map", "type": "main", "index": 0 }]]
     },
     "Extract Fact Map": {
-      "main": [[{ "node": "Wrap for Ghostwriter", "type": "main", "index": 0 }]]
+      "main": [[
+        { "node": "Wrap for Ghostwriter", "type": "main", "index": 0 },
+        { "node": "Wrap for Photo Editor", "type": "main", "index": 0 }
+      ]]
+    },
+    "Wrap for Photo Editor": {
+      "main": [[{ "node": "Get Prompt: Photo Editor", "type": "main", "index": 0 }]]
+    },
+    "Get Prompt: Photo Editor": {
+      "main": [[{ "node": "Photo Editor", "type": "main", "index": 0 }]]
+    },
+    "Photo Editor": {
+      "main": [[{ "node": "Extract from Photo Editor", "type": "main", "index": 0 }]]
+    },
+    "Extract from Photo Editor": {
+      "main": [[{ "node": "Merge: Text + Photos", "type": "main", "index": 1 }]]
     },
     "Wrap for Ghostwriter": {
       "main": [[{ "node": "Get Prompt: Ghostwriter", "type": "main", "index": 0 }]]
@@ -521,12 +713,10 @@
       "main": [[{ "node": "Extract Book Draft", "type": "main", "index": 0 }]]
     },
     "Extract Book Draft": {
-      "main": [
-        [
-          { "node": "Wrap for Fact Checker", "type": "main", "index": 0 },
-          { "node": "Wrap for Interview Architect", "type": "main", "index": 0 }
-        ]
-      ]
+      "main": [[
+        { "node": "Wrap for Fact Checker", "type": "main", "index": 0 },
+        { "node": "Wrap for Interview Architect", "type": "main", "index": 0 }
+      ]]
     },
     "Wrap for Fact Checker": {
       "main": [[{ "node": "Get Prompt: Fact Checker", "type": "main", "index": 0 }]]
@@ -562,7 +752,7 @@
       "main": [[{ "node": "Extract from Proofreader", "type": "main", "index": 0 }]]
     },
     "Extract from Proofreader": {
-      "main": [[{ "node": "Merge: Bio + Questions", "type": "main", "index": 0 }]]
+      "main": [[{ "node": "Merge: Text + Photos", "type": "main", "index": 0 }]]
     },
     "Wrap for Interview Architect": {
       "main": [[{ "node": "Get Prompt: Interview Architect", "type": "main", "index": 0 }]]
@@ -574,9 +764,36 @@
       "main": [[{ "node": "Extract from Interview Architect", "type": "main", "index": 0 }]]
     },
     "Extract from Interview Architect": {
-      "main": [[{ "node": "Merge: Bio + Questions", "type": "main", "index": 1 }]]
+      "main": [[{ "node": "Merge: Layout + Questions", "type": "main", "index": 1 }]]
     },
-    "Merge: Bio + Questions": {
+    "Merge: Text + Photos": {
+      "main": [[{ "node": "Wrap for Layout Designer", "type": "main", "index": 0 }]]
+    },
+    "Wrap for Layout Designer": {
+      "main": [[{ "node": "Get Prompt: Layout Designer", "type": "main", "index": 0 }]]
+    },
+    "Get Prompt: Layout Designer": {
+      "main": [[{ "node": "Layout Designer", "type": "main", "index": 0 }]]
+    },
+    "Layout Designer": {
+      "main": [[{ "node": "Extract from Layout Designer", "type": "main", "index": 0 }]]
+    },
+    "Extract from Layout Designer": {
+      "main": [[{ "node": "Wrap for Layout QA", "type": "main", "index": 0 }]]
+    },
+    "Wrap for Layout QA": {
+      "main": [[{ "node": "Get Prompt: Layout QA", "type": "main", "index": 0 }]]
+    },
+    "Get Prompt: Layout QA": {
+      "main": [[{ "node": "Layout QA", "type": "main", "index": 0 }]]
+    },
+    "Layout QA": {
+      "main": [[{ "node": "Extract from Layout QA", "type": "main", "index": 0 }]]
+    },
+    "Extract from Layout QA": {
+      "main": [[{ "node": "Merge: Layout + Questions", "type": "main", "index": 0 }]]
+    },
+    "Merge: Layout + Questions": {
       "main": [[{ "node": "Wrap for Producer", "type": "main", "index": 0 }]]
     },
     "Wrap for Producer": {
@@ -589,13 +806,11 @@
       "main": [[{ "node": "Extract from Producer", "type": "main", "index": 0 }]]
     },
     "Extract from Producer": {
-      "main": [
-        [
-          { "node": "Send Intro to Telegram", "type": "main", "index": 0 },
-          { "node": "Send Bio to Telegram", "type": "main", "index": 0 },
-          { "node": "Send Questions to Telegram", "type": "main", "index": 0 }
-        ]
-      ]
+      "main": [[
+        { "node": "Send Intro to Telegram", "type": "main", "index": 0 },
+        { "node": "Send Bio to Telegram", "type": "main", "index": 0 },
+        { "node": "Send Questions to Telegram", "type": "main", "index": 0 }
+      ]]
     },
     "Send Intro to Telegram": {
       "main": [[{ "node": "Update Job Status", "type": "main", "index": 0 }]]
