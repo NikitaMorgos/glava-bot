@@ -96,7 +96,7 @@ python scripts/run_diarized_compare.py
 | Шаблоны панели | `admin/templates/` (Jinja2 + Tailwind CSS) |
 | БД миграция (admin) | `scripts/migrate_admin.py` — таблицы `prompts`, `pipeline_jobs`, `mailings`, `mailing_recipients`, `mailing_triggers` |
 | n8n (AI-пайплайн) | Запуск: `docker run` (см. команду в `tasks/admin-panel/status.md`), данные: `/opt/glava/n8n-data/`, доступ: `https://admin.glava.family/n8n/` |
-| n8n workflow Phase A | `n8n-workflows/phase-a.json` — workflow v4, протестирован end-to-end. Архитектура: Webhook → Fact Extractor → Ghostwriter → [Fact Checker → Literary Editor → Proofreader] + [Interview Architect параллельно] → Merge → Producer → 3 сообщения в Telegram. Время выполнения ~1.5–2 мин. |
+| n8n workflow Phase A | `n8n-workflows/phase-a.json` — workflow v5, протестирован end-to-end. Архитектура: Webhook → Fact Extractor → [Ghostwriter → … → Proofreader] + [Photo Editor] → Merge → Layout Designer → Layout QA → Merge → Producer → 3 сообщения в Telegram. Время ~2–3 мин. Тест: `python scripts/run_n8n_test.py TELEGRAM_ID`. Producer: в промпте обязателен блок `docs/PRODUCER_PHASE_A_ADDON.md` для штатной доставки (без JSON). |
 | n8n триггер из Python | `pipeline_n8n.py` — `trigger_phase_a_background()` вызывается из `pipeline_transcribe_bio.py` после транскрипции |
 | Внутренний API для n8n | `GET /api/prompts/<role>` — промпт из БД без кеша (читается при каждом запуске пайплайна, Даша может менять промпты в реальном времени); `POST /api/jobs/update` — статус джобы |
 | Деплой admin-панели | `deploy/glava-admin.service` (systemd), `deploy/nginx-admin.conf` (включает `/n8n/` proxy) |
@@ -114,6 +114,7 @@ python scripts/run_diarized_compare.py
 | **docs/DIARIZATION.md** | Разбивка интервью по спикерам: SpeechKit, AssemblyAI, Whisper; рекомендации по длинным файлам. |
 | **docs/USER_SCENARIOS.md** | Пользовательские сценарии и таблица тест-кейсов для бота. |
 | **docs/N8N_DASHA_GUIDE.md** | Инструкция для Даши (продакт): как менять промпты, логику пайплайна, добавлять агентов, тестировать изменения в n8n. |
+| **docs/PRODUCER_PHASE_A_ADDON.md** | Блок для промпта Producer: штатная доставка Phase A (без JSON). Добавить в начало промпта в админке. |
 | **ARCHITECTURE.md** | Схема сервисов, бот, кабинет, БД, S3, деплой. |
 | **tasks/admin-panel/docs/ARCHITECTURE.md** | Схема admin-панели: роли, маршруты, таблицы БД, n8n интеграция. |
 | **tasks/admin-panel/plan.md** | Детальный план задачи Admin Panel + n8n. |
@@ -268,6 +269,12 @@ Webhook
 Между агентами стоят **Code-ноды** (`Wrap for X`, `Extract from X`) — они парсят JSON из LLM-ответа и упаковывают вход для следующего агента.
 
 > **Примечание по Layout Designer/QA:** в текущей версии они производят JSON-спецификацию вёрстки. Фактическая генерация PDF — отдельная задача (#214, подключение Gamma/Claude). Нода `Layout Designer` задаёт метаданные, по которым внешний PDF-сервис построит книгу.
+
+### Тестирование и фиксы (март 2026)
+
+- **Тестовый прогон:** `python scripts/run_n8n_test.py TELEGRAM_ID` — короткий транскрипт, сообщения в Telegram.
+- **Producer:** промпт в админке должен содержать блок штатной доставки Phase A (см. `docs/PRODUCER_PHASE_A_ADDON.md`). Иначе LLM возвращает JSON эскалаций → в Telegram уходит сырой JSON.
+- **Extract from Producer:** fallback — если из ответа не извлечён текст, отправляется заглушка вместо raw JSON.
 
 ### Как Даша управляет пайплайном
 
