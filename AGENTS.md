@@ -113,6 +113,7 @@ python scripts/run_diarized_compare.py
 | **docs/OPENAI_ACCESS.md** | Доступ к OpenAI из РФ, запуск на сервере, копирование файлов, генерация bio и уточняющих вопросов. |
 | **docs/DIARIZATION.md** | Разбивка интервью по спикерам: SpeechKit, AssemblyAI, Whisper; рекомендации по длинным файлам. |
 | **docs/USER_SCENARIOS.md** | Пользовательские сценарии и таблица тест-кейсов для бота. |
+| **docs/N8N_DASHA_GUIDE.md** | Инструкция для Даши (продакт): как менять промпты, логику пайплайна, добавлять агентов, тестировать изменения в n8n. |
 | **ARCHITECTURE.md** | Схема сервисов, бот, кабинет, БД, S3, деплой. |
 | **tasks/admin-panel/docs/ARCHITECTURE.md** | Схема admin-панели: роли, маршруты, таблицы БД, n8n интеграция. |
 | **tasks/admin-panel/plan.md** | Детальный план задачи Admin Panel + n8n. |
