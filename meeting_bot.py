@@ -97,7 +97,7 @@ def record_meeting(
     meeting_url: str,
     duration_sec: int = 1800,
     output_path: str | None = None,
-    bot_name: str = "GLAVA",
+    bot_name: str = "GlavaBot",
 ) -> str | None:
     """
     Подключается к встрече по URL, записывает аудио.
@@ -192,12 +192,74 @@ def record_meeting(
 
             page.goto(meeting_url, wait_until="domcontentloaded", timeout=60000)
 
-            # Ждём загрузки meeting
-            time.sleep(5)
+            # Ждём загрузки meeting (Telemost грузит iframe — нужно больше времени)
+            extra_wait = 5 if _is_telemost_url(meeting_url) else 3
+            time.sleep(5 + extra_wait)
 
-            # Zoom: часто есть "Join from Your Browser" или "Открыть в браузере"
-            # Telemost: обычно сразу в браузере
-            # Пробуем кликнуть на кнопки "Join" / "Войти" / "Подключиться"
+            debug_join = os.environ.get("MEETING_JOIN_DEBUG", "").strip().lower() in ("1", "true", "yes")
+            if debug_join:
+                try:
+                    page.screenshot(path="/tmp/meeting_join_debug.png")
+                    logger.info("DEBUG: скриншот сохранён в /tmp/meeting_join_debug.png")
+                    for i, frame in enumerate(page.frames):
+                        try:
+                            inputs_info = frame.evaluate("""() => {
+                                const inputs = document.querySelectorAll('input, [contenteditable="true"]');
+                                return Array.from(inputs).map(el => ({
+                                    tag: el.tagName,
+                                    name: el.name,
+                                    id: el.id,
+                                    placeholder: el.placeholder || '',
+                                    type: el.type || '',
+                                    value: (el.value || el.textContent || '').slice(0, 50)
+                                }));
+                            }""")
+                            logger.info("DEBUG: frame %s (url=%s) inputs: %s", i, frame.url, inputs_info)
+                        except Exception as e:
+                            logger.info("DEBUG: frame %s: %s", i, e)
+                except Exception as e:
+                    logger.warning("DEBUG: не удалось сохранить отладку: %s", e)
+
+            # Сначала заполняем имя (Telemost, Zoom — поле часто до кнопки «Войти»)
+            # Telemost: placeholder может быть "Гость"; форма может быть в iframe
+            name_selectors = [
+                'input[placeholder*="Гость"]',
+                'input[placeholder*="гость"]',
+                'input[placeholder*="Guest"]',
+                'input[name="name"]',
+                'input[placeholder*="ame"]',
+                'input[placeholder*="имя"]',
+                'input[placeholder*="Имя"]',
+                'input[placeholder*="имени"]',
+                'input[placeholder*="называть"]',
+                '#inputname',
+                'input[type="text"]',
+                '[data-testid="name-input"]',
+                'input[autocomplete="name"]',
+                '[contenteditable="true"]',
+            ]
+
+            def _try_fill_name(frame_or_page):
+                for sel in name_selectors:
+                    try:
+                        loc = frame_or_page.locator(sel).first
+                        if loc.is_visible(timeout=1000):
+                            loc.fill(bot_name)
+                            return True
+                    except Exception:
+                        continue
+                return False
+
+            filled = _try_fill_name(page)
+            if not filled:
+                for frame in page.frames:
+                    if frame != page.main_frame and _try_fill_name(frame):
+                        filled = True
+                        break
+            if filled:
+                time.sleep(1)
+
+            # Кнопки Join / Войти / Подключиться (в т.ч. в iframe)
             join_selectors = [
                 'button:has-text("Join")',
                 'button:has-text("Войти")',
@@ -206,28 +268,31 @@ def record_meeting(
                 'a:has-text("Открыть в браузере")',
                 '[data-testid="join-meeting"]',
                 'button[aria-label*="Join"]',
+                'button:has-text("Войти в конференцию")',
             ]
-            for sel in join_selectors:
-                try:
-                    btn = page.locator(sel).first
-                    if btn.is_visible(timeout=2000):
-                        btn.click()
-                        time.sleep(3)
-                        break
-                except Exception:
-                    continue
 
-            # Поле имени — заполняем bot_name
-            name_selectors = ['input[name="name"]', 'input[placeholder*="ame"]', '#inputname']
-            for sel in name_selectors:
-                try:
-                    inp = page.locator(sel).first
-                    if inp.is_visible(timeout=1000):
-                        inp.fill(bot_name)
-                        time.sleep(0.5)
+            def _try_click_join(frame_or_page):
+                for sel in join_selectors:
+                    try:
+                        btn = frame_or_page.locator(sel).first
+                        if btn.is_visible(timeout=2000):
+                            btn.click()
+                            return True
+                    except Exception:
+                        continue
+                return False
+
+            if not _try_click_join(page):
+                for frame in page.frames:
+                    if frame != page.main_frame and _try_click_join(frame):
                         break
-                except Exception:
-                    continue
+            time.sleep(3)
+
+            # Повторно заполняем имя (Telemost может показать поле после клика «Войти»)
+            _try_fill_name(page)
+            for frame in page.frames:
+                if frame != page.main_frame:
+                    _try_fill_name(frame)
 
             # Записываем
             elapsed = 0

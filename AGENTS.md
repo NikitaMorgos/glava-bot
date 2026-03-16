@@ -88,7 +88,7 @@ python scripts/run_diarized_compare.py
 | Транскрипция, диаризация | `transcribe.py`, `assemblyai_client.py` |
 | LLM: биография и вопросы | `llm_bio.py`, `biographical_prompt.py`, `clarifying_questions_prompt.py` |
 | Пайплайны (bio после транскрипта) | `pipeline_transcribe_bio.py`, `pipeline_assemblyai_bio.py`, `pipeline_plaud_bio.py`, `pipeline_mymeet_bio.py`, `pipeline_recall_bio.py` |
-| Клиенты онлайн-встреч | `recall_client.py` (Recall.ai, приоритет), `mymeet_client.py` (MyMeet, резерв) |
+| Клиенты онлайн-встреч | `recall_client.py` (Recall.ai, приоритет), `mymeet_client.py` (MyMeet, резерв), `meeting_bot.py` (self-hosted Playwright, при `MEETING_BOT_ENABLED`) |
 | **Лендинг glava.family** | `landing/` — `index.html`, `base.css`, `style.css`, `assets/`. Деплой: `bash deploy/deploy-landing.sh` (копирует в `/var/www/glava.family/`). Nginx: `deploy/nginx-glava.conf` (HTTPS + кэш ассетов + www→без www). Хедер содержит кнопку «Личный кабинет» → `https://cabinet.glava.family`. |
 | Telegram Mini App (кабинет) | `tma/index.html` (фронтенд), `cabinet/tma_api.py` (API Blueprint), `deploy/nginx-tma.conf` |
 | **Панель администратора** | `admin/app.py` (Flask, порт 5001), `admin/auth.py`, `admin/db_admin.py` |
@@ -115,7 +115,8 @@ python scripts/run_diarized_compare.py
 | **docs/USER_SCENARIOS.md** | Пользовательские сценарии и таблица тест-кейсов для бота. |
 | **docs/N8N_DASHA_GUIDE.md** | Инструкция для Даши (продакт): как менять промпты, логику пайплайна, добавлять агентов, тестировать изменения в n8n. |
 | **docs/PRODUCER_PHASE_A_ADDON.md** | Блок для промпта Producer: штатная доставка Phase A (без JSON). Добавить в начало промпта в админке. |
-| **tasks/meeting-bot/** | Бот записи онлайн-созвонов (Playwright + Chromium). Telemost, Zoom. `meeting_bot.py`, `MEETING_BOT_ENABLED=true`. |
+| **tasks/meeting-bot/** | Бот записи онлайн-созвонов (Playwright + Chromium). Telemost, Zoom. `meeting_bot.py`, `MEETING_BOT_ENABLED=true`. Статус: `status.md`, план: `plan.md`, отладка имени: `MEETING_JOIN_DEBUG=true`. |
+| **tasks/bot-flow-admin/** | Сообщения бота в админке Даши. Тексты — `Сообщения бота`, схема — `Сценарий бота`. `bot_messages.py`, `scripts/seed_bot_messages.py`. |
 | **ARCHITECTURE.md** | Схема сервисов, бот, кабинет, БД, S3, деплой. |
 | **tasks/admin-panel/docs/ARCHITECTURE.md** | Схема admin-панели: роли, маршруты, таблицы БД, n8n интеграция. |
 | **tasks/admin-panel/plan.md** | Детальный план задачи Admin Panel + n8n. |
