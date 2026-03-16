@@ -34,6 +34,9 @@ anthropic>=0.39.0
 # Ресайз фото перед отправкой в Claude (опционально для typesetter)
 Pillow>=10.0.0
 
+# Meeting bot — запись онлайн-созвонов (Playwright + Chromium)
+playwright>=1.40.0
+
 # Диаризация (разделение по спикерам) — опционально
 # pip install librosa scikit-learn
 librosa>=0.10.0

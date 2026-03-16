@@ -8,6 +8,7 @@ GLAVA — Telegram-бот. Pre-pay flow: навигация до оплаты.
 
 import html
 import logging
+import os
 import re
 import tempfile
 from pathlib import Path
@@ -55,10 +56,10 @@ def _format_price(kopecks: int) -> str:
     return str(kopecks // 100)
 
 
-def _online_meeting_api_key() -> tuple[str, str]:
+def _online_meeting_provider() -> tuple[str, str]:
     """
     Возвращает (provider, api_key) для записи онлайн-встреч.
-    Приоритет: recall → mymeet.
+    Приоритет: recall → mymeet → meeting_bot (self-hosted Playwright).
     """
     recall_key = getattr(config, "RECALL_API_KEY", "") or ""
     mymeet_key = getattr(config, "MYMEET_API_KEY", "") or ""
@@ -66,14 +67,21 @@ def _online_meeting_api_key() -> tuple[str, str]:
         return "recall", recall_key
     if mymeet_key:
         return "mymeet", mymeet_key
+    # meeting_bot — self-hosted (Linux + pulseaudio + playwright). Включить: MEETING_BOT_ENABLED=true
+    if os.name == "posix" and getattr(config, "MEETING_BOT_ENABLED", False):
+        return "meeting_bot", ""
     return "", ""
 
 
 async def _start_online_meeting_recording(
-    link: str, provider: str, api_key: str
+    link: str,
+    provider: str,
+    api_key: str,
+    telegram_id: int = 0,
+    username: str | None = None,
 ) -> str | None:
     """
-    Запускает запись встречи через Recall.ai или MyMeet.
+    Запускает запись встречи через Recall.ai, MyMeet или meeting_bot.
     Возвращает bot_id / meeting_id или None.
     """
     if provider == "recall":
@@ -93,6 +101,10 @@ async def _start_online_meeting_recording(
             title="GLAVA интервью",
             template_name="research-interview",
         )
+    if provider == "meeting_bot":
+        from meeting_bot import record_meeting_background
+        record_meeting_background(link, telegram_id, username)
+        return "meeting_bot"
     return None
 
 
@@ -100,6 +112,8 @@ def _run_online_meeting_background(
     bot_id: str, provider: str, telegram_id: int, username: str | None
 ) -> None:
     """Запускает фоновую обработку онлайн-встречи через нужный провайдер."""
+    if provider == "meeting_bot":
+        return  # Уже запущено в _start_online_meeting_recording
     if provider == "recall":
         from pipeline_recall_bio import run_online_meeting_background
         run_online_meeting_background(bot_id, telegram_id, username)
@@ -386,11 +400,13 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     if data == "online_use_telemost":
         context.user_data.pop("awaiting_meeting_link", None)
         link = getattr(config, "TELEMOST_MEETING_LINK", "") or ""
-        provider, api_key = _online_meeting_api_key()
+        provider, api_key = _online_meeting_provider()
         if not link or not provider:
             await query.answer("Ссылка на встречу не настроена.", show_alert=True)
             return
-        bot_id = await _start_online_meeting_recording(link, provider, api_key)
+        bot_id = await _start_online_meeting_recording(
+            link, provider, api_key, telegram_id=user.id, username=user.username
+        )
         if bot_id:
             _run_online_meeting_background(bot_id, provider, user.id, user.username)
             await query.edit_message_text(
@@ -606,11 +622,13 @@ async def handle_caption_text(update: Update, context: ContextTypes.DEFAULT_TYPE
         if not text.startswith("http"):
             await update.message.reply_text(ONLINE_MEETING_BAD_LINK_MSG)
             return
-        provider, api_key = _online_meeting_api_key()
+        provider, api_key = _online_meeting_provider()
         if not provider:
             await update.message.reply_text("Запись онлайн-встреч временно недоступна.")
             return
-        bot_id = await _start_online_meeting_recording(text, provider, api_key)
+        bot_id = await _start_online_meeting_recording(
+            text, provider, api_key, telegram_id=user.id, username=user.username
+        )
         if bot_id:
             _run_online_meeting_background(bot_id, provider, user.id, user.username)
             await update.message.reply_text(ONLINE_MEETING_LINK_SENT_MSG)
@@ -703,7 +721,7 @@ async def cmd_online(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
                 reply_markup=kb_blocked_start(),
             )
             return
-        provider, _ = _online_meeting_api_key()
+        provider, _ = _online_meeting_provider()
         if not provider:
             await update.message.reply_text("Запись онлайн-встреч временно недоступна.")
             return

@@ -58,6 +58,9 @@ ASSEMBLYAI_API_KEY = os.getenv("ASSEMBLYAI_API_KEY", "")
 # mymeet.ai — транскрипция и запись онлайн-встреч, API: mymeet.ai/contact
 MYMEET_API_KEY = os.getenv("MYMEET_API_KEY", "")
 
+# Meeting bot — self-hosted запись Zoom/Telemost (Playwright, Linux + pulseaudio)
+MEETING_BOT_ENABLED = os.getenv("MEETING_BOT_ENABLED", "").strip().lower() in ("1", "true", "yes")
+
 # Recall.ai — запись онлайн-встреч по URL, транскрипция через AssemblyAI
 # Ключ: https://www.recall.ai/ → Settings → API Keys
 RECALL_API_KEY = os.getenv("RECALL_API_KEY", "")

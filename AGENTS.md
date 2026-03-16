@@ -115,7 +115,7 @@ python scripts/run_diarized_compare.py
 | **docs/USER_SCENARIOS.md** | Пользовательские сценарии и таблица тест-кейсов для бота. |
 | **docs/N8N_DASHA_GUIDE.md** | Инструкция для Даши (продакт): как менять промпты, логику пайплайна, добавлять агентов, тестировать изменения в n8n. |
 | **docs/PRODUCER_PHASE_A_ADDON.md** | Блок для промпта Producer: штатная доставка Phase A (без JSON). Добавить в начало промпта в админке. |
-| **tasks/meeting-bot/** | Бот записи онлайн-созвонов (Playwright + Chromium). Telemost, Zoom. Следующая задача после Phase A v5. |
+| **tasks/meeting-bot/** | Бот записи онлайн-созвонов (Playwright + Chromium). Telemost, Zoom. `meeting_bot.py`, `MEETING_BOT_ENABLED=true`. |
 | **ARCHITECTURE.md** | Схема сервисов, бот, кабинет, БД, S3, деплой. |
 | **tasks/admin-panel/docs/ARCHITECTURE.md** | Схема admin-панели: роли, маршруты, таблицы БД, n8n интеграция. |
 | **tasks/admin-panel/plan.md** | Детальный план задачи Admin Panel + n8n. |
