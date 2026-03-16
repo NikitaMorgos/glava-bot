@@ -23,15 +23,7 @@ import db
 import storage
 import db_draft
 from payment_adapter import create_payment, check_payment
-from prepay.messages import (
-    INTRO_MAIN_MSG, INTRO_EXAMPLE_MSG, INTRO_PRICE_MSG,
-    CONFIG_CHARACTERS_MSG, CONFIG_CHARACTERS_LIST_MSG,
-    EMAIL_INPUT_MSG, EMAIL_ERROR_MSG, ORDER_SUMMARY_MSG,
-    PAYMENT_INIT_MSG, PAYMENT_WAIT_MSG, PAYMENT_STILL_PENDING_MSG,
-    RESUME_DRAFT_MSG, RESUME_PAYMENT_MSG, BLOCKED_MEDIA_MSG,
-    ONLINE_MEETING_INTRO_MSG, ONLINE_MEETING_LINK_SENT_MSG,
-    ONLINE_MEETING_TELEMOST_SENT_MSG, ONLINE_MEETING_BAD_LINK_MSG, ONLINE_MEETING_ERROR_MSG,
-)
+import bot_messages
 from prepay.keyboards import (
     kb_intro_main, kb_intro_example, kb_intro_price,
     kb_config_characters, kb_config_edit_list, kb_email_back,
@@ -188,7 +180,7 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             InlineKeyboardButton(btn_label, web_app=WebAppInfo(url=TMA_URL))
         ]]
     )
-    await update.message.reply_text(INTRO_MAIN_MSG, reply_markup=markup)
+    await update.message.reply_text(bot_messages.get_message("intro_main"), reply_markup=markup)
 
 
 async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -200,17 +192,17 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     data = query.data or ""
 
     if data == "intro_main":
-        await query.edit_message_text(INTRO_MAIN_MSG, reply_markup=kb_intro_main())
+        await query.edit_message_text(bot_messages.get_message("intro_main"), reply_markup=kb_intro_main())
         return
 
     if data == "intro_example":
         logger.info("event: example_viewed")
-        await query.edit_message_text(INTRO_EXAMPLE_MSG, reply_markup=kb_intro_example())
+        await query.edit_message_text(bot_messages.get_message("intro_example"), reply_markup=kb_intro_example())
         return
 
     if data == "intro_price":
         logger.info("event: price_viewed")
-        await query.edit_message_text(INTRO_PRICE_MSG, reply_markup=kb_intro_price())
+        await query.edit_message_text(bot_messages.get_message("intro_price"), reply_markup=kb_intro_price())
         return
 
     if data == "intro_start":
@@ -221,7 +213,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         status = draft.get("status", "")
         if status == "payment_pending":
             await query.edit_message_text(
-                PAYMENT_WAIT_MSG,
+                bot_messages.get_message("payment_wait"),
                 reply_markup=kb_payment(draft["id"], draft.get("payment_url") or "https://example.com"),
             )
             return
@@ -260,7 +252,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
                 db_draft.set_draft_paid(draft["id"])
                 await query.edit_message_text("Оплата прошла! Теперь можете отправлять голосовые и фото. /list")
             else:
-                await query.answer(PAYMENT_STILL_PENDING_MSG, show_alert=True)
+                await query.answer(bot_messages.get_message("payment_still_pending"), show_alert=True)
         return
 
     if data.startswith("cfg_add:"):
@@ -346,7 +338,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             db_draft.set_draft_payment_pending(draft_id, payment_id, payment_url, provider)
             logger.info("event: payment_created draft_id=%s", draft_id)
             await query.edit_message_text(
-                PAYMENT_INIT_MSG.format(payment_url=payment_url),
+                bot_messages.get_message("payment_init", payment_url=payment_url),
                 reply_markup=kb_payment(draft_id, payment_url),
             )
         else:
@@ -377,7 +369,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
                 db_draft.set_draft_paid(draft_id)
                 await query.edit_message_text("Оплата прошла! Можете отправлять голосовые и фото. /list")
             else:
-                await query.answer(PAYMENT_STILL_PENDING_MSG, show_alert=True)
+                await query.answer(bot_messages.get_message("payment_still_pending"), show_alert=True)
         return
 
     if data.startswith("payment_new_order:"):
@@ -410,10 +402,10 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         if bot_id:
             _run_online_meeting_background(bot_id, provider, user.id, user.username)
             await query.edit_message_text(
-                f"{link}\n\n{ONLINE_MEETING_TELEMOST_SENT_MSG}",
+                f"{link}\n\n{bot_messages.get_message('online_meeting_telemost_sent')}",
             )
         else:
-            await query.answer(ONLINE_MEETING_ERROR_MSG, show_alert=True)
+            await query.answer(bot_messages.get_message("online_meeting_error"), show_alert=True)
         return
 
 
@@ -422,9 +414,9 @@ async def _show_config_characters(update: Update, context: ContextTypes.DEFAULT_
     if not draft:
         return
     chars = draft.get("characters") or []
-    msg = CONFIG_CHARACTERS_MSG
+    msg = bot_messages.get_message("config_characters")
     if chars:
-        msg = CONFIG_CHARACTERS_LIST_MSG.format(characters=_format_characters(chars))
+        msg = bot_messages.get_message("config_characters_list", characters=_format_characters(chars))
     await update.message.reply_text(msg, reply_markup=kb_config_characters(draft["id"], len(chars) >= 1))
 
 
@@ -433,14 +425,14 @@ async def _show_config_characters_callback(query, context, telegram_id: int) -> 
     if not draft:
         return
     chars = draft.get("characters") or []
-    msg = CONFIG_CHARACTERS_MSG
+    msg = bot_messages.get_message("config_characters")
     if chars:
-        msg = CONFIG_CHARACTERS_LIST_MSG.format(characters=_format_characters(chars))
+        msg = bot_messages.get_message("config_characters_list", characters=_format_characters(chars))
     await query.edit_message_text(msg, reply_markup=kb_config_characters(draft["id"], len(chars) >= 1))
 
 
 async def _show_email_input(update: Update, context: ContextTypes.DEFAULT_TYPE, draft_id: int) -> None:
-    await update.message.reply_text(EMAIL_INPUT_MSG, reply_markup=kb_email_back(draft_id))
+    await update.message.reply_text(bot_messages.get_message("email_input"), reply_markup=kb_email_back(draft_id))
 
 
 async def _show_email_input_callback(query, context, draft_id: int) -> None:
@@ -448,18 +440,14 @@ async def _show_email_input_callback(query, context, draft_id: int) -> None:
     context.user_data.pop("prepay_char_name", None)
     context.user_data["prepay_awaiting"] = "email"
     context.user_data["prepay_draft_id"] = draft_id
-    await query.edit_message_text(EMAIL_INPUT_MSG, reply_markup=kb_email_back(draft_id))
+    await query.edit_message_text(bot_messages.get_message("email_input"), reply_markup=kb_email_back(draft_id))
 
 
 async def _show_order_summary(update: Update, context: ContextTypes.DEFAULT_TYPE, draft: dict) -> None:
     chars = draft.get("characters") or []
     total = _format_price(draft.get("total_price", 0))
     email = draft.get("email") or ""
-    msg = ORDER_SUMMARY_MSG.format(
-        characters=_format_characters(chars),
-        total=total,
-        email=email,
-    )
+    msg = bot_messages.get_message("order_summary", characters=_format_characters(chars), total=total, email=email)
     await update.message.reply_text(msg, reply_markup=kb_order_summary(draft["id"]))
 
 
@@ -467,11 +455,7 @@ async def _show_order_summary_callback(query, context, draft: dict) -> None:
     chars = draft.get("characters") or []
     total = _format_price(draft.get("total_price", 0))
     email = draft.get("email") or ""
-    msg = ORDER_SUMMARY_MSG.format(
-        characters=_format_characters(chars),
-        total=total,
-        email=email,
-    )
+    msg = bot_messages.get_message("order_summary", characters=_format_characters(chars), total=total, email=email)
     await query.edit_message_text(msg, reply_markup=kb_order_summary(draft["id"]))
 
 
@@ -499,7 +483,7 @@ async def _handle_prepay_text(update: Update, context: ContextTypes.DEFAULT_TYPE
 
     if awaiting == "email":
         if not EMAIL_RE.match(text):
-            await update.message.reply_text(EMAIL_ERROR_MSG, reply_markup=kb_email_back(draft_id or 0))
+            await update.message.reply_text(bot_messages.get_message("email_error"), reply_markup=kb_email_back(draft_id or 0))
             return True
         if draft_id:
             db_draft.update_draft_email(draft_id, text)
@@ -516,7 +500,7 @@ async def _handle_prepay_text(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 async def handle_blocked_media(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Голосовые/фото/файлы до оплаты."""
-    await update.message.reply_text(BLOCKED_MEDIA_MSG, reply_markup=kb_blocked_start())
+    await update.message.reply_text(bot_messages.get_message("blocked_media"), reply_markup=kb_blocked_start())
 
 
 async def _save_audio_file(
@@ -620,7 +604,7 @@ async def handle_caption_text(update: Update, context: ContextTypes.DEFAULT_TYPE
         return
     if context.user_data.pop("awaiting_meeting_link", None):
         if not text.startswith("http"):
-            await update.message.reply_text(ONLINE_MEETING_BAD_LINK_MSG)
+            await update.message.reply_text(bot_messages.get_message("online_meeting_bad_link"))
             return
         provider, api_key = _online_meeting_provider()
         if not provider:
@@ -631,9 +615,9 @@ async def handle_caption_text(update: Update, context: ContextTypes.DEFAULT_TYPE
         )
         if bot_id:
             _run_online_meeting_background(bot_id, provider, user.id, user.username)
-            await update.message.reply_text(ONLINE_MEETING_LINK_SENT_MSG)
+            await update.message.reply_text(bot_messages.get_message("online_meeting_link_sent"))
         else:
-            await update.message.reply_text(ONLINE_MEETING_ERROR_MSG)
+            await update.message.reply_text(bot_messages.get_message("online_meeting_error"))
         return
 
     if context.user_data.pop("awaiting_cabinet_password", None):
@@ -729,7 +713,7 @@ async def cmd_online(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
         has_telemost = bool(getattr(config, "TELEMOST_MEETING_LINK", "") or "")
         reply_markup = kb_online_meeting(has_telemost)
         await update.message.reply_text(
-            ONLINE_MEETING_INTRO_MSG,
+            bot_messages.get_message("online_meeting_intro"),
             reply_markup=reply_markup,
         )
     except Exception as e:

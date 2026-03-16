@@ -62,6 +62,19 @@ def get_prompt_history(role: str, limit: int = 10) -> list[dict]:
         return [dict(r) for r in cur.fetchall()]
 
 
+def get_bot_messages() -> list[dict]:
+    """Сообщения бота (role LIKE 'bot_%')."""
+    with _conn() as conn:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT DISTINCT ON (role) role, version, prompt_text, updated_at, updated_by
+            FROM prompts
+            WHERE role LIKE 'bot_%%'
+            ORDER BY role, version DESC
+        """)
+        return [dict(r) for r in cur.fetchall()]
+
+
 def save_prompt(role: str, text: str, author: str) -> None:
     with _conn() as conn:
         cur = conn.cursor()

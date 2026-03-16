@@ -9,6 +9,29 @@ from admin import db_admin as dba
 
 bp = Blueprint("dasha", __name__, url_prefix="/dasha")
 
+# Сообщения бота (key → человекочитаемое имя)
+BOT_MESSAGE_KEYS = [
+    ("intro_main", "Приветствие (главное)"),
+    ("intro_example", "Пример книги"),
+    ("intro_price", "Стоимость"),
+    ("config_characters", "Персонажи — ввод"),
+    ("config_characters_list", "Персонажи — список"),
+    ("email_input", "Ввод email"),
+    ("email_error", "Ошибка email"),
+    ("order_summary", "Итого заказа"),
+    ("payment_init", "Оплата создана"),
+    ("payment_wait", "Ожидание оплаты"),
+    ("payment_still_pending", "Оплата ещё не поступила"),
+    ("resume_draft", "Возобновление черновика"),
+    ("resume_payment", "Оплата в процессе"),
+    ("blocked_media", "Блокировка до оплаты"),
+    ("online_meeting_intro", "Онлайн-встреча — ввод"),
+    ("online_meeting_link_sent", "Онлайн — ссылка отправлена"),
+    ("online_meeting_telemost_sent", "Онлайн — ссылка Телемост"),
+    ("online_meeting_bad_link", "Онлайн — неверная ссылка"),
+    ("online_meeting_error", "Онлайн — ошибка"),
+]
+
 AGENT_ROLES = [
     ("transcriber",       "01 · Транскрибатор"),
     ("fact_extractor",    "02 · Фактолог"),
@@ -64,6 +87,55 @@ def prompt_edit(role: str):
     return render_template("dasha/prompt_edit.html",
                            role=role, role_name=role_map[role],
                            current=current, history=history)
+
+
+# ── Сообщения бота ───────────────────────────────────────────────
+@bp.route("/bot_messages")
+@role_required("dev", "dasha")
+def bot_messages():
+    rows = dba.get_bot_messages()
+    prompt_map = {r["role"]: r for r in rows}
+    return render_template(
+        "dasha/bot_messages.html",
+        bot_keys=BOT_MESSAGE_KEYS,
+        prompt_map=prompt_map,
+    )
+
+
+@bp.route("/bot_flow")
+@role_required("dev", "dasha")
+def bot_flow():
+    """Схема сценария бота для просмотра."""
+    return render_template("dasha/bot_flow.html")
+
+
+@bp.route("/bot_messages/<key>", methods=["GET", "POST"])
+@role_required("dev", "dasha")
+def bot_message_edit(key: str):
+    key_map = dict(BOT_MESSAGE_KEYS)
+    if key not in key_map:
+        flash("Неизвестный ключ сообщения", "error")
+        return redirect(url_for("dasha.bot_messages"))
+
+    role = f"bot_{key}"
+    if request.method == "POST":
+        text = request.form.get("prompt_text", "").strip()
+        if text:
+            from flask import session
+            author = session.get("username", "dasha")
+            dba.save_prompt(role, text, author)
+            flash(f"Сообщение «{key_map[key]}» сохранено", "success")
+        return redirect(url_for("dasha.bot_messages"))
+
+    current = dba.get_prompt(role)
+    history = dba.get_prompt_history(role)
+    return render_template(
+        "dasha/bot_message_edit.html",
+        key=key,
+        key_name=key_map[key],
+        current=current,
+        history=history,
+    )
 
 
 # ── Заказы / пайплайн ────────────────────────────────────────────
