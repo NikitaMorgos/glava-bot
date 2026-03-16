@@ -89,7 +89,7 @@ python scripts/run_diarized_compare.py
 | LLM: биография и вопросы | `llm_bio.py`, `biographical_prompt.py`, `clarifying_questions_prompt.py` |
 | Пайплайны (bio после транскрипта) | `pipeline_transcribe_bio.py`, `pipeline_assemblyai_bio.py`, `pipeline_plaud_bio.py`, `pipeline_mymeet_bio.py`, `pipeline_recall_bio.py` |
 | Клиенты онлайн-встреч | `recall_client.py` (Recall.ai, приоритет), `mymeet_client.py` (MyMeet, резерв) |
-| **Лендинг glava.family** | `landing/index.html` (HTML/CSS/JS, единый файл), `deploy/nginx-glava.conf` (создать) |
+| **Лендинг glava.family** | `landing/` — `index.html`, `base.css`, `style.css`, `assets/`. Деплой: `bash deploy/deploy-landing.sh` (копирует в `/var/www/glava.family/`). Nginx: `deploy/nginx-glava.conf` (HTTPS + кэш ассетов + www→без www). Хедер содержит кнопку «Личный кабинет» → `https://cabinet.glava.family`. |
 | Telegram Mini App (кабинет) | `tma/index.html` (фронтенд), `cabinet/tma_api.py` (API Blueprint), `deploy/nginx-tma.conf` |
 | **Панель администратора** | `admin/app.py` (Flask, порт 5001), `admin/auth.py`, `admin/db_admin.py` |
 | Блюпринты панели | `admin/blueprints/dev.py` (разработчик), `admin/blueprints/dasha.py` (продакт), `admin/blueprints/lena.py` (маркетолог), `admin/blueprints/api.py` (внутренний API для n8n) |
@@ -321,7 +321,7 @@ Phase B включает Триажера (Triage Agent) и 6 маршрутов
 
 | Область | Файлы |
 |---------|-------|
-| Лендинг сайта | `landing/` (новая папка) |
+| Лендинг сайта | `landing/` — опубликован на `https://glava.family` |
 | Telegram Mini App (TMA) | `tma/index.html`, `tma/` |
 | Личный кабинет — UI | `cabinet/templates/` |
 | Статика | `static/` |
