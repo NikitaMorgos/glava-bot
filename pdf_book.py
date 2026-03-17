@@ -35,10 +35,59 @@ MUTED       = HexColor("#7A6B5A")
 LIGHT_LINE  = HexColor("#DDD5C8")
 
 # ── Шрифты ─────────────────────────────────────────────────────────────
-# Используем встроенные шрифты reportlab (не требуют TTF-файлов)
-FONT_SERIF  = "Times-Roman"
-FONT_BOLD   = "Times-Bold"
-FONT_ITALIC = "Times-Italic"
+# Кириллица требует TTF-шрифта. Ищем DejaVuSerif (есть на большинстве Linux).
+# Резерв — проверяем локальную папку fonts/ рядом с модулем.
+
+import os as _os
+
+_HERE = _os.path.dirname(_os.path.abspath(__file__))
+
+_FONT_CANDIDATES = {
+    "DejaVuSerif": [
+        "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf",
+        _os.path.join(_HERE, "fonts", "DejaVuSerif.ttf"),
+    ],
+    "DejaVuSerif-Bold": [
+        "/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf",
+        _os.path.join(_HERE, "fonts", "DejaVuSerif-Bold.ttf"),
+    ],
+    "DejaVuSerif-Italic": [
+        "/usr/share/fonts/truetype/dejavu/DejaVuSerif-BoldItalic.ttf",
+        _os.path.join(_HERE, "fonts", "DejaVuSerif-BoldItalic.ttf"),
+    ],
+}
+
+
+def _register_cyrillic_fonts() -> tuple[str, str, str]:
+    """
+    Регистрирует DejaVuSerif (поддерживает кириллицу).
+    Возвращает (serif, bold, italic).
+    Если TTF не найден — возвращает встроенные шрифты (кириллица будет квадратами).
+    """
+    registered = {}
+    for name, paths in _FONT_CANDIDATES.items():
+        for path in paths:
+            if _os.path.isfile(path):
+                try:
+                    pdfmetrics.registerFont(TTFont(name, path))
+                    registered[name] = True
+                    logger.info("pdf_book: шрифт %s загружен из %s", name, path)
+                    break
+                except Exception as e:
+                    logger.warning("pdf_book: не удалось загрузить %s: %s", path, e)
+
+    if "DejaVuSerif" in registered:
+        return (
+            "DejaVuSerif",
+            "DejaVuSerif-Bold" if "DejaVuSerif-Bold" in registered else "DejaVuSerif",
+            "DejaVuSerif-Italic" if "DejaVuSerif-Italic" in registered else "DejaVuSerif",
+        )
+
+    logger.warning("pdf_book: DejaVu-шрифты не найдены, кириллица будет нечитаема!")
+    return "Times-Roman", "Times-Bold", "Times-Italic"
+
+
+FONT_SERIF, FONT_BOLD, FONT_ITALIC = _register_cyrillic_fonts()
 
 
 def _build_styles() -> dict:
