@@ -2,245 +2,238 @@
 {% block title %}Расходы — GLAVA Finance{% endblock %}
 
 {% block content %}
-<div class="flex gap-6">
 
-  <!-- ── Левая колонка: таблица + форма добавления ── -->
-  <div class="flex-1 min-w-0">
-
-    <!-- Заголовок + фильтр по месяцу -->
-    <div class="flex items-center justify-between mb-4">
-      <h1 class="text-xl font-bold text-gray-800">💰 Расходы</h1>
-      <div class="flex items-center gap-3">
-        <form method="get" class="flex items-center gap-2">
-          <label class="text-sm text-gray-600">Месяц:</label>
-          <input type="month" name="month" value="{{ selected_month }}"
-                 class="border rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-          <button type="submit"
-                  class="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">
-            Показать
-          </button>
-          {% if selected_month %}
-          <a href="/finance/expenses" class="text-sm text-gray-500 hover:text-gray-700">✕ Сбросить</a>
-          {% endif %}
-        </form>
-        <a href="/finance/pnl"
-           class="px-3 py-1.5 bg-emerald-600 text-white text-sm rounded-lg hover:bg-emerald-700">
-          📊 P&L
-        </a>
-      </div>
-    </div>
-
-    <!-- Форма добавления расхода -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-5">
-      <div class="text-sm font-semibold text-gray-700 mb-3">Добавить расход</div>
-      <form method="post" action="/finance/expenses/add">
-        <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-7">
-          <div>
-            <label class="block text-xs text-gray-500 mb-1">Дата *</label>
-            <input type="date" name="date" required
-                   value="{{ selected_month + '-01' if selected_month else '' }}"
-                   class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-          </div>
-          <div>
-            <label class="block text-xs text-gray-500 mb-1">Сумма, ₽ *</label>
-            <input type="number" name="amount" required min="0.01" step="0.01" placeholder="0.00"
-                   class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-          </div>
-          <div>
-            <label class="block text-xs text-gray-500 mb-1">Статья *</label>
-            <select name="category_id" required
-                    class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
-              <option value="">— выбрать —</option>
-              {% for cat in categories %}
-              <option value="{{ cat.id }}">{{ cat.name }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div>
-            <label class="block text-xs text-gray-500 mb-1">Инициатор *</label>
-            <select name="initiator_id" required
-                    class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
-              <option value="">— выбрать —</option>
-              {% for ini in initiators %}
-              <option value="{{ ini.id }}"
-                {% if ini.name == session.username %}selected{% endif %}>
-                {{ ini.name }}
-              </option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="col-span-2">
-            <label class="block text-xs text-gray-500 mb-1">Название</label>
-            <input type="text" name="title" placeholder="Например: Хостинг Timeweb"
-                   class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-          </div>
-          <div>
-            <label class="block text-xs text-gray-500 mb-1">Периодичность</label>
-            <select name="periodicity"
-                    class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
-              <option value="разовая">Разовая</option>
-              <option value="подписка">Подписка</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-xs text-gray-500 mb-1">Поведение</label>
-            <select name="behavior"
-                    class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
-              <option value="переменная">Переменная</option>
-              <option value="постоянная">Постоянная</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-xs text-gray-500 mb-1">Комментарий</label>
-            <input type="text" name="comment" placeholder="необязательно"
-                   class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-          </div>
-        </div>
-        <div class="mt-3 flex justify-end">
-          <button type="submit"
-                  class="px-5 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">
-            + Добавить
-          </button>
-        </div>
-      </form>
-    </div>
-
-    <!-- Таблица расходов -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-      {% if rows %}
-      <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-          <thead class="bg-gray-50 border-b border-gray-200">
-            <tr>
-              <th class="text-left px-4 py-3 font-semibold text-gray-600">Дата</th>
-              <th class="text-right px-4 py-3 font-semibold text-gray-600">Сумма, ₽</th>
-              <th class="text-left px-4 py-3 font-semibold text-gray-600">Название</th>
-              <th class="text-left px-4 py-3 font-semibold text-gray-600">Статья</th>
-              <th class="text-left px-4 py-3 font-semibold text-gray-600">Периодичность</th>
-              <th class="text-left px-4 py-3 font-semibold text-gray-600">Поведение</th>
-              <th class="text-left px-4 py-3 font-semibold text-gray-600">Инициатор</th>
-              <th class="text-left px-4 py-3 font-semibold text-gray-600">Комментарий</th>
-              <th class="px-4 py-3"></th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-100">
-            {% for row in rows %}
-            <tr class="hover:bg-gray-50 transition-colors">
-              <td class="px-4 py-3 text-gray-700 whitespace-nowrap">
-                {{ row.date.strftime('%d.%m.%Y') if row.date else '—' }}
-              </td>
-              <td class="px-4 py-3 text-right font-mono font-medium text-gray-900 whitespace-nowrap">
-                {{ "{:,.2f}".format(row.amount).replace(",", " ") }}
-              </td>
-              <td class="px-4 py-3 text-gray-800 font-medium">{{ row.title or '—' }}</td>
-              <td class="px-4 py-3">
-                <span class="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full text-xs font-medium">
-                  {{ row.category }}
-                </span>
-              </td>
-              <td class="px-4 py-3">
-                <span class="px-2 py-0.5 rounded-full text-xs font-medium
-                  {% if row.periodicity == 'подписка' %}bg-purple-50 text-purple-700
-                  {% else %}bg-gray-100 text-gray-600{% endif %}">
-                  {{ row.periodicity }}
-                </span>
-              </td>
-              <td class="px-4 py-3">
-                <span class="px-2 py-0.5 rounded-full text-xs font-medium
-                  {% if row.behavior == 'постоянная' %}bg-amber-50 text-amber-700
-                  {% else %}bg-gray-100 text-gray-600{% endif %}">
-                  {{ row.behavior }}
-                </span>
-              </td>
-              <td class="px-4 py-3 text-gray-600">{{ row.initiator }}</td>
-              <td class="px-4 py-3 text-gray-500 max-w-xs truncate">{{ row.comment or '—' }}</td>
-              <td class="px-4 py-3 whitespace-nowrap">
-                <a href="/finance/expenses/{{ row.id }}/edit"
-                   class="text-blue-600 hover:text-blue-800 text-xs mr-3">Изм.</a>
-                <form method="post" action="/finance/expenses/{{ row.id }}/delete"
-                      class="inline"
-                      onsubmit="return confirm('Удалить расход?')">
-                  <button type="submit" class="text-red-500 hover:text-red-700 text-xs">Удалить</button>
-                </form>
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-          <tfoot class="bg-gray-50 border-t-2 border-gray-300">
-            <tr>
-              <td class="px-4 py-3 font-semibold text-gray-700">Итого</td>
-              <td class="px-4 py-3 text-right font-mono font-bold text-gray-900">
-                {{ "{:,.2f}".format(total).replace(",", " ") }}
-              </td>
-              <td colspan="7"></td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
-      {% else %}
-      <div class="text-center py-16 text-gray-400">
-        <div class="text-4xl mb-3">📭</div>
-        <div class="text-sm">Расходов пока нет{% if selected_month %} за этот месяц{% endif %}</div>
-      </div>
+<!-- Заголовок + фильтр по месяцу -->
+<div class="flex items-center justify-between mb-4">
+  <h1 class="text-xl font-bold text-gray-800">💰 Расходы</h1>
+  <div class="flex items-center gap-3">
+    <form method="get" class="flex items-center gap-2">
+      <label class="text-sm text-gray-600">Месяц:</label>
+      <input type="month" name="month" value="{{ selected_month }}"
+             class="border rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+      <button type="submit"
+              class="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">
+        Показать
+      </button>
+      {% if selected_month %}
+      <a href="/finance/expenses" class="text-sm text-gray-500 hover:text-gray-700">✕ Сбросить</a>
       {% endif %}
-    </div>
+    </form>
+    <a href="/finance/pnl"
+       class="px-3 py-1.5 bg-emerald-600 text-white text-sm rounded-lg hover:bg-emerald-700">
+      📊 P&L
+    </a>
+  </div>
+</div>
 
+<!-- Форма добавления расхода -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-5">
+  <div class="text-sm font-semibold text-gray-700 mb-3">Добавить расход</div>
+  <form method="post" action="/finance/expenses/add">
+    <div class="flex flex-wrap gap-2 items-end">
+      <div class="w-32">
+        <label class="block text-xs text-gray-500 mb-1">Дата *</label>
+        <input type="date" name="date" required
+               value="{{ selected_month + '-01' if selected_month else '' }}"
+               class="w-full border rounded-lg px-2 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+      </div>
+      <div class="w-28">
+        <label class="block text-xs text-gray-500 mb-1">Сумма, ₽ *</label>
+        <input type="number" name="amount" required min="0.01" step="0.01" placeholder="0.00"
+               class="w-full border rounded-lg px-2 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+      </div>
+      <div class="w-36">
+        <label class="block text-xs text-gray-500 mb-1">Статья *</label>
+        <select name="category_id" required
+                class="w-full border rounded-lg px-2 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+          <option value="">— выбрать —</option>
+          {% for cat in categories %}
+          <option value="{{ cat.id }}">{{ cat.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="w-28">
+        <label class="block text-xs text-gray-500 mb-1">Инициатор *</label>
+        <select name="initiator_id" required
+                class="w-full border rounded-lg px-2 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+          <option value="">— выбрать —</option>
+          {% for ini in initiators %}
+          <option value="{{ ini.id }}"
+            {% if ini.name == session.username %}selected{% endif %}>
+            {{ ini.name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="flex-1 min-w-36">
+        <label class="block text-xs text-gray-500 mb-1">Название</label>
+        <input type="text" name="title" placeholder="Например: Хостинг Timeweb"
+               class="w-full border rounded-lg px-2 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+      </div>
+      <div class="w-28">
+        <label class="block text-xs text-gray-500 mb-1">Периодичность</label>
+        <select name="periodicity"
+                class="w-full border rounded-lg px-2 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+          <option value="разовая">Разовая</option>
+          <option value="подписка">Подписка</option>
+        </select>
+      </div>
+      <div class="w-28">
+        <label class="block text-xs text-gray-500 mb-1">Поведение</label>
+        <select name="behavior"
+                class="w-full border rounded-lg px-2 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+          <option value="переменная">Переменная</option>
+          <option value="постоянная">Постоянная</option>
+        </select>
+      </div>
+      <div class="w-36">
+        <label class="block text-xs text-gray-500 mb-1">Комментарий</label>
+        <input type="text" name="comment" placeholder="необязательно"
+               class="w-full border rounded-lg px-2 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+      </div>
+      <div>
+        <button type="submit"
+                class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 whitespace-nowrap">
+          + Добавить
+        </button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- Таблица расходов -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
+  {% if rows %}
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="bg-gray-50 border-b border-gray-200">
+        <tr>
+          <th class="text-left px-3 py-3 font-semibold text-gray-600 whitespace-nowrap">Дата</th>
+          <th class="text-right px-3 py-3 font-semibold text-gray-600 whitespace-nowrap">Сумма, ₽</th>
+          <th class="text-left px-3 py-3 font-semibold text-gray-600">Название</th>
+          <th class="text-left px-3 py-3 font-semibold text-gray-600">Статья</th>
+          <th class="text-left px-3 py-3 font-semibold text-gray-600">Период.</th>
+          <th class="text-left px-3 py-3 font-semibold text-gray-600">Поведение</th>
+          <th class="text-left px-3 py-3 font-semibold text-gray-600">Инициатор</th>
+          <th class="text-left px-3 py-3 font-semibold text-gray-600">Комментарий</th>
+          <th class="px-3 py-3"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        {% for row in rows %}
+        <tr class="hover:bg-gray-50 transition-colors">
+          <td class="px-3 py-2.5 text-gray-700 whitespace-nowrap">
+            {{ row.date.strftime('%d.%m.%Y') if row.date else '—' }}
+          </td>
+          <td class="px-3 py-2.5 text-right font-mono font-medium text-gray-900 whitespace-nowrap">
+            {{ "{:,.0f}".format(row.amount).replace(",", " ") }}
+          </td>
+          <td class="px-3 py-2.5 text-gray-800 font-medium max-w-xs truncate">{{ row.title or '—' }}</td>
+          <td class="px-3 py-2.5">
+            <span class="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full text-xs font-medium whitespace-nowrap">
+              {{ row.category }}
+            </span>
+          </td>
+          <td class="px-3 py-2.5">
+            <span class="px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap
+              {% if row.periodicity == 'подписка' %}bg-purple-50 text-purple-700
+              {% else %}bg-gray-100 text-gray-600{% endif %}">
+              {{ row.periodicity }}
+            </span>
+          </td>
+          <td class="px-3 py-2.5">
+            <span class="px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap
+              {% if row.behavior == 'постоянная' %}bg-amber-50 text-amber-700
+              {% else %}bg-gray-100 text-gray-600{% endif %}">
+              {{ row.behavior }}
+            </span>
+          </td>
+          <td class="px-3 py-2.5 text-gray-600 whitespace-nowrap">{{ row.initiator }}</td>
+          <td class="px-3 py-2.5 text-gray-500 max-w-xs truncate">{{ row.comment or '—' }}</td>
+          <td class="px-3 py-2.5 whitespace-nowrap">
+            <a href="/finance/expenses/{{ row.id }}/edit"
+               class="text-blue-600 hover:text-blue-800 text-xs mr-2">Изм.</a>
+            <form method="post" action="/finance/expenses/{{ row.id }}/delete"
+                  class="inline"
+                  onsubmit="return confirm('Удалить расход?')">
+              <button type="submit" class="text-red-500 hover:text-red-700 text-xs">Удалить</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot class="bg-gray-50 border-t-2 border-gray-300">
+        <tr>
+          <td class="px-3 py-2.5 font-semibold text-gray-700">Итого</td>
+          <td class="px-3 py-2.5 text-right font-mono font-bold text-gray-900">
+            {{ "{:,.0f}".format(total).replace(",", " ") }}
+          </td>
+          <td colspan="7"></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+  {% else %}
+  <div class="text-center py-16 text-gray-400">
+    <div class="text-4xl mb-3">📭</div>
+    <div class="text-sm">Расходов пока нет{% if selected_month %} за этот месяц{% endif %}</div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Справочники внизу -->
+<div class="grid grid-cols-2 gap-4">
+
+  <!-- Статьи расходов -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+    <div class="text-sm font-semibold text-gray-700 mb-3">📁 Статьи расходов</div>
+    <div class="flex flex-wrap gap-2 mb-3">
+      {% for cat in categories %}
+      <div class="flex items-center gap-1 bg-gray-100 rounded-lg px-2 py-1 group">
+        <span class="text-sm text-gray-700">{{ cat.name }}</span>
+        <form method="post" action="/finance/categories/{{ cat.id }}/delete"
+              onsubmit="return confirm('Удалить категорию «{{ cat.name }}»?')">
+          <button type="submit"
+                  class="text-gray-300 group-hover:text-red-400 text-xs leading-none hover:text-red-600 transition-colors ml-1">
+            ✕
+          </button>
+        </form>
+      </div>
+      {% endfor %}
+    </div>
+    <form method="post" action="/finance/categories/add" class="flex gap-1">
+      <input type="text" name="name" placeholder="Новая статья" required
+             class="flex-1 border rounded-lg px-2 py-1.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none">
+      <button type="submit"
+              class="px-3 py-1.5 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700">+ Добавить</button>
+    </form>
   </div>
 
-  <!-- ── Правая колонка: справочники ── -->
-  <div class="w-56 flex-shrink-0 space-y-4">
-
-    <!-- Статьи расходов -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-      <div class="text-sm font-semibold text-gray-700 mb-3">📁 Статьи расходов</div>
-      <ul class="space-y-1 mb-3">
-        {% for cat in categories %}
-        <li class="flex items-center justify-between group">
-          <span class="text-sm text-gray-700">{{ cat.name }}</span>
-          <form method="post" action="/finance/categories/{{ cat.id }}/delete"
-                onsubmit="return confirm('Удалить категорию «{{ cat.name }}»?')">
-            <button type="submit"
-                    class="text-gray-300 group-hover:text-red-400 text-xs leading-none hover:text-red-600 transition-colors">
-              ✕
-            </button>
-          </form>
-        </li>
-        {% endfor %}
-      </ul>
-      <form method="post" action="/finance/categories/add" class="flex gap-1">
-        <input type="text" name="name" placeholder="Новая статья" required
-               class="flex-1 border rounded-lg px-2 py-1.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none min-w-0">
-        <button type="submit"
-                class="px-2 py-1.5 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700">+</button>
-      </form>
+  <!-- Инициаторы -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+    <div class="text-sm font-semibold text-gray-700 mb-3">👤 Инициаторы</div>
+    <div class="flex flex-wrap gap-2 mb-3">
+      {% for ini in initiators %}
+      <div class="flex items-center gap-1 bg-gray-100 rounded-lg px-2 py-1 group">
+        <span class="text-sm text-gray-700">{{ ini.name }}</span>
+        <form method="post" action="/finance/initiators/{{ ini.id }}/delete"
+              onsubmit="return confirm('Удалить инициатора «{{ ini.name }}»?')">
+          <button type="submit"
+                  class="text-gray-300 group-hover:text-red-400 text-xs leading-none hover:text-red-600 transition-colors ml-1">
+            ✕
+          </button>
+        </form>
+      </div>
+      {% endfor %}
     </div>
-
-    <!-- Инициаторы -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-      <div class="text-sm font-semibold text-gray-700 mb-3">👤 Инициаторы</div>
-      <ul class="space-y-1 mb-3">
-        {% for ini in initiators %}
-        <li class="flex items-center justify-between group">
-          <span class="text-sm text-gray-700">{{ ini.name }}</span>
-          <form method="post" action="/finance/initiators/{{ ini.id }}/delete"
-                onsubmit="return confirm('Удалить инициатора «{{ ini.name }}»?')">
-            <button type="submit"
-                    class="text-gray-300 group-hover:text-red-400 text-xs leading-none hover:text-red-600 transition-colors">
-              ✕
-            </button>
-          </form>
-        </li>
-        {% endfor %}
-      </ul>
-      <form method="post" action="/finance/initiators/add" class="flex gap-1">
-        <input type="text" name="name" placeholder="Новый" required
-               class="flex-1 border rounded-lg px-2 py-1.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none min-w-0">
-        <button type="submit"
-                class="px-2 py-1.5 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700">+</button>
-      </form>
-    </div>
-
+    <form method="post" action="/finance/initiators/add" class="flex gap-1">
+      <input type="text" name="name" placeholder="Новый инициатор" required
+             class="flex-1 border rounded-lg px-2 py-1.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none">
+      <button type="submit"
+              class="px-3 py-1.5 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700">+ Добавить</button>
+    </form>
   </div>
 
 </div>
+
 {% endblock %}
