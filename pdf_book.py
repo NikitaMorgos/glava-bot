@@ -1,0 +1,285 @@
+# -*- coding: utf-8 -*-
+"""
+Генератор PDF-книги из bio_text.
+
+Использует reportlab для создания книжного PDF формата A5.
+Стиль: тёплый, книжный, аккуратный.
+
+Использование:
+    from pdf_book import generate_book_pdf
+    pdf_bytes = generate_book_pdf(bio_text, character_name="Мария")
+"""
+import io
+import re
+import logging
+
+from reportlab.lib.pagesizes import A5
+from reportlab.lib.units import mm
+from reportlab.lib.colors import HexColor, white, black
+from reportlab.lib.styles import ParagraphStyle
+from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_JUSTIFY
+from reportlab.platypus import (
+    SimpleDocTemplate, Paragraph, Spacer, PageBreak, HRFlowable,
+)
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.platypus.flowables import KeepTogether
+
+logger = logging.getLogger(__name__)
+
+# ── Цвета ──────────────────────────────────────────────────────────────
+CREAM       = HexColor("#FAF6F0")
+INK         = HexColor("#1A1208")
+GOLD        = HexColor("#A8823C")
+MUTED       = HexColor("#7A6B5A")
+LIGHT_LINE  = HexColor("#DDD5C8")
+
+# ── Шрифты ─────────────────────────────────────────────────────────────
+# Используем встроенные шрифты reportlab (не требуют TTF-файлов)
+FONT_SERIF  = "Times-Roman"
+FONT_BOLD   = "Times-Bold"
+FONT_ITALIC = "Times-Italic"
+
+
+def _build_styles() -> dict:
+    base = dict(fontName=FONT_SERIF, textColor=INK, leading=18)
+
+    return {
+        "title": ParagraphStyle(
+            "title",
+            fontName=FONT_BOLD,
+            fontSize=26,
+            textColor=INK,
+            alignment=TA_CENTER,
+            leading=32,
+            spaceAfter=6 * mm,
+        ),
+        "subtitle": ParagraphStyle(
+            "subtitle",
+            fontName=FONT_ITALIC,
+            fontSize=13,
+            textColor=MUTED,
+            alignment=TA_CENTER,
+            leading=18,
+            spaceAfter=4 * mm,
+        ),
+        "cover_label": ParagraphStyle(
+            "cover_label",
+            fontName=FONT_SERIF,
+            fontSize=10,
+            textColor=MUTED,
+            alignment=TA_CENTER,
+            leading=14,
+            spaceAfter=2 * mm,
+        ),
+        "chapter_heading": ParagraphStyle(
+            "chapter_heading",
+            fontName=FONT_BOLD,
+            fontSize=14,
+            textColor=INK,
+            alignment=TA_LEFT,
+            leading=20,
+            spaceBefore=8 * mm,
+            spaceAfter=4 * mm,
+        ),
+        "section_heading": ParagraphStyle(
+            "section_heading",
+            fontName=FONT_BOLD,
+            fontSize=11,
+            textColor=GOLD,
+            alignment=TA_LEFT,
+            leading=16,
+            spaceBefore=5 * mm,
+            spaceAfter=2 * mm,
+        ),
+        "body": ParagraphStyle(
+            "body",
+            fontName=FONT_SERIF,
+            fontSize=10,
+            textColor=INK,
+            alignment=TA_JUSTIFY,
+            leading=17,
+            spaceAfter=3 * mm,
+            firstLineIndent=5 * mm,
+        ),
+        "body_first": ParagraphStyle(
+            "body_first",
+            fontName=FONT_SERIF,
+            fontSize=10,
+            textColor=INK,
+            alignment=TA_JUSTIFY,
+            leading=17,
+            spaceAfter=3 * mm,
+        ),
+        "footer_text": ParagraphStyle(
+            "footer_text",
+            fontName=FONT_SERIF,
+            fontSize=8,
+            textColor=MUTED,
+            alignment=TA_CENTER,
+            leading=12,
+        ),
+    }
+
+
+def _is_chapter_heading(line: str) -> bool:
+    """Определяет, является ли строка заголовком главы."""
+    stripped = line.strip()
+    if not stripped:
+        return False
+    patterns = [
+        r"^(Глава|Chapter)\s+\d+",
+        r"^\d+\.\s+[А-ЯA-Z]",
+        r"^[IVX]+\.\s+",
+        r"^#{1,3}\s+",
+        r"^[А-ЯA-Z][А-ЯA-Z\s]{4,40}$",  # Строка полностью заглавными (название главы)
+    ]
+    for p in patterns:
+        if re.match(p, stripped):
+            return True
+    # Короткая строка без точки в конце, начинается с заглавной
+    if len(stripped) < 60 and stripped[0].isupper() and not stripped.endswith(('.', ',', ';', ':')):
+        words = stripped.split()
+        if len(words) <= 6:
+            return True
+    return False
+
+
+def _is_section_heading(line: str) -> bool:
+    """Определяет подзаголовок секции (курсивный раздел)."""
+    stripped = line.strip()
+    if not stripped or len(stripped) > 80:
+        return False
+    if stripped.startswith('**') and stripped.endswith('**'):
+        return True
+    if stripped.startswith('##'):
+        return True
+    return False
+
+
+def _clean(text: str) -> str:
+    """Очищает markdown-разметку и лишние символы."""
+    text = re.sub(r'\*\*(.*?)\*\*', r'\1', text)
+    text = re.sub(r'\*(.*?)\*', r'\1', text)
+    text = re.sub(r'^#{1,6}\s*', '', text, flags=re.MULTILINE)
+    text = text.replace('—', '\u2014').replace('–', '\u2013')
+    text = text.replace('"', '\u00ab').replace('"', '\u00bb')
+    text = text.replace("'", '\u2019')
+    return text.strip()
+
+
+def _add_page_border(canvas, doc):
+    """Рисует тонкую рамку и колонтитул на каждой странице."""
+    canvas.saveState()
+    w, h = A5
+    margin = 10 * mm
+
+    # Нижний колонтитул
+    canvas.setFont(FONT_SERIF, 7)
+    canvas.setFillColor(MUTED)
+    canvas.drawCentredString(w / 2, margin - 4 * mm, "Глава — семейная биография · glava.family")
+
+    # Номер страницы
+    page_num = canvas.getPageNumber()
+    if page_num > 1:
+        canvas.drawCentredString(w / 2, margin - 8 * mm, str(page_num))
+
+    canvas.restoreState()
+
+
+def generate_book_pdf(
+    bio_text: str,
+    character_name: str = "Герой книги",
+    subtitle: str = "Семейная биография",
+) -> bytes:
+    """
+    Генерирует PDF-книгу из bio_text.
+
+    Returns:
+        bytes: содержимое PDF-файла
+    """
+    buf = io.BytesIO()
+    page_w, page_h = A5
+
+    doc = SimpleDocTemplate(
+        buf,
+        pagesize=A5,
+        leftMargin=18 * mm,
+        rightMargin=15 * mm,
+        topMargin=18 * mm,
+        bottomMargin=18 * mm,
+        title=f"{character_name} — семейная биография",
+        author="Глава · glava.family",
+        subject="Семейная биография",
+    )
+
+    styles = _build_styles()
+    story = []
+
+    # ── Обложка (title page) ───────────────────────────────────────────
+    story.append(Spacer(1, 25 * mm))
+    story.append(Paragraph("Глава", styles["cover_label"]))
+    story.append(Spacer(1, 6 * mm))
+    story.append(HRFlowable(width="60%", thickness=0.5, color=GOLD, hAlign="CENTER"))
+    story.append(Spacer(1, 8 * mm))
+    story.append(Paragraph(_clean(character_name), styles["title"]))
+    story.append(Spacer(1, 4 * mm))
+    story.append(Paragraph(subtitle, styles["subtitle"]))
+    story.append(Spacer(1, 8 * mm))
+    story.append(HRFlowable(width="60%", thickness=0.5, color=GOLD, hAlign="CENTER"))
+    story.append(Spacer(1, 20 * mm))
+    story.append(Paragraph("glava.family", styles["cover_label"]))
+    story.append(PageBreak())
+
+    # ── Контент ────────────────────────────────────────────────────────
+    lines = bio_text.strip().split('\n')
+    first_para_in_chapter = True
+
+    for line in lines:
+        line = line.rstrip()
+
+        if not line:
+            first_para_in_chapter = False
+            continue
+
+        if _is_section_heading(line):
+            clean = _clean(line)
+            story.append(Paragraph(clean, styles["section_heading"]))
+            first_para_in_chapter = True
+            continue
+
+        if _is_chapter_heading(line):
+            clean = _clean(line)
+            story.append(Paragraph(clean, styles["chapter_heading"]))
+            story.append(HRFlowable(width="30%", thickness=0.3, color=LIGHT_LINE, hAlign="LEFT"))
+            story.append(Spacer(1, 2 * mm))
+            first_para_in_chapter = True
+            continue
+
+        # Обычный текстовый параграф
+        clean = _clean(line)
+        if not clean:
+            continue
+
+        style = styles["body_first"] if first_para_in_chapter else styles["body"]
+        story.append(Paragraph(clean, style))
+        first_para_in_chapter = False
+
+    # ── Финальная страница ─────────────────────────────────────────────
+    story.append(PageBreak())
+    story.append(Spacer(1, 40 * mm))
+    story.append(HRFlowable(width="40%", thickness=0.5, color=GOLD, hAlign="CENTER"))
+    story.append(Spacer(1, 6 * mm))
+    story.append(Paragraph("Создано с любовью", styles["subtitle"]))
+    story.append(Paragraph("glava.family", styles["cover_label"]))
+
+    try:
+        doc.build(story, onFirstPage=_add_page_border, onLaterPages=_add_page_border)
+    except Exception as e:
+        logger.error("pdf_book: ошибка сборки PDF: %s", e)
+        raise
+
+    pdf_bytes = buf.getvalue()
+    buf.close()
+    logger.info("pdf_book: сгенерирован PDF %d байт для '%s'", len(pdf_bytes), character_name)
+    return pdf_bytes

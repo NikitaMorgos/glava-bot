@@ -613,7 +613,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ 'https://api.telegram.org/bot' + $('Webhook').item.json.body.bot_token + '/sendMessage' }}",
+        "url": "http://127.0.0.1:5001/api/send-book-pdf",
         "sendHeaders": true,
         "headerParameters": { "parameters": [
           { "name": "Content-Type", "value": "application/json" }
@@ -621,11 +621,11 @@
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "application/json",
-        "body": "={{ JSON.stringify({ chat_id: $('Webhook').item.json.body.telegram_id, text: $('Wrap for Producer').item.json.bio_text.slice(0, 4000) }) }}",
-        "options": { "timeout": 30000 }
+        "body": "={{ JSON.stringify({ telegram_id: $('Webhook').item.json.body.telegram_id, bio_text: $('Wrap for Producer').item.json.bio_text, character_name: $('Webhook').item.json.body.character_name || 'Герой книги', draft_id: $('Webhook').item.json.body.draft_id || 0 }) }}",
+        "options": { "timeout": 120000 }
       },
       "id": "node-send-bio",
-      "name": "Send Bio to Telegram",
+      "name": "Send Bio PDF to Telegram",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
       "position": [8750, 450]
