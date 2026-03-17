@@ -1,46 +1,402 @@
 {% extends "base.html" %}
-{% block title %}Сценарий бота — GLAVA Admin{% endblock %}
+{% block title %}Карта флоу бота — GLAVA{% endblock %}
+
 {% block content %}
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Unbounded:wght@300;400;600;700&family=Inter:wght@300;400;500&display=swap');
+  :root {
+    --bg:#0d0d0f;--surface:#16161a;--surface2:#1e1e24;--border:#2a2a35;
+    --accent:#c8a96e;--accent2:#7c6bd4;--green:#4ecb71;--red:#e05757;
+    --text:#f0ede8;--muted:#6b6878;--wait:#e8a44a;
+  }
+  #flow-root { background:var(--bg); color:var(--text); font-family:'Inter',sans-serif;
+    padding:32px 40px 60px; border-radius:16px; overflow-x:auto; min-height:400px; }
+  .flow-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+  .flow-title { font-family:'Unbounded',sans-serif; font-size:18px; font-weight:600; color:var(--accent); }
+  .flow-meta { font-size:11px; color:var(--muted); display:flex; align-items:center; gap:12px; }
+  .refresh-btn { background:rgba(200,169,110,0.12); border:1px solid rgba(200,169,110,0.3);
+    color:var(--accent); font-size:11px; padding:5px 14px; border-radius:20px; cursor:pointer;
+    font-family:'Inter',sans-serif; transition:all .2s; }
+  .refresh-btn:hover { background:rgba(200,169,110,0.22); }
+  .legend { display:flex; gap:16px; flex-wrap:wrap; margin-bottom:36px; padding:12px 16px;
+    background:var(--surface); border-radius:10px; border:1px solid var(--border); }
+  .legend-item { display:flex; align-items:center; gap:7px; font-size:11px; color:var(--muted); }
+  .legend-dot { width:10px; height:10px; border-radius:3px; flex-shrink:0; }
+  .flow { display:flex; flex-direction:column; gap:0; min-width:860px; }
+  .section-label { font-family:'Unbounded',sans-serif; font-size:9px; font-weight:600;
+    text-transform:uppercase; letter-spacing:2px; color:var(--muted); margin:28px 0 12px;
+    display:flex; align-items:center; gap:12px; }
+  .section-label::after { content:''; flex:1; height:1px; background:var(--border); }
+  .row { display:flex; align-items:flex-start; gap:0; position:relative; flex-wrap:wrap; }
+  .screen { background:var(--surface); border:1px solid var(--border); border-radius:14px;
+    padding:14px 16px; min-width:190px; max-width:230px; flex-shrink:0; transition:border-color .2s; }
+  .screen:hover { border-color:var(--accent); }
+  .screen.entry { border-color:var(--accent); background:rgba(200,169,110,0.05); }
+  .screen-id { font-family:'Unbounded',sans-serif; font-size:9px; font-weight:600;
+    color:var(--muted); letter-spacing:1px; margin-bottom:6px; }
+  .screen-title { font-size:12px; font-weight:500; color:var(--text); margin-bottom:8px; line-height:1.4; }
+  .screen-msg { font-size:10px; color:#888; line-height:1.5; margin-bottom:8px;
+    max-height:80px; overflow:hidden; cursor:pointer; position:relative; }
+  .screen-msg.expanded { max-height:none; }
+  .screen-msg::after { content:''; position:absolute; bottom:0; left:0; right:0;
+    height:20px; background:linear-gradient(transparent,var(--surface)); pointer-events:none; }
+  .screen-msg.expanded::after { display:none; }
+  .msg-loading { color:var(--muted); font-style:italic; font-size:10px; }
+  .btns { display:flex; flex-direction:column; gap:3px; }
+  .btn { font-size:10px; padding:4px 9px; border-radius:7px; border:1px solid var(--border);
+    background:var(--surface2); color:var(--text); line-height:1.3; }
+  .btn.primary { background:rgba(200,169,110,0.12); border-color:rgba(200,169,110,0.4); color:var(--accent); }
+  .btn.danger { background:rgba(224,87,87,0.08); border-color:rgba(224,87,87,0.3); color:var(--red); }
+  .btn.success { background:rgba(78,203,113,0.1); border-color:rgba(78,203,113,0.35); color:var(--green); }
+  .btn.wait { background:rgba(232,164,74,0.08); border-color:rgba(232,164,74,0.3); color:var(--wait); }
+  .badge { display:inline-block; font-size:9px; font-weight:600; padding:2px 7px;
+    border-radius:20px; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:6px; }
+  .badge-pre { background:rgba(232,164,74,0.15); color:var(--wait); }
+  .badge-post { background:rgba(78,203,113,0.12); color:var(--green); }
+  .badge-ai { background:rgba(124,107,212,0.15); color:var(--accent2); }
+  .badge-wait { background:rgba(232,164,74,0.12); color:var(--wait); }
+  .badge-err { background:rgba(224,87,87,0.12); color:var(--red); }
+  .badge-service { background:rgba(200,169,110,0.1); color:var(--accent); }
+  .arrow-r { display:flex; align-items:center; padding:0 8px; color:var(--muted);
+    font-size:14px; flex-shrink:0; align-self:center; margin-top:-18px; }
+  .connector { display:flex; align-items:center; gap:6px; margin:0 6px; align-self:center; margin-top:-18px; }
+  .connector-line { height:1px; width:20px; background:var(--border); }
+  .fork-wrapper { display:flex; flex-direction:column; gap:0; }
+  .fork-row { display:flex; align-items:flex-start; gap:0; margin-bottom:10px; }
+  .fork-label-wrap { display:flex; align-items:center; gap:6px; margin:0 8px; align-self:center; }
+  .fork-label { font-size:9px; color:var(--muted); background:var(--surface2);
+    border:1px solid var(--border); padding:2px 7px; border-radius:20px; white-space:nowrap; }
+  .paywall-divider { margin:28px 0; display:flex; align-items:center; gap:14px; }
+  .paywall-line { flex:1; height:1px; background:linear-gradient(to right,transparent,var(--green),transparent); opacity:0.5; }
+  .paywall-badge { font-family:'Unbounded',sans-serif; font-size:9px; font-weight:600;
+    letter-spacing:1.5px; color:var(--green); padding:4px 14px;
+    border:1px solid rgba(78,203,113,0.3); border-radius:20px; background:rgba(78,203,113,0.07); }
+  .note { font-size:10px; border-radius:8px; padding:7px 12px; margin-top:10px;
+    display:flex; align-items:center; gap:8px; max-width:620px; }
+  .note-warn { color:var(--wait); background:rgba(232,164,74,0.08); border:1px solid rgba(232,164,74,0.2); }
+  .note-info { color:var(--accent2); background:rgba(124,107,212,0.08); border:1px solid rgba(124,107,212,0.2); }
+  .edit-link { display:inline-block; margin-top:6px; font-size:9px; color:var(--accent2);
+    text-decoration:none; opacity:0.6; }
+  .edit-link:hover { opacity:1; }
+</style>
 
-<div class="flex items-center gap-3 mb-6">
-  <a href="/dasha/bot_messages" class="text-gray-400 hover:text-gray-700">← Сообщения бота</a>
-  <h1 class="text-2xl font-bold text-gray-900">📊 Сценарий бота</h1>
-</div>
+<div id="flow-root">
+  <div class="flow-header">
+    <div class="flow-title">Glava — карта флоу бота</div>
+    <div class="flow-meta">
+      <span id="updated-at">загрузка…</span>
+      <button class="refresh-btn" onclick="loadMessages()">↺ Обновить тексты</button>
+      <a href="/dasha/bot_messages" style="color:var(--accent2);font-size:11px;text-decoration:none;">✏ Редактировать тексты →</a>
+    </div>
+  </div>
 
-<p class="text-sm text-gray-500 mb-6">
-  Порядок шагов и переходов. Тексты сообщений редактируются в разделе «Сообщения бота».
-  Изменение сценария (новые шаги, условия) требует участия разработчика.
-</p>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:rgba(232,164,74,0.7)"></div>До оплаты</div>
+    <div class="legend-item"><div class="legend-dot" style="background:rgba(78,203,113,0.7)"></div>После оплаты</div>
+    <div class="legend-item"><div class="legend-dot" style="background:rgba(124,107,212,0.7)"></div>Онлайн-встреча</div>
+    <div class="legend-item"><div class="legend-dot" style="background:rgba(232,164,74,0.5)"></div>Ожидание</div>
+    <div class="legend-item"><div class="legend-dot" style="background:rgba(224,87,87,0.6)"></div>Ошибка</div>
+    <div class="legend-item" style="margin-left:auto;">
+      <span style="color:var(--muted);">Клик по тексту — развернуть · </span>
+      <span style="color:var(--accent2);">↗ ссылка — редактировать</span>
+    </div>
+  </div>
 
-<div class="bg-white rounded-xl shadow-sm p-6 overflow-x-auto">
-  <pre class="text-xs font-mono text-gray-700 whitespace-pre">                                    ┌─────────────────┐
-                                    │   /start        │
-                                    │   Приветствие   │
-                                    └────────┬────────┘
-                                             │
-              ┌──────────────────────────────┼──────────────────────────────┐
-              ▼                              ▼                              ▼
-     ┌────────────────┐            ┌────────────────┐            ┌────────────────┐
-     │ Пример книги   │            │ Стоимость      │            │ Начать         │
-     └───────┬────────┘            └───────┬────────┘            └────────┬───────┘
-            │ ← Назад                      │ ← Назад                       │
-            └─────────────────────────────┴───────────────────────────────┘
-                                                          │
-                                    ┌─────────────────────┼─────────────────────┐
-                                    ▼                     ▼                     ▼
-                           [черновик]           [ожидание оплаты]         [оплачено]
-                                    │                     │                     │
-                                    ▼                     ▼                     │
-                           Персонажи → Email      Проверить оплату              │
-                                    │                     │                     │
-                                    ▼                     └─────────────────────┘
-                           Итого → Оплата
-                                    │
-                                    ▼
-                           Голосовые / Фото / /list / /cabinet</pre>
-</div>
+  <div class="flow">
 
-<div class="mt-6 text-sm text-gray-500">
-  Полное описание: <code>docs/USER_SCENARIOS.md</code>
-</div>
+    <!-- ══════ 0. ENTRY ══════ -->
+    <div class="section-label">0 — Entry · /start</div>
+    <div class="row">
+      <div class="screen entry">
+        <div class="screen-id">0.1 · /start</div>
+        <div class="screen-title">Точка входа</div>
+        <div class="screen-msg" style="max-height:none;cursor:default;">Проверка состояния пользователя</div>
+      </div>
+      <div class="connector">
+        <div class="connector-line"></div>
+        <div class="fork-wrapper">
+          <div class="fork-row">
+            <div class="fork-label-wrap"><div class="fork-label" style="color:var(--green);border-color:rgba(78,203,113,0.3)">есть оплаченный проект →</div></div>
+            <div class="screen"><div class="screen-id">POST-PAY</div><div class="screen-title">Личный кабинет</div></div>
+          </div>
+          <div class="fork-row">
+            <div class="fork-label-wrap"><div class="fork-label">есть черновик →</div></div>
+            <div class="screen"><div class="screen-id">→ 2.1</div><div class="screen-title">Продолжить</div><div class="screen-msg" data-key="resume_draft"></div></div>
+          </div>
+          <div class="fork-row">
+            <div class="fork-label-wrap"><div class="fork-label">оплата в процессе →</div></div>
+            <div class="screen"><div class="screen-id">→ 2.2</div><div class="screen-title">Оплата в процессе</div><div class="screen-msg" data-key="resume_payment"></div></div>
+          </div>
+          <div class="fork-row" style="margin-bottom:0">
+            <div class="fork-label-wrap"><div class="fork-label">новый пользователь →</div></div>
+            <div class="screen"><div class="screen-id">→ 1.1</div><div class="screen-title">Интро</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════ 1. ИНТРО ══════ -->
+    <div class="section-label">1 — Интро · Pre-pay</div>
+    <div class="row">
+      <div class="screen">
+        <div class="badge badge-pre">Pre-pay</div>
+        <div class="screen-id">1.1 · intro_main</div>
+        <div class="screen-title">Главный экран</div>
+        <div class="screen-msg" data-key="intro_main"></div>
+        <a class="edit-link" href="/dasha/bot_messages/intro_main" target="_blank">↗ редактировать</a>
+        <div class="btns">
+          <div class="btn">📖 Посмотреть пример → 1.2</div>
+          <div class="btn">💰 Узнать стоимость → 1.3</div>
+          <div class="btn primary">🚀 Начать → 2.1</div>
+        </div>
+      </div>
+      <div class="arrow-r">→</div>
+      <div class="screen">
+        <div class="badge badge-pre">Pre-pay</div>
+        <div class="screen-id">1.2 · intro_example</div>
+        <div class="screen-title">Пример книги</div>
+        <div class="screen-msg" data-key="intro_example"></div>
+        <a class="edit-link" href="/dasha/bot_messages/intro_example" target="_blank">↗ редактировать</a>
+        <div class="btns">
+          <div class="btn primary">Создать свою книгу → 2.1</div>
+          <div class="btn">← Назад → 1.1</div>
+        </div>
+      </div>
+      <div class="arrow-r">→</div>
+      <div class="screen">
+        <div class="badge badge-pre">Pre-pay</div>
+        <div class="screen-id">1.3 · intro_price</div>
+        <div class="screen-title">Стоимость</div>
+        <div class="screen-msg" data-key="intro_price"></div>
+        <a class="edit-link" href="/dasha/bot_messages/intro_price" target="_blank">↗ редактировать</a>
+        <div class="btns">
+          <div class="btn primary">Начать создание → 2.1</div>
+          <div class="btn">← Назад → 1.1</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════ 2. ПЕРСОНАЖИ ══════ -->
+    <div class="section-label">2 — Персонажи · Pre-pay</div>
+    <div class="row">
+      <div class="screen">
+        <div class="badge badge-pre">Pre-pay</div>
+        <div class="screen-id">2.1 · config_characters</div>
+        <div class="screen-title">Добавить персонажа</div>
+        <div class="screen-msg" data-key="config_characters"></div>
+        <a class="edit-link" href="/dasha/bot_messages/config_characters" target="_blank">↗ редактировать</a>
+        <div class="btns">
+          <div class="btn">➕ Добавить персонажа</div>
+          <div class="btn primary">Продолжить →</div>
+          <div class="btn">✏ Изменить список</div>
+        </div>
+      </div>
+      <div class="arrow-r">→</div>
+      <div class="screen">
+        <div class="badge badge-pre">Pre-pay</div>
+        <div class="screen-id">2.2 · config_characters_list</div>
+        <div class="screen-title">Список персонажей</div>
+        <div class="screen-msg" data-key="config_characters_list"></div>
+        <a class="edit-link" href="/dasha/bot_messages/config_characters_list" target="_blank">↗ редактировать</a>
+        <div class="btns">
+          <div class="btn">➕ Добавить ещё → 2.1</div>
+          <div class="btn danger">🗑 Удалить персонажа</div>
+          <div class="btn primary">Продолжить → 3.1</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════ 3. EMAIL ══════ -->
+    <div class="section-label">3 — Email</div>
+    <div class="row">
+      <div class="screen">
+        <div class="badge badge-pre">Pre-pay</div>
+        <div class="screen-id">3.1 · email_input</div>
+        <div class="screen-title">Ввод email</div>
+        <div class="screen-msg" data-key="email_input"></div>
+        <a class="edit-link" href="/dasha/bot_messages/email_input" target="_blank">↗ редактировать</a>
+        <div class="btns">
+          <div class="btn" style="color:var(--muted)">Ввод: email [текст]</div>
+          <div class="btn primary">Валидный email → 4.1</div>
+          <div class="btn">← Назад → 2.2</div>
+        </div>
+      </div>
+      <div class="connector">
+        <div class="connector-line"></div>
+        <div class="fork-label" style="color:var(--red);border-color:rgba(224,87,87,0.25)">невалидный → E.1</div>
+      </div>
+      <div class="screen" style="border-color:rgba(224,87,87,0.3)">
+        <div class="badge badge-err">Ошибка</div>
+        <div class="screen-id">E.1 · email_error</div>
+        <div class="screen-title">Неверный email</div>
+        <div class="screen-msg" data-key="email_error"></div>
+        <a class="edit-link" href="/dasha/bot_messages/email_error" target="_blank">↗ редактировать</a>
+        <div class="btns">
+          <div class="btn">Ввести заново → 3.1</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════ 4. ИТОГ → ОПЛАТА ══════ -->
+    <div class="section-label">4 — Итог заказа → Оплата</div>
+    <div class="row">
+      <div class="screen">
+        <div class="badge badge-pre">Pre-pay</div>
+        <div class="screen-id">4.1 · order_summary</div>
+        <div class="screen-title">Итог заказа</div>
+        <div class="screen-msg" data-key="order_summary"></div>
+        <a class="edit-link" href="/dasha/bot_messages/order_summary" target="_blank">↗ редактировать</a>
+        <div class="btns">
+          <div class="btn primary">💳 Перейти к оплате → 4.2</div>
+          <div class="btn">✏ Изменить → 2.2</div>
+          <div class="btn">← Назад → 3.1</div>
+        </div>
+      </div>
+      <div class="arrow-r">→</div>
+      <div class="screen">
+        <div class="badge badge-pre">Pre-pay</div>
+        <div class="screen-id">4.2 · payment_init</div>
+        <div class="screen-title">Ссылка на оплату</div>
+        <div class="screen-msg" data-key="payment_init"></div>
+        <a class="edit-link" href="/dasha/bot_messages/payment_init" target="_blank">↗ редактировать</a>
+        <div class="btns">
+          <div class="btn primary">Открыть оплату [url]</div>
+          <div class="btn">Проверить оплату</div>
+          <div class="btn">🔄 Начать новый заказ</div>
+          <div class="btn">← Назад → 4.1</div>
+        </div>
+      </div>
+      <div class="arrow-r">→</div>
+      <div class="screen">
+        <div class="badge badge-wait">Ожидание</div>
+        <div class="screen-id">4.3 · payment_wait</div>
+        <div class="screen-title">Ожидание оплаты</div>
+        <div class="screen-msg" data-key="payment_wait"></div>
+        <a class="edit-link" href="/dasha/bot_messages/payment_wait" target="_blank">↗ редактировать</a>
+        <div class="btns">
+          <div class="btn">✅ Проверить вручную</div>
+        </div>
+      </div>
+      <div class="connector">
+        <div class="connector-line"></div>
+        <div class="fork-wrapper">
+          <div class="fork-row" style="margin-bottom:4px">
+            <div class="fork-label-wrap"><div class="fork-label" style="color:var(--green);border-color:rgba(78,203,113,0.3)">✅ оплата прошла → POST-PAY</div></div>
+          </div>
+          <div class="fork-row" style="margin-bottom:0">
+            <div class="fork-label-wrap"><div class="fork-label" style="color:var(--wait)">ещё не прошла →</div></div>
+            <div class="screen"><div class="screen-id">payment_still_pending</div><div class="screen-msg" data-key="payment_still_pending"></div><a class="edit-link" href="/dasha/bot_messages/payment_still_pending" target="_blank">↗</a></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="paywall-divider">
+      <div class="paywall-line"></div>
+      <div class="paywall-badge">✅ ОПЛАТА ПРОШЛА</div>
+      <div class="paywall-line"></div>
+    </div>
+
+    <!-- ══════ ЗАБЛОКИРОВАНО ══════ -->
+    <div class="section-label">— Блокировка · до оплаты файлы/фото</div>
+    <div class="row">
+      <div class="screen" style="border-color:rgba(224,87,87,0.3)">
+        <div class="badge badge-err">Блок</div>
+        <div class="screen-id">blocked_media</div>
+        <div class="screen-title">Блокировка до оплаты</div>
+        <div class="screen-msg" data-key="blocked_media"></div>
+        <a class="edit-link" href="/dasha/bot_messages/blocked_media" target="_blank">↗ редактировать</a>
+        <div class="btns">
+          <div class="btn primary">Начать → 1.1</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════ ОНЛАЙН ВСТРЕЧА ══════ -->
+    <div class="section-label">— Онлайн-встреча · /online</div>
+    <div class="row">
+      <div class="screen">
+        <div class="badge" style="background:rgba(124,107,212,0.15);color:var(--accent2);">Online</div>
+        <div class="screen-id">online · intro</div>
+        <div class="screen-title">Запись встречи</div>
+        <div class="screen-msg" data-key="online_meeting_intro"></div>
+        <a class="edit-link" href="/dasha/bot_messages/online_meeting_intro" target="_blank">↗ редактировать</a>
+        <div class="btns">
+          <div class="btn">🔗 Получить ссылку (Телемост)</div>
+          <div class="btn" style="color:var(--muted)">Ввод: ссылка на встречу</div>
+        </div>
+      </div>
+      <div class="arrow-r">→</div>
+      <div class="screen">
+        <div class="badge" style="background:rgba(124,107,212,0.15);color:var(--accent2);">Online</div>
+        <div class="screen-id">online · link_sent</div>
+        <div class="screen-title">Бот подключается…</div>
+        <div class="screen-msg" data-key="online_meeting_link_sent"></div>
+        <a class="edit-link" href="/dasha/bot_messages/online_meeting_link_sent" target="_blank">↗ редактировать</a>
+      </div>
+      <div class="arrow-r">→</div>
+      <div class="screen">
+        <div class="badge" style="background:rgba(124,107,212,0.15);color:var(--accent2);">Online</div>
+        <div class="screen-id">online · telemost</div>
+        <div class="screen-title">Ссылка Телемост</div>
+        <div class="screen-msg" data-key="online_meeting_telemost_sent"></div>
+        <a class="edit-link" href="/dasha/bot_messages/online_meeting_telemost_sent" target="_blank">↗ редактировать</a>
+      </div>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <div class="screen" style="border-color:rgba(224,87,87,0.3)">
+        <div class="badge badge-err">Ошибка</div>
+        <div class="screen-id">online · bad_link</div>
+        <div class="screen-title">Неверная ссылка</div>
+        <div class="screen-msg" data-key="online_meeting_bad_link"></div>
+        <a class="edit-link" href="/dasha/bot_messages/online_meeting_bad_link" target="_blank">↗ редактировать</a>
+      </div>
+      <div class="arrow-r" style="color:transparent">→</div>
+      <div class="screen" style="border-color:rgba(224,87,87,0.3)">
+        <div class="badge badge-err">Ошибка</div>
+        <div class="screen-id">online · error</div>
+        <div class="screen-title">Ошибка записи</div>
+        <div class="screen-msg" data-key="online_meeting_error"></div>
+        <a class="edit-link" href="/dasha/bot_messages/online_meeting_error" target="_blank">↗ редактировать</a>
+      </div>
+    </div>
+
+  </div><!-- /flow -->
+</div><!-- /flow-root -->
+
+<script>
+async function loadMessages() {
+  const btn = document.querySelector('.refresh-btn');
+  btn.textContent = '↺ Загрузка…';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch('/dasha/bot_messages_json');
+    const data = await res.json();
+
+    document.querySelectorAll('[data-key]').forEach(el => {
+      const key = el.dataset.key;
+      const text = data[key] || '';
+      el.textContent = text ? text : '(текст не задан)';
+      if (!text) el.style.color = 'var(--muted)';
+      else el.style.color = '';
+
+      // Клик — раскрыть / свернуть
+      el.onclick = () => el.classList.toggle('expanded');
+    });
+
+    const now = new Date();
+    document.getElementById('updated-at').textContent =
+      'обновлено: ' + now.toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+  } catch(e) {
+    document.getElementById('updated-at').textContent = 'ошибка загрузки';
+  }
+
+  btn.textContent = '↺ Обновить тексты';
+  btn.disabled = false;
+}
+
+// Загружаем при открытии страницы
+loadMessages();
+</script>
 {% endblock %}

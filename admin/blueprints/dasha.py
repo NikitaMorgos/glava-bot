@@ -105,8 +105,18 @@ def bot_messages():
 @bp.route("/bot_flow")
 @role_required("dev", "dasha", "lena")
 def bot_flow():
-    """Схема сценария бота для просмотра."""
+    """Живая карта флоу бота."""
     return render_template("dasha/bot_flow.html")
+
+
+@bp.route("/bot_messages_json")
+@role_required("dev", "dasha", "lena")
+def bot_messages_json():
+    """JSON со всеми текстами бота для живой карты флоу."""
+    from flask import jsonify
+    rows = dba.get_bot_messages()
+    data = {r["role"].replace("bot_", ""): r.get("prompt_text", "") for r in rows}
+    return jsonify(data)
 
 
 @bp.route("/bot_messages/<key>", methods=["GET", "POST"])
