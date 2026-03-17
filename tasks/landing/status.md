@@ -20,6 +20,7 @@
 | 2.0 | 15.03.2026 | Дизайн-апгрейд: масштаб (1280px), типографика, контраст, trust-маркеры |
 | 3.0 | 15.03.2026 | UX-апгрейд: desktop nav, secondary CTA, FAQ reorder, mid-CTA, hero без заглушки книги |
 | 4.0 | 17.03.2026 | **Новый дизайн** (Instrument Serif + Work Sans, тёмная тема, hero с фото). Деплой на glava.family. ТГ-канал в футере. Юридические документы. |
+| 4.1 | 17.03.2026 | Фавиконки: `favicon.ico` (16/32/48px ICO), `favicon-32.png`, `favicon-16.png`, `apple-touch-icon.png`. Теги во всех страницах. |
 
 ---
 
@@ -46,6 +47,11 @@
 | `landing/consent.html` | Согласие на обработку ПД |
 | `landing/policy.html` | Политика обработки ПД |
 | `scripts/gen_legal_pages.py` | Скрипт генерации юридических страниц из DOCX |
+| `landing/assets/favicon.ico` | Фавиконка ICO (16/32/48px) |
+| `landing/assets/favicon-32.png` | Фавиконка PNG 32×32 |
+| `landing/assets/favicon-16.png` | Фавиконка PNG 16×16 |
+| `landing/assets/apple-touch-icon.png` | Иконка для iOS |
+| `scripts/copy_favicons.py` | Скрипт копирования и конвертации фавиконок |
 
 ---
 

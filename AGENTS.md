@@ -122,7 +122,7 @@ python scripts/run_diarized_compare.py
 | **tasks/admin-panel/docs/ARCHITECTURE.md** | Схема admin-панели: роли, маршруты, таблицы БД, n8n интеграция. |
 | **tasks/admin-panel/plan.md** | Детальный план задачи Admin Panel + n8n. |
 | **tasks/landing/plan.md** | План задачи лендинга glava.family: фазы, блоки, дизайн-система, Nginx-конфиг. |
-| **tasks/landing/status.md** | Текущий статус лендинга: v4.0 задеплоен (2026-03-17). Новый дизайн (ZIP → `landing/`), ТГ-канал `t.me/glava_book` в футере, юридические страницы `oferta.html`, `consent.html`, `policy.html`. Деплой: `bash deploy/deploy-landing.sh`. |
+| **tasks/landing/status.md** | Текущий статус лендинга: v4.1 задеплоен (2026-03-17). Новый дизайн (ZIP → `landing/`), ТГ-канал `t.me/glava_book` в футере, юридические страницы, фавиконки (ICO + PNG 16/32 + apple-touch-icon). Деплой: `bash deploy/deploy-landing.sh`. |
 | **tasks/landing/docs/DESIGN_BRIEF.md** | Дизайн-бриф: палитра, шрифты, описание всех блоков, что нужно от клиента. |
 
 ---
