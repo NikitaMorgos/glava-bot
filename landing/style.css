@@ -163,6 +163,27 @@ body { overflow-x: hidden; }
   margin-top: -2px;
 }
 
+.logo__img {
+  height: 36px;
+  width: auto;
+  display: block;
+}
+
+.logo__img--footer {
+  height: 28px;
+}
+
+/* Dark mode: lighten logo for dark backgrounds */
+[data-theme="dark"] .logo__img {
+  filter: brightness(0) invert(0.85) sepia(0.1) saturate(0.5) hue-rotate(10deg);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .logo__img {
+    filter: brightness(0) invert(0.85) sepia(0.1) saturate(0.5) hue-rotate(10deg);
+  }
+}
+
 .header__actions {
   display: flex;
   align-items: center;
@@ -681,16 +702,60 @@ body { overflow-x: hidden; }
   padding-block: clamp(var(--space-12), 6vw, var(--space-24));
 }
 
-.reviews__grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
+/* Carousel layout */
+.reviews__carousel {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.reviews__track-wrapper {
+  flex: 1;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.reviews__track {
+  display: flex;
   gap: var(--space-6);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reviews__track .review-card {
+  width: calc(50% - var(--space-6) / 2);
+  min-width: calc(50% - var(--space-6) / 2);
+  max-width: calc(50% - var(--space-6) / 2);
+  flex-shrink: 0;
+}
+
+.reviews__arrow {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-text-faint);
+  border: none;
+  cursor: pointer;
+  transition: color var(--transition-interactive), opacity var(--transition-interactive);
+}
+
+.reviews__arrow:hover {
+  color: var(--color-primary);
+}
+
+.reviews__arrow svg {
+  width: 28px;
+  height: 28px;
 }
 
 .review-card {
   background: var(--color-surface);
   border-radius: var(--radius-lg);
-  padding: var(--space-6);
+  padding: var(--space-8) var(--space-6);
   border: 1px solid var(--color-divider);
   position: relative;
 }
@@ -958,8 +1023,22 @@ body { overflow-x: hidden; }
     text-align: center;
   }
 
-  .reviews__grid {
-    grid-template-columns: 1fr;
+  .reviews__track .review-card {
+    min-width: 100%;
+  }
+
+  .reviews__arrow {
+    width: 36px;
+    height: 36px;
+  }
+
+  .reviews__arrow svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .reviews__carousel {
+    gap: var(--space-2);
   }
 
   .footer__inner {

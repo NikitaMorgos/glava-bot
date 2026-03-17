@@ -38,8 +38,7 @@
 <header class="header" id="header">
   <div class="container header__inner">
     <a href="#" class="logo">
-      Glava
-      <span>Глава семьи</span>
+      <img src="./assets/logo-glava.png" alt="Глава" class="logo__img">
     </a>
     <div class="header__actions">
       <a href="https://cabinet.glava.family" class="btn btn--ghost">Личный кабинет</a>
@@ -90,8 +89,13 @@
     <div class="values__grid">
       <div class="value-card reveal">
         <div class="value-card__icon">
-          <svg viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path d="M28 8l6 12 13 2-9.5 9 2.5 13L28 37l-12 7 2.5-13L9 22l13-2z"/>
+          <svg viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <!-- Gift box with bow -->
+            <rect x="10" y="26" width="36" height="22" rx="2"/>
+            <rect x="6" y="18" width="44" height="10" rx="2"/>
+            <path d="M28 18v30"/>
+            <path d="M28 18c0-6-6-10-10-10s-6 4-2 8 12 2 12 2"/>
+            <path d="M28 18c0-6 6-10 10-10s6 4 2 8-12 2-12 2"/>
           </svg>
         </div>
         <h3 class="value-card__title">Уникальный подарок</h3>
@@ -195,51 +199,61 @@
   <div class="container">
     <h2 class="section-title reveal">Что говорят наши клиенты</h2>
     <p class="section-subtitle reveal">Истории тех, кто уже сохранил память о близких</p>
-    <div class="reviews__grid">
-      <div class="review-card reveal">
-        <span class="review-card__quote">&ldquo;</span>
-        <p class="review-card__text">Отец у меня человек суровый, мало говорит. Думала, интервью не получится. Но отец разговорился, вспомнил истории из армии, о которых я и не знала. Книгу читал молча, потом сказал: «Хорошо вышло». Для него это высшая похвала. Спасибо.</p>
-        <div class="review-card__stars">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l2 4.2 4.6.7-3.3 3.2.8 4.5L8 11.3 3.9 13.6l.8-4.5L1.4 5.9 6 5.2z"/></svg>
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l2 4.2 4.6.7-3.3 3.2.8 4.5L8 11.3 3.9 13.6l.8-4.5L1.4 5.9 6 5.2z"/></svg>
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l2 4.2 4.6.7-3.3 3.2.8 4.5L8 11.3 3.9 13.6l.8-4.5L1.4 5.9 6 5.2z"/></svg>
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l2 4.2 4.6.7-3.3 3.2.8 4.5L8 11.3 3.9 13.6l.8-4.5L1.4 5.9 6 5.2z"/></svg>
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l2 4.2 4.6.7-3.3 3.2.8 4.5L8 11.3 3.9 13.6l.8-4.5L1.4 5.9 6 5.2z"/></svg>
+    <div class="reviews__carousel reveal">
+      <button class="reviews__arrow reviews__arrow--prev" aria-label="Предыдущий отзыв" data-carousel-prev>
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="reviews__track-wrapper">
+        <div class="reviews__track" data-carousel-track>
+          <div class="review-card">
+            <span class="review-card__quote">&ldquo;</span>
+            <p class="review-card__text">Отец у меня человек суровый, мало говорит. Думала, интервью не получится. Но отец разговорился, вспомнил истории из армии, о которых я и не знала. Книгу читал молча, потом сказал: «Хорошо вышло». Для него это высшая похвала. Спасибо.</p>
+            <div class="review-card__stars">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l2 4.2 4.6.7-3.3 3.2.8 4.5L8 11.3 3.9 13.6l.8-4.5L1.4 5.9 6 5.2z"/></svg>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l2 4.2 4.6.7-3.3 3.2.8 4.5L8 11.3 3.9 13.6l.8-4.5L1.4 5.9 6 5.2z"/></svg>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l2 4.2 4.6.7-3.3 3.2.8 4.5L8 11.3 3.9 13.6l.8-4.5L1.4 5.9 6 5.2z"/></svg>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l2 4.2 4.6.7-3.3 3.2.8 4.5L8 11.3 3.9 13.6l.8-4.5L1.4 5.9 6 5.2z"/></svg>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l2 4.2 4.6.7-3.3 3.2.8 4.5L8 11.3 3.9 13.6l.8-4.5L1.4 5.9 6 5.2z"/></svg>
+            </div>
+          </div>
+          <div class="review-card">
+            <span class="review-card__quote">&ldquo;</span>
+            <p class="review-card__text">Вау! Честно, не ожидал, что из нашего с дедом разговора выйдет такая крутая штука. Стиль классный, всё по делу, но с душой. Дед оценил, а это дорогого стоит. Рекомендую!</p>
+            <div class="review-card__stars">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l2 4.2 4.6.7-3.3 3.2.8 4.5L8 11.3 3.9 13.6l.8-4.5L1.4 5.9 6 5.2z"/></svg>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l2 4.2 4.6.7-3.3 3.2.8 4.5L8 11.3 3.9 13.6l.8-4.5L1.4 5.9 6 5.2z"/></svg>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l2 4.2 4.6.7-3.3 3.2.8 4.5L8 11.3 3.9 13.6l.8-4.5L1.4 5.9 6 5.2z"/></svg>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l2 4.2 4.6.7-3.3 3.2.8 4.5L8 11.3 3.9 13.6l.8-4.5L1.4 5.9 6 5.2z"/></svg>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l2 4.2 4.6.7-3.3 3.2.8 4.5L8 11.3 3.9 13.6l.8-4.5L1.4 5.9 6 5.2z"/></svg>
+            </div>
+          </div>
+          <div class="review-card">
+            <span class="review-card__quote">&ldquo;</span>
+            <p class="review-card__text">Делали книгу о маме вместе с сестрой. Мы постоянно что-то забывали, присылали дополнения — огромное спасибо, что материалы можно было дополнять. Книга получилась очень личной и тёплой. Мама была в полном восторге в день рождения.</p>
+            <div class="review-card__stars">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l2 4.2 4.6.7-3.3 3.2.8 4.5L8 11.3 3.9 13.6l.8-4.5L1.4 5.9 6 5.2z"/></svg>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l2 4.2 4.6.7-3.3 3.2.8 4.5L8 11.3 3.9 13.6l.8-4.5L1.4 5.9 6 5.2z"/></svg>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l2 4.2 4.6.7-3.3 3.2.8 4.5L8 11.3 3.9 13.6l.8-4.5L1.4 5.9 6 5.2z"/></svg>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l2 4.2 4.6.7-3.3 3.2.8 4.5L8 11.3 3.9 13.6l.8-4.5L1.4 5.9 6 5.2z"/></svg>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l2 4.2 4.6.7-3.3 3.2.8 4.5L8 11.3 3.9 13.6l.8-4.5L1.4 5.9 6 5.2z"/></svg>
+            </div>
+          </div>
+          <div class="review-card">
+            <span class="review-card__quote">&ldquo;</span>
+            <p class="review-card__text">Лучший подарок. Сделали книгу о свёкре для жены по старым фотографиям и нашим воспоминаниям. Получился очень трогательный подарок. Обязательно обратимся ещё для книги о моих родителях.</p>
+            <div class="review-card__stars">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l2 4.2 4.6.7-3.3 3.2.8 4.5L8 11.3 3.9 13.6l.8-4.5L1.4 5.9 6 5.2z"/></svg>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l2 4.2 4.6.7-3.3 3.2.8 4.5L8 11.3 3.9 13.6l.8-4.5L1.4 5.9 6 5.2z"/></svg>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l2 4.2 4.6.7-3.3 3.2.8 4.5L8 11.3 3.9 13.6l.8-4.5L1.4 5.9 6 5.2z"/></svg>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l2 4.2 4.6.7-3.3 3.2.8 4.5L8 11.3 3.9 13.6l.8-4.5L1.4 5.9 6 5.2z"/></svg>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l2 4.2 4.6.7-3.3 3.2.8 4.5L8 11.3 3.9 13.6l.8-4.5L1.4 5.9 6 5.2z"/></svg>
+            </div>
+          </div>
         </div>
       </div>
-      <div class="review-card reveal">
-        <span class="review-card__quote">&ldquo;</span>
-        <p class="review-card__text">Вау! Честно, не ожидал, что из нашего с дедом разговора выйдет такая крутая штука. Стиль классный, всё по делу, но с душой. Дед оценил, а это дорогого стоит. Рекомендую!</p>
-        <div class="review-card__stars">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l2 4.2 4.6.7-3.3 3.2.8 4.5L8 11.3 3.9 13.6l.8-4.5L1.4 5.9 6 5.2z"/></svg>
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l2 4.2 4.6.7-3.3 3.2.8 4.5L8 11.3 3.9 13.6l.8-4.5L1.4 5.9 6 5.2z"/></svg>
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l2 4.2 4.6.7-3.3 3.2.8 4.5L8 11.3 3.9 13.6l.8-4.5L1.4 5.9 6 5.2z"/></svg>
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l2 4.2 4.6.7-3.3 3.2.8 4.5L8 11.3 3.9 13.6l.8-4.5L1.4 5.9 6 5.2z"/></svg>
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l2 4.2 4.6.7-3.3 3.2.8 4.5L8 11.3 3.9 13.6l.8-4.5L1.4 5.9 6 5.2z"/></svg>
-        </div>
-      </div>
-      <div class="review-card reveal">
-        <span class="review-card__quote">&ldquo;</span>
-        <p class="review-card__text">Делали книгу о маме вместе с сестрой. Мы постоянно что-то забывали, присылали дополнения — огромное спасибо, что материалы можно было дополнять. Книга получилась очень личной и тёплой. Мама была в полном восторге в день рождения.</p>
-        <div class="review-card__stars">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l2 4.2 4.6.7-3.3 3.2.8 4.5L8 11.3 3.9 13.6l.8-4.5L1.4 5.9 6 5.2z"/></svg>
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l2 4.2 4.6.7-3.3 3.2.8 4.5L8 11.3 3.9 13.6l.8-4.5L1.4 5.9 6 5.2z"/></svg>
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l2 4.2 4.6.7-3.3 3.2.8 4.5L8 11.3 3.9 13.6l.8-4.5L1.4 5.9 6 5.2z"/></svg>
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l2 4.2 4.6.7-3.3 3.2.8 4.5L8 11.3 3.9 13.6l.8-4.5L1.4 5.9 6 5.2z"/></svg>
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l2 4.2 4.6.7-3.3 3.2.8 4.5L8 11.3 3.9 13.6l.8-4.5L1.4 5.9 6 5.2z"/></svg>
-        </div>
-      </div>
-      <div class="review-card reveal">
-        <span class="review-card__quote">&ldquo;</span>
-        <p class="review-card__text">Лучший подарок. Сделали книгу о свёкре для жены по старым фотографиям и нашим воспоминаниям. Получился очень трогательный подарок. Обязательно обратимся ещё для книги о моих родителях.</p>
-        <div class="review-card__stars">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l2 4.2 4.6.7-3.3 3.2.8 4.5L8 11.3 3.9 13.6l.8-4.5L1.4 5.9 6 5.2z"/></svg>
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l2 4.2 4.6.7-3.3 3.2.8 4.5L8 11.3 3.9 13.6l.8-4.5L1.4 5.9 6 5.2z"/></svg>
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l2 4.2 4.6.7-3.3 3.2.8 4.5L8 11.3 3.9 13.6l.8-4.5L1.4 5.9 6 5.2z"/></svg>
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l2 4.2 4.6.7-3.3 3.2.8 4.5L8 11.3 3.9 13.6l.8-4.5L1.4 5.9 6 5.2z"/></svg>
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l2 4.2 4.6.7-3.3 3.2.8 4.5L8 11.3 3.9 13.6l.8-4.5L1.4 5.9 6 5.2z"/></svg>
-        </div>
-      </div>
+      <button class="reviews__arrow reviews__arrow--next" aria-label="Следующий отзыв" data-carousel-next>
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+      </button>
     </div>
   </div>
 </section>
@@ -338,9 +352,8 @@
 <!-- ===== FOOTER ===== -->
 <footer class="footer">
   <div class="container footer__inner">
-    <a href="#" class="logo" style="font-size: var(--text-lg);">
-      Glava
-      <span>Глава семьи</span>
+    <a href="#" class="logo logo--footer">
+      <img src="./assets/logo-glava.png" alt="Глава" class="logo__img logo__img--footer">
     </a>
     <ul class="footer__links" role="list">
       <li><a href="https://t.me/glava_voice_bot" target="_blank" rel="noopener noreferrer">Telegram-бот</a></li>
@@ -406,6 +419,46 @@ document.querySelectorAll('.faq__question').forEach(btn => {
     }
   });
 });
+
+// Reviews carousel
+(function(){
+  const track = document.querySelector('[data-carousel-track]');
+  const prevBtn = document.querySelector('[data-carousel-prev]');
+  const nextBtn = document.querySelector('[data-carousel-next]');
+  if (!track || !prevBtn || !nextBtn) return;
+  const cards = track.querySelectorAll('.review-card');
+  const total = cards.length;
+  let current = 0;
+
+  function getPerPage() {
+    return window.innerWidth <= 768 ? 1 : 2;
+  }
+
+  function update() {
+    const perPage = getPerPage();
+    const maxIndex = Math.max(0, total - perPage);
+    current = Math.min(current, maxIndex);
+    const gap = parseFloat(getComputedStyle(track).gap) || 0;
+    const card = cards[0];
+    const cardWidth = card.offsetWidth;
+    const offset = current * (cardWidth + gap);
+    track.style.transform = `translateX(-${offset}px)`;
+    prevBtn.style.opacity = current === 0 ? '0.3' : '1';
+    prevBtn.style.pointerEvents = current === 0 ? 'none' : 'auto';
+    nextBtn.style.opacity = current >= maxIndex ? '0.3' : '1';
+    nextBtn.style.pointerEvents = current >= maxIndex ? 'none' : 'auto';
+  }
+
+  prevBtn.addEventListener('click', () => { if (current > 0) { current--; update(); } });
+  nextBtn.addEventListener('click', () => {
+    const perPage = getPerPage();
+    const maxIndex = Math.max(0, total - perPage);
+    if (current < maxIndex) { current++; update(); }
+  });
+
+  window.addEventListener('resize', update);
+  update();
+})();
 
 // Scroll reveal
 (function(){
