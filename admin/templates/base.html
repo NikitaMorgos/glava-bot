@@ -30,8 +30,11 @@
       <a href="/dasha/prompts" class="sidebar-link {% if request.path.startswith('/dasha/prompt') and not request.path.startswith('/dasha/bot') %}active{% endif %}">
         🤖 Скрипты агентов
       </a>
-      <a href="/dasha/bot_messages" class="sidebar-link {% if request.path.startswith('/dasha/bot') %}active{% endif %}">
+      <a href="/dasha/bot_messages" class="sidebar-link {% if request.path.startswith('/dasha/bot_messages') %}active{% endif %}">
         💬 Сообщения бота
+      </a>
+      <a href="/dasha/bot_flow" class="sidebar-link {% if request.path.startswith('/dasha/bot_flow') %}active{% endif %}">
+        🗺 Карта флоу
       </a>
       <a href="/dasha/orders" class="sidebar-link {% if request.path.startswith('/dasha/order') %}active{% endif %}">
         📋 Заказы
