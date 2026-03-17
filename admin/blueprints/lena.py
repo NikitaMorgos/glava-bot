@@ -18,14 +18,14 @@ SEGMENTS = [
 
 
 @bp.route("/")
-@role_required("dev", "lena")
+@role_required("dev", "dasha", "lena")
 def index():
     return redirect(url_for("lena.users"))
 
 
 # ── Пользователи ─────────────────────────────────────────────────
 @bp.route("/users")
-@role_required("dev", "lena")
+@role_required("dev", "dasha", "lena")
 def users():
     segment = request.args.get("segment", "all")
     rows = dba.get_users_by_segment(segment)
@@ -35,14 +35,14 @@ def users():
 
 # ── Рассылки ─────────────────────────────────────────────────────
 @bp.route("/mailings")
-@role_required("dev", "lena")
+@role_required("dev", "dasha", "lena")
 def mailings():
     rows = dba.get_mailings()
     return render_template("lena/mailings.html", mailings=rows)
 
 
 @bp.route("/mailings/new", methods=["GET", "POST"])
-@role_required("dev", "lena")
+@role_required("dev", "dasha", "lena")
 def mailing_new():
     if request.method == "POST":
         name    = request.form.get("name", "").strip()
@@ -103,14 +103,14 @@ def _send_mailing(mailing_id: int, text: str, segment: str):
 
 # ── Триггеры ─────────────────────────────────────────────────────
 @bp.route("/triggers")
-@role_required("dev", "lena")
+@role_required("dev", "dasha", "lena")
 def triggers():
     rows = dba.get_triggers()
     return render_template("lena/triggers.html", triggers=rows)
 
 
 @bp.route("/triggers/<int:trigger_id>/toggle", methods=["POST"])
-@role_required("dev", "lena")
+@role_required("dev", "dasha", "lena")
 def trigger_toggle(trigger_id: int):
     dba.toggle_trigger(trigger_id)
     flash("Триггер обновлён", "success")

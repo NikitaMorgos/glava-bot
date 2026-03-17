@@ -21,15 +21,12 @@
     </div>
 
     <nav class="flex-1 p-3 space-y-1">
-      {% if session.role == 'dev' %}
       <div class="text-xs text-gray-500 uppercase px-3 py-2">Разработчик</div>
       <a href="/dev/" class="sidebar-link {% if request.path.startswith('/dev') %}active{% endif %}">
         📊 Дашборд
       </a>
-      <div class="text-xs text-gray-500 uppercase px-3 pt-4 pb-2">Продакт</div>
-      {% endif %}
 
-      {% if session.role in ('dev', 'dasha') %}
+      <div class="text-xs text-gray-500 uppercase px-3 pt-4 pb-2">Продакт</div>
       <a href="/dasha/prompts" class="sidebar-link {% if request.path.startswith('/dasha/prompt') and not request.path.startswith('/dasha/bot') %}active{% endif %}">
         🤖 Скрипты агентов
       </a>
@@ -42,13 +39,8 @@
       <a href="/dasha/reports" class="sidebar-link {% if request.path.startswith('/dasha/report') %}active{% endif %}">
         📈 Отчёты
       </a>
-      {% endif %}
 
-      {% if session.role == 'dev' %}
       <div class="text-xs text-gray-500 uppercase px-3 pt-4 pb-2">Маркетинг</div>
-      {% endif %}
-
-      {% if session.role in ('dev', 'lena') %}
       <a href="/lena/users" class="sidebar-link {% if request.path.startswith('/lena/user') %}active{% endif %}">
         👥 Пользователи
       </a>
@@ -58,20 +50,14 @@
       <a href="/lena/triggers" class="sidebar-link {% if request.path.startswith('/lena/trigger') %}active{% endif %}">
         ⚡ Триггеры
       </a>
-      {% endif %}
 
-      {% if session.role == 'dev' %}
       <div class="text-xs text-gray-500 uppercase px-3 pt-4 pb-2">Финансы</div>
-      {% endif %}
-
-      {% if session.role in ('dev', 'dasha', 'lena') %}
       <a href="/finance/expenses" class="sidebar-link {% if request.path.startswith('/finance/expense') %}active{% endif %}">
         💰 Расходы
       </a>
       <a href="/finance/pnl" class="sidebar-link {% if request.path.startswith('/finance/pnl') %}active{% endif %}">
         📊 P&L
       </a>
-      {% endif %}
     </nav>
 
     <div class="p-3 border-t border-white/10">

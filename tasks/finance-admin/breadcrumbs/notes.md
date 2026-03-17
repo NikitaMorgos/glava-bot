@@ -17,3 +17,11 @@
 - Диагностика: запуск gunicorn вручную на порту 5003 → `[Errno 98] Address already in use` — порт удерживал старый фоновый gunicorn-процесс от тестов.
 - **Решение:** `pkill -f gunicorn` → `systemctl restart glava-admin` → curl вернул `302` → браузер открылся.
 - Итог: https://admin.glava.family → все роли видят раздел «Финансы» ✅
+
+## 2026-03-17 — Доработки после запуска
+
+- Добавлены столбцы `periodicity` (разовая/подписка) и `behavior` (постоянная/переменная) — ALTER TABLE через migrate_finance.py.
+- Добавлен столбец `title` (название, свободный ввод).
+- Форма добавления расхода переверстана в одну строку (flex-wrap), справочники категорий и инициаторов перенесены вниз страницы (grid 2 колонки).
+- Gunicorn service: `--worker-tmp-dir /dev/shm` убран — вызывал незапуск воркера. Добавлены `--timeout 30 --log-level debug --capture-output`, `KillMode=mixed`, `TimeoutStopSec=10`, `RestartSec=3`.
+- Все роли (dev/dasha/lena) получили доступ ко всем разделам: blueprints dev/dasha/lena обновлены, сайдбар стал единым без ролевых условий.

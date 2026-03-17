@@ -106,7 +106,7 @@ def _config_check() -> list[dict]:
 
 # ─────────────────────────────────────────────────────────────────
 @bp.route("/")
-@role_required("dev")
+@role_required("dev", "dasha", "lena")
 def dashboard():
     services = [
         _service_status("glava"),
