@@ -35,15 +35,17 @@ ROLE_HOME = {
 }
 
 # ── Blueprints ────────────────────────────────────────────────────
-from admin.blueprints.dev   import bp as dev_bp
-from admin.blueprints.dasha import bp as dasha_bp
-from admin.blueprints.lena  import bp as lena_bp
-from admin.blueprints.api   import bp as api_bp
+from admin.blueprints.dev     import bp as dev_bp
+from admin.blueprints.dasha   import bp as dasha_bp
+from admin.blueprints.lena    import bp as lena_bp
+from admin.blueprints.api     import bp as api_bp
+from admin.blueprints.finance import bp as finance_bp
 
 app.register_blueprint(dev_bp)
 app.register_blueprint(dasha_bp)
 app.register_blueprint(lena_bp)
 app.register_blueprint(api_bp)
+app.register_blueprint(finance_bp)
 
 # ── Auth ──────────────────────────────────────────────────────────
 @app.route("/")

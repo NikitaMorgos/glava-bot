@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Редактировать расход — GLAVA Finance{% endblock %}
+
+{% block content %}
+<div class="max-w-lg">
+  <div class="flex items-center gap-3 mb-6">
+    <a href="/finance/expenses" class="text-gray-500 hover:text-gray-700 text-sm">← Назад</a>
+    <h1 class="text-xl font-bold text-gray-800">Редактировать расход #{{ expense.id }}</h1>
+  </div>
+
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+    <form method="post">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Дата *</label>
+          <input type="date" name="date" required
+                 value="{{ expense.date.strftime('%Y-%m-%d') if expense.date else '' }}"
+                 class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Сумма, ₽ *</label>
+          <input type="number" name="amount" required min="0.01" step="0.01"
+                 value="{{ expense.amount }}"
+                 class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Статья расходов *</label>
+          <select name="category_id" required
+                  class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+            {% for cat in categories %}
+            <option value="{{ cat.id }}"
+              {% if cat.id == expense.category_id %}selected{% endif %}>
+              {{ cat.name }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Инициатор *</label>
+          <select name="initiator_id" required
+                  class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+            {% for ini in initiators %}
+            <option value="{{ ini.id }}"
+              {% if ini.id == expense.initiator_id %}selected{% endif %}>
+              {{ ini.name }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Комментарий</label>
+          <textarea name="comment" rows="2" placeholder="необязательно"
+                    class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none">{{ expense.comment or '' }}</textarea>
+        </div>
+      </div>
+      <div class="mt-6 flex gap-3">
+        <button type="submit"
+                class="px-5 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">
+          Сохранить
+        </button>
+        <a href="/finance/expenses"
+           class="px-5 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50">
+          Отмена
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -116,7 +116,8 @@ python scripts/run_diarized_compare.py
 | **docs/N8N_DASHA_GUIDE.md** | Инструкция для Даши (продакт): как менять промпты, логику пайплайна, добавлять агентов, тестировать изменения в n8n. |
 | **docs/PRODUCER_PHASE_A_ADDON.md** | Блок для промпта Producer: штатная доставка Phase A (без JSON). Добавить в начало промпта в админке. |
 | **tasks/meeting-bot/** | Бот записи онлайн-созвонов (Playwright + Chromium). Telemost, Zoom. `meeting_bot.py`, `MEETING_BOT_ENABLED=true`. Статус: `status.md`, план: `plan.md`, отладка имени: `MEETING_JOIN_DEBUG=true`. |
-| **tasks/bot-flow-admin/** | Сообщения бота в админке Даши. Тексты — `Сообщения бота`, схема — `Сценарий бота`. `bot_messages.py`, `scripts/seed_bot_messages.py`. |
+| **tasks/finance-admin/** | 🟡 В деплое (2026-03-17). Раздел «Финансы» в админке: учёт расходов, справочники категорий/инициаторов, P&L. Доступен dev/dasha/lena. `admin/blueprints/finance.py`, `admin/db_finance.py`, `scripts/migrate_finance.py`. |
+| **tasks/bot-flow-admin/** | ✅ Выполнено (2026-03-17). Сообщения бота в админке Даши: 19 ключей, редактирование через UI. Бот читает из API с кешем и fallback. `bot_messages.py`, `scripts/seed_bot_messages.py`. |
 | **ARCHITECTURE.md** | Схема сервисов, бот, кабинет, БД, S3, деплой. |
 | **tasks/admin-panel/docs/ARCHITECTURE.md** | Схема admin-панели: роли, маршруты, таблицы БД, n8n интеграция. |
 | **tasks/admin-panel/plan.md** | Детальный план задачи Admin Panel + n8n. |

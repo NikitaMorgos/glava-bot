@@ -59,6 +59,19 @@
         ⚡ Триггеры
       </a>
       {% endif %}
+
+      {% if session.role == 'dev' %}
+      <div class="text-xs text-gray-500 uppercase px-3 pt-4 pb-2">Финансы</div>
+      {% endif %}
+
+      {% if session.role in ('dev', 'dasha', 'lena') %}
+      <a href="/finance/expenses" class="sidebar-link {% if request.path.startswith('/finance/expense') %}active{% endif %}">
+        💰 Расходы
+      </a>
+      <a href="/finance/pnl" class="sidebar-link {% if request.path.startswith('/finance/pnl') %}active{% endif %}">
+        📊 P&L
+      </a>
+      {% endif %}
     </nav>
 
     <div class="p-3 border-t border-white/10">
