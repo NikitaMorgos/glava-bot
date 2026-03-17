@@ -13,6 +13,10 @@ cp /opt/glava/landing/index.html   /var/www/glava.family/
 cp /opt/glava/landing/base.css     /var/www/glava.family/
 cp /opt/glava/landing/style.css    /var/www/glava.family/
 cp /opt/glava/landing/assets/*     /var/www/glava.family/assets/
+# Юридические страницы
+cp /opt/glava/landing/oferta.html  /var/www/glava.family/
+cp /opt/glava/landing/consent.html /var/www/glava.family/
+cp /opt/glava/landing/policy.html  /var/www/glava.family/
 
 # Права
 chown -R www-data:www-data /var/www/glava.family
