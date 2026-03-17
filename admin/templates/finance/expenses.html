@@ -69,6 +69,11 @@
               {% endfor %}
             </select>
           </div>
+          <div class="col-span-2">
+            <label class="block text-xs text-gray-500 mb-1">Название</label>
+            <input type="text" name="title" placeholder="Например: Хостинг Timeweb"
+                   class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+          </div>
           <div>
             <label class="block text-xs text-gray-500 mb-1">Периодичность</label>
             <select name="periodicity"
@@ -109,6 +114,7 @@
             <tr>
               <th class="text-left px-4 py-3 font-semibold text-gray-600">Дата</th>
               <th class="text-right px-4 py-3 font-semibold text-gray-600">Сумма, ₽</th>
+              <th class="text-left px-4 py-3 font-semibold text-gray-600">Название</th>
               <th class="text-left px-4 py-3 font-semibold text-gray-600">Статья</th>
               <th class="text-left px-4 py-3 font-semibold text-gray-600">Периодичность</th>
               <th class="text-left px-4 py-3 font-semibold text-gray-600">Поведение</th>
@@ -126,6 +132,7 @@
               <td class="px-4 py-3 text-right font-mono font-medium text-gray-900 whitespace-nowrap">
                 {{ "{:,.2f}".format(row.amount).replace(",", " ") }}
               </td>
+              <td class="px-4 py-3 text-gray-800 font-medium">{{ row.title or '—' }}</td>
               <td class="px-4 py-3">
                 <span class="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full text-xs font-medium">
                   {{ row.category }}
@@ -165,7 +172,7 @@
               <td class="px-4 py-3 text-right font-mono font-bold text-gray-900">
                 {{ "{:,.2f}".format(total).replace(",", " ") }}
               </td>
-              <td colspan="6"></td>
+              <td colspan="7"></td>
             </tr>
           </tfoot>
         </table>

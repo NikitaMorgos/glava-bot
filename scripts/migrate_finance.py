@@ -58,6 +58,10 @@ BEGIN
         ALTER TABLE expenses ADD COLUMN behavior TEXT NOT NULL DEFAULT 'переменная'
             CHECK (behavior IN ('постоянная', 'переменная'));
     END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                   WHERE table_name='expenses' AND column_name='title') THEN
+        ALTER TABLE expenses ADD COLUMN title TEXT;
+    END IF;
 END $$;
 """
 
