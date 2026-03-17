@@ -98,7 +98,8 @@ python scripts/run_diarized_compare.py
 | n8n (AI-пайплайн) | Запуск: `docker run` (см. команду в `tasks/admin-panel/status.md`), данные: `/opt/glava/n8n-data/`, доступ: `https://admin.glava.family/n8n/` |
 | n8n workflow Phase A | `n8n-workflows/phase-a.json` — workflow v5, протестирован end-to-end. Архитектура: Webhook → Fact Extractor → [Ghostwriter → … → Proofreader] + [Photo Editor] → Merge → Layout Designer → Layout QA → Merge → Producer → 3 сообщения в Telegram. Время ~2–3 мин. Тест: `python scripts/run_n8n_test.py TELEGRAM_ID`. Producer: в промпте обязателен блок `docs/PRODUCER_PHASE_A_ADDON.md` для штатной доставки (без JSON). |
 | n8n триггер из Python | `pipeline_n8n.py` — `trigger_phase_a_background()` вызывается из `pipeline_transcribe_bio.py` после транскрипции |
-| Внутренний API для n8n | `GET /api/prompts/<role>` — промпт из БД без кеша (читается при каждом запуске пайплайна, Даша может менять промпты в реальном времени); `POST /api/jobs/update` — статус джобы |
+| Внутренний API для n8n | `GET /api/prompts/<role>` — промпт из БД без кеша; `POST /api/jobs/update` — статус джобы; `POST /api/send-book-pdf` — генерация PDF из bio_text и отправка файлом в Telegram (`sendDocument`). Вызывается из n8n Phase A вместо sendMessage с текстом. |
+| Генератор PDF книги | `pdf_book.py` — `generate_book_pdf(bio_text, character_name)` → bytes. Формат A5, книжный стиль, reportlab: обложка, главы, типографика, колонтитулы glava.family. |
 | Деплой admin-панели | `deploy/glava-admin.service` (systemd), `deploy/nginx-admin.conf` (включает `/n8n/` proxy) |
 | Автотесты бота | `tests/test_bot_flows.py` |
 | Деплой, systemd | `deploy/deploy.sh` (основной скрипт), `deploy/glava.service`, `DEPLOY_24_7.md`, `DEPLOY_TIMEWEB.md`, `deploy/DEPLOY_GLAVA_FAMILY.md` |
