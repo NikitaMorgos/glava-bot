@@ -48,6 +48,22 @@
           </select>
         </div>
         <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Периодичность</label>
+          <select name="periodicity"
+                  class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+            <option value="разовая" {% if expense.periodicity == 'разовая' %}selected{% endif %}>Разовая</option>
+            <option value="подписка" {% if expense.periodicity == 'подписка' %}selected{% endif %}>Подписка</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Поведение</label>
+          <select name="behavior"
+                  class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+            <option value="переменная" {% if expense.behavior == 'переменная' %}selected{% endif %}>Переменная</option>
+            <option value="постоянная" {% if expense.behavior == 'постоянная' %}selected{% endif %}>Постоянная</option>
+          </select>
+        </div>
+        <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Комментарий</label>
           <textarea name="comment" rows="2" placeholder="необязательно"
                     class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none">{{ expense.comment or '' }}</textarea>

@@ -94,6 +94,7 @@ def get_expenses(month: str | None = None) -> list[dict]:
         if month:
             cur.execute("""
                 SELECT e.id, e.date, e.amount, e.comment, e.created_at, e.created_by,
+                       e.periodicity, e.behavior,
                        c.name AS category, i.name AS initiator
                 FROM expenses e
                 JOIN expense_categories c ON c.id = e.category_id
@@ -104,6 +105,7 @@ def get_expenses(month: str | None = None) -> list[dict]:
         else:
             cur.execute("""
                 SELECT e.id, e.date, e.amount, e.comment, e.created_at, e.created_by,
+                       e.periodicity, e.behavior,
                        c.name AS category, i.name AS initiator
                 FROM expenses e
                 JOIN expense_categories c ON c.id = e.category_id
@@ -122,25 +124,29 @@ def get_expense(expense_id: int) -> dict | None:
         return dict(row) if row else None
 
 
-def add_expense(date: str, amount: Decimal, category_id: int,
-                initiator_id: int, comment: str, created_by: str) -> None:
+def add_expense(date: str, amount: Decimal, category_id: int, initiator_id: int,
+                periodicity: str, behavior: str, comment: str, created_by: str) -> None:
     with _conn() as conn:
         cur = conn.cursor()
         cur.execute("""
-            INSERT INTO expenses (date, amount, category_id, initiator_id, comment, created_by)
-            VALUES (%s, %s, %s, %s, %s, %s)
-        """, (date, amount, category_id, initiator_id, comment or None, created_by))
+            INSERT INTO expenses
+                (date, amount, category_id, initiator_id, periodicity, behavior, comment, created_by)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        """, (date, amount, category_id, initiator_id, periodicity, behavior,
+              comment or None, created_by))
 
 
-def update_expense(expense_id: int, date: str, amount: Decimal,
-                   category_id: int, initiator_id: int, comment: str) -> None:
+def update_expense(expense_id: int, date: str, amount: Decimal, category_id: int,
+                   initiator_id: int, periodicity: str, behavior: str, comment: str) -> None:
     with _conn() as conn:
         cur = conn.cursor()
         cur.execute("""
             UPDATE expenses
-            SET date=%s, amount=%s, category_id=%s, initiator_id=%s, comment=%s
+            SET date=%s, amount=%s, category_id=%s, initiator_id=%s,
+                periodicity=%s, behavior=%s, comment=%s
             WHERE id=%s
-        """, (date, amount, category_id, initiator_id, comment or None, expense_id))
+        """, (date, amount, category_id, initiator_id,
+              periodicity, behavior, comment or None, expense_id))
 
 
 def delete_expense(expense_id: int) -> None:

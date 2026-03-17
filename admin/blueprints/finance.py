@@ -62,6 +62,8 @@ def expense_add():
     amount_str = request.form.get("amount", "").strip().replace(",", ".")
     category_id = request.form.get("category_id", "")
     initiator_id = request.form.get("initiator_id", "")
+    periodicity = request.form.get("periodicity", "разовая")
+    behavior = request.form.get("behavior", "переменная")
     comment = request.form.get("comment", "").strip()
 
     try:
@@ -77,7 +79,7 @@ def expense_add():
         return redirect(url_for("finance.expenses"))
 
     dbf.add_expense(date, amount, int(category_id), int(initiator_id),
-                    comment, session.get("username", ""))
+                    periodicity, behavior, comment, session.get("username", ""))
     flash("Расход добавлен", "success")
     month = date[:7]
     return redirect(url_for("finance.expenses", month=month))
@@ -99,6 +101,8 @@ def expense_edit(expense_id: int):
         amount_str = request.form.get("amount", "").strip().replace(",", ".")
         category_id = request.form.get("category_id", "")
         initiator_id = request.form.get("initiator_id", "")
+        periodicity = request.form.get("periodicity", "разовая")
+        behavior = request.form.get("behavior", "переменная")
         comment = request.form.get("comment", "").strip()
 
         try:
@@ -110,7 +114,8 @@ def expense_edit(expense_id: int):
             return redirect(url_for("finance.expense_edit", expense_id=expense_id))
 
         dbf.update_expense(expense_id, date, amount,
-                           int(category_id), int(initiator_id), comment)
+                           int(category_id), int(initiator_id),
+                           periodicity, behavior, comment)
         flash("Расход обновлён", "success")
         month = date[:7]
         return redirect(url_for("finance.expenses", month=month))

@@ -33,15 +33,32 @@ CREATE TABLE IF NOT EXISTS expense_initiators (
 );
 
 CREATE TABLE IF NOT EXISTS expenses (
-    id           SERIAL PRIMARY KEY,
-    date         DATE        NOT NULL,
-    amount       NUMERIC(12,2) NOT NULL,
-    category_id  INT         NOT NULL REFERENCES expense_categories(id),
-    initiator_id INT         NOT NULL REFERENCES expense_initiators(id),
-    comment      TEXT,
-    created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    created_by   TEXT
+    id            SERIAL PRIMARY KEY,
+    date          DATE          NOT NULL,
+    amount        NUMERIC(12,2) NOT NULL,
+    category_id   INT           NOT NULL REFERENCES expense_categories(id),
+    initiator_id  INT           NOT NULL REFERENCES expense_initiators(id),
+    periodicity   TEXT          NOT NULL DEFAULT 'разовая' CHECK (periodicity IN ('разовая', 'подписка')),
+    behavior      TEXT          NOT NULL DEFAULT 'переменная' CHECK (behavior IN ('постоянная', 'переменная')),
+    comment       TEXT,
+    created_at    TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
+    created_by    TEXT
 );
+
+-- Добавляем колонки если таблица уже существовала
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                   WHERE table_name='expenses' AND column_name='periodicity') THEN
+        ALTER TABLE expenses ADD COLUMN periodicity TEXT NOT NULL DEFAULT 'разовая'
+            CHECK (periodicity IN ('разовая', 'подписка'));
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                   WHERE table_name='expenses' AND column_name='behavior') THEN
+        ALTER TABLE expenses ADD COLUMN behavior TEXT NOT NULL DEFAULT 'переменная'
+            CHECK (behavior IN ('постоянная', 'переменная'));
+    END IF;
+END $$;
 """
 
 SEED_CATEGORIES = [
