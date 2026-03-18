@@ -33,8 +33,10 @@ BOT_MESSAGE_KEYS = [
 ]
 
 AGENT_ROLES = [
+    ("triage_agent",      "00 · Триаж-агент"),
     ("transcriber",       "01 · Транскрибатор"),
     ("fact_extractor",    "02 · Фактолог"),
+    ("historian",         "02b · Историк"),
     ("ghostwriter",       "03 · Писатель"),
     ("fact_checker",      "04 · Фактчекер"),
     ("literary_editor",   "05 · Литредактор"),
@@ -44,7 +46,6 @@ AGENT_ROLES = [
     ("layout_qa",         "09 · Контролёр вёрстки"),
     ("producer",          "10 · Продюсер"),
     ("interview_architect","11 · Интервьюер"),
-    ("triage",            "T · Триажер"),
 ]
 
 
