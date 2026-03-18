@@ -133,6 +133,28 @@ def dashboard():
     )
 
 
+# ── Предложения по флоу ──────────────────────────────────────────
+@bp.route("/suggestions")
+@role_required("dev")
+def suggestions():
+    from admin import db_admin as dba
+    items = dba.get_flow_suggestions()
+    new_count = sum(1 for s in items if s["status"] == "new")
+    return render_template("dev/suggestions.html", suggestions=items, new_count=new_count)
+
+
+@bp.route("/suggestions/<int:suggestion_id>/update", methods=["POST"])
+@role_required("dev")
+def update_suggestion(suggestion_id: int):
+    from admin import db_admin as dba
+    from flask import jsonify
+    data = request.get_json(silent=True) or {}
+    status = data.get("status", "in_progress")
+    comment = data.get("comment", "")
+    dba.update_flow_suggestion(suggestion_id, status, comment)
+    return jsonify({"ok": True})
+
+
 @bp.route("/restart/<service>", methods=["POST"])
 @role_required("dev")
 def restart_service(service: str):

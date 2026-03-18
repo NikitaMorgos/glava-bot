@@ -78,6 +78,37 @@
   .edit-link { display:inline-block; margin-top:6px; font-size:9px; color:var(--accent2);
     text-decoration:none; opacity:0.6; }
   .edit-link:hover { opacity:1; }
+  .suggest-btn { display:inline-block; margin-top:5px; margin-left:4px; font-size:9px;
+    color:var(--muted); background:none; border:none; cursor:pointer; padding:0;
+    font-family:'Inter',sans-serif; transition:color .2s; }
+  .suggest-btn:hover { color:var(--wait); }
+
+  /* Модальное окно */
+  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7);
+    z-index:1000; align-items:center; justify-content:center; }
+  .modal-overlay.open { display:flex; }
+  .modal { background:var(--surface); border:1px solid var(--border); border-radius:16px;
+    padding:28px 32px; width:480px; max-width:90vw; }
+  .modal h3 { font-family:'Unbounded',sans-serif; font-size:14px; color:var(--accent);
+    margin-bottom:4px; }
+  .modal .modal-screen { font-size:11px; color:var(--muted); margin-bottom:16px; }
+  .modal textarea { width:100%; min-height:110px; background:var(--surface2);
+    border:1px solid var(--border); border-radius:8px; color:var(--text);
+    font-family:'Inter',sans-serif; font-size:12px; padding:10px 12px; resize:vertical;
+    outline:none; transition:border-color .2s; }
+  .modal textarea:focus { border-color:var(--accent); }
+  .modal-hint { font-size:10px; color:var(--muted); margin-top:6px; margin-bottom:16px; }
+  .modal-actions { display:flex; gap:10px; justify-content:flex-end; }
+  .modal-cancel { background:none; border:1px solid var(--border); color:var(--muted);
+    padding:7px 18px; border-radius:8px; cursor:pointer; font-size:12px; font-family:'Inter',sans-serif; }
+  .modal-cancel:hover { border-color:var(--text); color:var(--text); }
+  .modal-submit { background:rgba(200,169,110,0.15); border:1px solid rgba(200,169,110,0.4);
+    color:var(--accent); padding:7px 18px; border-radius:8px; cursor:pointer;
+    font-size:12px; font-family:'Inter',sans-serif; transition:background .2s; }
+  .modal-submit:hover { background:rgba(200,169,110,0.28); }
+  .modal-success { display:none; text-align:center; padding:12px 0 4px; }
+  .modal-success .ok-icon { font-size:28px; margin-bottom:8px; }
+  .modal-success p { font-size:13px; color:var(--green); }
 </style>
 
 <div id="flow-root">
@@ -398,5 +429,83 @@ async function loadMessages() {
 
 // Загружаем при открытии страницы
 loadMessages();
+
+// Добавляем кнопку «предложить правку» к каждому экрану
+document.querySelectorAll('.screen').forEach(function(screen) {
+  const idEl = screen.querySelector('.screen-id');
+  const titleEl = screen.querySelector('.screen-title');
+  if (!idEl) return;
+  const screenId = idEl.textContent.trim();
+  const screenTitle = titleEl ? titleEl.textContent.trim() : '';
+  const btn = document.createElement('button');
+  btn.className = 'suggest-btn';
+  btn.textContent = '✏ предложить правку';
+  btn.onclick = function(e) { e.stopPropagation(); openSuggest(screenId, screenTitle); };
+  screen.appendChild(btn);
+});
+
+// ── Предложения по правке флоу ────────────────────────────────────
+function openSuggest(screenId, screenTitle) {
+  document.getElementById('modal-screen-id').textContent = screenId;
+  document.getElementById('modal-screen-title').textContent = screenTitle;
+  document.getElementById('suggest-text').value = '';
+  document.getElementById('modal-form').style.display = 'block';
+  document.getElementById('modal-success').style.display = 'none';
+  document.getElementById('suggest-modal').classList.add('open');
+}
+
+function closeSuggest() {
+  document.getElementById('suggest-modal').classList.remove('open');
+}
+
+document.getElementById('suggest-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeSuggest();
+});
+
+document.getElementById('modal-cancel-btn').addEventListener('click', closeSuggest);
+
+document.getElementById('modal-submit-btn').addEventListener('click', async function() {
+  const text = document.getElementById('suggest-text').value.trim();
+  if (!text) { document.getElementById('suggest-text').focus(); return; }
+  const screenId = document.getElementById('modal-screen-id').textContent;
+  const screenTitle = document.getElementById('modal-screen-title').textContent;
+  this.disabled = true;
+  this.textContent = 'Отправка…';
+  try {
+    const r = await fetch('/dasha/suggest_change', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({screen_id: screenId, screen_title: screenTitle, suggestion: text})
+    });
+    const data = await r.json();
+    if (data.ok) {
+      document.getElementById('modal-form').style.display = 'none';
+      document.getElementById('modal-success').style.display = 'block';
+      setTimeout(closeSuggest, 1800);
+    }
+  } catch(e) { /* silent */ }
+  this.disabled = false;
+  this.textContent = 'Отправить';
+});
 </script>
+
+<!-- Модальное окно -->
+<div class="modal-overlay" id="suggest-modal">
+  <div class="modal">
+    <h3>Предложить правку</h3>
+    <div class="modal-screen">Экран: <strong id="modal-screen-id"></strong> — <span id="modal-screen-title"></span></div>
+    <div id="modal-form">
+      <textarea id="suggest-text" placeholder="Опишите что нужно изменить: логику, кнопки, переходы, поведение бота…"></textarea>
+      <div class="modal-hint">Задача уйдёт разработчику в раздел «Предложения»</div>
+      <div class="modal-actions">
+        <button class="modal-cancel" id="modal-cancel-btn">Отмена</button>
+        <button class="modal-submit" id="modal-submit-btn">Отправить</button>
+      </div>
+    </div>
+    <div class="modal-success" id="modal-success">
+      <div class="ok-icon">✓</div>
+      <p>Предложение отправлено!</p>
+    </div>
+  </div>
+</div>
 {% endblock %}

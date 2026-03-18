@@ -264,3 +264,62 @@ def toggle_trigger(trigger_id: int) -> None:
         cur.execute("""
             UPDATE mailing_triggers SET is_active = NOT is_active WHERE id = %s
         """, (trigger_id,))
+
+
+# ── Предложения по флоу бота ──────────────────────────────────────
+
+def ensure_flow_suggestions_table() -> None:
+    """Создаёт таблицу flow_suggestions если её нет."""
+    with _conn() as conn:
+        cur = conn.cursor()
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS flow_suggestions (
+                id          SERIAL PRIMARY KEY,
+                screen_id   TEXT NOT NULL,
+                screen_title TEXT,
+                suggestion  TEXT NOT NULL,
+                author      TEXT NOT NULL DEFAULT 'dasha',
+                status      TEXT NOT NULL DEFAULT 'new',
+                dev_comment TEXT,
+                created_at  TIMESTAMP DEFAULT NOW(),
+                updated_at  TIMESTAMP DEFAULT NOW()
+            )
+        """)
+
+
+def add_flow_suggestion(screen_id: str, screen_title: str,
+                        suggestion: str, author: str = "dasha") -> int:
+    ensure_flow_suggestions_table()
+    with _conn() as conn:
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO flow_suggestions (screen_id, screen_title, suggestion, author)
+            VALUES (%s, %s, %s, %s) RETURNING id
+        """, (screen_id, screen_title, suggestion, author))
+        return cur.fetchone()["id"]
+
+
+def get_flow_suggestions(status: str | None = None) -> list[dict]:
+    ensure_flow_suggestions_table()
+    with _conn() as conn:
+        cur = conn.cursor()
+        if status:
+            cur.execute("""
+                SELECT * FROM flow_suggestions WHERE status = %s
+                ORDER BY created_at DESC
+            """, (status,))
+        else:
+            cur.execute("SELECT * FROM flow_suggestions ORDER BY created_at DESC")
+        return [dict(r) for r in cur.fetchall()]
+
+
+def update_flow_suggestion(suggestion_id: int, status: str,
+                            dev_comment: str = "") -> None:
+    ensure_flow_suggestions_table()
+    with _conn() as conn:
+        cur = conn.cursor()
+        cur.execute("""
+            UPDATE flow_suggestions
+            SET status = %s, dev_comment = %s, updated_at = NOW()
+            WHERE id = %s
+        """, (status, dev_comment, suggestion_id))

@@ -22,8 +22,11 @@
 
     <nav class="flex-1 p-3 space-y-1">
       <div class="text-xs text-gray-500 uppercase px-3 py-2">Разработчик</div>
-      <a href="/dev/" class="sidebar-link {% if request.path.startswith('/dev') %}active{% endif %}">
+      <a href="/dev/" class="sidebar-link {% if request.path == '/dev/' %}active{% endif %}">
         📊 Дашборд
+      </a>
+      <a href="/dev/suggestions" class="sidebar-link {% if request.path.startswith('/dev/suggestions') %}active{% endif %}">
+        💡 Предложения
       </a>
 
       <div class="text-xs text-gray-500 uppercase px-3 pt-4 pb-2">Продакт</div>

@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title %}Предложения по флоу — GLAVA Dev{% endblock %}
+
+{% block content %}
+<style>
+  .sug-header { display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:24px; flex-wrap:wrap; gap:12px; }
+  .sug-title { font-size:20px; font-weight:700; color:#c8a96e; }
+  .sug-badge { background:rgba(232,164,74,0.15); color:#e8a44a; font-size:11px;
+    font-weight:600; padding:3px 10px; border-radius:20px; border:1px solid rgba(232,164,74,0.3); }
+  .filter-tabs { display:flex; gap:6px; margin-bottom:20px; }
+  .ftab { background:none; border:1px solid #2a2a35; color:#6b6878; padding:5px 16px;
+    border-radius:20px; cursor:pointer; font-size:12px; transition:all .2s; }
+  .ftab.active, .ftab:hover { border-color:#c8a96e; color:#c8a96e; }
+  .sug-list { display:flex; flex-direction:column; gap:12px; }
+  .sug-card { background:#16161a; border:1px solid #2a2a35; border-radius:12px; padding:18px 20px; }
+  .sug-card.new { border-left:3px solid #e8a44a; }
+  .sug-card.in_progress { border-left:3px solid #5b8fb9; }
+  .sug-card.done { border-left:3px solid #4ecb71; opacity:0.7; }
+  .sug-card.wont_fix { border-left:3px solid #6b6878; opacity:0.5; }
+  .sug-top { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:10px; }
+  .sug-screen { font-size:11px; font-weight:600; color:#c8a96e; font-family:'JetBrains Mono',monospace; }
+  .sug-screen span { color:#6b6878; font-weight:400; margin-left:6px; }
+  .sug-meta { font-size:10px; color:#6b6878; white-space:nowrap; }
+  .sug-text { font-size:13px; color:#f0ede8; line-height:1.55; margin-bottom:12px; }
+  .sug-author { font-size:10px; color:#6b6878; margin-bottom:10px; }
+  .sug-comment { font-size:11px; color:#8a8894; background:#1e1e24; border-radius:6px;
+    padding:7px 10px; margin-bottom:12px; border-left:2px solid #2a2a35; }
+  .sug-actions { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .sug-status-badge { font-size:10px; font-weight:600; padding:3px 10px; border-radius:20px;
+    text-transform:uppercase; letter-spacing:0.6px; }
+  .badge-new { background:rgba(232,164,74,0.12); color:#e8a44a; border:1px solid rgba(232,164,74,0.3); }
+  .badge-in_progress { background:rgba(91,143,185,0.12); color:#5b8fb9; border:1px solid rgba(91,143,185,0.3); }
+  .badge-done { background:rgba(78,203,113,0.1); color:#4ecb71; border:1px solid rgba(78,203,113,0.3); }
+  .badge-wont_fix { background:rgba(107,104,120,0.12); color:#6b6878; border:1px solid rgba(107,104,120,0.3); }
+  .act-btn { font-size:11px; padding:4px 12px; border-radius:8px; cursor:pointer;
+    font-family:inherit; transition:all .2s; border:1px solid; }
+  .act-btn.progress { background:rgba(91,143,185,0.1); border-color:rgba(91,143,185,0.3); color:#5b8fb9; }
+  .act-btn.progress:hover { background:rgba(91,143,185,0.2); }
+  .act-btn.done-btn { background:rgba(78,203,113,0.1); border-color:rgba(78,203,113,0.3); color:#4ecb71; }
+  .act-btn.done-btn:hover { background:rgba(78,203,113,0.2); }
+  .act-btn.wont { background:rgba(107,104,120,0.1); border-color:rgba(107,104,120,0.3); color:#6b6878; }
+  .act-btn.wont:hover { background:rgba(107,104,120,0.2); }
+  .comment-input { flex:1; background:#1e1e24; border:1px solid #2a2a35; color:#f0ede8;
+    border-radius:7px; padding:4px 10px; font-size:11px; font-family:inherit; outline:none;
+    min-width:180px; transition:border-color .2s; }
+  .comment-input:focus { border-color:#c8a96e; }
+  .empty { text-align:center; padding:60px 20px; color:#6b6878; font-size:13px; }
+</style>
+
+<div class="sug-header">
+  <div>
+    <div class="sug-title">Предложения по флоу бота
+      {% if new_count > 0 %}
+        <span class="sug-badge">{{ new_count }} новых</span>
+      {% endif %}
+    </div>
+    <div style="font-size:12px;color:#6b6878;margin-top:4px;">
+      Предложения Даши по изменению логики бота — карта флоу
+    </div>
+  </div>
+  <a href="/dasha/bot_flow" style="font-size:12px;color:#7c6bd4;text-decoration:none;">← Карта флоу</a>
+</div>
+
+<div class="filter-tabs">
+  <button class="ftab active" onclick="filterCards('all', this)">Все ({{ suggestions|length }})</button>
+  <button class="ftab" onclick="filterCards('new', this)">Новые</button>
+  <button class="ftab" onclick="filterCards('in_progress', this)">В работе</button>
+  <button class="ftab" onclick="filterCards('done', this)">Выполнено</button>
+  <button class="ftab" onclick="filterCards('wont_fix', this)">Отклонено</button>
+</div>
+
+<div class="sug-list" id="sug-list">
+{% if suggestions %}
+  {% for s in suggestions %}
+  <div class="sug-card {{ s.status }}" data-status="{{ s.status }}" data-id="{{ s.id }}">
+    <div class="sug-top">
+      <div class="sug-screen">
+        {{ s.screen_id }}<span>{{ s.screen_title }}</span>
+      </div>
+      <div class="sug-meta">{{ s.created_at.strftime('%d.%m.%Y %H:%M') if s.created_at else '' }}</div>
+    </div>
+    <div class="sug-text">{{ s.suggestion }}</div>
+    <div class="sug-author">от {{ s.author }}</div>
+    {% if s.dev_comment %}
+    <div class="sug-comment">💬 {{ s.dev_comment }}</div>
+    {% endif %}
+    <div class="sug-actions">
+      <span class="sug-status-badge badge-{{ s.status }}">
+        {{ {'new':'новое','in_progress':'в работе','done':'готово','wont_fix':'отклонено'}.get(s.status, s.status) }}
+      </span>
+      <button class="act-btn progress" onclick="updateSug({{ s.id }}, 'in_progress', this)">▶ В работу</button>
+      <button class="act-btn done-btn" onclick="updateSug({{ s.id }}, 'done', this)">✓ Готово</button>
+      <button class="act-btn wont" onclick="updateSug({{ s.id }}, 'wont_fix', this)">✕ Отклонить</button>
+      <input class="comment-input" id="comment-{{ s.id }}" placeholder="Комментарий разработчика…"
+        value="{{ s.dev_comment or '' }}">
+    </div>
+  </div>
+  {% endfor %}
+{% else %}
+  <div class="empty">Предложений пока нет.<br>Они появятся когда Даша нажмёт «✏ предложить правку» на карте флоу.</div>
+{% endif %}
+</div>
+
+<script>
+function filterCards(status, btn) {
+  document.querySelectorAll('.ftab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.sug-card').forEach(card => {
+    card.style.display = (status === 'all' || card.dataset.status === status) ? '' : 'none';
+  });
+}
+
+async function updateSug(id, status, btn) {
+  const comment = document.getElementById('comment-' + id).value.trim();
+  btn.disabled = true;
+  try {
+    const r = await fetch('/dev/suggestions/' + id + '/update', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({status, comment})
+    });
+    const data = await r.json();
+    if (data.ok) {
+      const card = document.querySelector('[data-id="' + id + '"]');
+      card.className = 'sug-card ' + status;
+      card.dataset.status = status;
+      const badge = card.querySelector('.sug-status-badge');
+      const labels = {new:'новое', in_progress:'в работе', done:'готово', wont_fix:'отклонено'};
+      badge.textContent = labels[status] || status;
+      badge.className = 'sug-status-badge badge-' + status;
+    }
+  } catch(e) {}
+  btn.disabled = false;
+}
+</script>
+{% endblock %}

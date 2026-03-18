@@ -2,7 +2,7 @@
 import os
 from datetime import datetime
 
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import Blueprint, flash, jsonify, redirect, render_template, request, url_for, session
 
 from admin.auth import role_required
 from admin import db_admin as dba
@@ -175,6 +175,21 @@ def pipeline_start(telegram_id: int):
     except Exception as e:
         flash(f"Ошибка запуска: {e}", "error")
     return redirect(url_for("dasha.order_detail", telegram_id=telegram_id))
+
+
+# ── Предложения по флоу ──────────────────────────────────────────
+@bp.route("/suggest_change", methods=["POST"])
+@role_required("dev", "dasha", "lena")
+def suggest_change():
+    data = request.get_json(silent=True) or {}
+    screen_id = data.get("screen_id", "").strip()
+    screen_title = data.get("screen_title", "").strip()
+    suggestion = data.get("suggestion", "").strip()
+    if not screen_id or not suggestion:
+        return jsonify({"ok": False, "error": "Заполните все поля"}), 400
+    author = session.get("username", "dasha")
+    new_id = dba.add_flow_suggestion(screen_id, screen_title, suggestion, author)
+    return jsonify({"ok": True, "id": new_id})
 
 
 # ── Отчёты ───────────────────────────────────────────────────────
