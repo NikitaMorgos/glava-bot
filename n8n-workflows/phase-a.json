@@ -516,7 +516,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const body = $('Webhook').first().json.body;const bio_text = $('Extract from Proofreader').first().json.bio_text || '';const questions_text = $('Extract from Interview Architect').first().json.questions_text || '';const lqa = $('Call Orch: Layout QA').first().json;const cover_spec = $('Extract Cover Designer').first().json.cover_spec || {};const character_name = body.character_name || 'Герой книги';return [{ json: {  wrapped_input: JSON.stringify({    phase: 'A',    project_id: String(body.draft_id || body.telegram_id),    character_name: character_name,    book_title: cover_spec.title || character_name,    book_subtitle: cover_spec.subtitle || 'Семейная биография',    book_tagline: cover_spec.tagline || '',    book_status: 'ready',    chapters_count: 4,    book_excerpt: bio_text.slice(0, 400),    delivery_type: 'phase_a_v1',    layout_qa_verdict: lqa.verdict || 'pass',    estimated_pages: (lqa.layout_spec && lqa.layout_spec.estimated_pages) || null  }),  bio_text: bio_text,  questions_text: questions_text,  character_name: character_name,  cover_spec: cover_spec} }];",
+        "jsCode": "const body = $('Webhook').first().json.body;const bio_text = $('Extract from Proofreader').first().json.bio_text || '';const questions_text = $('Extract from Interview Architect').first().json.questions_text || '';const lqa = $('Call Orch: Layout QA').first().json;const cover_spec = $('Extract Cover Designer').first().json.cover_spec || {};const character_name = body.character_name || 'Герой книги';return [{ json: { bio_text, questions_text, wrapped_input: JSON.stringify({    phase: 'A',    project_id: String(body.draft_id || body.telegram_id),    character_name: character_name,    book_title: cover_spec.title || character_name,    book_subtitle: cover_spec.subtitle || 'Семейная биография',    book_tagline: cover_spec.tagline || '',    book_status: 'ready',    chapters_count: 4,    book_excerpt: bio_text.slice(0, 400),    delivery_type: 'phase_a_v1',    layout_qa_verdict: lqa.verdict || 'pass',    estimated_pages: (lqa.layout_spec && lqa.layout_spec.estimated_pages) || null  }),  bio_text: bio_text,  questions_text: questions_text,  character_name: character_name,  cover_spec: cover_spec} }];",
         "mode": "runOnceForAllItems"
       },
       "id": "node-wrap-producer",
@@ -638,7 +638,7 @@
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "application/json",
-        "body": "={{ JSON.stringify({ telegram_id: $('Webhook').item.json.body.telegram_id, bio_text: $('Wrap for Producer').item.json.bio_text, character_name: $('Webhook').item.json.body.character_name || 'Герой книги', draft_id: $('Webhook').item.json.body.draft_id || 0 }) }}",
+        "body": "={{ JSON.stringify({ telegram_id: $('Webhook').item.json.body.telegram_id, bio_text: $('Wrap for Producer').item.json.bio_text || $('Extract from Proofreader').first().json.bio_text || '', character_name: $('Webhook').item.json.body.character_name || 'Герой книги', draft_id: $('Webhook').item.json.body.draft_id || 0, cover_spec: $('Extract Cover Designer').first().json.cover_spec || {} }) }}",
         "options": {
           "timeout": 120000
         }
@@ -1519,7 +1519,7 @@
             "index": 0
           },
           {
-            "node": "Send Bio to Telegram",
+            "node": "Send Bio PDF to Telegram",
             "type": "main",
             "index": 0
           },
@@ -1532,17 +1532,6 @@
       ]
     },
     "Send Intro to Telegram": {
-      "main": [
-        [
-          {
-            "node": "Update Job Status",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Send Bio to Telegram": {
       "main": [
         [
           {
@@ -1777,6 +1766,17 @@
         [
           {
             "node": "State: delivered_v1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Bio PDF to Telegram": {
+      "main": [
+        [
+          {
+            "node": "Update Job Status",
             "type": "main",
             "index": 0
           }
