@@ -41,6 +41,30 @@
   {% endfor %}
 </div>
 
+{# ── Прогресс-бары Phase A/B ── #}
+{% set PHASE_A_STEPS = ['collecting', 'assembling_phase_a', 'delivered_v1'] %}
+{% set PHASE_B_STEPS = ['delivered_v1', 'revising_phase_b', 'delivered_vN', 'finalized'] %}
+{% macro pipeline_progress(state) %}
+  {% if state in ['assembling_phase_a', 'revising_phase_b'] %}
+    <div class="d-flex align-items-center gap-1 mt-1">
+      <div class="spinner-border spinner-border-sm text-warning" style="width:.7rem;height:.7rem"></div>
+      <small class="text-warning">в процессе</small>
+    </div>
+  {% elif state == 'delivered_v1' %}
+    <div class="progress mt-1" style="height:4px;width:80px">
+      <div class="progress-bar bg-primary" style="width:50%"></div>
+    </div>
+    <small class="text-primary" style="font-size:.65rem">v1 доставлена</small>
+  {% elif state == 'delivered_vN' %}
+    <div class="progress mt-1" style="height:4px;width:80px">
+      <div class="progress-bar bg-success" style="width:100%"></div>
+    </div>
+    <small class="text-success" style="font-size:.65rem">vN доставлена</small>
+  {% elif state == 'finalized' %}
+    <small class="text-dark fw-bold" style="font-size:.65rem">✓ Финал</small>
+  {% endif %}
+{% endmacro %}
+
 {# ── Таблица проектов ── #}
 {% set filter_state = request.args.get('filter', '') %}
 <div class="card shadow-sm">
@@ -51,9 +75,9 @@
           <th>Герой</th>
           <th>Telegram ID</th>
           <th>Статус</th>
-          <th>Phase</th>
+          <th>Версии книги</th>
+          <th>Пайплайн</th>
           <th>Обновлён</th>
-          <th>Заметки</th>
           <th></th>
         </tr>
       </thead>
@@ -62,29 +86,80 @@
         {% for p in projects %}
         {% if not filter_state or p.state == filter_state %}
         {% set ns.shown = ns.shown + 1 %}
+        {% set book_info = book_versions.get(p.telegram_id) %}
         <tr>
           <td>
             <strong>{{ p.character_name or '—' }}</strong>
+            {% if p.phase %}
+            <span class="badge bg-secondary ms-1" style="font-size:.6rem">Phase {{ p.phase }}</span>
+            {% endif %}
           </td>
           <td>
             <code class="small">{{ p.telegram_id }}</code>
+            {% if p.draft_id %}
+            <br><small class="text-muted">#{{ p.draft_id }}</small>
+            {% endif %}
           </td>
           <td>
             <span class="badge bg-{{ state_colors.get(p.state, 'secondary') }}">
               {{ state_labels.get(p.state, p.state) }}
             </span>
             {% if p.previous_state %}
-            <br><small class="text-muted">← {{ state_labels.get(p.previous_state, p.previous_state) }}</small>
+            <br><small class="text-muted" style="font-size:.65rem">← {{ state_labels.get(p.previous_state, p.previous_state) }}</small>
+            {% endif %}
+            {{ pipeline_progress(p.state) }}
+          </td>
+          <td>
+            {% if book_info %}
+              <span class="badge bg-info text-dark">v{{ book_info.version }}</span>
+              <br><small class="text-muted" style="font-size:.65rem">
+                {{ book_info.created_at.strftime('%d.%m %H:%M') if book_info.created_at else '' }}
+              </small>
+              <br>
+              <button class="btn btn-link btn-sm p-0 text-decoration-none"
+                      style="font-size:.65rem"
+                      data-bs-toggle="modal"
+                      data-bs-target="#booksModal"
+                      data-tgid="{{ p.telegram_id }}"
+                      data-name="{{ p.character_name or p.telegram_id }}">
+                история версий ›
+              </button>
+            {% else %}
+              <span class="text-muted small">—</span>
             {% endif %}
           </td>
-          <td><span class="badge bg-secondary">{{ p.phase or 'A' }}</span></td>
+          <td>
+            {% set job = pipeline_jobs.get(p.telegram_id) %}
+            {% if job %}
+              <small class="text-muted">
+                {% if job.status == 'running' %}
+                  <span class="text-warning">⟳ {{ job.step or 'выполняется' }}</span>
+                {% elif job.status == 'done' %}
+                  <span class="text-success">✓ {{ job.step or 'готово' }}</span>
+                {% elif job.status == 'error' %}
+                  <span class="text-danger">✗ ошибка</span>
+                  {% if job.error %}
+                  <br><span style="font-size:.6rem">{{ (job.error or '')[:50] }}</span>
+                  {% endif %}
+                {% else %}
+                  {{ job.step or job.status }}
+                {% endif %}
+                <br>
+                {% if job.started_at %}
+                <span style="font-size:.6rem">{{ job.started_at.strftime('%d.%m %H:%M') }}</span>
+                {% endif %}
+              </small>
+            {% else %}
+              <span class="text-muted small">—</span>
+            {% endif %}
+          </td>
           <td>
             <small class="text-muted">
               {{ p.updated_at.strftime('%d.%m %H:%M') if p.updated_at else '—' }}
             </small>
-          </td>
-          <td>
-            <small class="text-muted">{{ (p.notes or '')[:60] }}</small>
+            {% if p.notes %}
+            <br><small class="text-muted" style="font-size:.6rem">{{ (p.notes or '')[:50] }}</small>
+            {% endif %}
           </td>
           <td>
             <button class="btn btn-sm btn-outline-secondary"
@@ -93,7 +168,7 @@
                     data-tgid="{{ p.telegram_id }}"
                     data-name="{{ p.character_name or p.telegram_id }}"
                     data-state="{{ p.state }}">
-              Изменить
+              ✎
             </button>
           </td>
         </tr>
@@ -148,16 +223,56 @@
   </div>
 </div>
 
+{# ── Модальное окно истории версий книги ── #}
+<div class="modal fade" id="booksModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Версии книги: <span id="booksModalName"></span></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="booksModalBody">
+        <div class="text-center text-muted py-3">Загрузка...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 document.getElementById('stateModal').addEventListener('show.bs.modal', function(e) {
   const btn = e.relatedTarget;
+  document.getElementById('modalName').textContent = btn.dataset.name;
+  document.getElementById('stateForm').action = '/dasha/projects/' + btn.dataset.tgid + '/set_state';
+  document.querySelector('#stateModal select[name="state"]').value = btn.dataset.state;
+});
+
+document.getElementById('booksModal').addEventListener('show.bs.modal', function(e) {
+  const btn = e.relatedTarget;
   const tgid = btn.dataset.tgid;
   const name = btn.dataset.name;
-  const state = btn.dataset.state;
-  document.getElementById('modalName').textContent = name;
-  document.getElementById('stateForm').action = '/dasha/projects/' + tgid + '/set_state';
-  const sel = document.querySelector('#stateModal select[name="state"]');
-  sel.value = state;
+  document.getElementById('booksModalName').textContent = name;
+  document.getElementById('booksModalBody').innerHTML = '<div class="text-center text-muted py-3">Загрузка...</div>';
+  fetch('/dasha/projects/' + tgid + '/book-versions')
+    .then(r => r.json())
+    .then(data => {
+      if (!data.versions || data.versions.length === 0) {
+        document.getElementById('booksModalBody').innerHTML = '<p class="text-muted">Версий нет</p>';
+        return;
+      }
+      let html = '<table class="table table-sm"><thead><tr><th>Версия</th><th>Файл</th><th>Дата</th></tr></thead><tbody>';
+      data.versions.forEach(v => {
+        html += `<tr>
+          <td><span class="badge bg-info text-dark">v${v.version}</span></td>
+          <td><small>${v.pdf_filename || '—'}</small></td>
+          <td><small>${v.created_at || '—'}</small></td>
+        </tr>`;
+      });
+      html += '</tbody></table>';
+      document.getElementById('booksModalBody').innerHTML = html;
+    })
+    .catch(() => {
+      document.getElementById('booksModalBody').innerHTML = '<p class="text-danger">Ошибка загрузки</p>';
+    });
 });
 </script>
 {% endblock %}

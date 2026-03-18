@@ -154,6 +154,41 @@ def _user_has_paid(telegram_id: int) -> bool:
     return draft is not None and draft.get("status") == "paid"
 
 
+def _user_book_delivered(telegram_id: int) -> bool:
+    """Проверяет, доставлена ли книга v1 или vN (Phase B активна)."""
+    try:
+        import requests as _req
+        admin_url = os.environ.get("ADMIN_API_BASE_URL", "http://127.0.0.1:5001/api")
+        r = _req.get(f"{admin_url}/state/{telegram_id}", timeout=3)
+        if r.status_code == 200:
+            state = r.json().get("state", "")
+            return state in ("delivered_v1", "delivered_vN", "revising_phase_b")
+    except Exception:
+        pass
+    return False
+
+
+def _get_user_character_name(telegram_id: int) -> str:
+    """Берёт имя персонажа из draft."""
+    try:
+        draft = db_draft.get_draft_by_telegram_id(telegram_id)
+        if draft:
+            chars = draft.get("characters") or []
+            if chars:
+                return chars[0].get("name", "")
+    except Exception:
+        pass
+    return ""
+
+
+def _get_user_draft_id(telegram_id: int) -> int:
+    try:
+        draft = db_draft.get_draft_by_telegram_id(telegram_id)
+        return draft["id"] if draft else 0
+    except Exception:
+        return 0
+
+
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """START — только приветствие и главное меню (ТЗ 4.1–4.2)."""
     user = update.effective_user
@@ -527,9 +562,25 @@ async def _save_audio_file(
                 storage_key=storage_key,
                 duration=duration,
             )
-            await update.message.reply_text("Аудио сохранено.")
-            if voice:
-                _run_transcription_pipeline(voice["id"], storage_key, user.id, user.username)
+            if _user_book_delivered(user.id):
+                await update.message.reply_text(
+                    "🎙 Аудио получено. Транскрибируем и обновляем книгу — это займёт несколько минут."
+                )
+                # Phase B: передаём storage_key напрямую; n8n Phase B сам транскрибирует
+                if voice:
+                    from pipeline_n8n import trigger_phase_b_background
+                    trigger_phase_b_background(
+                        telegram_id=user.id,
+                        input_type="voice",
+                        content=storage_key,
+                        character_name=_get_user_character_name(user.id),
+                        draft_id=_get_user_draft_id(user.id),
+                        username=user.username or "",
+                    )
+            else:
+                await update.message.reply_text("Аудио сохранено.")
+                if voice:
+                    _run_transcription_pipeline(voice["id"], storage_key, user.id, user.username)
         finally:
             Path(tmp_path).unlink(missing_ok=True)
     except Exception as e:
@@ -640,8 +691,33 @@ async def handle_caption_text(update: Update, context: ContextTypes.DEFAULT_TYPE
     if pending:
         db.update_photo_caption(pending["id"], text)
         await update.message.reply_text("Подпись сохранена.")
+        # Если книга уже доставлена — фото с подписью идёт в Phase B
+        if _user_book_delivered(user.id):
+            from pipeline_n8n import trigger_phase_b_background
+            trigger_phase_b_background(
+                telegram_id=user.id,
+                input_type="photo_caption",
+                content=text,
+                character_name=_get_user_character_name(user.id),
+                draft_id=_get_user_draft_id(user.id),
+                username=user.username or "",
+            )
     elif await _handle_prepay_text(update, context, text, user):
         pass
+    elif _user_book_delivered(user.id):
+        # Книга доставлена → текстовое сообщение = правка → Phase B
+        from pipeline_n8n import trigger_phase_b_background
+        await update.message.reply_text(
+            "📝 Получили вашу правку. Обновляем книгу — это займёт несколько минут."
+        )
+        trigger_phase_b_background(
+            telegram_id=user.id,
+            input_type="text",
+            content=text,
+            character_name=_get_user_character_name(user.id),
+            draft_id=_get_user_draft_id(user.id),
+            username=user.username or "",
+        )
     else:
         await update.message.reply_text("Используйте кнопки меню или /start")
 

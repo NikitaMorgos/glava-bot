@@ -133,6 +133,17 @@ def send_book_pdf():
         logger.exception("send_book_pdf: ошибка отправки в Telegram: %s", e)
         return jsonify({"error": f"telegram send failed: {e}"}), 502
 
+    # Сохраняем версию книги для Phase B
+    try:
+        dba.save_book_version(
+            int(telegram_id),
+            bio_text=bio_text,
+            character_name=character_name,
+            pdf_filename=filename,
+        )
+    except Exception as e:
+        logger.warning("send_book_pdf: не удалось сохранить book_version: %s", e)
+
     logger.info(
         "send_book_pdf: PDF '%s' (%d байт) отправлен telegram_id=%s",
         filename, len(pdf_bytes), telegram_id,
@@ -314,6 +325,68 @@ def get_state(telegram_id: int):
         return jsonify({"found": True, **result}), 200
     except Exception as e:
         logger.exception("get_state error: %s", e)
+        return jsonify({"error": str(e)}), 500
+
+
+# ── GET /api/book-context/<telegram_id> ──────────────────────────
+# n8n Phase B запрашивает текст последней версии книги.
+
+@bp.get("/book-context/<int:telegram_id>")
+def book_context(telegram_id: int):
+    _check_access()
+    try:
+        row = dba.get_last_book_version(telegram_id)
+        if row is None:
+            return jsonify({"found": False, "bio_text": "", "version": 0}), 200
+        return jsonify({
+            "found": True,
+            "bio_text": row.get("bio_text", ""),
+            "version": row.get("version", 1),
+            "character_name": row.get("character_name", ""),
+        }), 200
+    except Exception as e:
+        logger.exception("book_context error: %s", e)
+        return jsonify({"error": str(e)}), 500
+
+
+# ── POST /api/orchestrate/phase-b-revision ────────────────────────
+# Phase B: применяет правку к тексту книги через нужных агентов.
+# Body: {book_text, correction_type, correction_content, character_name, project_id?}
+
+@bp.post("/orchestrate/phase-b-revision")
+def orchestrate_phase_b():
+    _check_access()
+    data = request.get_json(silent=True) or {}
+
+    book_text          = data.get("book_text", "")
+    correction_type    = data.get("correction_type", "structural")
+    correction_content = data.get("correction_content", "")
+    character_name     = data.get("character_name", "Герой книги")
+    project_id         = str(data.get("project_id", "proj"))
+
+    if not book_text:
+        return jsonify({"error": "book_text is required"}), 400
+    if not correction_content:
+        return jsonify({"error": "correction_content is required"}), 400
+
+    openai_key = os.environ.get("OPENAI_API_KEY", "")
+    if not openai_key:
+        return jsonify({"error": "OPENAI_API_KEY not configured"}), 500
+
+    try:
+        from orchestrator import run_phase_b_revision
+        result = run_phase_b_revision(
+            book_text=book_text,
+            correction_type=correction_type,
+            correction_content=correction_content,
+            character_name=character_name,
+            openai_key=openai_key,
+            admin_url="http://127.0.0.1:5001",
+            project_id=project_id,
+        )
+        return jsonify({"ok": True, **result}), 200
+    except Exception as e:
+        logger.exception("orchestrate_phase_b error: %s", e)
         return jsonify({"error": str(e)}), 500
 
 

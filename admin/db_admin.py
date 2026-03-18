@@ -460,3 +460,74 @@ def get_project_states_summary() -> dict:
             FROM project_states GROUP BY state
         """)
         return {r["state"]: r["cnt"] for r in cur.fetchall()}
+
+
+# ── Версии книг (Phase B context) ────────────────────────────────
+
+def ensure_book_versions_table() -> None:
+    with _conn() as conn:
+        cur = conn.cursor()
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS book_versions (
+                id             SERIAL PRIMARY KEY,
+                telegram_id    BIGINT NOT NULL,
+                version        INTEGER NOT NULL DEFAULT 1,
+                bio_text       TEXT NOT NULL,
+                character_name VARCHAR(200) DEFAULT '',
+                pdf_filename   VARCHAR(200) DEFAULT '',
+                created_at     TIMESTAMPTZ DEFAULT NOW()
+            );
+            CREATE INDEX IF NOT EXISTS idx_book_versions_tgid
+                ON book_versions(telegram_id);
+        """)
+
+
+def save_book_version(
+    telegram_id: int,
+    bio_text: str,
+    character_name: str = "",
+    pdf_filename: str = "",
+) -> int:
+    ensure_book_versions_table()
+    with _conn() as conn:
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT COALESCE(MAX(version), 0) AS max_ver FROM book_versions WHERE telegram_id = %s",
+            (telegram_id,),
+        )
+        max_ver = cur.fetchone()["max_ver"]
+        cur.execute(
+            """
+            INSERT INTO book_versions (telegram_id, version, bio_text, character_name, pdf_filename)
+            VALUES (%s, %s, %s, %s, %s) RETURNING id
+            """,
+            (telegram_id, max_ver + 1, bio_text, character_name, pdf_filename),
+        )
+        return cur.fetchone()["id"]
+
+
+def get_last_book_version(telegram_id: int) -> dict | None:
+    ensure_book_versions_table()
+    with _conn() as conn:
+        cur = conn.cursor()
+        cur.execute(
+            """
+            SELECT * FROM book_versions
+            WHERE telegram_id = %s ORDER BY version DESC LIMIT 1
+            """,
+            (telegram_id,),
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
+def get_book_versions(telegram_id: int) -> list[dict]:
+    ensure_book_versions_table()
+    with _conn() as conn:
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT id, version, character_name, pdf_filename, created_at FROM book_versions "
+            "WHERE telegram_id = %s ORDER BY version DESC",
+            (telegram_id,),
+        )
+        return [dict(r) for r in cur.fetchall()]

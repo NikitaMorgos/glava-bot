@@ -459,6 +459,98 @@ def run_layout_qa_loop(
     }
 
 
+# ── Phase B: ревизия книги ────────────────────────────────────────
+
+CORRECTION_TYPE_MAP = {
+    "factual":    ("ghostwriter", "Клиент внёс фактическую поправку. Исправь только факты, не трогай стиль."),
+    "style":      ("literary_editor", "Клиент внёс стилевой комментарий. Применяй только стилевые правки."),
+    "addition":   ("ghostwriter", "Клиент добавил новый материал. Интегрируй его органично в текст книги."),
+    "audio":      ("ghostwriter", "Клиент прислал новое аудио-интервью (транскрипт). Интегрируй новые факты и истории в текст книги."),
+    "structural": ("ghostwriter", "Клиент запросил структурную правку. Перестрой указанные разделы, сохрани все факты."),
+    "photo":      ("ghostwriter", "Клиент прислал новые фото. Добавь соответствующие подписи и упоминания в текст."),
+}
+
+
+def run_phase_b_revision(
+    book_text: str,
+    correction_type: str,
+    correction_content: str,
+    character_name: str,
+    openai_key: str,
+    admin_url: str,
+    project_id: str = "proj",
+) -> dict:
+    """
+    Phase B: применяет клиентскую правку к тексту книги.
+    correction_type: factual | style | addition | audio | structural | photo
+    Возвращает {revised_text, correction_type, summary}
+    """
+    agent_role, instruction = CORRECTION_TYPE_MAP.get(
+        correction_type,
+        ("ghostwriter", "Клиент внёс правку. Применяй аккуратно, сохраняя стиль."),
+    )
+
+    writer_prompt = _fetch_prompt(agent_role, admin_url) or (
+        f"Ты {agent_role}. {instruction} "
+        f"Верни полный обновлённый текст книги в виде обычного текста, без JSON."
+    )
+
+    writer_msg = {
+        "context": _build_context(
+            project_id, "B", "revision", 1, 1, "client", instruction
+        ),
+        "data": {
+            "character_name": character_name,
+            "current_book_text": book_text,
+            "client_correction_type": correction_type,
+            "client_correction_content": correction_content,
+        },
+    }
+
+    logger.info(
+        "orchestrator phase_b: applying %s correction via %s",
+        correction_type, agent_role,
+    )
+
+    result = _call_openai(agent_role, writer_prompt, writer_msg, openai_key)
+
+    revised_text = ""
+    if isinstance(result, dict):
+        revised_text = (
+            result.get("bio_text")
+            or result.get("revised_text")
+            or result.get("text")
+            or result.get("content")
+            or ""
+        )
+    if not revised_text:
+        revised_text = str(result) if result else book_text
+
+    # Прогоняем через пруфридера
+    proofread_prompt = _fetch_prompt("proofreader", admin_url) or (
+        "Ты корректор. Исправь опечатки, пунктуацию и грамматику. "
+        "Верни полный исправленный текст."
+    )
+    proofread_msg = {
+        "context": _build_context(project_id, "B", "final", 1, 1, agent_role, ""),
+        "data": {"text": revised_text},
+    }
+    pr_result = _call_openai("proofreader", proofread_prompt, proofread_msg, openai_key)
+    if isinstance(pr_result, dict):
+        final_text = pr_result.get("bio_text") or pr_result.get("text") or revised_text
+    elif isinstance(pr_result, str) and len(pr_result) > 100:
+        final_text = pr_result
+    else:
+        final_text = revised_text
+
+    return {
+        "revised_text": final_text,
+        "bio_text": final_text,
+        "correction_type": correction_type,
+        "summary": f"Phase B revision: {correction_type} applied via {agent_role}",
+    }
+
+
 # ── Утилиты ──────────────────────────────────────────────────────
 
 def _chapters_to_text(chapters: list) -> str:

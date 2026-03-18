@@ -33,7 +33,8 @@ BOT_MESSAGE_KEYS = [
 ]
 
 AGENT_ROLES = [
-    ("triage_agent",      "00 · Триаж-агент"),
+    ("triage_agent",      "00 · Триаж Phase A"),
+    ("triage_b",          "00b · Триаж Phase B"),
     ("transcriber",       "01 · Транскрибатор"),
     ("fact_extractor",    "02 · Фактолог"),
     ("historian",         "02b · Историк"),
@@ -97,7 +98,28 @@ def prompt_edit(role: str):
 @role_required("dev", "dasha", "lena")
 def projects():
     all_projects = dba.get_all_project_states()
-    summary = dba.get_project_states_summary()
+    summary      = dba.get_project_states_summary()
+
+    # Последние версии книг по каждому telegram_id
+    book_versions = {}
+    for p in all_projects:
+        try:
+            row = dba.get_last_book_version(p["telegram_id"])
+            if row:
+                book_versions[p["telegram_id"]] = row
+        except Exception:
+            pass
+
+    # Статусы пайплайна
+    pipeline_jobs = {}
+    try:
+        for job in dba.get_pipeline_jobs():
+            tid = job.get("telegram_id")
+            if tid and tid not in pipeline_jobs:
+                pipeline_jobs[tid] = job
+    except Exception:
+        pass
+
     return render_template(
         "dasha/projects.html",
         projects=all_projects,
@@ -105,7 +127,26 @@ def projects():
         state_labels=dba.STATE_LABELS,
         state_colors=dba.STATE_COLORS,
         valid_states=dba.VALID_STATES,
+        book_versions=book_versions,
+        pipeline_jobs=pipeline_jobs,
     )
+
+
+@bp.route("/projects/<int:telegram_id>/book-versions")
+@role_required("dev", "dasha", "lena")
+def project_book_versions(telegram_id: int):
+    try:
+        versions = dba.get_book_versions(telegram_id)
+        return jsonify({"versions": [
+            {
+                "version": v["version"],
+                "pdf_filename": v.get("pdf_filename", ""),
+                "created_at": v["created_at"].strftime("%d.%m.%Y %H:%M") if v.get("created_at") else "",
+            }
+            for v in versions
+        ]})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @bp.route("/projects/<int:telegram_id>/set_state", methods=["POST"])

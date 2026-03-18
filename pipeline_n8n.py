@@ -68,6 +68,73 @@ def trigger_phase_a(
         return False
 
 
+def trigger_phase_b(
+    telegram_id: int,
+    input_type: str,
+    content: str,
+    character_name: str = "",
+    draft_id: int = 0,
+    username: str = "",
+) -> bool:
+    """
+    Отправляет клиентскую правку в n8n webhook Phase B.
+    input_type: text | voice_transcript | photo_caption
+    Возвращает True если запрос принят.
+    """
+    webhook_url = os.environ.get("N8N_WEBHOOK_PHASE_B", "").strip()
+    if not webhook_url:
+        logger.info("N8N_WEBHOOK_PHASE_B не задан — Phase B пропущен")
+        return False
+
+    bot_token = os.environ.get("BOT_TOKEN", "")
+    admin_api_url = os.environ.get("ADMIN_API_BASE_URL", "http://127.0.0.1:5001/api")
+
+    payload = {
+        "telegram_id": telegram_id,
+        "input_type": input_type,
+        "content": content,
+        "character_name": character_name,
+        "draft_id": draft_id,
+        "username": username,
+        "bot_token": bot_token,
+        "admin_api_url": admin_api_url,
+    }
+
+    try:
+        r = _requests.post(webhook_url, json=payload, timeout=30)
+        if r.status_code < 400:
+            logger.info("n8n Phase B запущен: HTTP %s, telegram_id=%s", r.status_code, telegram_id)
+            return True
+        logger.error("n8n Phase B webhook ошибка: HTTP %s, body=%s", r.status_code, r.text[:200])
+        return False
+    except Exception as e:
+        logger.error("n8n trigger_phase_b ошибка: %s", e)
+        return False
+
+
+def trigger_phase_b_background(
+    telegram_id: int,
+    input_type: str,
+    content: str,
+    character_name: str = "",
+    draft_id: int = 0,
+    username: str = "",
+) -> None:
+    """Запускает trigger_phase_b в фоновом потоке."""
+    def _run():
+        trigger_phase_b(
+            telegram_id=telegram_id,
+            input_type=input_type,
+            content=content,
+            character_name=character_name,
+            draft_id=draft_id,
+            username=username,
+        )
+    t = threading.Thread(target=_run, daemon=True)
+    t.start()
+    logger.info("n8n Phase B триггер отправлен в фон для telegram_id=%s", telegram_id)
+
+
 def trigger_phase_a_background(
     telegram_id: int,
     transcript: str,

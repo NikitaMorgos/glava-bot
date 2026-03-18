@@ -1,0 +1,424 @@
+{
+  "name": "GLAVA — Phase B — Client Revision Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "glava/phase-b",
+        "options": {}
+      },
+      "id": "pb-webhook",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        250,
+        450
+      ],
+      "webhookId": "glava-phase-b"
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Webhook').first().json.body.admin_api_url + '/book-context/' + $('Webhook').first().json.body.telegram_id }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "pb-get-context",
+      "name": "Get Book Context",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        500,
+        450
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $('Webhook').first().json.body;const ctx  = $('Get Book Context').first().json;const book_text = ctx.bio_text || '';const input_type = body.input_type || 'text';const content    = body.content || '';const character_name = ctx.character_name || body.character_name || 'Герой книги';return [{ json: {  book_text,  input_type,  content,  character_name,  book_version: ctx.version || 1,  wrapped_input: JSON.stringify({    phase: 'B',    telegram_id: body.telegram_id,    character_name,    input_type,    client_message: content,    current_book_length: book_text.length,    book_preview: book_text.slice(0, 600)  })} }];",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "pb-wrap-triage",
+      "name": "Wrap for Triage B",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        750,
+        450
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Webhook').first().json.body.admin_api_url + '/prompts/triage_b' }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "pb-get-prompt-triage",
+      "name": "Get Prompt: Triage B",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        1000,
+        450
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.OPENAI_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [{ role: 'system', content: $('Get Prompt: Triage B').item.json.text || 'Ты Triage-агент Phase B. Определи тип клиентской правки и верни JSON: {\"correction_type\": \"factual|style|addition|audio|structural|photo\", \"summary\": \"краткое описание правки\"}.'},{ role: 'user', content: $('Wrap for Triage B').item.json.wrapped_input }], temperature: 0.0, max_tokens: 300 }) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "pb-triage",
+      "name": "Triage B Agent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        1250,
+        450
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.choices[0].message.content || '';let triage = { correction_type: 'structural', summary: '' };const t = raw.trim();const s = t.indexOf('{'); const e = t.lastIndexOf('}');if (s !== -1 && e > s) { try { triage = JSON.parse(t.slice(s, e+1)); } catch(err) {} }const input_type = $('Wrap for Triage B').first().json.input_type || 'text';if (input_type === 'voice') triage.correction_type = 'audio';if (input_type === 'photo_caption') triage.correction_type = 'photo';return [{ json: { triage_result: triage, correction_type: triage.correction_type || 'structural', summary: triage.summary || '' } }];",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "pb-extract-triage",
+      "name": "Extract Triage B",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1500,
+        450
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Webhook').first().json.body.admin_api_url + '/state/transition' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({  telegram_id: $('Webhook').first().json.body.telegram_id,  state: 'revising_phase_b',  draft_id: $('Webhook').first().json.body.draft_id || 0,  character_name: $('Wrap for Triage B').first().json.character_name,  phase: 'B'}) }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "pb-state-revising",
+      "name": "State: revising_phase_b",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        1750,
+        450
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://api.telegram.org/bot' + $('Webhook').first().json.body.bot_token + '/sendMessage' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({  chat_id: $('Webhook').first().json.body.telegram_id,  text: '\\u270f\\ufe0f \\u041f\\u043e\\u043b\\u0443\\u0447\\u0438\\u043b\\u0438 \\u0432\\u0430\\u0448\\u0443 \\u043f\\u0440\\u0430\\u0432\\u043a\\u0443 ('+ $('Extract Triage B').first().json.correction_type +'). \\u041e\\u0431\\u043d\\u043e\\u0432\\u043b\\u044f\\u0435\\u043c \\u043a\\u043d\\u0438\\u0433\\u0443 \\u2014 \\u044d\\u0442\\u043e \\u0437\\u0430\\u0439\\u043c\\u0451\\u0442 1\\u20133 \\u043c\\u0438\\u043d\\u0443\\u0442\\u044b.'}) }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "pb-notify-started",
+      "name": "Notify: Revision Started",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        2000,
+        450
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Webhook').first().json.body.admin_api_url + '/orchestrate/phase-b-revision' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({  book_text: $('Get Book Context').first().json.bio_text || '',  correction_type: $('Extract Triage B').first().json.correction_type,  correction_content: $('Wrap for Triage B').first().json.content,  character_name: $('Wrap for Triage B').first().json.character_name,  project_id: String($('Webhook').first().json.body.telegram_id)}) }}",
+        "options": {
+          "timeout": 600000
+        }
+      },
+      "id": "pb-call-orch",
+      "name": "Call Orch: Phase B Revision",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        2250,
+        450
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Webhook').first().json.body.admin_api_url + '/send-book-pdf' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({  telegram_id: $('Webhook').first().json.body.telegram_id,  bio_text: $('Call Orch: Phase B Revision').first().json.bio_text || $('Call Orch: Phase B Revision').first().json.revised_text || '',  character_name: $('Wrap for Triage B').first().json.character_name,  draft_id: $('Webhook').first().json.body.draft_id || 0}) }}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "pb-send-pdf",
+      "name": "Send Book PDF v2",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        2500,
+        450
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Webhook').first().json.body.admin_api_url + '/state/transition' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({  telegram_id: $('Webhook').first().json.body.telegram_id,  state: 'delivered_vN',  draft_id: $('Webhook').first().json.body.draft_id || 0,  phase: 'B',  notes: 'Phase B revision delivered'}) }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "pb-state-delivered",
+      "name": "State: delivered_vN",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        2750,
+        450
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Webhook').first().json.body.admin_api_url + '/jobs/update' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({  telegram_id: $('Webhook').first().json.body.telegram_id,  phase: 'B',  step: 'delivered_vN',  status: 'done'}) }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "pb-update-job",
+      "name": "Update Job Status B",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        3000,
+        450
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get Book Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Book Context": {
+      "main": [
+        [
+          {
+            "node": "Wrap for Triage B",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wrap for Triage B": {
+      "main": [
+        [
+          {
+            "node": "Get Prompt: Triage B",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Prompt: Triage B": {
+      "main": [
+        [
+          {
+            "node": "Triage B Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Triage B Agent": {
+      "main": [
+        [
+          {
+            "node": "Extract Triage B",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Triage B": {
+      "main": [
+        [
+          {
+            "node": "State: revising_phase_b",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "State: revising_phase_b": {
+      "main": [
+        [
+          {
+            "node": "Notify: Revision Started",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify: Revision Started": {
+      "main": [
+        [
+          {
+            "node": "Call Orch: Phase B Revision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Orch: Phase B Revision": {
+      "main": [
+        [
+          {
+            "node": "Send Book PDF v2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Book PDF v2": {
+      "main": [
+        [
+          {
+            "node": "State: delivered_vN",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "State: delivered_vN": {
+      "main": [
+        [
+          {
+            "node": "Update Job Status B",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  }
+}
