@@ -323,3 +323,140 @@ def update_flow_suggestion(suggestion_id: int, status: str,
             SET status = %s, dev_comment = %s, updated_at = NOW()
             WHERE id = %s
         """, (status, dev_comment, suggestion_id))
+
+
+# ── State Machine проектов ────────────────────────────────────────
+
+VALID_STATES = (
+    "created",
+    "collecting",
+    "assembling_phase_a",
+    "delivered_v1",
+    "revising_phase_b",
+    "delivered_vN",
+    "finalized",
+)
+
+STATE_LABELS = {
+    "created":            "Создан",
+    "collecting":         "Сбор материалов",
+    "assembling_phase_a": "Сборка Phase A",
+    "delivered_v1":       "Доставлен v1",
+    "revising_phase_b":   "Доработка Phase B",
+    "delivered_vN":       "Доставлен vN",
+    "finalized":          "Финализирован",
+}
+
+STATE_COLORS = {
+    "created":            "secondary",
+    "collecting":         "info",
+    "assembling_phase_a": "warning",
+    "delivered_v1":       "primary",
+    "revising_phase_b":   "warning",
+    "delivered_vN":       "success",
+    "finalized":          "dark",
+}
+
+
+def ensure_project_states_table() -> None:
+    with _conn() as conn:
+        cur = conn.cursor()
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS project_states (
+                id             SERIAL PRIMARY KEY,
+                telegram_id    BIGINT NOT NULL UNIQUE,
+                draft_id       INTEGER,
+                character_name VARCHAR(200),
+                state          VARCHAR(50) NOT NULL DEFAULT 'created',
+                previous_state VARCHAR(50),
+                phase          VARCHAR(10) DEFAULT 'A',
+                metadata       JSONB DEFAULT '{}',
+                notes          TEXT DEFAULT '',
+                created_at     TIMESTAMPTZ DEFAULT NOW(),
+                updated_at     TIMESTAMPTZ DEFAULT NOW()
+            );
+            CREATE INDEX IF NOT EXISTS idx_proj_states_tgid
+                ON project_states(telegram_id);
+            CREATE INDEX IF NOT EXISTS idx_proj_states_state
+                ON project_states(state);
+        """)
+
+
+def get_project_state(telegram_id: int) -> dict | None:
+    ensure_project_states_table()
+    with _conn() as conn:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT * FROM project_states WHERE telegram_id = %s
+        """, (telegram_id,))
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
+def upsert_project_state(
+    telegram_id: int,
+    new_state: str,
+    draft_id: int | None = None,
+    character_name: str | None = None,
+    phase: str = "A",
+    metadata: dict | None = None,
+    notes: str = "",
+) -> dict:
+    import json as _json
+    ensure_project_states_table()
+    with _conn() as conn:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT state FROM project_states WHERE telegram_id = %s
+        """, (telegram_id,))
+        row = cur.fetchone()
+        previous_state = row["state"] if row else None
+
+        if row:
+            cur.execute("""
+                UPDATE project_states SET
+                    state = %s, previous_state = %s, phase = %s,
+                    metadata = %s, notes = %s, updated_at = NOW(),
+                    draft_id       = COALESCE(%s, draft_id),
+                    character_name = COALESCE(%s, character_name)
+                WHERE telegram_id = %s
+            """, (new_state, previous_state, phase,
+                  _json.dumps(metadata or {}), notes,
+                  draft_id, character_name, telegram_id))
+        else:
+            cur.execute("""
+                INSERT INTO project_states
+                    (telegram_id, draft_id, character_name, state,
+                     previous_state, phase, metadata, notes)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            """, (telegram_id, draft_id, character_name, new_state,
+                  previous_state, phase,
+                  _json.dumps(metadata or {}), notes))
+
+    return {
+        "telegram_id": telegram_id,
+        "state": new_state,
+        "previous_state": previous_state,
+    }
+
+
+def get_all_project_states() -> list[dict]:
+    ensure_project_states_table()
+    with _conn() as conn:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT * FROM project_states ORDER BY updated_at DESC
+        """)
+        return [dict(r) for r in cur.fetchall()]
+
+
+def get_project_states_summary() -> dict:
+    """Возвращает кол-во проектов по каждому состоянию."""
+    ensure_project_states_table()
+    with _conn() as conn:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT state, COUNT(*) AS cnt
+            FROM project_states GROUP BY state
+        """)
+        return {r["state"]: r["cnt"] for r in cur.fetchall()}

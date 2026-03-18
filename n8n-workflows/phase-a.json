@@ -1,5 +1,5 @@
 {
-  "name": "GLAVA · Phase A — Book Pipeline v8 (Cover Designer + IA improved)",
+  "name": "GLAVA · Phase A — Book Pipeline v9 (State Machine)",
   "nodes": [
     {
       "parameters": {
@@ -1077,6 +1077,96 @@
         "mode": "runOnceForAllItems",
         "jsCode": "const raw = $input.first().json.choices[0].message.content;let cover_spec = { title: '', subtitle: 'Семейная биография', tagline: '',  image_description: '', visual_style: 'warm', color_palette: 'cream_gold' };const t = raw.trim(); const s = t.indexOf('{'); const e = t.lastIndexOf('}');if (s !== -1 && e > s) { try { const p = JSON.parse(t.slice(s, e + 1));  if (p.title || p.subtitle) cover_spec = { ...cover_spec, ...p }; } catch(err) {} }return [{ json: { cover_spec } }];"
       }
+    },
+    {
+      "id": "node-state-assembling",
+      "name": "State: assembling_phase_a",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        -50,
+        300
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:5001/api/state/transition",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({  telegram_id: $('Webhook').first().json.body.telegram_id,  state: 'assembling_phase_a',  draft_id: $('Webhook').first().json.body.draft_id || 0,  character_name: $('Webhook').first().json.body.character_name || null,  phase: 'A',  metadata: { pipeline_variant: $('Extract Triage').first().json.triage_result.pipeline_variant || 'standard' }}) }}",
+        "options": {
+          "timeout": 10000
+        }
+      }
+    },
+    {
+      "id": "node-state-delivered",
+      "name": "State: delivered_v1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        9250,
+        450
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:5001/api/state/transition",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({  telegram_id: $('Webhook').first().json.body.telegram_id,  state: 'delivered_v1',  draft_id: $('Webhook').first().json.body.draft_id || 0,  character_name: $('Webhook').first().json.body.character_name || null,  phase: 'A',  notes: 'PDF доставлен клиенту'}) }}",
+        "options": {
+          "timeout": 10000
+        }
+      }
+    },
+    {
+      "id": "node-notify-start",
+      "name": "Notify: Pipeline Started",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        -50,
+        150
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://api.telegram.org/bot' + $('Webhook').first().json.body.bot_token + '/sendMessage' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({  chat_id: $('Webhook').first().json.body.telegram_id,  text: '📖 Начинаем работу над вашей книгой. Это займёт несколько минут — мы пришлём результат сюда.'}) }}",
+        "options": {
+          "timeout": 15000
+        }
+      }
     }
   ],
   "connections": {
@@ -1582,7 +1672,12 @@
       "main": [
         [
           {
-            "node": "Wrap for Fact Extractor",
+            "node": "State: assembling_phase_a",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Notify: Pipeline Started",
             "type": "main",
             "index": 0
           }
@@ -1660,6 +1755,28 @@
         [
           {
             "node": "Extract Cover Designer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "State: assembling_phase_a": {
+      "main": [
+        [
+          {
+            "node": "Wrap for Fact Extractor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Job Status": {
+      "main": [
+        [
+          {
+            "node": "State: delivered_v1",
             "type": "main",
             "index": 0
           }

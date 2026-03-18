@@ -261,6 +261,62 @@ def orchestrate_layout_qa():
         return jsonify({"error": str(e)}), 500
 
 
+# ── POST /api/state/transition ───────────────────────────────────
+# n8n и бот вызывают при каждом переходе состояния проекта.
+# Body: {telegram_id, state, draft_id?, character_name?, phase?, metadata?, notes?}
+
+@bp.post("/state/transition")
+def state_transition():
+    _check_access()
+    data = request.get_json(silent=True) or {}
+
+    telegram_id = data.get("telegram_id")
+    new_state   = data.get("state", "")
+
+    if not telegram_id:
+        return jsonify({"error": "telegram_id required"}), 400
+
+    if new_state not in dba.VALID_STATES:
+        return jsonify({
+            "error": f"invalid state: {new_state}",
+            "valid": list(dba.VALID_STATES),
+        }), 400
+
+    try:
+        result = dba.upsert_project_state(
+            telegram_id    = int(telegram_id),
+            new_state      = new_state,
+            draft_id       = data.get("draft_id"),
+            character_name = data.get("character_name"),
+            phase          = data.get("phase", "A"),
+            metadata       = data.get("metadata"),
+            notes          = data.get("notes", ""),
+        )
+        logger.info(
+            "state_transition: telegram_id=%s %s → %s",
+            telegram_id, result.get("previous_state"), new_state,
+        )
+        return jsonify({"ok": True, **result}), 200
+    except Exception as e:
+        logger.exception("state_transition error: %s", e)
+        return jsonify({"error": str(e)}), 500
+
+
+# ── GET /api/state/<telegram_id> ─────────────────────────────────
+
+@bp.get("/state/<int:telegram_id>")
+def get_state(telegram_id: int):
+    _check_access()
+    try:
+        result = dba.get_project_state(telegram_id)
+        if result is None:
+            return jsonify({"telegram_id": telegram_id, "state": "created", "found": False}), 200
+        return jsonify({"found": True, **result}), 200
+    except Exception as e:
+        logger.exception("get_state error: %s", e)
+        return jsonify({"error": str(e)}), 500
+
+
 # ── GET /api/health ───────────────────────────────────────────────
 
 @bp.get("/health")

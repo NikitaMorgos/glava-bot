@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% block title %}Проекты{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h2 class="mb-0">Проекты клиентов</h2>
+  <span class="text-muted small">Всего: {{ projects|length }}</span>
+</div>
+
+{# ── Сводка по состояниям ── #}
+<div class="row g-3 mb-4">
+  {% for state_key in valid_states %}
+  {% set cnt = summary.get(state_key, 0) %}
+  {% if cnt > 0 %}
+  <div class="col-6 col-md-4 col-lg-3">
+    <div class="card border-0 bg-light h-100">
+      <div class="card-body py-2 px-3">
+        <div class="d-flex justify-content-between align-items-center">
+          <small class="text-muted">{{ state_labels[state_key] }}</small>
+          <span class="badge bg-{{ state_colors[state_key] }} rounded-pill">{{ cnt }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+  {% endfor %}
+</div>
+
+{# ── Фильтр ── #}
+<div class="mb-3 d-flex gap-2 flex-wrap">
+  <a href="{{ url_for('dasha.projects') }}" class="btn btn-sm btn-outline-secondary">Все</a>
+  {% for state_key in valid_states %}
+  {% set cnt = summary.get(state_key, 0) %}
+  {% if cnt > 0 %}
+  <a href="?filter={{ state_key }}"
+     class="btn btn-sm btn-outline-{{ state_colors[state_key] }}">
+    {{ state_labels[state_key] }}
+    <span class="badge bg-{{ state_colors[state_key] }} ms-1">{{ cnt }}</span>
+  </a>
+  {% endif %}
+  {% endfor %}
+</div>
+
+{# ── Таблица проектов ── #}
+{% set filter_state = request.args.get('filter', '') %}
+<div class="card shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Герой</th>
+          <th>Telegram ID</th>
+          <th>Статус</th>
+          <th>Phase</th>
+          <th>Обновлён</th>
+          <th>Заметки</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% set ns = namespace(shown=0) %}
+        {% for p in projects %}
+        {% if not filter_state or p.state == filter_state %}
+        {% set ns.shown = ns.shown + 1 %}
+        <tr>
+          <td>
+            <strong>{{ p.character_name or '—' }}</strong>
+          </td>
+          <td>
+            <code class="small">{{ p.telegram_id }}</code>
+          </td>
+          <td>
+            <span class="badge bg-{{ state_colors.get(p.state, 'secondary') }}">
+              {{ state_labels.get(p.state, p.state) }}
+            </span>
+            {% if p.previous_state %}
+            <br><small class="text-muted">← {{ state_labels.get(p.previous_state, p.previous_state) }}</small>
+            {% endif %}
+          </td>
+          <td><span class="badge bg-secondary">{{ p.phase or 'A' }}</span></td>
+          <td>
+            <small class="text-muted">
+              {{ p.updated_at.strftime('%d.%m %H:%M') if p.updated_at else '—' }}
+            </small>
+          </td>
+          <td>
+            <small class="text-muted">{{ (p.notes or '')[:60] }}</small>
+          </td>
+          <td>
+            <button class="btn btn-sm btn-outline-secondary"
+                    data-bs-toggle="modal"
+                    data-bs-target="#stateModal"
+                    data-tgid="{{ p.telegram_id }}"
+                    data-name="{{ p.character_name or p.telegram_id }}"
+                    data-state="{{ p.state }}">
+              Изменить
+            </button>
+          </td>
+        </tr>
+        {% endif %}
+        {% endfor %}
+        {% if ns.shown == 0 %}
+        <tr>
+          <td colspan="7" class="text-center text-muted py-4">
+            {% if filter_state %}Нет проектов в статусе «{{ state_labels.get(filter_state, filter_state) }}»
+            {% else %}Проектов пока нет{% endif %}
+          </td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{# ── Модальное окно изменения статуса ── #}
+<div class="modal fade" id="stateModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Изменить статус проекта</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" id="stateForm" action="">
+        <div class="modal-body">
+          <p class="text-muted mb-3">
+            Проект: <strong id="modalName"></strong>
+          </p>
+          <div class="mb-3">
+            <label class="form-label">Новый статус</label>
+            <select name="state" class="form-select" required>
+              {% for state_key in valid_states %}
+              <option value="{{ state_key }}">{{ state_labels[state_key] }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Заметка (необязательно)</label>
+            <input type="text" name="notes" class="form-control"
+                   placeholder="Например: клиент попросил паузу">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+          <button type="submit" class="btn btn-primary">Сохранить</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+document.getElementById('stateModal').addEventListener('show.bs.modal', function(e) {
+  const btn = e.relatedTarget;
+  const tgid = btn.dataset.tgid;
+  const name = btn.dataset.name;
+  const state = btn.dataset.state;
+  document.getElementById('modalName').textContent = name;
+  document.getElementById('stateForm').action = '/dasha/projects/' + tgid + '/set_state';
+  const sel = document.querySelector('#stateModal select[name="state"]');
+  sel.value = state;
+});
+</script>
+{% endblock %}

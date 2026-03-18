@@ -91,6 +91,36 @@ def prompt_edit(role: str):
                            current=current, history=history)
 
 
+# ── Dashboard проектов (State Machine) ────────────────────────────
+
+@bp.route("/projects")
+@role_required("dev", "dasha", "lena")
+def projects():
+    all_projects = dba.get_all_project_states()
+    summary = dba.get_project_states_summary()
+    return render_template(
+        "dasha/projects.html",
+        projects=all_projects,
+        summary=summary,
+        state_labels=dba.STATE_LABELS,
+        state_colors=dba.STATE_COLORS,
+        valid_states=dba.VALID_STATES,
+    )
+
+
+@bp.route("/projects/<int:telegram_id>/set_state", methods=["POST"])
+@role_required("dev", "dasha")
+def set_project_state(telegram_id: int):
+    new_state = request.form.get("state", "")
+    notes     = request.form.get("notes", "")
+    if new_state in dba.VALID_STATES:
+        dba.upsert_project_state(telegram_id, new_state, notes=notes)
+        flash(f"Статус проекта обновлён: {dba.STATE_LABELS.get(new_state, new_state)}", "success")
+    else:
+        flash("Неверный статус", "danger")
+    return redirect(url_for("dasha.projects"))
+
+
 # ── Сообщения бота ───────────────────────────────────────────────
 @bp.route("/bot_messages")
 @role_required("dev", "dasha", "lena")
