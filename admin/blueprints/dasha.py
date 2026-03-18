@@ -46,6 +46,7 @@ AGENT_ROLES = [
     ("layout_qa",         "09 · Контролёр вёрстки"),
     ("producer",          "10 · Продюсер"),
     ("interview_architect","11 · Интервьюер"),
+    ("cover_designer",    "12 · Дизайнер обложки"),
 ]
 
 

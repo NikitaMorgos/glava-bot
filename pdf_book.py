@@ -240,13 +240,26 @@ def generate_book_pdf(
     bio_text: str,
     character_name: str = "Герой книги",
     subtitle: str = "Семейная биография",
+    cover_spec: dict | None = None,
 ) -> bytes:
     """
     Генерирует PDF-книгу из bio_text.
 
+    Args:
+        bio_text: текст биографии
+        character_name: имя героя (запасной заголовок)
+        subtitle: подзаголовок (запасной)
+        cover_spec: словарь от Cover Designer агента с полями
+                    title, subtitle, tagline, visual_style
+
     Returns:
         bytes: содержимое PDF-файла
     """
+    cs = cover_spec or {}
+    book_title    = cs.get("title") or character_name
+    book_subtitle = cs.get("subtitle") or subtitle
+    book_tagline  = cs.get("tagline", "")
+
     buf = io.BytesIO()
     page_w, page_h = A5
 
@@ -257,7 +270,7 @@ def generate_book_pdf(
         rightMargin=15 * mm,
         topMargin=18 * mm,
         bottomMargin=18 * mm,
-        title=f"{character_name} — семейная биография",
+        title=f"{book_title} — семейная биография",
         author="Глава · glava.family",
         subject="Семейная биография",
     )
@@ -266,17 +279,20 @@ def generate_book_pdf(
     story = []
 
     # ── Обложка (title page) ───────────────────────────────────────────
-    story.append(Spacer(1, 25 * mm))
+    story.append(Spacer(1, 22 * mm))
     story.append(Paragraph("Глава", styles["cover_label"]))
     story.append(Spacer(1, 6 * mm))
     story.append(HRFlowable(width="60%", thickness=0.5, color=GOLD, hAlign="CENTER"))
     story.append(Spacer(1, 8 * mm))
-    story.append(Paragraph(_clean(character_name), styles["title"]))
-    story.append(Spacer(1, 4 * mm))
-    story.append(Paragraph(subtitle, styles["subtitle"]))
+    story.append(Paragraph(_clean(book_title), styles["title"]))
+    story.append(Spacer(1, 3 * mm))
+    story.append(Paragraph(_clean(book_subtitle), styles["subtitle"]))
+    if book_tagline:
+        story.append(Spacer(1, 3 * mm))
+        story.append(Paragraph(_clean(book_tagline), styles["cover_label"]))
     story.append(Spacer(1, 8 * mm))
     story.append(HRFlowable(width="60%", thickness=0.5, color=GOLD, hAlign="CENTER"))
-    story.append(Spacer(1, 20 * mm))
+    story.append(Spacer(1, 18 * mm))
     story.append(Paragraph("glava.family", styles["cover_label"]))
     story.append(PageBreak())
 

@@ -89,6 +89,7 @@ def send_book_pdf():
     bio_text = data.get("bio_text", "")
     character_name = data.get("character_name", "Герой книги")
     draft_id = data.get("draft_id", 0)
+    cover_spec = data.get("cover_spec") or {}
 
     if not telegram_id:
         return jsonify({"error": "telegram_id required"}), 400
@@ -101,7 +102,11 @@ def send_book_pdf():
 
     try:
         from pdf_book import generate_book_pdf
-        pdf_bytes = generate_book_pdf(bio_text, character_name=character_name)
+        pdf_bytes = generate_book_pdf(
+            bio_text,
+            character_name=character_name,
+            cover_spec=cover_spec if cover_spec else None,
+        )
     except Exception as e:
         logger.exception("send_book_pdf: ошибка генерации PDF: %s", e)
         return jsonify({"error": f"pdf generation failed: {e}"}), 500

@@ -1,5 +1,5 @@
 {
-  "name": "GLAVA · Phase A — Book Pipeline v7 (Triage + Historian)",
+  "name": "GLAVA · Phase A — Book Pipeline v8 (Cover Designer + IA improved)",
   "nodes": [
     {
       "parameters": {
@@ -332,7 +332,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const body = $('Webhook').first().json.body; const fact_map = $('Extract Fact Map').first().json.fact_map; const book_draft = $('Extract Book Draft').first().json.book_draft; const subject = fact_map.subject || {}; const chapters_summary = (book_draft.chapters || []).map(ch => ({ id: ch.id, title: ch.title || '', covers_period: '', brief_content: (ch.content || '').slice(0, 300) + '...' })); return [{ json: { wrapped_input: JSON.stringify({ project_id: String(body.draft_id || body.telegram_id), subject: { name: body.character_name || subject.name || 'Герой книги', birth_year: subject.birth_year || null, death_year: subject.death_year || null, birth_place: subject.birth_place || null }, gaps: fact_map.gaps || [], timeline: (fact_map.timeline || []).map(ev => ({ id: ev.id, date: ev.date, title: ev.title, life_period: ev.life_period, confidence: ev.confidence })), persons: (fact_map.persons || []).map(p => ({ id: p.id, name: p.name, relation_to_subject: p.relation_to_subject })), locations: (fact_map.locations || []).map(l => ({ id: l.id, name: l.name, period: l.period || null })), conflicts: fact_map.conflicts || [], book_chapters_summary: chapters_summary, transcripts_summary: { count: 1, speakers: ['Рассказчик'], total_topics_covered: 'Биографические факты из интервью' } }) }}];",
+        "jsCode": "const body = $('Webhook').first().json.body;const fact_map = $('Extract Fact Map').first().json.fact_map;const book_draft = $('Extract Book Draft').first().json.book_draft;const triage_result = $('Extract Triage').first().json.triage_result || {};const historical_context = $('Extract Historian').first().json.historical_context || {};const subject = fact_map.subject || {};const chapters_summary = (book_draft.chapters || []).map(ch => ({  id: ch.id, title: ch.title || '',  brief_content: (ch.content || '').slice(0, 300) + '...'}));const historical_events = (historical_context.key_historical_events || []).slice(0, 5);return [{ json: { wrapped_input: JSON.stringify({  project_id: String(body.draft_id || body.telegram_id),  subject: {    name: body.character_name || subject.name || 'Герой книги',    birth_year: subject.birth_year || triage_result.birth_year_estimate || null,    death_year: subject.death_year || triage_result.death_year_estimate || null,    birth_place: subject.birth_place || triage_result.primary_location || null  },  period: triage_result.subject_period || null,  key_themes: triage_result.key_themes || [],  gaps: fact_map.gaps || [],  timeline: (fact_map.timeline || []).map(ev => ({    id: ev.id, date: ev.date, title: ev.title, life_period: ev.life_period,    confidence: ev.confidence  })),  persons: (fact_map.persons || []).map(p => ({    id: p.id, name: p.name, relation_to_subject: p.relation_to_subject  })),  locations: (fact_map.locations || []).map(l => ({ id: l.id, name: l.name })),  conflicts: fact_map.conflicts || [],  historical_gaps: historical_events.map(ev => ev.event || ''),  book_chapters_summary: chapters_summary,  complexity: triage_result.complexity || 'medium'}) }}];",
         "mode": "runOnceForAllItems"
       },
       "id": "node-wrap-ia",
@@ -424,7 +424,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const body = $('Webhook').first().json.body; const bio_text = $('Extract from Proofreader').first().json.bio_text || ''; const photo_layout = $('Extract from Photo Editor').first().json.photo_layout || []; return [{ json: { wrapped_input: JSON.stringify({ phase: 'A', project_id: String(body.draft_id || body.telegram_id), bio_text_excerpt: bio_text.slice(0, 2000), chapters_count: 4, photo_placements: photo_layout, format: 'A5_print_ready', style: 'warm_book', note: 'Создай спецификацию вёрстки PDF: структуру страниц, расположение текста и фотографий, стиль оформления' }) }}];",
+        "jsCode": "const body = $('Webhook').first().json.body;const bio_text = $('Extract from Proofreader').first().json.bio_text || '';const photo_layout = $('Extract from Photo Editor').first().json.photo_layout || [];const cover_spec = $('Extract Cover Designer').first().json.cover_spec || {};return [{ json: { wrapped_input: JSON.stringify({  phase: 'A',  project_id: String(body.draft_id || body.telegram_id),  bio_text_excerpt: bio_text.slice(0, 2000),  chapters_count: 4,  photo_placements: photo_layout,  cover_spec: cover_spec,  format: 'A5_print_ready',  style: cover_spec.visual_style || 'warm_book',  note: 'Создай спецификацию вёрстки PDF на основе обложки и содержания'}) }}];",
         "mode": "runOnceForAllItems"
       },
       "id": "node-wrap-ld",
@@ -516,7 +516,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const body = $('Webhook').first().json.body; const bio_text = $('Extract from Proofreader').first().json.bio_text || ''; const questions_text = $('Extract from Interview Architect').first().json.questions_text || ''; const lqa = $('Call Orch: Layout QA').first().json; const character_name = body.character_name || 'Герой книги'; return [{ json: { wrapped_input: JSON.stringify({ phase: 'A', project_id: String(body.draft_id || body.telegram_id), character_name: character_name, book_status: 'ready', chapters_count: 4, book_excerpt: bio_text.slice(0, 400), delivery_type: 'phase_a_v1', layout_qa_verdict: lqa.verdict || 'pass', estimated_pages: (lqa.layout_spec && lqa.layout_spec.estimated_pages) || null }), bio_text: bio_text, questions_text: questions_text, character_name: character_name } }];",
+        "jsCode": "const body = $('Webhook').first().json.body;const bio_text = $('Extract from Proofreader').first().json.bio_text || '';const questions_text = $('Extract from Interview Architect').first().json.questions_text || '';const lqa = $('Call Orch: Layout QA').first().json;const cover_spec = $('Extract Cover Designer').first().json.cover_spec || {};const character_name = body.character_name || 'Герой книги';return [{ json: {  wrapped_input: JSON.stringify({    phase: 'A',    project_id: String(body.draft_id || body.telegram_id),    character_name: character_name,    book_title: cover_spec.title || character_name,    book_subtitle: cover_spec.subtitle || 'Семейная биография',    book_tagline: cover_spec.tagline || '',    book_status: 'ready',    chapters_count: 4,    book_excerpt: bio_text.slice(0, 400),    delivery_type: 'phase_a_v1',    layout_qa_verdict: lqa.verdict || 'pass',    estimated_pages: (lqa.layout_spec && lqa.layout_spec.estimated_pages) || null  }),  bio_text: bio_text,  questions_text: questions_text,  character_name: character_name,  cover_spec: cover_spec} }];",
         "mode": "runOnceForAllItems"
       },
       "id": "node-wrap-producer",
@@ -999,6 +999,84 @@
         "mode": "runOnceForAllItems",
         "jsCode": "const raw = $input.first().json.choices[0].message.content;let historical_context = {};const t = raw.trim(); const s = t.indexOf('{'); const e = t.lastIndexOf('}');if (s !== -1 && e > s) { try { historical_context = JSON.parse(t.slice(s, e + 1)); } catch(err) {} }return [{ json: { historical_context } }];"
       }
+    },
+    {
+      "id": "node-wrap-cover",
+      "name": "Wrap Cover Designer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3000,
+        600
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const body = $('Webhook').first().json.body;const fact_map = $('Extract Fact Map').first().json.fact_map;const historical_context = $('Extract Historian').first().json.historical_context || {};const triage_result = $('Extract Triage').first().json.triage_result || {};const subject = fact_map.subject || {};return [{ json: { wrapped_input: JSON.stringify({  phase: 'A',  project_id: String(body.draft_id || body.telegram_id),  subject: {    name: body.character_name || subject.name || 'Герой книги',    birth_year: subject.birth_year || triage_result.birth_year_estimate || null,    birth_place: subject.birth_place || triage_result.primary_location || null  },  period: triage_result.subject_period || null,  key_themes: triage_result.key_themes || [],  historical_backdrop: historical_context.historical_backdrop || '',  period_overview: historical_context.period_overview || '',  tone: triage_result.language_style || 'warm'}) }}];"
+      }
+    },
+    {
+      "id": "node-get-prompt-cover",
+      "name": "Get Prompt: Cover Designer",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        3250,
+        600
+      ],
+      "parameters": {
+        "url": "http://127.0.0.1:5001/api/prompts/cover_designer",
+        "options": {
+          "timeout": 10000
+        }
+      }
+    },
+    {
+      "id": "node-cover-designer",
+      "name": "Cover Designer",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        3500,
+        600
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.OPENAI_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [ { role: 'system', content: $('Get Prompt: Cover Designer').item.json.text || 'Ты Дизайнер обложки семейной книги. Создай концепцию обложки. Верни только валидный JSON с полями: title (заголовок книги — имя героя или поэтичное название), subtitle (подзаголовок, например: Семейная биография), tagline (короткая фраза 5-10 слов — суть жизни героя), image_description (описание образа для обложки в 2-3 предложения), visual_style (warm/classic/modern/vintage), color_palette (описание цветовой гаммы).' }, { role: 'user', content: $('Wrap Cover Designer').item.json.wrapped_input } ], temperature: 0.6, max_tokens: 800 }) }}",
+        "options": {
+          "timeout": 60000
+        }
+      }
+    },
+    {
+      "id": "node-extract-cover",
+      "name": "Extract Cover Designer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3750,
+        600
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const raw = $input.first().json.choices[0].message.content;let cover_spec = { title: '', subtitle: 'Семейная биография', tagline: '',  image_description: '', visual_style: 'warm', color_palette: 'cream_gold' };const t = raw.trim(); const s = t.indexOf('{'); const e = t.lastIndexOf('}');if (s !== -1 && e > s) { try { const p = JSON.parse(t.slice(s, e + 1));  if (p.title || p.subtitle) cover_spec = { ...cover_spec, ...p }; } catch(err) {} }return [{ json: { cover_spec } }];"
+      }
     }
   ],
   "connections": {
@@ -1436,6 +1514,11 @@
             "node": "Wrap for Proofreader",
             "type": "main",
             "index": 0
+          },
+          {
+            "node": "Wrap Cover Designer",
+            "type": "main",
+            "index": 0
           }
         ]
       ]
@@ -1544,6 +1627,39 @@
         [
           {
             "node": "Wrap for Ghostwriter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wrap Cover Designer": {
+      "main": [
+        [
+          {
+            "node": "Get Prompt: Cover Designer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Prompt: Cover Designer": {
+      "main": [
+        [
+          {
+            "node": "Cover Designer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cover Designer": {
+      "main": [
+        [
+          {
+            "node": "Extract Cover Designer",
             "type": "main",
             "index": 0
           }
