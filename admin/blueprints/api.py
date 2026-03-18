@@ -364,10 +364,10 @@ def orchestrate_phase_b():
     character_name     = data.get("character_name", "Герой книги")
     project_id         = str(data.get("project_id", "proj"))
 
-    if not book_text:
-        return jsonify({"error": "book_text is required"}), 400
     if not correction_content:
         return jsonify({"error": "correction_content is required"}), 400
+    # book_text может быть пустым (первый запуск Phase B до сохранения версии)
+    # в этом случае используем correction_content как основу
 
     openai_key = os.environ.get("OPENAI_API_KEY", "")
     if not openai_key:
