@@ -458,19 +458,36 @@ function closeSuggest() {
   document.getElementById('suggest-modal').classList.remove('open');
 }
 
-document.getElementById('suggest-modal').addEventListener('click', function(e) {
-  if (e.target === this) closeSuggest();
-});
+</script>
 
-document.getElementById('modal-cancel-btn').addEventListener('click', closeSuggest);
+<!-- Модальное окно — должно быть ДО JS-обработчиков -->
+<div class="modal-overlay" id="suggest-modal" onclick="if(event.target===this)closeSuggest()">
+  <div class="modal">
+    <h3>Предложить правку</h3>
+    <div class="modal-screen">Экран: <strong id="modal-screen-id"></strong> — <span id="modal-screen-title"></span></div>
+    <div id="modal-form">
+      <textarea id="suggest-text" placeholder="Опишите что нужно изменить: логику, кнопки, переходы, поведение бота…"></textarea>
+      <div class="modal-hint">Задача уйдёт разработчику в раздел «Предложения»</div>
+      <div class="modal-actions">
+        <button class="modal-cancel" onclick="closeSuggest()">Отмена</button>
+        <button class="modal-submit" onclick="submitSuggest(this)">Отправить</button>
+      </div>
+    </div>
+    <div class="modal-success" id="modal-success">
+      <div class="ok-icon">✓</div>
+      <p>Предложение отправлено!</p>
+    </div>
+  </div>
+</div>
 
-document.getElementById('modal-submit-btn').addEventListener('click', async function() {
+<script>
+async function submitSuggest(btn) {
   const text = document.getElementById('suggest-text').value.trim();
   if (!text) { document.getElementById('suggest-text').focus(); return; }
   const screenId = document.getElementById('modal-screen-id').textContent;
   const screenTitle = document.getElementById('modal-screen-title').textContent;
-  this.disabled = true;
-  this.textContent = 'Отправка…';
+  btn.disabled = true;
+  btn.textContent = 'Отправка…';
   try {
     const r = await fetch('/dasha/suggest_change', {
       method: 'POST',
@@ -484,28 +501,8 @@ document.getElementById('modal-submit-btn').addEventListener('click', async func
       setTimeout(closeSuggest, 1800);
     }
   } catch(e) { /* silent */ }
-  this.disabled = false;
-  this.textContent = 'Отправить';
-});
+  btn.disabled = false;
+  btn.textContent = 'Отправить';
+}
 </script>
-
-<!-- Модальное окно -->
-<div class="modal-overlay" id="suggest-modal">
-  <div class="modal">
-    <h3>Предложить правку</h3>
-    <div class="modal-screen">Экран: <strong id="modal-screen-id"></strong> — <span id="modal-screen-title"></span></div>
-    <div id="modal-form">
-      <textarea id="suggest-text" placeholder="Опишите что нужно изменить: логику, кнопки, переходы, поведение бота…"></textarea>
-      <div class="modal-hint">Задача уйдёт разработчику в раздел «Предложения»</div>
-      <div class="modal-actions">
-        <button class="modal-cancel" id="modal-cancel-btn">Отмена</button>
-        <button class="modal-submit" id="modal-submit-btn">Отправить</button>
-      </div>
-    </div>
-    <div class="modal-success" id="modal-success">
-      <div class="ok-icon">✓</div>
-      <p>Предложение отправлено!</p>
-    </div>
-  </div>
-</div>
 {% endblock %}
