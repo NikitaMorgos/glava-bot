@@ -135,6 +135,127 @@ def send_book_pdf():
     return jsonify({"ok": True, "filename": filename, "size": len(pdf_bytes)}), 200
 
 
+# ── POST /api/orchestrate/fact-check ─────────────────────────────
+# Цикл: Fact Checker → Ghostwriter (до 3 итераций).
+# Body: {book_draft, fact_map, transcripts, project_id?, max_iterations?}
+
+@bp.post("/orchestrate/fact-check")
+def orchestrate_fact_check():
+    _check_access()
+    data = request.get_json(silent=True) or {}
+
+    book_draft = data.get("book_draft")
+    fact_map = data.get("fact_map")
+    transcripts = data.get("transcripts", [])
+    project_id = str(data.get("project_id", "proj"))
+    max_iterations = int(data.get("max_iterations", 3))
+
+    if not book_draft or not fact_map:
+        return jsonify({"error": "book_draft and fact_map are required"}), 400
+
+    openai_key = os.environ.get("OPENAI_API_KEY", "")
+    if not openai_key:
+        return jsonify({"error": "OPENAI_API_KEY not configured"}), 500
+
+    admin_url = "http://127.0.0.1:5001"
+
+    try:
+        from orchestrator import run_fact_check_loop
+        result = run_fact_check_loop(
+            book_draft=book_draft,
+            fact_map=fact_map,
+            transcripts=transcripts,
+            openai_key=openai_key,
+            admin_url=admin_url,
+            project_id=project_id,
+            max_iterations=max_iterations,
+        )
+        return jsonify({"ok": True, **result}), 200
+    except Exception as e:
+        logger.exception("orchestrate_fact_check error: %s", e)
+        return jsonify({"error": str(e)}), 500
+
+
+# ── POST /api/orchestrate/literary-edit ──────────────────────────
+# Цикл: Literary Editor → Ghostwriter (до 2 итераций).
+# Body: {book_draft, fact_checker_warnings, project_id?, max_iterations?}
+
+@bp.post("/orchestrate/literary-edit")
+def orchestrate_literary_edit():
+    _check_access()
+    data = request.get_json(silent=True) or {}
+
+    book_draft = data.get("book_draft")
+    warnings = data.get("fact_checker_warnings", [])
+    project_id = str(data.get("project_id", "proj"))
+    max_iterations = int(data.get("max_iterations", 2))
+
+    if not book_draft:
+        return jsonify({"error": "book_draft is required"}), 400
+
+    openai_key = os.environ.get("OPENAI_API_KEY", "")
+    if not openai_key:
+        return jsonify({"error": "OPENAI_API_KEY not configured"}), 500
+
+    admin_url = "http://127.0.0.1:5001"
+
+    try:
+        from orchestrator import run_literary_edit_loop
+        result = run_literary_edit_loop(
+            book_draft=book_draft,
+            fact_checker_warnings=warnings,
+            openai_key=openai_key,
+            admin_url=admin_url,
+            project_id=project_id,
+            max_iterations=max_iterations,
+        )
+        return jsonify({"ok": True, **result}), 200
+    except Exception as e:
+        logger.exception("orchestrate_literary_edit error: %s", e)
+        return jsonify({"error": str(e)}), 500
+
+
+# ── POST /api/orchestrate/layout-qa ──────────────────────────────
+# Цикл: Layout QA → Layout Designer (до 3 итераций).
+# Body: {layout_spec, bio_text, photo_layout, project_id?, max_iterations?}
+
+@bp.post("/orchestrate/layout-qa")
+def orchestrate_layout_qa():
+    _check_access()
+    data = request.get_json(silent=True) or {}
+
+    layout_spec = data.get("layout_spec")
+    bio_text = data.get("bio_text", "")
+    photo_layout = data.get("photo_layout", [])
+    project_id = str(data.get("project_id", "proj"))
+    max_iterations = int(data.get("max_iterations", 3))
+
+    if not layout_spec:
+        return jsonify({"error": "layout_spec is required"}), 400
+
+    openai_key = os.environ.get("OPENAI_API_KEY", "")
+    if not openai_key:
+        return jsonify({"error": "OPENAI_API_KEY not configured"}), 500
+
+    admin_url = "http://127.0.0.1:5001"
+
+    try:
+        from orchestrator import run_layout_qa_loop
+        result = run_layout_qa_loop(
+            layout_spec=layout_spec,
+            bio_text=bio_text,
+            photo_layout=photo_layout,
+            openai_key=openai_key,
+            admin_url=admin_url,
+            project_id=project_id,
+            max_iterations=max_iterations,
+        )
+        return jsonify({"ok": True, **result}), 200
+    except Exception as e:
+        logger.exception("orchestrate_layout_qa error: %s", e)
+        return jsonify({"error": str(e)}), 500
+
+
 # ── GET /api/health ───────────────────────────────────────────────
 
 @bp.get("/health")
