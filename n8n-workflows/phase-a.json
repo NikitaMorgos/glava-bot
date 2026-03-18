@@ -1102,7 +1102,7 @@
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "application/json",
-        "body": "={{ JSON.stringify({  telegram_id: $('Webhook').first().json.body.telegram_id,  state: 'assembling_phase_a',  draft_id: $('Webhook').first().json.body.draft_id || 0,  character_name: $('Webhook').first().json.body.character_name || null,  phase: 'A',  metadata: { pipeline_variant: $('Extract Triage').first().json.triage_result.pipeline_variant || 'standard' }}) }}",
+        "body": "={{ JSON.stringify({  telegram_id: $('Webhook').first().json.body.telegram_id,  state: 'assembling_phase_a',  draft_id: $('Webhook').first().json.body.draft_id || 0,  character_name: $('Webhook').first().json.body.character_name || '',  phase: 'A'}) }}",
         "options": {
           "timeout": 10000
         }
@@ -1132,7 +1132,7 @@
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "application/json",
-        "body": "={{ JSON.stringify({  telegram_id: $('Webhook').first().json.body.telegram_id,  state: 'delivered_v1',  draft_id: $('Webhook').first().json.body.draft_id || 0,  character_name: $('Webhook').first().json.body.character_name || null,  phase: 'A',  notes: 'PDF доставлен клиенту'}) }}",
+        "body": "={{ JSON.stringify({  telegram_id: $('Webhook').first().json.body.telegram_id,  state: 'delivered_v1',  draft_id: $('Webhook').first().json.body.draft_id || 0,  character_name: $('Webhook').first().json.body.character_name || '',  phase: 'A',  notes: 'PDF delivered'}) }}",
         "options": {
           "timeout": 10000
         }
