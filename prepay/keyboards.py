@@ -98,3 +98,170 @@ def kb_online_meeting(has_telemost_link: bool) -> InlineKeyboardMarkup:
     if has_telemost_link:
         buttons.append([InlineKeyboardButton("🔗 Получить ссылку на встречу", callback_data="online_use_telemost")])
     return InlineKeyboardMarkup(buttons) if buttons else None
+
+
+# ── Клавиатуры bot scenario v2 ───────────────────────────────────────────────
+
+def kb_narrators(draft_id: int, narrators: list[dict], has_narrators: bool) -> InlineKeyboardMarkup:
+    """Экран 6.1: список нарраторов + добавить/удалить/продолжить."""
+    buttons = []
+    for n in narrators:
+        label = f"🗑 {n['name']} ({n.get('relation', '')})"
+        buttons.append([InlineKeyboardButton(label, callback_data=f"narrator_del:{draft_id}:{n['id']}")])
+    buttons.append([InlineKeyboardButton("➕ Добавить рассказчика", callback_data=f"narrator_add:{draft_id}")])
+    if has_narrators:
+        buttons.append([InlineKeyboardButton("Продолжить →", callback_data=f"narrator_continue:{draft_id}")])
+    buttons.append([InlineKeyboardButton("← Назад", callback_data="intro_main")])
+    return InlineKeyboardMarkup(buttons)
+
+
+def kb_interview_guide(draft_id: int) -> InlineKeyboardMarkup:
+    """Экран 7.1: подготовка к интервью."""
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("📋 Показать вопросы в чате", callback_data=f"guide_questions:{draft_id}")],
+        [InlineKeyboardButton("📄 Скачать вопросы PDF", callback_data=f"guide_pdf:{draft_id}")],
+        [InlineKeyboardButton("📞 Получить ссылку для звонка", callback_data=f"guide_call_link:{draft_id}")],
+        [InlineKeyboardButton("⬆️ Загрузить материалы", callback_data=f"upload_start:{draft_id}")],
+        [InlineKeyboardButton("← Назад", callback_data=f"narrator_back:{draft_id}")],
+    ])
+
+
+def kb_interview_questions(draft_id: int) -> InlineKeyboardMarkup:
+    """Экран 7.2: список вопросов."""
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("⬆️ Загрузить материалы", callback_data=f"upload_start:{draft_id}")],
+        [InlineKeyboardButton("← Назад", callback_data=f"guide_back:{draft_id}")],
+    ])
+
+
+def kb_narrator_select(narrators: list[dict], draft_id: int) -> InlineKeyboardMarkup:
+    """Экран 8.1: выбор нарратора для загрузки."""
+    buttons = []
+    for n in narrators:
+        label = f"{n['name']} — {n.get('relation', '')}"
+        buttons.append([InlineKeyboardButton(label, callback_data=f"upload_narrator:{draft_id}:{n['id']}")])
+    buttons.append([InlineKeyboardButton("← Назад", callback_data=f"guide_back:{draft_id}")])
+    return InlineKeyboardMarkup(buttons)
+
+
+def kb_upload_audio(draft_id: int, has_files: bool) -> InlineKeyboardMarkup:
+    """Экран 8.2: загрузка аудио."""
+    buttons = []
+    if has_files:
+        buttons.append([InlineKeyboardButton("➕ Добавить ещё файл", callback_data=f"upload_more:{draft_id}")])
+        buttons.append([InlineKeyboardButton("Далее →", callback_data=f"upload_to_photos:{draft_id}")])
+    buttons.append([InlineKeyboardButton("← Назад", callback_data=f"upload_start:{draft_id}")])
+    return InlineKeyboardMarkup(buttons)
+
+
+def kb_upload_photos(draft_id: int) -> InlineKeyboardMarkup:
+    """Экран 8.3: выбор типа фото."""
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("📸 Фотографии персонажа", callback_data=f"photo_type_photo:{draft_id}")],
+        [InlineKeyboardButton("📄 Фото документов", callback_data=f"photo_type_doc:{draft_id}")],
+        [InlineKeyboardButton("Добавить позже", callback_data=f"upload_summary:{draft_id}")],
+        [InlineKeyboardButton("Далее →", callback_data=f"upload_summary:{draft_id}")],
+    ])
+
+
+def kb_upload_summary(draft_id: int, has_more_narrators: bool) -> InlineKeyboardMarkup:
+    """Экран 8.4: итог загрузки."""
+    buttons = []
+    if has_more_narrators:
+        buttons.append([InlineKeyboardButton("🎤 Загрузить от другого рассказчика", callback_data=f"upload_start:{draft_id}")])
+    buttons.append([InlineKeyboardButton("✅ Все интервью загружены", callback_data=f"upload_done:{draft_id}")])
+    buttons.append([InlineKeyboardButton("➕ Добавить ещё файлы", callback_data=f"upload_more:{draft_id}")])
+    return InlineKeyboardMarkup(buttons)
+
+
+def kb_interview_result(draft_id: int) -> InlineKeyboardMarkup:
+    """Экран 8.6: уточняющие вопросы готовы."""
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("📋 Перейти к этапу 2", callback_data=f"interview2_start:{draft_id}")],
+        [InlineKeyboardButton("⏭ Пропустить, собрать книгу", callback_data=f"assemble_book:{draft_id}")],
+    ])
+
+
+def kb_interview2_confirm(draft_id: int) -> InlineKeyboardMarkup:
+    """Экран 9.2: подтверждение второго интервью."""
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("✅ Да, собирайте книгу", callback_data=f"assemble_book:{draft_id}")],
+        [InlineKeyboardButton("➕ Добавить ещё", callback_data=f"interview2_start:{draft_id}")],
+    ])
+
+
+def kb_book_ready(draft_id: int, revision_count: int, max_revisions: int = 3) -> InlineKeyboardMarkup:
+    """Экран 10.2 / 11.3: книга готова."""
+    buttons = [
+        [InlineKeyboardButton("📄 Открыть PDF", callback_data=f"book_get_pdf:{draft_id}")],
+    ]
+    if revision_count < max_revisions:
+        buttons.append([InlineKeyboardButton("💬 Оставить комментарий", callback_data=f"revision_start:{draft_id}")])
+    buttons.append([InlineKeyboardButton("✅ Всё отлично, завершить", callback_data=f"book_finalize:{draft_id}")])
+    if revision_count > 0:
+        buttons.append([InlineKeyboardButton("😞 Не нравится результат", callback_data=f"refund_start:{draft_id}")])
+    buttons.append([InlineKeyboardButton("📜 Версии книги", callback_data=f"versions_list:{draft_id}")])
+    return InlineKeyboardMarkup(buttons)
+
+
+def kb_revision_comment(draft_id: int) -> InlineKeyboardMarkup:
+    """Экран 11.1: ввод комментария к правке."""
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("📤 Отправить комментарий", callback_data=f"revision_submit:{draft_id}")],
+        [InlineKeyboardButton("← Назад к книге", callback_data=f"book_ready_back:{draft_id}")],
+    ])
+
+
+def kb_versions_list(versions: list[dict], draft_id: int) -> InlineKeyboardMarkup:
+    """Экран 12.1: список версий книги."""
+    buttons = []
+    for v in versions:
+        ver = v.get("version", "?")
+        date = str(v.get("created_at", ""))[:10]
+        buttons.append([
+            InlineKeyboardButton(f"📄 v{ver} · {date}", callback_data=f"version_open:{draft_id}:{ver}"),
+            InlineKeyboardButton("↩️ Откатить", callback_data=f"version_rollback:{draft_id}:{ver}"),
+        ])
+    buttons.append([InlineKeyboardButton("← Назад", callback_data=f"book_ready_back:{draft_id}")])
+    return InlineKeyboardMarkup(buttons)
+
+
+def kb_version_rollback_confirm(draft_id: int, version: int) -> InlineKeyboardMarkup:
+    """Экран 12.2: подтверждение отката."""
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("Да, откатить", callback_data=f"version_rollback_confirm:{draft_id}:{version}")],
+        [InlineKeyboardButton("Отмена", callback_data=f"versions_list:{draft_id}")],
+    ])
+
+
+def kb_finalize_confirm(draft_id: int) -> InlineKeyboardMarkup:
+    """Экран 13.1: подтверждение завершения."""
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("✅ Завершить книгу", callback_data=f"finalize_confirm:{draft_id}")],
+        [InlineKeyboardButton("← Назад", callback_data=f"book_ready_back:{draft_id}")],
+    ])
+
+
+def kb_finalized(draft_id: int) -> InlineKeyboardMarkup:
+    """Экран 14.1: книга завершена."""
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("📄 Скачать PDF", callback_data=f"book_get_pdf:{draft_id}")],
+        [InlineKeyboardButton("🖨 Заказать печать", callback_data=f"print_info:{draft_id}")],
+        [InlineKeyboardButton("📤 Поделиться", callback_data=f"book_share:{draft_id}")],
+    ])
+
+
+def kb_print_soon(draft_id: int) -> InlineKeyboardMarkup:
+    """Экран 14.2: печать скоро."""
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("📩 Уведомить меня", callback_data=f"print_waitlist:{draft_id}")],
+        [InlineKeyboardButton("← Назад", callback_data=f"finalize_done:{draft_id}")],
+    ])
+
+
+def kb_refund_reason(draft_id: int) -> InlineKeyboardMarkup:
+    """Экран 15.1: причина возврата."""
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("Запросить возврат", callback_data=f"refund_submit:{draft_id}")],
+        [InlineKeyboardButton("← Передумал, назад к книге", callback_data=f"book_ready_back:{draft_id}")],
+    ])

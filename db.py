@@ -75,20 +75,20 @@ def save_voice_message(user_id: int, telegram_file_id: str, storage_key: str, du
             return dict(cur.fetchone())
 
 
-def save_photo(user_id: int, telegram_file_id: str, storage_key: str) -> dict:
+def save_photo(user_id: int, telegram_file_id: str, storage_key: str, photo_type: str = "photo") -> dict:
     """
     Сохраняет фото в БД (без подписи).
-    Подпись добавляется отдельно при следующем текстовом сообщении.
+    photo_type: 'photo' (обычное) или 'document' (фото документа).
     """
     with get_connection() as conn:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute(
                 """
-                INSERT INTO photos (user_id, telegram_file_id, storage_key)
-                VALUES (%s, %s, %s)
-                RETURNING id, user_id, storage_key, caption, created_at
+                INSERT INTO photos (user_id, telegram_file_id, storage_key, photo_type)
+                VALUES (%s, %s, %s, %s)
+                RETURNING id, user_id, storage_key, caption, photo_type, created_at
                 """,
-                (user_id, telegram_file_id, storage_key),
+                (user_id, telegram_file_id, storage_key, photo_type),
             )
             return dict(cur.fetchone())
 

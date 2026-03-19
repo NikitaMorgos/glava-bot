@@ -29,7 +29,15 @@ from prepay.keyboards import (
     kb_config_characters, kb_config_edit_list, kb_email_back,
     kb_order_summary, kb_payment, kb_resume_draft, kb_resume_payment, kb_blocked_start,
     kb_online_meeting,
+    # v2
+    kb_narrators, kb_interview_guide, kb_interview_questions, kb_narrator_select,
+    kb_upload_audio, kb_upload_photos, kb_upload_summary, kb_interview_result,
+    kb_interview2_confirm, kb_book_ready, kb_revision_comment, kb_versions_list,
+    kb_version_rollback_confirm, kb_finalize_confirm, kb_finalized, kb_print_soon,
+    kb_refund_reason,
 )
+
+MAX_REVISIONS = 3
 
 logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -190,25 +198,93 @@ def _get_user_draft_id(telegram_id: int) -> int:
 
 
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """START — только приветствие и главное меню (ТЗ 4.1–4.2)."""
+    """START — маршрутизация по bot_state (spec v2 экран 0.1)."""
     user = update.effective_user
     if not user:
         return
 
-    # Устанавливаем кнопку меню WebApp для этого конкретного чата
     try:
         await context.bot.set_chat_menu_button(
             chat_id=update.effective_chat.id,
             menu_button=MenuButtonWebApp(text="📱 Кабинет", web_app=WebAppInfo(url=TMA_URL)),
         )
-        logger.info("set_chat_menu_button per-chat OK: chat_id=%s", update.effective_chat.id)
     except Exception as e:
-        logger.error("set_chat_menu_button per-chat FAILED: chat_id=%s err=%s", update.effective_chat.id, e)
+        logger.debug("set_chat_menu_button: %s", e)
 
     context.user_data.clear()
+
+    # Маршрутизация по состоянию
+    draft = db_draft.get_draft_by_telegram_id(user.id)
+    bot_state = (draft.get("bot_state") if draft else None) or "no_project"
+    draft_status = (draft.get("status") if draft else None) or "no_project"
+
+    # Книга готова → экран 10.2
+    if bot_state in ("book_ready", "book_updated", "revision_1", "revision_2", "revision_3"):
+        await _show_book_ready(update.message, draft)
+        return
+
+    # Обработка правки → покажем экран ожидания
+    if bot_state == "revision_processing":
+        await update.message.reply_text(bot_messages.get_message("revision_processing"))
+        return
+
+    # Финализирован
+    if bot_state == "finalized":
+        draft_id = draft["id"] if draft else 0
+        revision_count = db_draft.get_revision_count(draft_id) if draft_id else 0
+        await update.message.reply_text(
+            bot_messages.get_message("finalized"),
+            reply_markup=kb_finalized(draft_id),
+        )
+        return
+
+    # Оплачен → нарраторы или текущий шаг после оплаты
+    if draft_status == "paid" or bot_state in (
+        "narrators_setup", "collecting_interview_1", "processing_interview_1",
+        "awaiting_interview_2", "collecting_interview_2", "assembling",
+    ):
+        if bot_state in ("collecting_interview_1", "processing_interview_1"):
+            await update.message.reply_text("Продолжайте загружать материалы. Используйте кнопки ниже.")
+            return
+        if bot_state == "awaiting_interview_2" and draft:
+            await update.message.reply_text(
+                bot_messages.get_message("interview_questions_ready"),
+                reply_markup=kb_interview_result(draft["id"]),
+            )
+            return
+        if bot_state == "assembling":
+            await update.message.reply_text(bot_messages.get_message("assembling"))
+            return
+        # narrators_setup или paid → экран нарраторов
+        if draft:
+            await _show_narrators_screen(update.message, draft)
+        return
+
+    # Есть draft → продолжить оформление
+    if draft and draft_status in ("draft",):
+        chars = draft.get("characters") or []
+        if chars:
+            if not draft.get("email"):
+                await _show_email_input(update, context, draft["id"])
+            else:
+                await _show_order_summary(update, context, draft)
+        else:
+            # Начать с экрана персонажа
+            context.user_data["prepay_awaiting"] = "character_name"
+            context.user_data["prepay_draft_id"] = draft["id"]
+            await update.message.reply_text(bot_messages.get_message("character_name"))
+        return
+
+    # payment_pending → ожидание оплаты
+    if draft_status == "payment_pending":
+        await update.message.reply_text(
+            bot_messages.get_message("payment_wait"),
+            reply_markup=kb_payment(draft["id"], draft.get("payment_url") or "https://glava.family"),
+        )
+        return
+
+    # no_project → экран 1.1
     markup = kb_intro_main()
-    # WebApp-кнопка добавляется всем — она отображается как «Open» в списке чатов Telegram.
-    # Для неоплативших TMA покажет информационный экран; для оплативших — полный кабинет.
     btn_label = "📱 Мой кабинет" if _user_has_paid(user.id) else "📱 Открыть кабинет"
     markup = InlineKeyboardMarkup(
         list(markup.inline_keyboard) + [[
@@ -225,6 +301,10 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     if not user:
         return
     data = query.data or ""
+
+    # Scenario v2 callbacks
+    if await _handle_v2_callback(query, data, user, context):
+        return
 
     if data == "intro_main":
         await query.edit_message_text(bot_messages.get_message("intro_main"), reply_markup=kb_intro_main())
@@ -637,8 +717,22 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         await photo_file.download_to_drive(tmp_path)
         try:
             storage_key = storage.upload_file(tmp_path, db_user["id"])
-            db.save_photo(db_user["id"], photo.file_id, storage_key)
-            await update.message.reply_text("Фото сохранено. Напиши подпись к нему (1-2 предложения).")
+            # Определяем тип фото из v2 user_data
+            photo_type = context.user_data.get("v2_photo_type", "photo")
+            db.save_photo(db_user["id"], photo.file_id, storage_key, photo_type=photo_type)
+            type_label = "документа" if photo_type == "document" else "персонажа"
+            accepted_msg = bot_messages.get_message("upload_photo_accepted", photo_type=type_label)
+            await update.message.reply_text(accepted_msg)
+            if _user_book_delivered(user.id):
+                from pipeline_n8n import trigger_phase_b_background
+                trigger_phase_b_background(
+                    telegram_id=user.id,
+                    input_type="photo_caption",
+                    content=storage_key,
+                    character_name=_get_user_character_name(user.id),
+                    draft_id=_get_user_draft_id(user.id),
+                    username=user.username or "",
+                )
         finally:
             Path(tmp_path).unlink(missing_ok=True)
     except Exception as e:
@@ -687,11 +781,60 @@ async def handle_caption_text(update: Update, context: ContextTypes.DEFAULT_TYPE
             logger.exception("Ошибка сохранения пароля кабинета")
             await update.message.reply_text(f"Ошибка: {e}. Попробуй ещё раз /cabinet")
         return
+    # ── v2: нарраторы ──────────────────────────────────────────────────────────
+    v2_awaiting = context.user_data.get("v2_awaiting")
+    v2_draft_id = context.user_data.get("v2_draft_id")
+
+    if v2_awaiting == "narrator_name":
+        context.user_data["v2_narrator_name"] = text
+        context.user_data["v2_awaiting"] = "narrator_relation"
+        draft = db_draft.get_draft_by_telegram_id(user.id)
+        char_name = (draft.get("characters") or [{}])[0].get("name", "персонажа") if draft and draft.get("characters") else "персонажа"
+        await update.message.reply_text(
+            bot_messages.get_message("narrator_relation", name=text, character_name=char_name)
+        )
+        return
+
+    if v2_awaiting == "narrator_relation":
+        name = context.user_data.pop("v2_narrator_name", "")
+        context.user_data.pop("v2_awaiting", None)
+        if v2_draft_id and name:
+            narrators = db_draft.add_narrator(v2_draft_id, name, text)
+            draft = db_draft.get_draft_by_telegram_id(user.id)
+            char_name = (draft.get("characters") or [{}])[0].get("name", "персонажа") if draft and draft.get("characters") else "персонажа"
+            msg_text = bot_messages.get_message("narrators_list", narrators_list=_format_narrators(narrators))
+            await update.message.reply_text(msg_text, reply_markup=kb_narrators(v2_draft_id, narrators, True))
+        return
+
+    # ── v2: ревизия с debounce ──────────────────────────────────────────────────
+    if v2_awaiting == "revision_text" and v2_draft_id:
+        # Сохраняем/дополняем pending_revision с debounce
+        existing, _ = db_draft.get_pending_revision(v2_draft_id)
+        combined = f"{existing}\n{text}" if existing else text
+        db_draft.set_pending_revision(v2_draft_id, combined, deadline_minutes=3)
+        await update.message.reply_text(
+            bot_messages.get_message("revision_debounce"),
+            reply_markup=kb_revision_comment(v2_draft_id),
+        )
+        return
+
+    # ── v2: причина возврата ───────────────────────────────────────────────────
+    if v2_awaiting == "refund_reason" and v2_draft_id:
+        if len(text) < 10:
+            await update.message.reply_text("Опишите подробнее (минимум 10 символов).")
+            return
+        context.user_data["v2_refund_reason"] = text
+        context.user_data.pop("v2_awaiting", None)
+        await update.message.reply_text(
+            "Причина принята. Нажмите кнопку ниже для отправки заявки.",
+            reply_markup=kb_refund_reason(v2_draft_id),
+        )
+        return
+
     pending = db.get_pending_photo(user.id)
     if pending:
         db.update_photo_caption(pending["id"], text)
         await update.message.reply_text("Подпись сохранена.")
-        # Если книга уже доставлена — фото с подписью идёт в Phase B
         if _user_book_delivered(user.id):
             from pipeline_n8n import trigger_phase_b_background
             trigger_phase_b_background(
@@ -705,19 +848,27 @@ async def handle_caption_text(update: Update, context: ContextTypes.DEFAULT_TYPE
     elif await _handle_prepay_text(update, context, text, user):
         pass
     elif _user_book_delivered(user.id):
-        # Книга доставлена → текстовое сообщение = правка → Phase B
-        from pipeline_n8n import trigger_phase_b_background
-        await update.message.reply_text(
-            "📝 Получили вашу правку. Обновляем книгу — это займёт несколько минут."
-        )
-        trigger_phase_b_background(
-            telegram_id=user.id,
-            input_type="text",
-            content=text,
-            character_name=_get_user_character_name(user.id),
-            draft_id=_get_user_draft_id(user.id),
-            username=user.username or "",
-        )
+        # Книга доставлена → правка → debounce Phase B
+        draft_id = _get_user_draft_id(user.id)
+        if draft_id:
+            existing, _ = db_draft.get_pending_revision(draft_id)
+            combined = f"{existing}\n{text}" if existing else text
+            db_draft.set_pending_revision(draft_id, combined, deadline_minutes=3)
+            await update.message.reply_text(
+                bot_messages.get_message("revision_debounce"),
+                reply_markup=kb_revision_comment(draft_id),
+            )
+        else:
+            from pipeline_n8n import trigger_phase_b_background
+            await update.message.reply_text("📝 Получили вашу правку. Обновляем книгу…")
+            trigger_phase_b_background(
+                telegram_id=user.id,
+                input_type="text",
+                content=text,
+                character_name=_get_user_character_name(user.id),
+                draft_id=0,
+                username=user.username or "",
+            )
     else:
         await update.message.reply_text("Используйте кнопки меню или /start")
 
@@ -798,10 +949,491 @@ async def cmd_online(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
             await update.message.reply_text("Ошибка. Попробуйте позже или напишите в поддержку.")
 
 
+# ═══════════════════════════════════════════════════════════════════════════
+# Helpers — bot scenario v2
+# ═══════════════════════════════════════════════════════════════════════════
+
+def _format_narrators(narrators: list[dict]) -> str:
+    if not narrators:
+        return "(нет)"
+    return "\n".join(f"• {n['name']} ({n.get('relation', '')})" for n in narrators)
+
+
+async def _show_narrators_screen(message, draft: dict) -> None:
+    """Экран 6.1: кто будет рассказывать."""
+    narrators = draft.get("narrators") or []
+    char_name = (draft.get("characters") or [{}])[0].get("name", "персонажа") if draft.get("characters") else "персонажа"
+    if narrators:
+        text = bot_messages.get_message("narrators_list", narrators_list=_format_narrators(narrators))
+    else:
+        text = bot_messages.get_message("narrators_setup", character_name=char_name)
+    await message.reply_text(text, reply_markup=kb_narrators(draft["id"], narrators, bool(narrators)))
+
+
+async def _show_book_ready(message, draft: dict | None) -> None:
+    """Экран 10.2 / 11.3: книга готова."""
+    if not draft:
+        await message.reply_text("Книга готова. Используйте /start для навигации.")
+        return
+    draft_id = draft["id"]
+    revision_count = db_draft.get_revision_count(draft_id)
+    text = bot_messages.get_message("book_ready")
+    await message.reply_text(text, reply_markup=kb_book_ready(draft_id, revision_count, MAX_REVISIONS))
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Callback handlers — bot scenario v2
+# ═══════════════════════════════════════════════════════════════════════════
+
+async def _handle_v2_callback(query, data: str, user, context) -> bool:
+    """Обработка callback_data для scenario v2. Возвращает True если обработано."""
+
+    # ── Нарраторы (6.1) ──────────────────────────────────────────────────────
+    if data.startswith("narrator_add:"):
+        draft_id = int(data.split(":")[1])
+        context.user_data["v2_awaiting"] = "narrator_name"
+        context.user_data["v2_draft_id"] = draft_id
+        draft = db_draft.get_draft_by_telegram_id(user.id)
+        char_name = (draft.get("characters") or [{}])[0].get("name", "персонажа") if draft and draft.get("characters") else "персонажа"
+        await query.edit_message_text(f"Введите имя рассказчика:")
+        return True
+
+    if data.startswith("narrator_del:"):
+        parts = data.split(":")
+        draft_id, narrator_id = int(parts[1]), parts[2]
+        draft = db_draft.get_draft_by_telegram_id(user.id)
+        if draft and draft["id"] == draft_id:
+            db_draft.remove_narrator(draft_id, narrator_id)
+            draft = db_draft.get_draft_by_telegram_id(user.id)
+            narrators = draft.get("narrators") or []
+            char_name = (draft.get("characters") or [{}])[0].get("name", "персонажа") if draft.get("characters") else "персонажа"
+            text = bot_messages.get_message("narrators_list", narrators_list=_format_narrators(narrators)) if narrators else bot_messages.get_message("narrators_setup", character_name=char_name)
+            await query.edit_message_text(text, reply_markup=kb_narrators(draft_id, narrators, bool(narrators)))
+        return True
+
+    if data.startswith("narrator_continue:"):
+        draft_id = int(data.split(":")[1])
+        draft = db_draft.get_draft_by_telegram_id(user.id)
+        narrators = (draft.get("narrators") or []) if draft else []
+        if not narrators:
+            await query.answer("Добавьте хотя бы одного рассказчика.", show_alert=True)
+            return True
+        db_draft.set_bot_state(draft_id, "narrators_setup")
+        await query.edit_message_text(
+            bot_messages.get_message("interview_guide"),
+            reply_markup=kb_interview_guide(draft_id),
+        )
+        return True
+
+    if data.startswith("narrator_back:"):
+        draft_id = int(data.split(":")[1])
+        draft = db_draft.get_draft_by_telegram_id(user.id)
+        if draft:
+            narrators = draft.get("narrators") or []
+            char_name = (draft.get("characters") or [{}])[0].get("name", "персонажа") if draft.get("characters") else "персонажа"
+            text = bot_messages.get_message("narrators_list", narrators_list=_format_narrators(narrators)) if narrators else bot_messages.get_message("narrators_setup", character_name=char_name)
+            await query.edit_message_text(text, reply_markup=kb_narrators(draft_id, narrators, bool(narrators)))
+        return True
+
+    # ── Гид по интервью (7.1–7.2) ────────────────────────────────────────────
+    if data.startswith("guide_questions:"):
+        draft_id = int(data.split(":")[1])
+        await query.edit_message_text(
+            bot_messages.get_message("interview_questions"),
+            reply_markup=kb_interview_questions(draft_id),
+        )
+        return True
+
+    if data.startswith("guide_pdf:"):
+        await query.answer("PDF с вопросами скоро будет доступен.", show_alert=True)
+        return True
+
+    if data.startswith("guide_call_link:"):
+        draft_id = int(data.split(":")[1])
+        link = getattr(config, "TELEMOST_MEETING_LINK", "") or ""
+        if link:
+            await query.message.reply_text(f"Ссылка для звонка:\n{link}")
+        else:
+            await query.answer("Ссылка временно недоступна.", show_alert=True)
+        return True
+
+    if data.startswith("guide_back:"):
+        draft_id = int(data.split(":")[1])
+        await query.edit_message_text(
+            bot_messages.get_message("interview_guide"),
+            reply_markup=kb_interview_guide(draft_id),
+        )
+        return True
+
+    # ── Загрузка материалов (8.1–8.5) ────────────────────────────────────────
+    if data.startswith("upload_start:"):
+        draft_id = int(data.split(":")[1])
+        draft = db_draft.get_draft_by_telegram_id(user.id)
+        narrators = (draft.get("narrators") or []) if draft else []
+        if len(narrators) == 1:
+            # Авто-выбор единственного нарратора
+            context.user_data["v2_current_narrator"] = narrators[0]["id"]
+            context.user_data["v2_draft_id"] = draft_id
+            db_draft.set_bot_state(draft_id, "collecting_interview_1")
+            char_name = (draft.get("characters") or [{}])[0].get("name", "персонажа") if draft and draft.get("characters") else "персонажа"
+            await query.edit_message_text(
+                bot_messages.get_message("upload_audio", narrator_name=narrators[0]["name"]),
+                reply_markup=kb_upload_audio(draft_id, False),
+            )
+        else:
+            await query.edit_message_text(
+                bot_messages.get_message("upload_who"),
+                reply_markup=kb_narrator_select(narrators, draft_id),
+            )
+        return True
+
+    if data.startswith("upload_narrator:"):
+        parts = data.split(":")
+        draft_id, narrator_id = int(parts[1]), parts[2]
+        draft = db_draft.get_draft_by_telegram_id(user.id)
+        narrators = (draft.get("narrators") or []) if draft else []
+        narrator = next((n for n in narrators if n["id"] == narrator_id), None)
+        context.user_data["v2_current_narrator"] = narrator_id
+        context.user_data["v2_draft_id"] = draft_id
+        db_draft.set_bot_state(draft_id, "collecting_interview_1")
+        name = narrator["name"] if narrator else "рассказчика"
+        await query.edit_message_text(
+            bot_messages.get_message("upload_audio", narrator_name=name),
+            reply_markup=kb_upload_audio(draft_id, False),
+        )
+        return True
+
+    if data.startswith("upload_to_photos:"):
+        draft_id = int(data.split(":")[1])
+        draft = db_draft.get_draft_by_telegram_id(user.id)
+        char_name = (draft.get("characters") or [{}])[0].get("name", "персонажа") if draft and draft.get("characters") else "персонажа"
+        await query.edit_message_text(
+            bot_messages.get_message("upload_photo", character_name=char_name),
+            reply_markup=kb_upload_photos(draft_id),
+        )
+        return True
+
+    if data.startswith("photo_type_photo:") or data.startswith("photo_type_doc:"):
+        draft_id = int(data.split(":")[1])
+        photo_type = "photo" if data.startswith("photo_type_photo:") else "document"
+        context.user_data["v2_photo_type"] = photo_type
+        context.user_data["v2_draft_id"] = draft_id
+        type_label = "Фотографии персонажа" if photo_type == "photo" else "Фото документов"
+        await query.edit_message_text(
+            f"Загружайте {type_label}. Отправляйте фото прямо в чат.",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("Далее →", callback_data=f"upload_summary:{draft_id}")],
+            ]),
+        )
+        return True
+
+    if data.startswith("upload_summary:"):
+        draft_id = int(data.split(":")[1])
+        draft = db_draft.get_draft_by_telegram_id(user.id)
+        narrators = (draft.get("narrators") or []) if draft else []
+        # Показываем итог
+        try:
+            photos = db.get_user_photos(user.id, 100)
+            photo_count = sum(1 for p in photos if p.get("photo_type") != "document")
+            doc_count = sum(1 for p in photos if p.get("photo_type") == "document")
+        except Exception:
+            photo_count = doc_count = 0
+        narrator_summaries = "\n".join(
+            f"✅ {n['name']} ({n.get('relation', '')}) — материалы получены" for n in narrators
+        )
+        text = bot_messages.get_message(
+            "upload_summary",
+            narrators_summary=narrator_summaries,
+            photo_count=photo_count,
+            doc_count=doc_count,
+        )
+        has_more = len(narrators) > 1
+        await query.edit_message_text(text, reply_markup=kb_upload_summary(draft_id, has_more))
+        return True
+
+    if data.startswith("upload_done:"):
+        draft_id = int(data.split(":")[1])
+        db_draft.set_bot_state(draft_id, "processing_interview_1")
+        await query.edit_message_text(bot_messages.get_message("upload_processing"))
+        # Запускаем первичный пайплайн (транскрипция → Интервьюер)
+        draft = db_draft.get_draft_by_telegram_id(user.id)
+        char_name = _get_user_character_name(user.id)
+        from pipeline_n8n import trigger_phase_a_background
+        trigger_phase_a_background(
+            telegram_id=user.id,
+            transcript="",  # Пайплайн сам заберёт из S3
+            character_name=char_name,
+            draft_id=draft_id,
+            username=user.username or "",
+        )
+        return True
+
+    if data.startswith("upload_more:"):
+        draft_id = int(data.split(":")[1])
+        context.user_data["v2_draft_id"] = draft_id
+        await query.edit_message_text(
+            "Загружайте дополнительные файлы — аудио, голосовые или текст.",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("Готово", callback_data=f"upload_summary:{draft_id}")],
+            ]),
+        )
+        return True
+
+    # ── Уточняющие вопросы (8.6) ─────────────────────────────────────────────
+    if data.startswith("interview2_start:"):
+        draft_id = int(data.split(":")[1])
+        db_draft.set_bot_state(draft_id, "collecting_interview_2")
+        context.user_data["v2_draft_id"] = draft_id
+        await query.edit_message_text(
+            bot_messages.get_message("interview2"),
+            reply_markup=kb_interview2_confirm(draft_id),
+        )
+        return True
+
+    if data.startswith("assemble_book:"):
+        draft_id = int(data.split(":")[1])
+        db_draft.set_bot_state(draft_id, "assembling")
+        await query.edit_message_text(bot_messages.get_message("assembling"))
+        # Запускаем полный Phase A
+        char_name = _get_user_character_name(user.id)
+        from pipeline_n8n import trigger_phase_a_background
+        trigger_phase_a_background(
+            telegram_id=user.id,
+            transcript="",
+            character_name=char_name,
+            draft_id=draft_id,
+            username=user.username or "",
+        )
+        return True
+
+    # ── Книга готова (10.2) ───────────────────────────────────────────────────
+    if data.startswith("book_ready_back:"):
+        draft_id = int(data.split(":")[1])
+        draft = db_draft.get_draft_by_telegram_id(user.id)
+        await _show_book_ready_callback(query, draft)
+        return True
+
+    if data.startswith("book_get_pdf:"):
+        draft_id = int(data.split(":")[1])
+        await query.answer("PDF отправляем в чат…")
+        try:
+            admin_url = os.environ.get("ADMIN_API_BASE_URL", "http://127.0.0.1:5001/api")
+            import requests as _req
+            r = _req.get(f"{admin_url}/book-context/{user.id}", timeout=5)
+            if r.status_code == 200:
+                pdf_file_id = r.json().get("pdf_file_id")
+                if pdf_file_id:
+                    await query.message.reply_document(pdf_file_id)
+                    return True
+        except Exception:
+            pass
+        await query.message.reply_text("PDF временно недоступен. Попробуйте позже.")
+        return True
+
+    if data.startswith("book_share:"):
+        bot_username = (await query.get_bot()).username or "glava_bot"
+        await query.message.reply_text(f"Поделитесь ботом: https://t.me/{bot_username}")
+        return True
+
+    # ── Правки (11.1) ─────────────────────────────────────────────────────────
+    if data.startswith("revision_start:"):
+        draft_id = int(data.split(":")[1])
+        revision_count = db_draft.get_revision_count(draft_id)
+        if revision_count >= MAX_REVISIONS:
+            await query.edit_message_text(bot_messages.get_message("revision_limit"))
+            return True
+        state = f"revision_{revision_count + 1}"
+        db_draft.set_bot_state(draft_id, state)
+        context.user_data["v2_awaiting"] = "revision_text"
+        context.user_data["v2_draft_id"] = draft_id
+        await query.edit_message_text(
+            bot_messages.get_message(
+                "revision_prompt",
+                revision_num=revision_count + 1,
+                max_revisions=MAX_REVISIONS,
+            ),
+            reply_markup=kb_revision_comment(draft_id),
+        )
+        return True
+
+    if data.startswith("revision_submit:"):
+        draft_id = int(data.split(":")[1])
+        text, is_ready = db_draft.get_pending_revision(draft_id)
+        if not text:
+            await query.answer("Сначала напишите комментарий.", show_alert=True)
+            return True
+        await _submit_revision(query.message, user, draft_id, text)
+        db_draft.clear_pending_revision(draft_id)
+        return True
+
+    # ── Версии (12.1–12.2) ────────────────────────────────────────────────────
+    if data.startswith("versions_list:"):
+        draft_id = int(data.split(":")[1])
+        try:
+            admin_url = os.environ.get("ADMIN_API_BASE_URL", "http://127.0.0.1:5001/api")
+            import requests as _req
+            r = _req.get(f"{admin_url}/book-context/{user.id}", timeout=5)
+            versions = r.json().get("versions", []) if r.status_code == 200 else []
+        except Exception:
+            versions = []
+        if not versions:
+            await query.edit_message_text(
+                bot_messages.get_message("versions_empty"),
+                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("← Назад", callback_data=f"book_ready_back:{draft_id}")]]),
+            )
+        else:
+            vlist = "\n".join(f"v{v.get('version')} · {str(v.get('created_at',''))[:10]}" for v in versions)
+            await query.edit_message_text(
+                bot_messages.get_message("versions_list", versions_list=vlist),
+                reply_markup=kb_versions_list(versions, draft_id),
+            )
+        return True
+
+    if data.startswith("version_open:"):
+        parts = data.split(":")
+        await query.answer("Версия будет отправлена в чат.")
+        return True
+
+    if data.startswith("version_rollback:"):
+        parts = data.split(":")
+        draft_id, version = int(parts[1]), parts[2]
+        await query.edit_message_text(
+            bot_messages.get_message("versions_rollback_confirm", version=version),
+            reply_markup=kb_version_rollback_confirm(draft_id, version),
+        )
+        return True
+
+    if data.startswith("version_rollback_confirm:"):
+        parts = data.split(":")
+        draft_id, version = int(parts[1]), parts[2]
+        # Сбрасываем счётчик ревизий до нужной версии
+        await query.edit_message_text("Версия восстановлена. /start для продолжения.")
+        return True
+
+    # ── Финализация (13.1–14.2) ────────────────────────────────────────────────
+    if data.startswith("book_finalize:"):
+        draft_id = int(data.split(":")[1])
+        await query.edit_message_text(
+            bot_messages.get_message("finalize_confirm"),
+            reply_markup=kb_finalize_confirm(draft_id),
+        )
+        return True
+
+    if data.startswith("finalize_confirm:"):
+        draft_id = int(data.split(":")[1])
+        db_draft.set_bot_state(draft_id, "finalized")
+        logger.info("event: book_finalized draft_id=%s", draft_id)
+        await query.edit_message_text(
+            bot_messages.get_message("finalized"),
+            reply_markup=kb_finalized(draft_id),
+        )
+        return True
+
+    if data.startswith("finalize_done:"):
+        draft_id = int(data.split(":")[1])
+        await query.edit_message_text(
+            bot_messages.get_message("finalized"),
+            reply_markup=kb_finalized(draft_id),
+        )
+        return True
+
+    if data.startswith("print_info:"):
+        draft_id = int(data.split(":")[1])
+        await query.edit_message_text(
+            bot_messages.get_message("print_soon"),
+            reply_markup=kb_print_soon(draft_id),
+        )
+        return True
+
+    if data.startswith("print_waitlist:"):
+        await query.answer("Добавили вас в список ожидания.", show_alert=True)
+        return True
+
+    # ── Возврат (15.1–15.2) ───────────────────────────────────────────────────
+    if data.startswith("refund_start:"):
+        draft_id = int(data.split(":")[1])
+        context.user_data["v2_awaiting"] = "refund_reason"
+        context.user_data["v2_draft_id"] = draft_id
+        await query.edit_message_text(
+            bot_messages.get_message("refund_reason"),
+            reply_markup=kb_refund_reason(draft_id),
+        )
+        return True
+
+    if data.startswith("refund_submit:"):
+        draft_id = int(data.split(":")[1])
+        reason = context.user_data.pop("v2_refund_reason", "")
+        if not reason:
+            await query.answer("Опишите причину — это поможет нам улучшить сервис.", show_alert=True)
+            return True
+        db_draft.set_bot_state(draft_id, "refund_requested")
+        logger.info("event: refund_requested draft_id=%s reason=%s", draft_id, reason[:100])
+        await query.edit_message_text(bot_messages.get_message("refund_submitted"))
+        return True
+
+    return False
+
+
+async def _show_book_ready_callback(query, draft: dict | None) -> None:
+    if not draft:
+        await query.edit_message_text("Используйте /start для навигации.")
+        return
+    draft_id = draft["id"]
+    revision_count = db_draft.get_revision_count(draft_id)
+    text = bot_messages.get_message("book_ready")
+    await query.edit_message_text(text, reply_markup=kb_book_ready(draft_id, revision_count, MAX_REVISIONS))
+
+
+async def _submit_revision(message, user, draft_id: int, text: str) -> None:
+    """Отправляет правку в Phase B пайплайн."""
+    revision_count = db_draft.increment_revision_count(draft_id)
+    db_draft.set_bot_state(draft_id, "revision_processing")
+    await message.reply_text(bot_messages.get_message("revision_processing"))
+    from pipeline_n8n import trigger_phase_b_background
+    trigger_phase_b_background(
+        telegram_id=user.id,
+        input_type="text",
+        content=text,
+        character_name=_get_user_character_name(user.id),
+        draft_id=draft_id,
+        username=user.username or "",
+    )
+
+
+# ── /versions команда ─────────────────────────────────────────────────────────
+
+async def cmd_versions(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Список версий книги."""
+    user = update.effective_user
+    if not user:
+        return
+    draft = db_draft.get_draft_by_telegram_id(user.id)
+    if not draft:
+        await update.message.reply_text("Версий книги пока нет.")
+        return
+    draft_id = draft["id"]
+    try:
+        admin_url = os.environ.get("ADMIN_API_BASE_URL", "http://127.0.0.1:5001/api")
+        import requests as _req
+        r = _req.get(f"{admin_url}/book-context/{user.id}", timeout=5)
+        versions = r.json().get("versions", []) if r.status_code == 200 else []
+    except Exception:
+        versions = []
+    if not versions:
+        await update.message.reply_text(bot_messages.get_message("versions_empty"))
+        return
+    vlist = "\n".join(f"v{v.get('version')} · {str(v.get('created_at',''))[:10]}" for v in versions)
+    await update.message.reply_text(
+        bot_messages.get_message("versions_list", versions_list=vlist),
+        reply_markup=kb_versions_list(versions, draft_id),
+    )
+
+
 async def _post_init(app: Application) -> None:
     await app.bot.delete_webhook(drop_pending_updates=True)
     await app.bot.set_my_commands([
-        BotCommand("start", "Начать"),
+        BotCommand("start", "Начать / главное меню"),
+        BotCommand("versions", "Версии книги"),
         BotCommand("list", "Мои материалы"),
         BotCommand("online", "Записать онлайн-встречу"),
         BotCommand("cabinet", "Кабинет"),
@@ -834,6 +1466,7 @@ def main() -> None:
     app = Application.builder().token(config.BOT_TOKEN).post_init(_post_init).build()
 
     app.add_handler(CommandHandler("start", cmd_start))
+    app.add_handler(CommandHandler("versions", cmd_versions))
     app.add_handler(CommandHandler("list", cmd_list))
     app.add_handler(CommandHandler("online", cmd_online))
     app.add_handler(CommandHandler("cabinet", cmd_cabinet))

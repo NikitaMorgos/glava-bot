@@ -328,6 +328,7 @@ def update_flow_suggestion(suggestion_id: int, status: str,
 # ── State Machine проектов ────────────────────────────────────────
 
 VALID_STATES = (
+    # Pipeline states (admin panel / n8n)
     "created",
     "collecting",
     "assembling_phase_a",
@@ -335,9 +336,28 @@ VALID_STATES = (
     "revising_phase_b",
     "delivered_vN",
     "finalized",
+    # Bot scenario v2 states
+    "no_project",
+    "draft",
+    "payment_pending",
+    "paid",
+    "narrators_setup",
+    "collecting_interview_1",
+    "processing_interview_1",
+    "awaiting_interview_2",
+    "collecting_interview_2",
+    "assembling",
+    "book_ready",
+    "revision_1",
+    "revision_2",
+    "revision_3",
+    "revision_processing",
+    "book_updated",
+    "refund_requested",
 )
 
 STATE_LABELS = {
+    # Pipeline states
     "created":            "Создан",
     "collecting":         "Сбор материалов",
     "assembling_phase_a": "Сборка Phase A",
@@ -345,9 +365,28 @@ STATE_LABELS = {
     "revising_phase_b":   "Доработка Phase B",
     "delivered_vN":       "Доставлен vN",
     "finalized":          "Финализирован",
+    # Bot v2 states
+    "no_project":              "Нет проекта",
+    "draft":                   "Черновик",
+    "payment_pending":         "Ожидает оплаты",
+    "paid":                    "Оплачено",
+    "narrators_setup":         "Настройка нарраторов",
+    "collecting_interview_1":  "Сбор интервью 1",
+    "processing_interview_1":  "Обработка интервью 1",
+    "awaiting_interview_2":    "Ожидает интервью 2",
+    "collecting_interview_2":  "Сбор интервью 2",
+    "assembling":              "Сборка книги",
+    "book_ready":              "Книга готова",
+    "revision_1":              "Правка 1/3",
+    "revision_2":              "Правка 2/3",
+    "revision_3":              "Правка 3/3",
+    "revision_processing":     "Обработка правок",
+    "book_updated":            "Книга обновлена",
+    "refund_requested":        "Запрошен возврат",
 }
 
 STATE_COLORS = {
+    # Pipeline states
     "created":            "secondary",
     "collecting":         "info",
     "assembling_phase_a": "warning",
@@ -355,6 +394,24 @@ STATE_COLORS = {
     "revising_phase_b":   "warning",
     "delivered_vN":       "success",
     "finalized":          "dark",
+    # Bot v2 states
+    "no_project":              "light",
+    "draft":                   "secondary",
+    "payment_pending":         "warning",
+    "paid":                    "success",
+    "narrators_setup":         "info",
+    "collecting_interview_1":  "info",
+    "processing_interview_1":  "warning",
+    "awaiting_interview_2":    "primary",
+    "collecting_interview_2":  "info",
+    "assembling":              "warning",
+    "book_ready":              "success",
+    "revision_1":              "primary",
+    "revision_2":              "primary",
+    "revision_3":              "primary",
+    "revision_processing":     "warning",
+    "book_updated":            "success",
+    "refund_requested":        "danger",
 }
 
 

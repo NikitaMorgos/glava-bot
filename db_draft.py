@@ -26,6 +26,20 @@ def get_connection():
         conn.close()
 
 
+_DRAFT_COLS = """id, user_id, status, email, characters, total_price, currency,
+                  payment_provider, payment_id, payment_url,
+                  character_relation, narrators, bot_state, revision_count,
+                  pending_revision, revision_deadline, created_at, updated_at"""
+
+
+def _hydrate(row: dict) -> dict:
+    d = dict(row)
+    for field in ("characters", "narrators"):
+        if isinstance(d.get(field), str):
+            d[field] = json.loads(d[field] or "[]")
+    return d
+
+
 def get_or_create_draft(telegram_id: int, username: str | None = None) -> dict | None:
     """
     Возвращает активный DraftOrder для пользователя или создаёт новый.
@@ -38,9 +52,8 @@ def get_or_create_draft(telegram_id: int, username: str | None = None) -> dict |
     with get_connection() as conn:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute(
-                """
-                SELECT id, user_id, status, email, characters, total_price, currency,
-                       payment_provider, payment_id, payment_url, created_at, updated_at
+                f"""
+                SELECT {_DRAFT_COLS}
                 FROM draft_orders
                 WHERE user_id = %s AND status IN ('draft', 'payment_pending')
                 ORDER BY updated_at DESC LIMIT 1
@@ -49,26 +62,18 @@ def get_or_create_draft(telegram_id: int, username: str | None = None) -> dict |
             )
             row = cur.fetchone()
             if row:
-                d = dict(row)
-                if isinstance(d.get("characters"), str):
-                    d["characters"] = json.loads(d["characters"] or "[]")
-                return d
+                return _hydrate(row)
 
             cur.execute(
-                """
-                INSERT INTO draft_orders (user_id, status, characters, total_price, currency)
-                VALUES (%s, 'draft', '[]', 0, 'RUB')
-                RETURNING id, user_id, status, email, characters, total_price, currency,
-                          payment_provider, payment_id, payment_url, created_at, updated_at
+                f"""
+                INSERT INTO draft_orders (user_id, status, characters, total_price, currency, bot_state)
+                VALUES (%s, 'draft', '[]', 0, 'RUB', 'draft')
+                RETURNING {_DRAFT_COLS}
                 """,
                 (user_id,),
             )
             row = cur.fetchone()
-            if row:
-                d = dict(row)
-                if isinstance(d.get("characters"), str):
-                    d["characters"] = json.loads(d["characters"] or "[]")
-                return d
+            return _hydrate(row) if row else None
     return None
 
 
@@ -79,9 +84,8 @@ def get_draft_by_telegram_id(telegram_id: int) -> dict | None:
     with get_connection() as conn:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute(
-                """
-                SELECT id, user_id, status, email, characters, total_price, currency,
-                       payment_provider, payment_id, payment_url, created_at, updated_at
+                f"""
+                SELECT {_DRAFT_COLS}
                 FROM draft_orders
                 WHERE user_id = %s AND status IN ('draft', 'payment_pending', 'paid')
                 ORDER BY updated_at DESC LIMIT 1
@@ -89,11 +93,7 @@ def get_draft_by_telegram_id(telegram_id: int) -> dict | None:
                 (user["id"],),
             )
             row = cur.fetchone()
-            if row:
-                d = dict(row)
-                if isinstance(d.get("characters"), str):
-                    d["characters"] = json.loads(d["characters"] or "[]")
-                return d
+            return _hydrate(row) if row else None
     return None
 
 
@@ -139,15 +139,11 @@ def _get_draft_by_id(draft_id: int) -> dict | None:
     with get_connection() as conn:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute(
-                "SELECT id, status, characters FROM draft_orders WHERE id = %s",
+                f"SELECT {_DRAFT_COLS} FROM draft_orders WHERE id = %s",
                 (draft_id,),
             )
             row = cur.fetchone()
-            if row:
-                d = dict(row)
-                if isinstance(d.get("characters"), str):
-                    d["characters"] = json.loads(d["characters"] or "[]")
-                return d
+            return _hydrate(row) if row else None
     return None
 
 
@@ -197,3 +193,144 @@ def _calc_total(characters_count: int) -> int:
     """Цена в копейках."""
     price_per_char = getattr(config, "PRICE_PER_CHARACTER", 1000)
     return characters_count * price_per_char
+
+
+# ── Расширения bot_scenario_v2 ──────────────────────────────────────────────
+
+def update_character_relation(draft_id: int, relation: str) -> None:
+    """Обновляет родство персонажа (character_relation)."""
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE draft_orders SET character_relation = %s, updated_at = NOW() WHERE id = %s",
+                (relation.strip(), draft_id),
+            )
+
+
+def set_bot_state(draft_id: int, state: str) -> None:
+    """Устанавливает состояние бота (bot_state) по spec v2."""
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE draft_orders SET bot_state = %s, updated_at = NOW() WHERE id = %s",
+                (state, draft_id),
+            )
+
+
+def get_bot_state(telegram_id: int) -> str:
+    """Возвращает bot_state для пользователя (или 'no_project')."""
+    draft = get_draft_by_telegram_id(telegram_id)
+    if not draft:
+        return "no_project"
+    return draft.get("bot_state") or draft.get("status") or "no_project"
+
+
+# ── Нарраторы ────────────────────────────────────────────────────────────────
+
+def get_narrators(draft_id: int) -> list[dict]:
+    draft = _get_draft_by_id(draft_id)
+    if not draft:
+        return []
+    return list(draft.get("narrators") or [])
+
+
+def add_narrator(draft_id: int, name: str, relation: str) -> list[dict]:
+    """Добавляет нарратора и возвращает обновлённый список."""
+    draft = _get_draft_by_id(draft_id)
+    if not draft:
+        return []
+    narrators = list(draft.get("narrators") or [])
+    narrator_id = f"n{len(narrators) + 1}"
+    narrators.append({"id": narrator_id, "name": name.strip(), "relation": relation.strip()})
+    _save_narrators(draft_id, narrators)
+    return narrators
+
+
+def remove_narrator(draft_id: int, narrator_id: str) -> list[dict]:
+    """Удаляет нарратора по id и возвращает обновлённый список."""
+    draft = _get_draft_by_id(draft_id)
+    if not draft:
+        return []
+    narrators = [n for n in (draft.get("narrators") or []) if n.get("id") != narrator_id]
+    _save_narrators(draft_id, narrators)
+    return narrators
+
+
+def _save_narrators(draft_id: int, narrators: list[dict]) -> None:
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE draft_orders SET narrators = %s::jsonb, updated_at = NOW() WHERE id = %s",
+                (json.dumps(narrators, ensure_ascii=False), draft_id),
+            )
+
+
+# ── Ревизии ─────────────────────────────────────────────────────────────────
+
+def increment_revision_count(draft_id: int) -> int:
+    """Увеличивает счётчик ревизий и возвращает новое значение."""
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE draft_orders
+                SET revision_count = COALESCE(revision_count, 0) + 1, updated_at = NOW()
+                WHERE id = %s
+                RETURNING revision_count
+                """,
+                (draft_id,),
+            )
+            row = cur.fetchone()
+            return row[0] if row else 0
+
+
+def get_revision_count(draft_id: int) -> int:
+    draft = _get_draft_by_id(draft_id)
+    return int(draft.get("revision_count") or 0) if draft else 0
+
+
+def set_pending_revision(draft_id: int, text: str, deadline_minutes: int = 3) -> None:
+    """Сохраняет текст ожидающей ревизии с дедлайном debounce."""
+    from datetime import datetime, timezone, timedelta
+    deadline = datetime.now(timezone.utc) + timedelta(minutes=deadline_minutes)
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE draft_orders
+                SET pending_revision = %s, revision_deadline = %s, updated_at = NOW()
+                WHERE id = %s
+                """,
+                (text, deadline, draft_id),
+            )
+
+
+def get_pending_revision(draft_id: int) -> tuple[str | None, bool]:
+    """
+    Возвращает (text, is_ready).
+    is_ready=True если debounce истёк (deadline < NOW()).
+    """
+    from datetime import datetime, timezone
+    draft = _get_draft_by_id(draft_id)
+    if not draft:
+        return None, False
+    text = draft.get("pending_revision")
+    deadline = draft.get("revision_deadline")
+    if not text:
+        return None, False
+    if deadline is None:
+        return text, True
+    now = datetime.now(timezone.utc)
+    if hasattr(deadline, 'tzinfo') and deadline.tzinfo is None:
+        from datetime import timezone as tz
+        deadline = deadline.replace(tzinfo=tz.utc)
+    return text, now >= deadline
+
+
+def clear_pending_revision(draft_id: int) -> None:
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE draft_orders SET pending_revision = NULL, revision_deadline = NULL, updated_at = NOW() WHERE id = %s",
+                (draft_id,),
+            )
