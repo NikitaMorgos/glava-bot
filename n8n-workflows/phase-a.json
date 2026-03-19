@@ -953,40 +953,6 @@
       }
     },
     {
-      "id": "node-historian-agent",
-      "name": "Historian Agent",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4,
-      "position": [
-        1750,
-        600
-      ],
-      "parameters": {
-        "method": "POST",
-        "url": "https://api.openai.com/v1/chat/completions",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Authorization",
-              "value": "={{ 'Bearer ' + $env.OPENAI_API_KEY }}"
-            },
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
-        },
-        "sendBody": true,
-        "contentType": "raw",
-        "rawContentType": "application/json",
-        "body": "={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [ { role: 'system', content: $('Get Prompt: Historian').item.json.text || 'Ты Историк. На основе жизненных событий и периода героя дай исторический контекст: что происходило в стране и мире в ключевые моменты его жизни. Верни только валидный JSON с полями: period_overview (string), key_historical_events (array of {year, event, relevance}), cultural_context (string), political_context (string), everyday_life_notes (string), historical_backdrop (string).' }, { role: 'user', content: $('Wrap Historian').item.json.wrapped_input } ], temperature: 0.3, max_tokens: 3000 }) }}",
-        "options": {
-          "timeout": 120000
-        }
-      }
-    },
-    {
       "id": "node-extract-historian",
       "name": "Extract Historian",
       "type": "n8n-nodes-base.code",
@@ -1202,9 +1168,9 @@
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "application/json",
-        "body": "={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [{ role: 'system', content: $('Get Prompt: Historian').item.json.text || 'Ты Историк. На основе карты фактов определи исторический контекст жизни героя. Верни JSON: {\"historical_context\": {\"era_overview\": \"краткий обзор эпохи\", \"key_events\": [{\"year\": 1960, \"event\": \"описание\"}], \"social_context\": \"социальный контекст\", \"cultural_notes\": \"культурные особенности\"}}' },{ role: 'user', content: $('Wrap for Historian').item.json.wrapped_input }], temperature: 0.3, max_tokens: 2000 }) }}",
+        "body": "={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [   { role: 'system', content: $('Get Prompt: Historian').item.json.text     || 'Ty Istorik. Na osnove faktov o geroe opishi istoricheskiy kontekst ego epokhi.        Verni tolko validy JSON: period_overview, key_historical_events, cultural_context,        political_context, everyday_life_notes, historical_backdrop.' },   { role: 'user', content: $('Wrap for Historian').item.json.wrapped_input } ], temperature: 0.3, max_tokens: 3000}) }}",
         "options": {
-          "timeout": 60000
+          "timeout": 120000
         }
       },
       "id": "node-historian",
@@ -1747,17 +1713,6 @@
           },
           {
             "node": "Historian",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Historian Agent": {
-      "main": [
-        [
-          {
-            "node": "Extract Historian",
             "type": "main",
             "index": 0
           }
