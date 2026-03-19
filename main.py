@@ -163,7 +163,11 @@ def _user_has_paid(telegram_id: int) -> bool:
 
 
 def _user_book_delivered(telegram_id: int) -> bool:
-    """Проверяет, доставлена ли книга v1 или vN (Phase B активна)."""
+    """Проверяет, доставлена ли книга v1 или vN (Phase B активна).
+
+    ВАЖНО: всегда вызывать вместе с _is_phase_a_active() —
+    если пользователь начал новое интервью, Phase B НЕ должна перехватывать его материалы.
+    """
     try:
         import requests as _req
         admin_url = os.environ.get("ADMIN_API_BASE_URL", "http://127.0.0.1:5001/api")
@@ -174,6 +178,40 @@ def _user_book_delivered(telegram_id: int) -> bool:
     except Exception:
         pass
     return False
+
+
+# Состояния v2-черновика, при которых идёт сбор материалов для Phase A
+_PHASE_A_BOT_STATES = frozenset({
+    "no_project",            # только оплатил, интервью ещё не начато
+    "narrators_setup",
+    "collecting_interview_1",
+    "processing_interview_1",
+    "awaiting_interview_2",
+    "collecting_interview_2",
+    "assembling",
+})
+
+# Состояния, при которых книга уже готова и пользователь работает в Phase B
+_PHASE_B_BOT_STATES = frozenset({
+    "book_ready", "book_updated",
+    "revision_1", "revision_2", "revision_3",
+    "revision_processing", "finalized",
+})
+
+
+def _is_phase_a_active(telegram_id: int) -> bool:
+    """Возвращает True, если текущий черновик находится в фазе сбора материалов (Phase A).
+
+    Используется как защита: голосовые и фото НЕ должны попадать в Phase B,
+    пока пользователь проходит интервью для нового заказа.
+    """
+    draft = db_draft.get_draft_by_telegram_id(telegram_id)
+    if not draft:
+        return False
+    if draft.get("status") != "paid":
+        return False
+    bot_state = (draft.get("bot_state") or "no_project")
+    return bot_state in _PHASE_A_BOT_STATES
 
 
 def _get_user_character_name(telegram_id: int) -> str:
@@ -642,7 +680,8 @@ async def _save_audio_file(
                 storage_key=storage_key,
                 duration=duration,
             )
-            if _user_book_delivered(user.id):
+            # Phase B только если книга доставлена И нет активного интервью (Phase A)
+            if _user_book_delivered(user.id) and not _is_phase_a_active(user.id):
                 await update.message.reply_text(
                     "🎙 Аудио получено. Транскрибируем и обновляем книгу — это займёт несколько минут."
                 )
@@ -702,6 +741,9 @@ async def handle_audio_document(update: Update, context: ContextTypes.DEFAULT_TY
 
 
 async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    # update.message может быть None при редактировании постов/каналов
+    if not update.message:
+        return
     if not _user_has_paid(update.effective_user.id if update.effective_user else 0):
         await handle_blocked_media(update, context)
         return
@@ -723,7 +765,8 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
             type_label = "документа" if photo_type == "document" else "персонажа"
             accepted_msg = bot_messages.get_message("upload_photo_accepted", photo_type=type_label)
             await update.message.reply_text(accepted_msg)
-            if _user_book_delivered(user.id):
+            # Phase B только если книга доставлена И нет активного интервью (Phase A)
+            if _user_book_delivered(user.id) and not _is_phase_a_active(user.id):
                 from pipeline_n8n import trigger_phase_b_background
                 trigger_phase_b_background(
                     telegram_id=user.id,
@@ -835,7 +878,8 @@ async def handle_caption_text(update: Update, context: ContextTypes.DEFAULT_TYPE
     if pending:
         db.update_photo_caption(pending["id"], text)
         await update.message.reply_text("Подпись сохранена.")
-        if _user_book_delivered(user.id):
+        # Phase B только если книга доставлена И нет активного интервью
+        if _user_book_delivered(user.id) and not _is_phase_a_active(user.id):
             from pipeline_n8n import trigger_phase_b_background
             trigger_phase_b_background(
                 telegram_id=user.id,
@@ -847,8 +891,8 @@ async def handle_caption_text(update: Update, context: ContextTypes.DEFAULT_TYPE
             )
     elif await _handle_prepay_text(update, context, text, user):
         pass
-    elif _user_book_delivered(user.id):
-        # Книга доставлена → правка → debounce Phase B
+    elif _user_book_delivered(user.id) and not _is_phase_a_active(user.id):
+        # Книга доставлена, нет активного интервью → правка → debounce Phase B
         draft_id = _get_user_draft_id(user.id)
         if draft_id:
             existing, _ = db_draft.get_pending_revision(draft_id)
