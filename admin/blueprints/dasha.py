@@ -325,70 +325,41 @@ def reports():
 
 # ── Авто-тесты бота ──────────────────────────────────────────────
 
-def _parse_pytest_output(raw: str, duration_s: float) -> dict:
-    """Разбирает вывод pytest -v --tb=short в структурированный результат.
-
-    Ожидаемый формат строки теста (pytest -v):
-        tests/foo.py::test_name PASSED                          [ 50%]
-        tests/foo.py::test_name FAILED                          [ 60%]
-    """
-    import re as _re
-
-    lines = raw.splitlines()
+def _parse_json_report(report: dict, raw: str, duration_s: float) -> dict:
+    """Разбирает pytest-json-report в структурированный результат."""
     results = []
-    current = None
-    tb_lines = []
-
-    # Паттерн строки с результатом теста
-    test_line_re = _re.compile(
-        r"^(?P<test_id>\S+::test_\S+)\s+(?P<status>PASSED|FAILED|ERROR)\s*"
-    )
-
-    for line in lines:
-        m = test_line_re.match(line)
-        if m:
-            # Сохраняем предыдущий
-            if current is not None:
-                current["traceback"] = "\n".join(tb_lines).strip()
-                results.append(current)
-                tb_lines = []
-
-            test_id = m.group("test_id")
-            status_raw = m.group("status")
-            status = "passed" if status_raw == "PASSED" else "failed"
-            short = test_id.split("::")[-1]
-            current = {
-                "id": test_id,
-                "name": short,
-                "status": status,
-                "traceback": "",
-            }
-            continue
-
-        # Собираем traceback для упавшего теста (до следующей строки-теста)
-        if current is not None and current["status"] == "failed":
-            tb_lines.append(line)
-
-    if current is not None:
-        current["traceback"] = "\n".join(tb_lines).strip()
-        results.append(current)
+    for test in report.get("tests", []):
+        test_id = test.get("nodeid", "")
+        short = test_id.split("::")[-1] if "::" in test_id else test_id
+        outcome = test.get("outcome", "")
+        status = "passed" if outcome == "passed" else "failed"
+        # Traceback из longrepr
+        tb = ""
+        if outcome != "passed":
+            for phase in ("setup", "call", "teardown"):
+                ph = test.get(phase) or {}
+                longrepr = ph.get("longrepr") or ""
+                if longrepr:
+                    tb = longrepr
+                    break
+        results.append({"id": test_id, "name": short, "status": status, "traceback": tb})
 
     passed = sum(1 for r in results if r["status"] == "passed")
     failed = sum(1 for r in results if r["status"] == "failed")
-
-    # Итоговая строка вида "17 passed in 2.04s" или "1 failed, 16 passed in 2s"
-    summary_line = next(
-        (l for l in reversed(lines) if _re.search(r"\d+ (passed|failed)", l)),
-        "",
+    dur = report.get("duration") or duration_s
+    summary = report.get("summary") or {}
+    summary_str = (
+        f"{summary.get('passed', passed)} passed"
+        + (f", {summary.get('failed', failed)} failed" if failed else "")
+        + f" in {round(dur, 2)}s"
     )
-
     return {
         "results": results,
         "passed": passed,
         "failed": failed,
         "total": len(results),
-        "duration_s": round(duration_s, 2),
-        "summary": summary_line.strip(),
+        "duration_s": round(dur, 2),
+        "summary": summary_str,
         "raw": raw,
     }
 
@@ -422,11 +393,18 @@ def bot_tests_run():
     import logging as _log
     _log.getLogger(__name__).info("bot_tests_run: python=%s cwd=%s path=%s", python_exe, project_root, test_path)
 
+    # Временный JSON-файл для отчёта
+    import tempfile as _tmp
+    json_report_file = _tmp.mktemp(suffix=".json")
+
     t_start = time.time()
+    raw = ""
+    report_data = {}
     try:
         proc = subprocess.run(
             [python_exe, "-m", "pytest", test_path,
-             "-v", "--tb=short", "--no-header", "--color=no"],
+             "--json-report", f"--json-report-file={json_report_file}",
+             "--tb=short", "--no-header", "--color=no", "-q"],
             capture_output=True,
             text=True,
             cwd=project_root,
@@ -434,8 +412,11 @@ def bot_tests_run():
             env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1", "NO_COLOR": "1", "TERM": "dumb"},
         )
         raw = proc.stdout + proc.stderr
-        _log.getLogger(__name__).info("bot_tests_run: rc=%d, stdout_len=%d, first200=%r",
-                                      proc.returncode, len(raw), raw[:200])
+        _log.getLogger(__name__).info("bot_tests_run: rc=%d stdout_len=%d", proc.returncode, len(raw))
+        if os.path.exists(json_report_file):
+            with open(json_report_file, encoding="utf-8") as fj:
+                report_data = json.load(fj)
+            os.unlink(json_report_file)
     except subprocess.TimeoutExpired:
         raw = "TIMEOUT: тесты не завершились за 120 секунд"
     except Exception as e:
@@ -443,7 +424,20 @@ def bot_tests_run():
         _log.getLogger(__name__).error("bot_tests_run exception: %s", e)
 
     duration_s = time.time() - t_start
-    parsed = _parse_pytest_output(raw, duration_s)
+
+    if report_data:
+        parsed = _parse_json_report(report_data, raw, duration_s)
+    else:
+        # Fallback: возвращаем raw как есть с понятной ошибкой
+        parsed = {
+            "results": [],
+            "passed": 0,
+            "failed": 0,
+            "total": 0,
+            "duration_s": round(duration_s, 2),
+            "summary": "Ошибка запуска тестов — смотрите Raw лог",
+            "raw": raw or "Нет вывода от pytest",
+        }
 
     # Сохраняем в БД
     try:
