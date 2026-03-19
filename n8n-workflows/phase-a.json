@@ -927,7 +927,8 @@
     },
     {
       "parameters": {
-        "jsCode": "const raw = $input.first().json.choices[0].message.content;let historical_context = {};const t = raw.trim(); const s = t.indexOf('{'); const e = t.lastIndexOf('}');if (s !== -1 && e > s) { try { historical_context = JSON.parse(t.slice(s, e + 1)); } catch(err) {} }return [{ json: { historical_context } }];"
+        "jsCode": "const r = $input.first().json;const historical_context = r.historical_context || {};return [{ json: { historical_context } }];",
+        "mode": "runOnceForAllItems"
       },
       "id": "c566e10d-5a77-4756-b0d0-4bdc35c6f1b1",
       "name": "Extract Historian",
@@ -1120,14 +1121,10 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://api.openai.com/v1/chat/completions",
+        "url": "http://127.0.0.1:5001/api/agents/historian",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            {
-              "name": "Authorization",
-              "value": "={{ 'Bearer ' + $env.OPENAI_API_KEY }}"
-            },
             {
               "name": "Content-Type",
               "value": "application/json"
@@ -1137,7 +1134,7 @@
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "application/json",
-        "body": "=={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [ { role: 'system', content: $('Get Prompt: Historian').item.json.text || 'You are a Historian. Based on the facts about the subject, provide historical context of their era. Return only valid JSON with fields: period_overview, key_historical_events (array of year/event/relevance), cultural_context, political_context, everyday_life_notes, historical_backdrop.' }, { role: 'user', content: $('Wrap for Historian').item.json.wrapped_input } ], temperature: 0.3, max_tokens: 3000 }) }}",
+        "body": "={{ JSON.stringify({ fact_map: $('Extract Fact Map').first().json.fact_map || {}, triage_result: $('Extract Triage').first().json.triage_result || {}, character_name: $('Webhook').first().json.body.character_name || 'Герой книги', project_id: String($('Webhook').first().json.body.draft_id || $('Webhook').first().json.body.telegram_id) }) }}",
         "options": {
           "timeout": 120000
         }

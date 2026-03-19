@@ -395,3 +395,83 @@ def orchestrate_phase_b():
 @bp.get("/health")
 def health():
     return jsonify({"status": "ok"}), 200
+
+
+# ── POST /api/agents/historian ────────────────────────────────────────
+# Вызывает историка через OpenAI и возвращает historical_context.
+# Body: {fact_map, triage_result, character_name, project_id}
+
+@bp.post("/agents/historian")
+def agent_historian():
+    _check_access()
+    import json as _json
+
+    data = request.get_json(silent=True) or {}
+    fact_map      = data.get("fact_map", {})
+    triage_result = data.get("triage_result", {})
+    character_name = data.get("character_name", "Герой книги")
+    project_id    = str(data.get("project_id", "proj"))
+
+    openai_key = os.environ.get("OPENAI_API_KEY", "")
+    if not openai_key:
+        return jsonify({"error": "OPENAI_API_KEY not set"}), 500
+
+    admin_url = "http://127.0.0.1:5001"
+
+    prompt_resp = _requests.get(f"{admin_url}/api/prompts/historian", timeout=10)
+    system_prompt = ""
+    if prompt_resp.ok:
+        system_prompt = prompt_resp.json().get("text", "")
+    if not system_prompt:
+        system_prompt = (
+            "Ты Историк. На основе фактов о герое опиши исторический контекст его эпохи. "
+            "Верни только валидный JSON с полями: period_overview, key_historical_events "
+            "(массив {year, event, relevance}), cultural_context, political_context, "
+            "everyday_life_notes, historical_backdrop."
+        )
+
+    user_msg = _json.dumps({
+        "phase": "A",
+        "project_id": project_id,
+        "character_name": character_name,
+        "pipeline_variant": triage_result.get("pipeline_variant", "standard"),
+        "subject_period": triage_result.get("subject_period", "советский"),
+        "timeline": (fact_map.get("timeline") or [])[:20],
+        "subject": fact_map.get("subject") or {},
+        "locations": [l.get("name", "") for l in (fact_map.get("locations") or [])],
+    }, ensure_ascii=False)
+
+    try:
+        resp = _requests.post(
+            "https://api.openai.com/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {openai_key}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "model": "gpt-4o-mini",
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user",   "content": user_msg},
+                ],
+                "temperature": 0.3,
+                "max_tokens": 3000,
+            },
+            timeout=120,
+        )
+        resp.raise_for_status()
+        raw = resp.json()["choices"][0]["message"]["content"]
+    except Exception as e:
+        logger.exception("historian: openai error: %s", e)
+        return jsonify({"error": str(e)}), 500
+
+    historical_context = {}
+    t = raw.strip()
+    s, e2 = t.find("{"), t.rfind("}")
+    if s != -1 and e2 > s:
+        try:
+            historical_context = _json.loads(t[s:e2 + 1])
+        except Exception:
+            historical_context = {"period_overview": raw[:500]}
+
+    return jsonify({"historical_context": historical_context}), 200
