@@ -411,26 +411,34 @@ def bot_tests_run():
     only_v2 = request.json.get("only_v2", False) if request.is_json else False
     test_path = "tests/test_bot_flows_v2.py" if only_v2 else "tests/"
 
-    # Используем python из того же venv, где запущен Flask
-    python_exe = sys.executable
+    # Всегда используем явный путь к python из venv
+    python_exe = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+        ".venv", "bin", "python"
+    )
+    if not os.path.exists(python_exe):
+        python_exe = sys.executable  # fallback
+
+    import logging as _log
+    _log.getLogger(__name__).info("bot_tests_run: python=%s cwd=%s path=%s", python_exe, project_root, test_path)
 
     t_start = time.time()
     try:
         proc = subprocess.run(
-            # -v даёт строки "test_name PASSED/FAILED [XX%]"
-            # --tb=short — короткий traceback при падении
-            # БЕЗ -q — он перебивает -v и убирает имена тестов
             [python_exe, "-m", "pytest", test_path, "-v", "--tb=short", "--no-header"],
             capture_output=True,
             text=True,
             cwd=project_root,
             timeout=120,
+            env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
         )
         raw = proc.stdout + proc.stderr
+        _log.getLogger(__name__).info("bot_tests_run: rc=%d, stdout_len=%d", proc.returncode, len(raw))
     except subprocess.TimeoutExpired:
         raw = "TIMEOUT: тесты не завершились за 120 секунд"
     except Exception as e:
         raw = f"ERROR: {e}"
+        _log.getLogger(__name__).error("bot_tests_run exception: %s", e)
 
     duration_s = time.time() - t_start
     parsed = _parse_pytest_output(raw, duration_s)
@@ -450,6 +458,30 @@ def bot_tests_run():
         parsed["db_error"] = str(e)
 
     return jsonify(parsed)
+
+
+@bp.route("/bot_tests/debug")
+@role_required("dev", "dasha")
+def bot_tests_debug():
+    """Отладка: запускает pytest и возвращает сырой вывод + детали окружения."""
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+    python_venv = os.path.join(project_root, ".venv", "bin", "python")
+    python_exe = python_venv if os.path.exists(python_venv) else sys.executable
+    try:
+        proc = subprocess.run(
+            [python_exe, "-m", "pytest", "tests/test_bot_flows_v2.py", "-v", "--tb=short", "--no-header"],
+            capture_output=True, text=True, cwd=project_root, timeout=60,
+        )
+        return jsonify({
+            "python_exe": python_exe,
+            "project_root": project_root,
+            "returncode": proc.returncode,
+            "stdout": proc.stdout,
+            "stderr": proc.stderr,
+            "stdout_lines": len(proc.stdout.splitlines()),
+        })
+    except Exception as e:
+        return jsonify({"error": str(e), "python_exe": python_exe})
 
 
 @bp.route("/bot_tests/run/<int:run_id>")
