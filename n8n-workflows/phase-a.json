@@ -5,31 +5,29 @@
       "parameters": {
         "httpMethod": "POST",
         "path": "glava/phase-a",
-        "responseMode": "onReceived",
         "options": {}
       },
-      "id": "node-webhook",
+      "id": "d243bc98-2c39-48c4-8104-b9d92444f940",
       "name": "Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [
-        0,
-        300
+        58880,
+        10784
       ],
       "webhookId": "glava-phase-a"
     },
     {
       "parameters": {
-        "jsCode": "const body = $('Webhook').first().json.body;const triage_result = $('Extract Triage').first().json.triage_result || {};return [{ json: { wrapped_input: JSON.stringify({  phase: 'A',  project_id: String(body.draft_id || body.telegram_id),  pipeline_variant: triage_result.pipeline_variant || 'standard',  subject: {    name: body.character_name || 'Герой книги',    known_birth_year: body.known_birth_year || triage_result.birth_year_estimate || null,    known_details: body.known_details || null  },  interview: {    id: 'int_001',    speaker: { name: 'Рассказчик', relation_to_subject: 'родственник' },    transcript: body.transcript  },  existing_facts: null}) }}];",
-        "mode": "runOnceForAllItems"
+        "jsCode": "const body = $('Webhook').first().json.body;const triage_result = $('Extract Triage').first().json.triage_result || {};return [{ json: { wrapped_input: JSON.stringify({  phase: 'A',  project_id: String(body.draft_id || body.telegram_id),  pipeline_variant: triage_result.pipeline_variant || 'standard',  subject: {    name: body.character_name || 'Герой книги',    known_birth_year: body.known_birth_year || triage_result.birth_year_estimate || null,    known_details: body.known_details || null  },  interview: {    id: 'int_001',    speaker: { name: 'Рассказчик', relation_to_subject: 'родственник' },    transcript: body.transcript  },  existing_facts: null}) }}];"
       },
-      "id": "node-wrap-fe",
+      "id": "f63dff66-2761-4112-94bc-44bbad373ae5",
       "name": "Wrap for Fact Extractor",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        250,
-        300
+        59120,
+        10784
       ]
     },
     {
@@ -39,13 +37,13 @@
           "timeout": 10000
         }
       },
-      "id": "node-get-prompt-fe",
+      "id": "d5eb2e42-473f-47f2-aa0b-ba9c7b625322",
       "name": "Get Prompt: Fact Extractor",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
       "position": [
-        500,
-        300
+        59376,
+        10784
       ]
     },
     {
@@ -73,41 +71,39 @@
           "timeout": 180000
         }
       },
-      "id": "node-fact-extractor",
+      "id": "e26998a1-9e69-4bdc-8f80-8a8d4a522b03",
       "name": "Fact Extractor",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
       "position": [
-        750,
-        300
+        59616,
+        10784
       ]
     },
     {
       "parameters": {
-        "jsCode": "const raw = $input.first().json.choices[0].message.content; let fact_map = {}; const t = raw.trim(); const s = t.indexOf('{'); const e = t.lastIndexOf('}'); if (s !== -1 && e > s) { try { fact_map = JSON.parse(t.slice(s, e + 1)); } catch(err) {} } if (!fact_map.subject) { try { fact_map = JSON.parse(t); } catch(err) {} } return [{ json: { fact_map } }];",
-        "mode": "runOnceForAllItems"
+        "jsCode": "const raw = $input.first().json.choices[0].message.content; let fact_map = {}; const t = raw.trim(); const s = t.indexOf('{'); const e = t.lastIndexOf('}'); if (s !== -1 && e > s) { try { fact_map = JSON.parse(t.slice(s, e + 1)); } catch(err) {} } if (!fact_map.subject) { try { fact_map = JSON.parse(t); } catch(err) {} } return [{ json: { fact_map } }];"
       },
-      "id": "node-extract-fm",
+      "id": "7cb7e862-a5f8-4da1-816f-3a4bc6a3561e",
       "name": "Extract Fact Map",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1000,
-        300
+        59872,
+        10784
       ]
     },
     {
       "parameters": {
-        "jsCode": "const body = $('Webhook').first().json.body; const fact_map = $('Extract Fact Map').first().json.fact_map; return [{ json: { wrapped_input: JSON.stringify({ phase: 'A', project_id: String(body.draft_id || body.telegram_id), fact_map: { persons: fact_map.persons || [], timeline: fact_map.timeline || [], locations: fact_map.locations || [], subject: fact_map.subject || {} }, photos_available: body.photo_count || 0, note: 'Создай подписи к фотографиям и план их размещения в книге на основе карты фактов' }) }}];",
-        "mode": "runOnceForAllItems"
+        "jsCode": "const body = $('Webhook').first().json.body; const fact_map = $('Extract Fact Map').first().json.fact_map; return [{ json: { wrapped_input: JSON.stringify({ phase: 'A', project_id: String(body.draft_id || body.telegram_id), fact_map: { persons: fact_map.persons || [], timeline: fact_map.timeline || [], locations: fact_map.locations || [], subject: fact_map.subject || {} }, photos_available: body.photo_count || 0, note: 'Создай подписи к фотографиям и план их размещения в книге на основе карты фактов' }) }}];"
       },
-      "id": "node-wrap-pe",
+      "id": "580ef9c1-8d55-4457-b42e-b8de280e6450",
       "name": "Wrap for Photo Editor",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1250,
-        900
+        60128,
+        11376
       ]
     },
     {
@@ -117,13 +113,13 @@
           "timeout": 10000
         }
       },
-      "id": "node-get-prompt-pe",
+      "id": "358cbe4f-49a6-46f0-960b-1185928cb223",
       "name": "Get Prompt: Photo Editor",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
       "position": [
-        1500,
-        900
+        60368,
+        11376
       ]
     },
     {
@@ -151,41 +147,39 @@
           "timeout": 60000
         }
       },
-      "id": "node-photo-editor",
+      "id": "b752b68b-9a81-4d0f-a376-15a6c7e329bd",
       "name": "Photo Editor",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
       "position": [
-        1750,
-        900
+        60624,
+        11376
       ]
     },
     {
       "parameters": {
-        "jsCode": "const raw = $input.first().json.choices[0].message.content; let photo_layout = []; const t = raw.trim(); const s = t.indexOf('{'); const e = t.lastIndexOf('}'); if (s !== -1 && e > s) { try { const p = JSON.parse(t.slice(s, e + 1)); photo_layout = p.photos || []; } catch(err) {} } return [{ json: { photo_layout } }];",
-        "mode": "runOnceForAllItems"
+        "jsCode": "const raw = $input.first().json.choices[0].message.content; let photo_layout = []; const t = raw.trim(); const s = t.indexOf('{'); const e = t.lastIndexOf('}'); if (s !== -1 && e > s) { try { const p = JSON.parse(t.slice(s, e + 1)); photo_layout = p.photos || []; } catch(err) {} } return [{ json: { photo_layout } }];"
       },
-      "id": "node-extract-pe",
+      "id": "e2c2e4a8-b17e-4b3f-9cbf-7af925cbe9f7",
       "name": "Extract from Photo Editor",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2000,
-        900
+        60880,
+        11376
       ]
     },
     {
       "parameters": {
-        "jsCode": "const body = $('Webhook').first().json.body;const fact_map = $('Extract Fact Map').first().json.fact_map;const historical_context = $('Extract Historian').first().json.historical_context || {};const triage_result = $('Extract Triage').first().json.triage_result || {};return [{ json: { wrapped_input: JSON.stringify({  phase: 'A',  project_id: String(body.draft_id || body.telegram_id),  pipeline_variant: triage_result.pipeline_variant || 'standard',  subject: {    name: body.character_name || (fact_map.subject && fact_map.subject.name) || 'Герой книги'  },  fact_map: fact_map,  historical_context: historical_context,  transcripts: [{ interview_id: 'int_001', speaker_name: 'Рассказчик',    relation_to_subject: 'родственник', text: body.transcript }]}) }}];",
-        "mode": "runOnceForAllItems"
+        "jsCode": "const body = $('Webhook').first().json.body;const fact_map = $('Extract Fact Map').first().json.fact_map;const historical_context = $('Extract Historian').first().json.historical_context || {};const triage_result = $('Extract Triage').first().json.triage_result || {};return [{ json: { wrapped_input: JSON.stringify({  phase: 'A',  project_id: String(body.draft_id || body.telegram_id),  pipeline_variant: triage_result.pipeline_variant || 'standard',  subject: {    name: body.character_name || (fact_map.subject && fact_map.subject.name) || 'Герой книги'  },  fact_map: fact_map,  historical_context: historical_context,  transcripts: [{ interview_id: 'int_001', speaker_name: 'Рассказчик',    relation_to_subject: 'родственник', text: body.transcript }]}) }}];"
       },
-      "id": "node-wrap-gw",
+      "id": "515c3bcc-d29f-42d7-b218-0d5db2cee965",
       "name": "Wrap for Ghostwriter",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1250,
-        300
+        60128,
+        10784
       ]
     },
     {
@@ -195,13 +189,13 @@
           "timeout": 10000
         }
       },
-      "id": "node-get-prompt-gw",
+      "id": "f447df64-df25-409e-8d60-899b6c201923",
       "name": "Get Prompt: Ghostwriter",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
       "position": [
-        1500,
-        300
+        60368,
+        10784
       ]
     },
     {
@@ -229,41 +223,39 @@
           "timeout": 300000
         }
       },
-      "id": "node-ghostwriter",
+      "id": "b1dbe14c-76d1-459d-9c10-8506eef3d51f",
       "name": "Ghostwriter",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
       "position": [
-        1750,
-        300
+        60624,
+        10784
       ]
     },
     {
       "parameters": {
-        "jsCode": "const raw = $input.first().json.choices[0].message.content; let book_draft = { chapters: [], callouts: [], historical_notes: [] }; const t = raw.trim(); const s = t.indexOf('{'); const e = t.lastIndexOf('}'); if (s !== -1 && e > s) { try { const p = JSON.parse(t.slice(s, e + 1)); if (p.chapters) book_draft = p; } catch(err) {} } return [{ json: { book_draft } }];",
-        "mode": "runOnceForAllItems"
+        "jsCode": "const raw = $input.first().json.choices[0].message.content; let book_draft = { chapters: [], callouts: [], historical_notes: [] }; const t = raw.trim(); const s = t.indexOf('{'); const e = t.lastIndexOf('}'); if (s !== -1 && e > s) { try { const p = JSON.parse(t.slice(s, e + 1)); if (p.chapters) book_draft = p; } catch(err) {} } return [{ json: { book_draft } }];"
       },
-      "id": "node-extract-bd",
+      "id": "5425a140-0279-494c-b00a-c609238f2950",
       "name": "Extract Book Draft",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2000,
-        300
+        60880,
+        10784
       ]
     },
     {
       "parameters": {
-        "jsCode": "const body = $('Webhook').first().json.body;const le = $('Call Orch: Literary Edit').first().json;const chapters = le.chapters || [];return [{ json: { wrapped_input: JSON.stringify({  phase: 'A',  project_id: String(body.draft_id || body.telegram_id),  book_text: { chapters: chapters, callouts: [], historical_notes: [] }}) }}];",
-        "mode": "runOnceForAllItems"
+        "jsCode": "const body = $('Webhook').first().json.body;const le = $('Call Orch: Literary Edit').first().json;const chapters = le.chapters || [];return [{ json: { wrapped_input: JSON.stringify({  phase: 'A',  project_id: String(body.draft_id || body.telegram_id),  book_text: { chapters: chapters, callouts: [], historical_notes: [] }}) }}];"
       },
-      "id": "node-wrap-pr",
+      "id": "2bc60e9f-4574-4066-baf4-28380ea23a48",
       "name": "Wrap for Proofreader",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        4250,
-        300
+        63120,
+        10784
       ]
     },
     {
@@ -273,13 +265,13 @@
           "timeout": 10000
         }
       },
-      "id": "node-get-prompt-pr",
+      "id": "74d7bc4a-c50b-45e6-9554-eabb075664b1",
       "name": "Get Prompt: Proofreader",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
       "position": [
-        4500,
-        300
+        63376,
+        10784
       ]
     },
     {
@@ -307,41 +299,39 @@
           "timeout": 180000
         }
       },
-      "id": "node-proofreader",
+      "id": "b7ab6431-3493-44f8-a20b-2492f6980240",
       "name": "Proofreader",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
       "position": [
-        4750,
-        300
+        63616,
+        10784
       ]
     },
     {
       "parameters": {
-        "jsCode": "const raw = $input.first().json.choices[0].message.content; let bio_text = raw; const t = raw.trim(); const s = t.indexOf('{'); const e = t.lastIndexOf('}'); if (s !== -1 && e > s) { try { const p = JSON.parse(t.slice(s, e + 1)); if (p.chapters && p.chapters.length > 0) { bio_text = p.chapters.map(ch => ch.content || '').filter(Boolean).join('\\n\\n'); } } catch(err) {} } return [{ json: { bio_text } }];",
-        "mode": "runOnceForAllItems"
+        "jsCode": "const raw = $input.first().json.choices[0].message.content; let bio_text = raw; const t = raw.trim(); const s = t.indexOf('{'); const e = t.lastIndexOf('}'); if (s !== -1 && e > s) { try { const p = JSON.parse(t.slice(s, e + 1)); if (p.chapters && p.chapters.length > 0) { bio_text = p.chapters.map(ch => ch.content || '').filter(Boolean).join('\\n\\n'); } } catch(err) {} } return [{ json: { bio_text } }];"
       },
-      "id": "node-extract-pr",
+      "id": "a1a457cb-3d1b-42cf-b758-07094d1a77a3",
       "name": "Extract from Proofreader",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        5000,
-        300
+        63872,
+        10784
       ]
     },
     {
       "parameters": {
-        "jsCode": "const body = $('Webhook').first().json.body;const fact_map = $('Extract Fact Map').first().json.fact_map;const book_draft = $('Extract Book Draft').first().json.book_draft;const triage_result = $('Extract Triage').first().json.triage_result || {};const historical_context = $('Extract Historian').first().json.historical_context || {};const subject = fact_map.subject || {};const chapters_summary = (book_draft.chapters || []).map(ch => ({  id: ch.id, title: ch.title || '',  brief_content: (ch.content || '').slice(0, 300) + '...'}));const historical_events = (historical_context.key_historical_events || []).slice(0, 5);return [{ json: { wrapped_input: JSON.stringify({  project_id: String(body.draft_id || body.telegram_id),  subject: {    name: body.character_name || subject.name || 'Герой книги',    birth_year: subject.birth_year || triage_result.birth_year_estimate || null,    death_year: subject.death_year || triage_result.death_year_estimate || null,    birth_place: subject.birth_place || triage_result.primary_location || null  },  period: triage_result.subject_period || null,  key_themes: triage_result.key_themes || [],  gaps: fact_map.gaps || [],  timeline: (fact_map.timeline || []).map(ev => ({    id: ev.id, date: ev.date, title: ev.title, life_period: ev.life_period,    confidence: ev.confidence  })),  persons: (fact_map.persons || []).map(p => ({    id: p.id, name: p.name, relation_to_subject: p.relation_to_subject  })),  locations: (fact_map.locations || []).map(l => ({ id: l.id, name: l.name })),  conflicts: fact_map.conflicts || [],  historical_gaps: historical_events.map(ev => ev.event || ''),  book_chapters_summary: chapters_summary,  complexity: triage_result.complexity || 'medium'}) }}];",
-        "mode": "runOnceForAllItems"
+        "jsCode": "const body = $('Webhook').first().json.body;const fact_map = $('Extract Fact Map').first().json.fact_map;const book_draft = $('Extract Book Draft').first().json.book_draft;const triage_result = $('Extract Triage').first().json.triage_result || {};const historical_context = $('Extract Historian').first().json.historical_context || {};const subject = fact_map.subject || {};const chapters_summary = (book_draft.chapters || []).map(ch => ({  id: ch.id, title: ch.title || '',  brief_content: (ch.content || '').slice(0, 300) + '...'}));const historical_events = (historical_context.key_historical_events || []).slice(0, 5);return [{ json: { wrapped_input: JSON.stringify({  project_id: String(body.draft_id || body.telegram_id),  subject: {    name: body.character_name || subject.name || 'Герой книги',    birth_year: subject.birth_year || triage_result.birth_year_estimate || null,    death_year: subject.death_year || triage_result.death_year_estimate || null,    birth_place: subject.birth_place || triage_result.primary_location || null  },  period: triage_result.subject_period || null,  key_themes: triage_result.key_themes || [],  gaps: fact_map.gaps || [],  timeline: (fact_map.timeline || []).map(ev => ({    id: ev.id, date: ev.date, title: ev.title, life_period: ev.life_period,    confidence: ev.confidence  })),  persons: (fact_map.persons || []).map(p => ({    id: p.id, name: p.name, relation_to_subject: p.relation_to_subject  })),  locations: (fact_map.locations || []).map(l => ({ id: l.id, name: l.name })),  conflicts: fact_map.conflicts || [],  historical_gaps: historical_events.map(ev => ev.event || ''),  book_chapters_summary: chapters_summary,  complexity: triage_result.complexity || 'medium'}) }}];"
       },
-      "id": "node-wrap-ia",
+      "id": "056f442d-ed5b-4265-bb65-c2f4c6133ce9",
       "name": "Wrap for Interview Architect",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2000,
-        600
+        60880,
+        11088
       ]
     },
     {
@@ -351,13 +341,13 @@
           "timeout": 10000
         }
       },
-      "id": "node-get-prompt-ia",
+      "id": "07acf16b-a5db-4252-9c67-f87725443846",
       "name": "Get Prompt: Interview Architect",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
       "position": [
-        2500,
-        600
+        61376,
+        11088
       ]
     },
     {
@@ -385,55 +375,50 @@
           "timeout": 120000
         }
       },
-      "id": "node-interview-architect",
+      "id": "4c1189e4-d974-4a31-a9f7-408a358b882f",
       "name": "Interview Architect",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
       "position": [
-        3000,
-        600
+        61872,
+        11088
       ]
     },
     {
       "parameters": {
-        "jsCode": "const raw = $input.first().json.choices[0].message.content; let questions_text = raw; const t = raw.trim(); const s = t.indexOf('{'); const e = t.lastIndexOf('}'); if (s !== -1 && e > s) { try { const p = JSON.parse(t.slice(s, e + 1)); const lines = []; if (p.question_groups && p.question_groups.length > 0) { p.question_groups.forEach(group => { lines.push(''); lines.push(group.theme); if (group.intro_for_client) lines.push(group.intro_for_client); (group.question_ids || []).forEach((qid, i) => { const q = (p.questions || []).find(q2 => q2.id === qid); if (q) lines.push((i + 1) + '. ' + q.text); }); }); if (lines.length > 0) questions_text = lines.join('\\n'); } else if (p.questions && p.questions.length > 0) { questions_text = p.questions.map((q, i) => (i + 1) + '. ' + q.text).join('\\n'); } } catch(err) {} } return [{ json: { questions_text } }];",
-        "mode": "runOnceForAllItems"
+        "jsCode": "const raw = $input.first().json.choices[0].message.content; let questions_text = raw; const t = raw.trim(); const s = t.indexOf('{'); const e = t.lastIndexOf('}'); if (s !== -1 && e > s) { try { const p = JSON.parse(t.slice(s, e + 1)); const lines = []; if (p.question_groups && p.question_groups.length > 0) { p.question_groups.forEach(group => { lines.push(''); lines.push(group.theme); if (group.intro_for_client) lines.push(group.intro_for_client); (group.question_ids || []).forEach((qid, i) => { const q = (p.questions || []).find(q2 => q2.id === qid); if (q) lines.push((i + 1) + '. ' + q.text); }); }); if (lines.length > 0) questions_text = lines.join('\\n'); } else if (p.questions && p.questions.length > 0) { questions_text = p.questions.map((q, i) => (i + 1) + '. ' + q.text).join('\\n'); } } catch(err) {} } return [{ json: { questions_text } }];"
       },
-      "id": "node-extract-ia",
+      "id": "e0140a5a-8d8e-4eed-b55e-e9132d45883b",
       "name": "Extract from Interview Architect",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3500,
-        600
+        62368,
+        11088
       ]
     },
     {
-      "parameters": {
-        "mode": "append",
-        "options": {}
-      },
-      "id": "node-merge-text-photos",
+      "parameters": {},
+      "id": "9ac04eee-5ade-4bf7-aefb-cc0dc8877ba8",
       "name": "Merge: Text + Photos",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 2,
       "position": [
-        5250,
-        600
+        64128,
+        11088
       ]
     },
     {
       "parameters": {
-        "jsCode": "const body = $('Webhook').first().json.body;const bio_text = $('Extract from Proofreader').first().json.bio_text || '';const photo_layout = $('Extract from Photo Editor').first().json.photo_layout || [];const cover_spec = $('Extract Cover Designer').first().json.cover_spec || {};return [{ json: { wrapped_input: JSON.stringify({  phase: 'A',  project_id: String(body.draft_id || body.telegram_id),  bio_text_excerpt: bio_text.slice(0, 2000),  chapters_count: 4,  photo_placements: photo_layout,  cover_spec: cover_spec,  format: 'A5_print_ready',  style: cover_spec.visual_style || 'warm_book',  note: 'Создай спецификацию вёрстки PDF на основе обложки и содержания'}) }}];",
-        "mode": "runOnceForAllItems"
+        "jsCode": "const body = $('Webhook').first().json.body;const bio_text = $('Extract from Proofreader').first().json.bio_text || '';const photo_layout = $('Extract from Photo Editor').first().json.photo_layout || [];const cover_spec = $('Extract Cover Designer').first().json.cover_spec || {};return [{ json: { wrapped_input: JSON.stringify({  phase: 'A',  project_id: String(body.draft_id || body.telegram_id),  bio_text_excerpt: bio_text.slice(0, 2000),  chapters_count: 4,  photo_placements: photo_layout,  cover_spec: cover_spec,  format: 'A5_print_ready',  style: cover_spec.visual_style || 'warm_book',  note: 'Создай спецификацию вёрстки PDF на основе обложки и содержания'}) }}];"
       },
-      "id": "node-wrap-ld",
+      "id": "ebaf9dc7-0e52-44ad-92ba-76018c19c54f",
       "name": "Wrap for Layout Designer",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        5500,
-        300
+        64368,
+        10784
       ]
     },
     {
@@ -443,13 +428,13 @@
           "timeout": 10000
         }
       },
-      "id": "node-get-prompt-ld",
+      "id": "ca50c559-f667-4cbe-a1af-fad2148fde6d",
       "name": "Get Prompt: Layout Designer",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
       "position": [
-        5750,
-        300
+        64624,
+        10784
       ]
     },
     {
@@ -477,55 +462,50 @@
           "timeout": 120000
         }
       },
-      "id": "node-layout-designer",
+      "id": "35a9e7cc-73e7-444b-97f8-ca063cb0fc0f",
       "name": "Layout Designer",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
       "position": [
-        6000,
-        300
+        64880,
+        10784
       ]
     },
     {
       "parameters": {
-        "jsCode": "const raw = $input.first().json.choices[0].message.content; let layout_spec = {}; let estimated_pages = null; const t = raw.trim(); const s = t.indexOf('{'); const e = t.lastIndexOf('}'); if (s !== -1 && e > s) { try { const p = JSON.parse(t.slice(s, e + 1)); layout_spec = p.layout_spec || p; estimated_pages = p.estimated_pages || null; } catch(err) {} } const bio_text = $('Extract from Proofreader').first().json.bio_text || ''; return [{ json: { layout_spec, estimated_pages, bio_text } }];",
-        "mode": "runOnceForAllItems"
+        "jsCode": "const raw = $input.first().json.choices[0].message.content; let layout_spec = {}; let estimated_pages = null; const t = raw.trim(); const s = t.indexOf('{'); const e = t.lastIndexOf('}'); if (s !== -1 && e > s) { try { const p = JSON.parse(t.slice(s, e + 1)); layout_spec = p.layout_spec || p; estimated_pages = p.estimated_pages || null; } catch(err) {} } const bio_text = $('Extract from Proofreader').first().json.bio_text || ''; return [{ json: { layout_spec, estimated_pages, bio_text } }];"
       },
-      "id": "node-extract-ld",
+      "id": "f439d03e-9577-47a8-be18-7b7a5a8f225d",
       "name": "Extract from Layout Designer",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        6250,
-        300
+        65120,
+        10784
       ]
     },
     {
-      "parameters": {
-        "mode": "append",
-        "options": {}
-      },
-      "id": "node-merge-layout-questions",
+      "parameters": {},
+      "id": "d346a9fd-ac48-42e2-bd3f-41e149e31b94",
       "name": "Merge: Layout + Questions",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 2,
       "position": [
-        7500,
-        450
+        66368,
+        10928
       ]
     },
     {
       "parameters": {
-        "jsCode": "const body = $('Webhook').first().json.body;const bio_text = $('Extract from Proofreader').first().json.bio_text || '';const questions_text = $('Extract from Interview Architect').first().json.questions_text || '';const lqa = $('Call Orch: Layout QA').first().json;const cover_spec = $('Extract Cover Designer').first().json.cover_spec || {};const character_name = body.character_name || 'Герой книги';return [{ json: { bio_text, questions_text, wrapped_input: JSON.stringify({    phase: 'A',    project_id: String(body.draft_id || body.telegram_id),    character_name: character_name,    book_title: cover_spec.title || character_name,    book_subtitle: cover_spec.subtitle || 'Семейная биография',    book_tagline: cover_spec.tagline || '',    book_status: 'ready',    chapters_count: 4,    book_excerpt: bio_text.slice(0, 400),    delivery_type: 'phase_a_v1',    layout_qa_verdict: lqa.verdict || 'pass',    estimated_pages: (lqa.layout_spec && lqa.layout_spec.estimated_pages) || null  }),  bio_text: bio_text,  questions_text: questions_text,  character_name: character_name,  cover_spec: cover_spec} }];",
-        "mode": "runOnceForAllItems"
+        "jsCode": "const body = $('Webhook').first().json.body;const bio_text = $('Extract from Proofreader').first().json.bio_text || '';const questions_text = $('Extract from Interview Architect').first().json.questions_text || '';const lqa = $('Call Orch: Layout QA').first().json;const cover_spec = $('Extract Cover Designer').first().json.cover_spec || {};const character_name = body.character_name || 'Герой книги';return [{ json: { bio_text, questions_text, wrapped_input: JSON.stringify({    phase: 'A',    project_id: String(body.draft_id || body.telegram_id),    character_name: character_name,    book_title: cover_spec.title || character_name,    book_subtitle: cover_spec.subtitle || 'Семейная биография',    book_tagline: cover_spec.tagline || '',    book_status: 'ready',    chapters_count: 4,    book_excerpt: bio_text.slice(0, 400),    delivery_type: 'phase_a_v1',    layout_qa_verdict: lqa.verdict || 'pass',    estimated_pages: (lqa.layout_spec && lqa.layout_spec.estimated_pages) || null  }),  bio_text: bio_text,  questions_text: questions_text,  character_name: character_name,  cover_spec: cover_spec} }];"
       },
-      "id": "node-wrap-producer",
+      "id": "2433446a-6536-451b-9356-23009d9cc022",
       "name": "Wrap for Producer",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        7750,
-        450
+        66624,
+        10928
       ]
     },
     {
@@ -535,13 +515,13 @@
           "timeout": 10000
         }
       },
-      "id": "node-get-prompt-producer",
+      "id": "3c4a13c5-7238-4aed-bb72-df4e6e222f40",
       "name": "Get Prompt: Producer",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
       "position": [
-        8000,
-        450
+        66880,
+        10928
       ]
     },
     {
@@ -569,27 +549,26 @@
           "timeout": 60000
         }
       },
-      "id": "node-producer",
+      "id": "a5240d4c-ea90-4c10-93ff-e8dcac9e3cc6",
       "name": "Producer",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
       "position": [
-        8250,
-        450
+        67120,
+        10928
       ]
     },
     {
       "parameters": {
-        "jsCode": "const raw = $input.first().json.choices[0].message.content; let intro_message = raw; const t = raw.trim(); const s = t.indexOf('{'); const e = t.lastIndexOf('}'); if (s !== -1 && e > s) { try { const p = JSON.parse(t.slice(s, e + 1)); intro_message = p.client_note || p.telegram_message || p.intro || p.message || (p.delivery_package && p.delivery_package.client_note); } catch(err) {} } if (!intro_message || (intro_message.startsWith('{') && intro_message.includes('\"'))) { intro_message = 'Книга готова! Ниже текст биографии и уточняющие вопросы — отвечать необязательно.'; } return [{ json: { intro_message } }];",
-        "mode": "runOnceForAllItems"
+        "jsCode": "const raw = $input.first().json.choices[0].message.content; let intro_message = raw; const t = raw.trim(); const s = t.indexOf('{'); const e = t.lastIndexOf('}'); if (s !== -1 && e > s) { try { const p = JSON.parse(t.slice(s, e + 1)); intro_message = p.client_note || p.telegram_message || p.intro || p.message || (p.delivery_package && p.delivery_package.client_note); } catch(err) {} } if (!intro_message || (intro_message.startsWith('{') && intro_message.includes('\"'))) { intro_message = 'Книга готова! Ниже текст биографии и уточняющие вопросы — отвечать необязательно.'; } return [{ json: { intro_message } }];"
       },
-      "id": "node-extract-producer",
+      "id": "b5ecde94-a635-4ad5-81db-fe84ef5a9d2d",
       "name": "Extract from Producer",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        8500,
-        450
+        67376,
+        10928
       ]
     },
     {
@@ -613,13 +592,13 @@
           "timeout": 30000
         }
       },
-      "id": "node-send-intro",
+      "id": "9c49a640-a6ae-40da-a968-312a4b609e84",
       "name": "Send Intro to Telegram",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
       "position": [
-        8750,
-        300
+        67616,
+        10784
       ]
     },
     {
@@ -643,13 +622,13 @@
           "timeout": 120000
         }
       },
-      "id": "node-send-bio",
+      "id": "c14c72b4-6d49-4016-97b5-3b958a18a935",
       "name": "Send Bio PDF to Telegram",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
       "position": [
-        8750,
-        450
+        67616,
+        10928
       ]
     },
     {
@@ -673,13 +652,13 @@
           "timeout": 30000
         }
       },
-      "id": "node-send-questions",
+      "id": "123c7fb1-9dfc-45c7-96e8-1280c52cde37",
       "name": "Send Questions to Telegram",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
       "position": [
-        8750,
-        600
+        67616,
+        11088
       ]
     },
     {
@@ -703,38 +682,29 @@
           "timeout": 10000
         }
       },
-      "id": "node-update-job",
+      "id": "6aeac866-11c7-4c3d-aabf-a7d573a42dd5",
       "name": "Update Job Status",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
       "position": [
-        9000,
-        450
+        67872,
+        10928
       ]
     },
     {
-      "id": "node-wrap-orch-fc",
+      "parameters": {
+        "jsCode": "const body = $('Webhook').first().json.body;const fact_map = $('Extract Fact Map').first().json.fact_map;const book_draft = $('Extract Book Draft').first().json.book_draft;return [{ json: { payload: JSON.stringify({  book_draft: book_draft,  fact_map: fact_map,  transcripts: [{ interview_id: 'int_001', speaker_name: 'Рассказчик',                  relation_to_subject: 'родственник', text: body.transcript }],  project_id: String(body.draft_id || body.telegram_id),  max_iterations: 3}) }}];"
+      },
+      "id": "8fd05b1e-51c1-4bf3-8d08-ea4e8ef9c9eb",
       "name": "Wrap Orch: Fact Check",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2250,
-        300
-      ],
-      "parameters": {
-        "mode": "runOnceForAllItems",
-        "jsCode": "const body = $('Webhook').first().json.body;const fact_map = $('Extract Fact Map').first().json.fact_map;const book_draft = $('Extract Book Draft').first().json.book_draft;return [{ json: { payload: JSON.stringify({  book_draft: book_draft,  fact_map: fact_map,  transcripts: [{ interview_id: 'int_001', speaker_name: 'Рассказчик',                  relation_to_subject: 'родственник', text: body.transcript }],  project_id: String(body.draft_id || body.telegram_id),  max_iterations: 3}) }}];"
-      }
+        61120,
+        10784
+      ]
     },
     {
-      "id": "node-call-orch-fc",
-      "name": "Call Orch: Fact Check",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4,
-      "position": [
-        2500,
-        300
-      ],
       "parameters": {
         "method": "POST",
         "url": "http://127.0.0.1:5001/api/orchestrate/fact-check",
@@ -754,31 +724,30 @@
         "options": {
           "timeout": 900000
         }
-      }
+      },
+      "id": "c6f734ff-71d8-4e89-aa71-2b82ed2219d8",
+      "name": "Call Orch: Fact Check",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        61376,
+        10784
+      ]
     },
     {
-      "id": "node-wrap-orch-le",
+      "parameters": {
+        "jsCode": "const body = $('Webhook').first().json.body;const fc = $('Call Orch: Fact Check').first().json;return [{ json: { payload: JSON.stringify({  book_draft: fc.book_draft || {},  fact_checker_warnings: fc.warnings || [],  project_id: String(body.draft_id || body.telegram_id),  max_iterations: 2}) }}];"
+      },
+      "id": "c299ae38-a633-4767-82f7-34f4b7faf97b",
       "name": "Wrap Orch: Literary Edit",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2750,
-        300
-      ],
-      "parameters": {
-        "mode": "runOnceForAllItems",
-        "jsCode": "const body = $('Webhook').first().json.body;const fc = $('Call Orch: Fact Check').first().json;return [{ json: { payload: JSON.stringify({  book_draft: fc.book_draft || {},  fact_checker_warnings: fc.warnings || [],  project_id: String(body.draft_id || body.telegram_id),  max_iterations: 2}) }}];"
-      }
+        61616,
+        10784
+      ]
     },
     {
-      "id": "node-call-orch-le",
-      "name": "Call Orch: Literary Edit",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4,
-      "position": [
-        3000,
-        300
-      ],
       "parameters": {
         "method": "POST",
         "url": "http://127.0.0.1:5001/api/orchestrate/literary-edit",
@@ -798,31 +767,30 @@
         "options": {
           "timeout": 900000
         }
-      }
+      },
+      "id": "0891d443-2f82-44a6-911f-29adecc3a40a",
+      "name": "Call Orch: Literary Edit",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        61872,
+        10784
+      ]
     },
     {
-      "id": "node-wrap-orch-lqa",
+      "parameters": {
+        "jsCode": "const body = $('Webhook').first().json.body;const ld = $('Extract from Layout Designer').first().json;const photo_layout = $('Extract from Photo Editor').first().json.photo_layout || [];const bio_text = $('Extract from Proofreader').first().json.bio_text || '';return [{ json: { payload: JSON.stringify({  layout_spec: ld.layout_spec || {},  bio_text: bio_text,  photo_layout: photo_layout,  project_id: String(body.draft_id || body.telegram_id),  max_iterations: 3}) }}];"
+      },
+      "id": "ac04c165-deef-4d74-aad9-b5c14f82ed6d",
       "name": "Wrap Orch: Layout QA",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        6500,
-        300
-      ],
-      "parameters": {
-        "mode": "runOnceForAllItems",
-        "jsCode": "const body = $('Webhook').first().json.body;const ld = $('Extract from Layout Designer').first().json;const photo_layout = $('Extract from Photo Editor').first().json.photo_layout || [];const bio_text = $('Extract from Proofreader').first().json.bio_text || '';return [{ json: { payload: JSON.stringify({  layout_spec: ld.layout_spec || {},  bio_text: bio_text,  photo_layout: photo_layout,  project_id: String(body.draft_id || body.telegram_id),  max_iterations: 3}) }}];"
-      }
+        65376,
+        10784
+      ]
     },
     {
-      "id": "node-call-orch-lqa",
-      "name": "Call Orch: Layout QA",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4,
-      "position": [
-        6750,
-        300
-      ],
       "parameters": {
         "method": "POST",
         "url": "http://127.0.0.1:5001/api/orchestrate/layout-qa",
@@ -842,47 +810,46 @@
         "options": {
           "timeout": 900000
         }
-      }
+      },
+      "id": "29d08a08-f4df-4b75-8716-c826a980b3ea",
+      "name": "Call Orch: Layout QA",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        65616,
+        10784
+      ]
     },
     {
-      "id": "node-wrap-triage",
+      "parameters": {
+        "jsCode": "const body = $('Webhook').first().json.body;return [{ json: { wrapped_input: JSON.stringify({  phase: 'A',  character_name: body.character_name || 'Неизвестно',  transcript_length: (body.transcript || '').length,  transcript_excerpt: (body.transcript || '').slice(0, 3000),  photo_count: body.photo_count || 0,  known_birth_year: body.known_birth_year || null,  known_details: body.known_details || null}) }}];"
+      },
+      "id": "9612bfac-699a-4469-b4ae-99f15298f164",
       "name": "Wrap Triage",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -1000,
-        300
-      ],
-      "parameters": {
-        "mode": "runOnceForAllItems",
-        "jsCode": "const body = $('Webhook').first().json.body;return [{ json: { wrapped_input: JSON.stringify({  phase: 'A',  character_name: body.character_name || 'Неизвестно',  transcript_length: (body.transcript || '').length,  transcript_excerpt: (body.transcript || '').slice(0, 3000),  photo_count: body.photo_count || 0,  known_birth_year: body.known_birth_year || null,  known_details: body.known_details || null}) }}];"
-      }
+        57872,
+        10784
+      ]
     },
     {
-      "id": "node-get-prompt-triage",
-      "name": "Get Prompt: Triage",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4,
-      "position": [
-        -750,
-        300
-      ],
       "parameters": {
         "url": "http://127.0.0.1:5001/api/prompts/triage_agent",
         "options": {
           "timeout": 10000
         }
-      }
-    },
-    {
-      "id": "node-triage-agent",
-      "name": "Triage Agent",
+      },
+      "id": "1abb89c9-bb1d-48ca-ba5c-63ad24ac9c80",
+      "name": "Get Prompt: Triage",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
       "position": [
-        -500,
-        300
-      ],
+        58128,
+        10784
+      ]
+    },
+    {
       "parameters": {
         "method": "POST",
         "url": "https://api.openai.com/v1/chat/completions",
@@ -906,105 +873,101 @@
         "options": {
           "timeout": 60000
         }
-      }
+      },
+      "id": "c55eabd9-135c-4ff2-be5b-2e6eb11235ba",
+      "name": "Triage Agent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        58368,
+        10784
+      ]
     },
     {
-      "id": "node-extract-triage",
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.choices[0].message.content;let triage_result = { pipeline_variant: 'standard', subject_period: null,  birth_year_estimate: null, complexity: 'medium', primary_location: null };const t = raw.trim(); const s = t.indexOf('{'); const e = t.lastIndexOf('}');if (s !== -1 && e > s) { try { const p = JSON.parse(t.slice(s, e + 1));  if (p.pipeline_variant || p.complexity) triage_result = p; } catch(err) {} }return [{ json: { triage_result } }];"
+      },
+      "id": "ecefc4d2-dde3-4f6f-aebc-04da4e7c1b37",
       "name": "Extract Triage",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -250,
-        300
-      ],
-      "parameters": {
-        "mode": "runOnceForAllItems",
-        "jsCode": "const raw = $input.first().json.choices[0].message.content;let triage_result = { pipeline_variant: 'standard', subject_period: null,  birth_year_estimate: null, complexity: 'medium', primary_location: null };const t = raw.trim(); const s = t.indexOf('{'); const e = t.lastIndexOf('}');if (s !== -1 && e > s) { try { const p = JSON.parse(t.slice(s, e + 1));  if (p.pipeline_variant || p.complexity) triage_result = p; } catch(err) {} }return [{ json: { triage_result } }];"
-      }
+        58624,
+        10784
+      ]
     },
     {
-      "id": "node-wrap-historian",
+      "parameters": {
+        "jsCode": "const body = $('Webhook').first().json.body;const fact_map = $('Extract Fact Map').first().json.fact_map;const triage_result = $('Extract Triage').first().json.triage_result || {};const subject = fact_map.subject || {};const timeline = (fact_map.timeline || []).slice(0, 20);const locations = (fact_map.locations || []).map(l => l.name);return [{ json: { wrapped_input: JSON.stringify({  phase: 'A',  project_id: String(body.draft_id || body.telegram_id),  subject: {    name: body.character_name || subject.name || 'Неизвестно',    birth_year: subject.birth_year || triage_result.birth_year_estimate || null,    birth_place: subject.birth_place || triage_result.primary_location || null,    known_period: triage_result.subject_period || null  },  key_life_events: timeline.map(ev => ({ date: ev.date, event: ev.title || ev.event || '' })),  locations: locations,  complexity: triage_result.complexity || 'medium'}) }}];"
+      },
+      "id": "886ba7bf-8fb8-4373-b84c-c8f9a7d76d5e",
       "name": "Wrap Historian",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1250,
-        600
-      ],
-      "parameters": {
-        "mode": "runOnceForAllItems",
-        "jsCode": "const body = $('Webhook').first().json.body;const fact_map = $('Extract Fact Map').first().json.fact_map;const triage_result = $('Extract Triage').first().json.triage_result || {};const subject = fact_map.subject || {};const timeline = (fact_map.timeline || []).slice(0, 20);const locations = (fact_map.locations || []).map(l => l.name);return [{ json: { wrapped_input: JSON.stringify({  phase: 'A',  project_id: String(body.draft_id || body.telegram_id),  subject: {    name: body.character_name || subject.name || 'Неизвестно',    birth_year: subject.birth_year || triage_result.birth_year_estimate || null,    birth_place: subject.birth_place || triage_result.primary_location || null,    known_period: triage_result.subject_period || null  },  key_life_events: timeline.map(ev => ({ date: ev.date, event: ev.title || ev.event || '' })),  locations: locations,  complexity: triage_result.complexity || 'medium'}) }}];"
-      }
+        60128,
+        11088
+      ]
     },
     {
-      "id": "node-get-prompt-historian",
-      "name": "Get Prompt: Historian",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4,
-      "position": [
-        1500,
-        600
-      ],
       "parameters": {
         "url": "http://127.0.0.1:5001/api/prompts/historian",
         "options": {
           "timeout": 10000
         }
-      }
+      },
+      "id": "b7f5c9b6-4652-427f-8113-7cee5b74dd5a",
+      "name": "Get Prompt: Historian",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        60368,
+        11088
+      ]
     },
     {
-      "id": "node-extract-historian",
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.choices[0].message.content;let historical_context = {};const t = raw.trim(); const s = t.indexOf('{'); const e = t.lastIndexOf('}');if (s !== -1 && e > s) { try { historical_context = JSON.parse(t.slice(s, e + 1)); } catch(err) {} }return [{ json: { historical_context } }];"
+      },
+      "id": "c566e10d-5a77-4756-b0d0-4bdc35c6f1b1",
       "name": "Extract Historian",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2000,
-        600
-      ],
-      "parameters": {
-        "mode": "runOnceForAllItems",
-        "jsCode": "const raw = $input.first().json.choices[0].message.content;let historical_context = {};const t = raw.trim(); const s = t.indexOf('{'); const e = t.lastIndexOf('}');if (s !== -1 && e > s) { try { historical_context = JSON.parse(t.slice(s, e + 1)); } catch(err) {} }return [{ json: { historical_context } }];"
-      }
+        60880,
+        11088
+      ]
     },
     {
-      "id": "node-wrap-cover",
+      "parameters": {
+        "jsCode": "const body = $('Webhook').first().json.body;const fact_map = $('Extract Fact Map').first().json.fact_map;const historical_context = $('Extract Historian').first().json.historical_context || {};const triage_result = $('Extract Triage').first().json.triage_result || {};const subject = fact_map.subject || {};return [{ json: { wrapped_input: JSON.stringify({  phase: 'A',  project_id: String(body.draft_id || body.telegram_id),  subject: {    name: body.character_name || subject.name || 'Герой книги',    birth_year: subject.birth_year || triage_result.birth_year_estimate || null,    birth_place: subject.birth_place || triage_result.primary_location || null  },  period: triage_result.subject_period || null,  key_themes: triage_result.key_themes || [],  historical_backdrop: historical_context.historical_backdrop || '',  period_overview: historical_context.period_overview || '',  tone: triage_result.language_style || 'warm'}) }}];"
+      },
+      "id": "3de6b022-99a7-4fa0-8337-d8710a23a776",
       "name": "Wrap Cover Designer",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3000,
-        600
-      ],
-      "parameters": {
-        "mode": "runOnceForAllItems",
-        "jsCode": "const body = $('Webhook').first().json.body;const fact_map = $('Extract Fact Map').first().json.fact_map;const historical_context = $('Extract Historian').first().json.historical_context || {};const triage_result = $('Extract Triage').first().json.triage_result || {};const subject = fact_map.subject || {};return [{ json: { wrapped_input: JSON.stringify({  phase: 'A',  project_id: String(body.draft_id || body.telegram_id),  subject: {    name: body.character_name || subject.name || 'Герой книги',    birth_year: subject.birth_year || triage_result.birth_year_estimate || null,    birth_place: subject.birth_place || triage_result.primary_location || null  },  period: triage_result.subject_period || null,  key_themes: triage_result.key_themes || [],  historical_backdrop: historical_context.historical_backdrop || '',  period_overview: historical_context.period_overview || '',  tone: triage_result.language_style || 'warm'}) }}];"
-      }
+        61872,
+        11088
+      ]
     },
     {
-      "id": "node-get-prompt-cover",
-      "name": "Get Prompt: Cover Designer",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4,
-      "position": [
-        3250,
-        600
-      ],
       "parameters": {
         "url": "http://127.0.0.1:5001/api/prompts/cover_designer",
         "options": {
           "timeout": 10000
         }
-      }
-    },
-    {
-      "id": "node-cover-designer",
-      "name": "Cover Designer",
+      },
+      "id": "e50c0438-5613-48dc-beee-a9c73f6b14e2",
+      "name": "Get Prompt: Cover Designer",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
       "position": [
-        3500,
-        600
-      ],
+        62128,
+        11088
+      ]
+    },
+    {
       "parameters": {
         "method": "POST",
         "url": "https://api.openai.com/v1/chat/completions",
@@ -1028,31 +991,30 @@
         "options": {
           "timeout": 60000
         }
-      }
+      },
+      "id": "d481633a-a681-4665-8d98-a475d19d7db9",
+      "name": "Cover Designer",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        62368,
+        11088
+      ]
     },
     {
-      "id": "node-extract-cover",
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.choices[0].message.content;let cover_spec = { title: '', subtitle: 'Семейная биография', tagline: '',  image_description: '', visual_style: 'warm', color_palette: 'cream_gold' };const t = raw.trim(); const s = t.indexOf('{'); const e = t.lastIndexOf('}');if (s !== -1 && e > s) { try { const p = JSON.parse(t.slice(s, e + 1));  if (p.title || p.subtitle) cover_spec = { ...cover_spec, ...p }; } catch(err) {} }return [{ json: { cover_spec } }];"
+      },
+      "id": "082a160f-e87d-4c22-bb6f-edd87b2da6f6",
       "name": "Extract Cover Designer",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3750,
-        600
-      ],
-      "parameters": {
-        "mode": "runOnceForAllItems",
-        "jsCode": "const raw = $input.first().json.choices[0].message.content;let cover_spec = { title: '', subtitle: 'Семейная биография', tagline: '',  image_description: '', visual_style: 'warm', color_palette: 'cream_gold' };const t = raw.trim(); const s = t.indexOf('{'); const e = t.lastIndexOf('}');if (s !== -1 && e > s) { try { const p = JSON.parse(t.slice(s, e + 1));  if (p.title || p.subtitle) cover_spec = { ...cover_spec, ...p }; } catch(err) {} }return [{ json: { cover_spec } }];"
-      }
+        62624,
+        11088
+      ]
     },
     {
-      "id": "node-state-assembling",
-      "name": "State: assembling_phase_a",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4,
-      "position": [
-        -50,
-        300
-      ],
       "parameters": {
         "method": "POST",
         "url": "http://127.0.0.1:5001/api/state/transition",
@@ -1072,17 +1034,17 @@
         "options": {
           "timeout": 10000
         }
-      }
-    },
-    {
-      "id": "node-state-delivered",
-      "name": "State: delivered_v1",
+      },
+      "id": "eb96c666-20d1-4f62-9fb2-d873595e5393",
+      "name": "State: assembling_phase_a",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
       "position": [
-        9250,
-        450
-      ],
+        58816,
+        10784
+      ]
+    },
+    {
       "parameters": {
         "method": "POST",
         "url": "http://127.0.0.1:5001/api/state/transition",
@@ -1102,17 +1064,17 @@
         "options": {
           "timeout": 10000
         }
-      }
-    },
-    {
-      "id": "node-notify-start",
-      "name": "Notify: Pipeline Started",
+      },
+      "id": "0f013376-dd12-465f-85f9-2902ab3249f1",
+      "name": "State: delivered_v1",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
       "position": [
-        -50,
-        150
-      ],
+        68128,
+        10928
+      ]
+    },
+    {
       "parameters": {
         "method": "POST",
         "url": "={{ 'https://api.telegram.org/bot' + $('Webhook').first().json.body.bot_token + '/sendMessage' }}",
@@ -1132,20 +1094,27 @@
         "options": {
           "timeout": 15000
         }
-      }
+      },
+      "id": "a491109c-5d8f-4f46-916a-77409d756210",
+      "name": "Notify: Pipeline Started",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        58816,
+        10624
+      ]
     },
     {
       "parameters": {
-        "jsCode": "const body = $('Webhook').first().json.body;const fact_map = $('Extract Fact Map').first().json.fact_map;const triage = $('Extract Triage').first().json.triage_result || {};return [{ json: { wrapped_input: JSON.stringify({  phase: 'A',  project_id: String(body.draft_id || body.telegram_id),  character_name: body.character_name || 'Герой книги',  pipeline_variant: triage.pipeline_variant || 'standard',  subject_period: triage.subject_period || 'советский',  timeline: (fact_map && fact_map.timeline) || [],  subject: (fact_map && fact_map.subject) || {},  task: 'Добавь исторический контекст: что происходило в стране и мире в ключевые периоды жизни героя. Помоги читателю понять эпоху.'}) } }];",
-        "mode": "runOnceForAllItems"
+        "jsCode": "const body = $('Webhook').first().json.body;const fact_map = $('Extract Fact Map').first().json.fact_map;const triage = $('Extract Triage').first().json.triage_result || {};return [{ json: { wrapped_input: JSON.stringify({  phase: 'A',  project_id: String(body.draft_id || body.telegram_id),  character_name: body.character_name || 'Герой книги',  pipeline_variant: triage.pipeline_variant || 'standard',  subject_period: triage.subject_period || 'советский',  timeline: (fact_map && fact_map.timeline) || [],  subject: (fact_map && fact_map.subject) || {},  task: 'Добавь исторический контекст: что происходило в стране и мире в ключевые периоды жизни героя. Помоги читателю понять эпоху.'}) } }];"
       },
-      "id": "node-wrap-historian",
+      "id": "ca64c204-5913-47dd-b222-07d17c03937d",
       "name": "Wrap for Historian",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1250,
-        600
+        60128,
+        11088
       ]
     },
     {
@@ -1168,21 +1137,22 @@
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "application/json",
-        "body": "={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [   { role: 'system', content: $('Get Prompt: Historian').item.json.text     || 'Ty Istorik. Na osnove faktov o geroe opishi istoricheskiy kontekst ego epokhi.        Verni tolko validy JSON: period_overview, key_historical_events, cultural_context,        political_context, everyday_life_notes, historical_backdrop.' },   { role: 'user', content: $('Wrap for Historian').item.json.wrapped_input } ], temperature: 0.3, max_tokens: 3000}) }}",
+        "body": "=={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [ { role: 'system', content: $('Get Prompt: Historian').item.json.text || 'You are a Historian. Based on the facts about the subject, provide historical context of their era. Return only valid JSON with fields: period_overview, key_historical_events (array of year/event/relevance), cultural_context, political_context, everyday_life_notes, historical_backdrop.' }, { role: 'user', content: $('Wrap for Historian').item.json.wrapped_input } ], temperature: 0.3, max_tokens: 3000 }) }}",
         "options": {
           "timeout": 120000
         }
       },
-      "id": "node-historian",
+      "id": "2ce7d7e4-8538-4dba-a249-d30e6023d18f",
       "name": "Historian",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
       "position": [
-        1750,
-        600
+        60624,
+        11088
       ]
     }
   ],
+  "pinData": {},
   "connections": {
     "Webhook": {
       "main": [
@@ -1707,11 +1677,6 @@
       "main": [
         [
           {
-            "node": "Historian Agent",
-            "type": "main",
-            "index": 0
-          },
-          {
             "node": "Historian",
             "type": "main",
             "index": 0
@@ -1819,10 +1784,16 @@
       ]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {
     "executionOrder": "v1",
-    "saveManualExecutions": true,
-    "callerPolicy": "workflowsFromSameOwner"
-  }
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "17f1e606-ddb6-4a9f-8db2-4872c7e65585",
+  "meta": {
+    "instanceId": "1bb512fd0dad7b5d7b487bb45373eb90872b65901e68b8ed2a87843bf434ba0b"
+  },
+  "id": "Cr3pGd3OWqx5SnER",
+  "tags": []
 }
