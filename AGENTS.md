@@ -11,7 +11,7 @@
 
 **GLAVA** — Telegram-бот и пайплайны для семейных историй: приём голосовых и фото, транскрипция, формирование биографического текста и уточняющих вопросов, личный кабинет, оплата (ЮKassa).
 
-- **Бот:** `main.py` — голосовые/фото, команды `/start`, `/list`, `/cabinet`; пайплайн только после оплаты.
+- **Бот:** `main.py` — сценарий v2 (spec Даши): двухинтервьюная модель, нарраторы, 3 круга правок, финализация, возврат. Команды: `/start`, `/versions`, `/list`, `/cabinet`. Пайплайн только после оплаты.
 - **Личный кабинет:** `cabinet/app.py` (Flask) — вход по паролю, dashboard, вопросы.
 - **Транскрипция:** SpeechKit (Яндекс), AssemblyAI, опционально Whisper; диаризация по спикерам — см. `docs/DIARIZATION.md`.
 - **LLM:** OpenAI (ChatGPT) — биодокумент из транскрипта (`llm_bio.process_transcript_to_bio`), уточняющие вопросы (`generate_clarifying_questions`). Из РФ API часто недоступен — запуск на сервере за рубежом, см. `docs/OPENAI_ACCESS.md`.
@@ -82,6 +82,13 @@ ssh root@72.56.121.94 "cd /opt/glava && python /tmp/test_pipeline.py"
 ```
 Файл `/tmp/test_pipeline.py` — POST на webhook Phase A с тестовым транскриптом и `bot_token` из `.env`.
 
+**Миграция БД и сид сообщений бота v2:**
+```bash
+cd /opt/glava && set -a && source .env && set +a && source .venv/bin/activate
+python scripts/migrate_bot_v2.py          # новые поля: narrators, bot_state, revision_count, photo_type
+python scripts/seed_bot_messages_v2.py    # 34 сообщения бота v2 в таблицу prompts
+```
+
 ---
 
 ## Ключевые пути и модули
@@ -106,6 +113,8 @@ ssh root@72.56.121.94 "cd /opt/glava && python /tmp/test_pipeline.py"
 | **Внутренний API для n8n** | `admin/blueprints/api.py` — см. таблицу эндпоинтов ниже |
 | Шаблоны панели | `admin/templates/` (Jinja2 + Tailwind CSS) |
 | БД миграция (admin) | `scripts/migrate_admin.py` — таблицы `prompts`, `pipeline_jobs`, `book_versions`, `flow_suggestions` |
+| **БД миграция bot v2** | `scripts/migrate_bot_v2.py` — поля `narrators`, `bot_state`, `revision_count`, `pending_revision`, `photo_type` |
+| **Сид сообщений бота** | `scripts/seed_bot_messages_v2.py` — 34 сообщения всех экранов v2 → `prompts` (ключи `bot_*`) |
 | n8n (AI-пайплайн) | Запуск: `docker run`, данные: `/opt/glava/n8n-data/`, доступ: `https://admin.glava.family/n8n/` |
 | n8n workflow Phase A | `n8n-workflows/phase-a.json` — v12, все 14 агентов |
 | n8n workflow Phase B | `n8n-workflows/phase-b.json` — Triage B + revision + PDF v2 |
@@ -139,6 +148,8 @@ ssh root@72.56.121.94 "cd /opt/glava && python /tmp/test_pipeline.py"
 | **tasks/meeting-bot/** | Бот записи онлайн-созвонов (Playwright + Chromium). |
 | **tasks/finance-admin/** | ✅ Выполнено (2026-03-17). Раздел «Финансы» в админке: расходы, P&L. |
 | **tasks/bot-flow-admin/** | ✅ Выполнено (2026-03-17→18). Сообщения бота в админке, живая карта флоу, предложения по флоу. |
+| **tasks/server-ops-access/** | ✅ Выполнено (2026-03-19). SSH без пароля, N8N API, ops.sh с 12 командами. |
+| **tasks/bot-scenario-v2/** | ✅ Выполнено (2026-03-19). Бот v2 по постановке Даши: нарраторы, 2 интервью, 3 круга правок, возврат, /versions. |
 | **ARCHITECTURE.md** | Схема сервисов, бот, кабинет, БД, S3, деплой. |
 | **tasks/admin-panel/docs/ARCHITECTURE.md** | Схема admin-панели: роли, маршруты, таблицы БД, n8n интеграция. |
 | **tasks/landing/status.md** | Лендинг v4.1 задеплоен (2026-03-17). |
@@ -172,17 +183,65 @@ ssh root@72.56.121.94 "cd /opt/glava && python /tmp/test_pipeline.py"
 
 ---
 
+## Автономный операционный доступ агента
+
+> Задача: `tasks/server-ops-access/`. Реализовано: 2026-03-19.
+
+Агент имеет прямой SSH-доступ к серверу и n8n API. При инциденте действует по схеме:
+
+```
+Ошибка/жалоба
+  → 1. ssh glava "bash /opt/glava/ops.sh logs-bot"   # смотрим логи
+  → 2. Локализуем поломку (бот / Flask / n8n / БД / внешний API)
+  → 3. Правим код локально в Cursor
+  → 4. ssh glava "bash /opt/glava/ops.sh deploy"     # git pull + restart + health
+  → 5. Проверяем health и n8n-executions
+  → 6. Эскалируем ТОЛЬКО если: внешний провайдер / нет доступа / риск данных
+```
+
+### SSH доступ
+
+- **Config:** `~/.ssh/config` — алиас `glava` → `root@72.56.121.94`, ключ `~/.ssh/id_ed25519`
+- **Без пароля:** ключ добавлен через Timeweb панель → SSH-ключи
+- **Проверка:** `ssh glava "echo ok"`
+
+### N8N API
+
+- **Ключ:** `N8N_API_KEY` в `.env` (локально и на сервере)
+- **База:** `N8N_BASE_URL=http://72.56.121.94:5678`
+- **Проверка:** `ssh glava "bash /opt/glava/ops.sh n8n-workflows"`
+
+### ops.sh — команды
+
+Скрипт: `/opt/glava/ops.sh`. Источник: `tasks/server-ops-access/jobs/ops.sh`.
+
+| Команда | Что делает |
+|---------|-----------|
+| `health` | Статус бота, Flask, n8n (все HTTP коды) |
+| `logs-bot [N]` | Последние N строк лога бота |
+| `logs-admin [N]` | Последние N строк лога Flask admin |
+| `logs-n8n [N]` | Логи n8n docker |
+| `status` | systemctl status обоих сервисов |
+| `deploy` | git stash + git pull + restart + health |
+| `restart` | Перезапуск сервисов + health |
+| `n8n-workflows` | Список воркфлоу с ID и статусом |
+| `n8n-executions [N]` | Последние N execution'ов |
+| `n8n-execution <id>` | Детали конкретного execution'а |
+| `db-check` | Кол-во промптов и версий книг в БД |
+| `seed-prompts` | Обновить промпты v10+v11 в БД |
+
+---
+
 ## Соглашения для деплоя
 
-- **Обновление кода:** `git pull` на сервере или `rsync`, никогда не `scp -r DIR`.
-- **После обновления:** `systemctl restart glava` и `systemctl restart glava-admin`.
+- **Обновление кода:** `git pull` на сервере через `ssh glava "bash /opt/glava/ops.sh deploy"`.
+- **После обновления:** `systemctl restart glava` и `systemctl restart glava-admin` (делает `deploy`).
 - **Сид промптов после обновления:** всегда запускать актуальные `_seed_prompts_vN.py` в `.venv`.
 - **Prod-токен — только на сервере.** Локально — отдельный бот через @BotFather.
 - **Виртуальное окружение:** `.venv/` на сервере (`/opt/glava/.venv/`).
 - **Проверка после деплоя:**
   ```bash
-  systemctl status glava-admin
-  curl -s http://localhost:5001/api/health
+  ssh glava "bash /opt/glava/ops.sh health"
   ```
 
 ### Обновление workflow в n8n
@@ -278,6 +337,76 @@ Webhook (phase-b)
 | `delivered_vN` | PDF v2+ отправлен, ожидает следующей правки |
 
 Реализован в `admin/db_admin.py`. Переходы через `POST /api/state/transition`.
+
+---
+
+## Бот — сценарий v2 (spec Даши)
+
+> Реализовано: 2026-03-19. Задача: `tasks/bot-scenario-v2/`. Спек: `glava-bot-spec.md`, схема: `glava-userflow-v2.html`.
+
+### State Machine бота
+
+```
+no_project → draft → payment_pending → paid
+→ narrators_setup → collecting_interview_1 → processing_interview_1
+→ awaiting_interview_2 → collecting_interview_2 → assembling
+→ book_ready → revision_N → revision_processing → book_updated → finalized
+                                                 ↘ refund_requested
+```
+
+| Состояние | Описание | Экран |
+|-----------|---------|-------|
+| `no_project` | Новый пользователь | → 1.1 |
+| `draft` | Заполняет данные (персонаж, email) | → 2.1–3.1 |
+| `payment_pending` | Ожидает оплаты | → 4.2 |
+| `paid` | Оплачено, настройка нарраторов | → 6.1 |
+| `narrators_setup` | Добавляет рассказчиков | 6.1 |
+| `collecting_interview_1` | Загружает первое интервью + фото | 8.1–8.4 |
+| `processing_interview_1` | AI обрабатывает первое интервью | 8.5 |
+| `awaiting_interview_2` | Показаны AI-вопросы, ждёт решения | 8.6 |
+| `collecting_interview_2` | Загружает второе интервью | 9.1 |
+| `assembling` | AI собирает книгу (Phase A) | 10.1 |
+| `book_ready` | Книга v1 готова | 10.2 |
+| `revision_1/2/3` | Пользователь пишет правку | 11.1 |
+| `revision_processing` | AI вносит правки (Phase B) | 11.2 |
+| `book_updated` | Обновлённая книга готова | 11.3 |
+| `finalized` | Книга зафиксирована | 14.1 |
+| `refund_requested` | Запрошен возврат средств | 15.2 |
+
+### Ключевые правила
+
+- **Нарраторы** (`narrators` JSONB в `draft_orders`) — люди, которые рассказывают историю персонажа. Отдельно от персонажа (hero).
+- **Один персонаж** на заказ: `character_name` + `character_relation`.
+- **Двухинтервьюная модель**: первое интервью → AI-вопросы (8.6) → опциональное второе → сборка.
+- **3 круга правок**: `revision_count` ≤ 3. После 3-го кнопка «Ещё комментарий» скрыта.
+- **Debounce 3 минуты**: несколько сообщений подряд собираются в `pending_revision` → отправляются одним блоком через `revision_deadline`.
+- **Фото двух типов**: `photo_type = 'photo' | 'document'` — хранится в таблице `photos`.
+- **bot_state** хранится в `draft_orders.bot_state` — первичный источник маршрутизации для `/start`.
+
+### Новые функции `db_draft.py`
+
+| Функция | Назначение |
+|---------|-----------|
+| `get_bot_state(telegram_id)` | Текущее состояние пользователя |
+| `set_bot_state(draft_id, state)` | Установить состояние |
+| `add_narrator(draft_id, name, relation)` | Добавить нарратора |
+| `remove_narrator(draft_id, narrator_id)` | Удалить нарратора |
+| `get_narrators(draft_id)` | Список нарраторов |
+| `increment_revision_count(draft_id)` | +1 к счётчику правок |
+| `set_pending_revision(draft_id, text, minutes=3)` | Сохранить правку с debounce |
+| `get_pending_revision(draft_id)` | `(text, is_ready)` — готова ли к отправке |
+| `clear_pending_revision(draft_id)` | Очистить после отправки |
+
+### Управление текстами бота (для Даши)
+
+Все тексты экранов хранятся в таблице `prompts` (ключ `bot_<screen_key>`).  
+Редактирование: **admin.glava.family/dasha/bot_messages** — 55 ключей, сгруппированных по номерам экранов.  
+Живая карта флоу: **admin.glava.family/dasha/bot_flow** — все экраны 1.1…15.2 с текстами из БД и ссылками «↗ редактировать».
+
+### Команда `/versions`
+
+Новая команда — список всех версий книги. Запрашивает `/api/book-context/<telegram_id>`, показывает inline-кнопки «📄 Открыть» и «↩️ Откатить» для каждой версии.
+
 
 ### Историк — особенности реализации
 
