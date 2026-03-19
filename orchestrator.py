@@ -490,7 +490,7 @@ def run_phase_b_revision(
         ("ghostwriter", "Клиент внёс правку. Применяй аккуратно, сохраняя стиль."),
     )
 
-    writer_prompt = _fetch_prompt(agent_role, admin_url) or (
+    writer_prompt = _get_prompt(agent_role, admin_url) or (
         f"Ты {agent_role}. {instruction} "
         f"Верни полный обновлённый текст книги в виде обычного текста, без JSON."
     )
@@ -527,7 +527,7 @@ def run_phase_b_revision(
         revised_text = str(result) if result else book_text
 
     # Прогоняем через пруфридера
-    proofread_prompt = _fetch_prompt("proofreader", admin_url) or (
+    proofread_prompt = _get_prompt("proofreader", admin_url) or (
         "Ты корректор. Исправь опечатки, пунктуацию и грамматику. "
         "Верни полный исправленный текст."
     )
