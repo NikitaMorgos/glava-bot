@@ -118,7 +118,8 @@ python scripts/seed_bot_messages_v2.py    # 34 сообщения бота v2 в
 | n8n (AI-пайплайн) | Запуск: `docker run`, данные: `/opt/glava/n8n-data/`, доступ: `https://admin.glava.family/n8n/` |
 | n8n workflow Phase A | `n8n-workflows/phase-a.json` — v12, все 14 агентов |
 | n8n workflow Phase B | `n8n-workflows/phase-b.json` — Triage B + revision + PDF v2 |
-| Автотесты бота | `tests/test_bot_flows.py` |
+| Автотесты бота (pre-pay) | `tests/test_bot_flows.py` — TC-01…TC-27 |
+| **Авто-тесты бота v2** | `tests/test_bot_flows_v2.py` — TC-28…TC-44 (нарраторы, интервью, правки, финализация) |
 | Деплой, systemd | `deploy/deploy.sh`, `deploy/glava.service`, `deploy/glava-admin.service` |
 
 ### Внутренний API (`admin/blueprints/api.py`)
@@ -134,13 +135,21 @@ python scripts/seed_bot_messages_v2.py    # 34 сообщения бота v2 в
 | POST | `/api/state/transition` | Переход состояния проекта (state machine) |
 | GET | `/api/health` | Проверка живости сервиса |
 
+### Маршруты /dasha/bot_tests
+
+| Метод | Путь | Назначение |
+|-------|------|-----------|
+| GET | `/dasha/bot_tests` | Панель авто-тестов: история, кнопки запуска |
+| POST | `/dasha/bot_tests/run` | Запустить pytest; body: `{only_v2: bool}`; возврат JSON |
+| GET | `/dasha/bot_tests/run/<id>` | Детали конкретного запуска (JSON) |
+
 ---
 
 ## Документация (skills / гайды)
 
 | Документ | Содержание |
 |----------|------------|
-| **docs/TESTING.md** | Система тестирования: тест-кейсы TC-01…TC-27, протокол запуска, отчёты. |
+| **docs/TESTING.md** | Система тестирования: тест-кейсы TC-01…TC-27 (pre-pay) + TC-28…TC-44 (v2 сценарий), протокол запуска, отчёты. |
 | **docs/OPENAI_ACCESS.md** | Доступ к OpenAI из РФ, запуск на сервере, генерация bio и уточняющих вопросов. |
 | **docs/DIARIZATION.md** | Разбивка интервью по спикерам: SpeechKit, AssemblyAI, Whisper. |
 | **docs/USER_SCENARIOS.md** | Пользовательские сценарии и таблица тест-кейсов для бота. |
@@ -150,6 +159,7 @@ python scripts/seed_bot_messages_v2.py    # 34 сообщения бота v2 в
 | **tasks/bot-flow-admin/** | ✅ Выполнено (2026-03-17→18). Сообщения бота в админке, живая карта флоу, предложения по флоу. |
 | **tasks/server-ops-access/** | ✅ Выполнено (2026-03-19). SSH без пароля, N8N API, ops.sh с 12 командами. |
 | **tasks/bot-scenario-v2/** | ✅ Выполнено (2026-03-19). Бот v2 по постановке Даши: нарраторы, 2 интервью, 3 круга правок, возврат, /versions. |
+| **tasks/bot-tests-panel/** | ✅ Выполнено (2026-03-19). Авто-тесты v2 (TC-28…TC-44) + панель запуска в админке `/dasha/bot_tests`. |
 | **ARCHITECTURE.md** | Схема сервисов, бот, кабинет, БД, S3, деплой. |
 | **tasks/admin-panel/docs/ARCHITECTURE.md** | Схема admin-панели: роли, маршруты, таблицы БД, n8n интеграция. |
 | **tasks/landing/status.md** | Лендинг v4.1 задеплоен (2026-03-17). |
