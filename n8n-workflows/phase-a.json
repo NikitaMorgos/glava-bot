@@ -1167,6 +1167,54 @@
           "timeout": 15000
         }
       }
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $('Webhook').first().json.body;const fact_map = $('Extract Fact Map').first().json.fact_map;const triage = $('Extract Triage').first().json.triage_result || {};return [{ json: { wrapped_input: JSON.stringify({  phase: 'A',  project_id: String(body.draft_id || body.telegram_id),  character_name: body.character_name || 'Герой книги',  pipeline_variant: triage.pipeline_variant || 'standard',  subject_period: triage.subject_period || 'советский',  timeline: (fact_map && fact_map.timeline) || [],  subject: (fact_map && fact_map.subject) || {},  task: 'Добавь исторический контекст: что происходило в стране и мире в ключевые периоды жизни героя. Помоги читателю понять эпоху.'}) } }];",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "node-wrap-historian",
+      "name": "Wrap for Historian",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1250,
+        600
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.OPENAI_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [{ role: 'system', content: $('Get Prompt: Historian').item.json.text || 'Ты Историк. На основе карты фактов определи исторический контекст жизни героя. Верни JSON: {\"historical_context\": {\"era_overview\": \"краткий обзор эпохи\", \"key_events\": [{\"year\": 1960, \"event\": \"описание\"}], \"social_context\": \"социальный контекст\", \"cultural_notes\": \"культурные особенности\"}}' },{ role: 'user', content: $('Wrap for Historian').item.json.wrapped_input }], temperature: 0.3, max_tokens: 2000 }) }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "node-historian",
+      "name": "Historian",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        1750,
+        600
+      ]
     }
   ],
   "connections": {
@@ -1224,6 +1272,11 @@
           },
           {
             "node": "Wrap for Photo Editor",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Wrap for Historian",
             "type": "main",
             "index": 0
           }
@@ -1691,6 +1744,11 @@
             "node": "Historian Agent",
             "type": "main",
             "index": 0
+          },
+          {
+            "node": "Historian",
+            "type": "main",
+            "index": 0
           }
         ]
       ]
@@ -1777,6 +1835,28 @@
         [
           {
             "node": "Update Job Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wrap for Historian": {
+      "main": [
+        [
+          {
+            "node": "Get Prompt: Historian",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Historian": {
+      "main": [
+        [
+          {
+            "node": "Extract Historian",
             "type": "main",
             "index": 0
           }
