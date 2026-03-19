@@ -67,13 +67,20 @@ python scripts/run_assembly_to_bio.py
 # Уточняющие вопросы по готовому bio
 python scripts/run_clarifying_questions.py
 ```
-На сервере: виртуальное окружение `venv` (`/opt/glava/venv/`), `pip install openai`. Полная инструкция — `docs/OPENAI_ACCESS.md`.
+На сервере: виртуальное окружение `.venv` (`/opt/glava/.venv/`). Полная инструкция — `docs/OPENAI_ACCESS.md`.
 
 **Сравнение транскриптов (диаризация):**
 ```bash
 python scripts/run_diarized_compare.py
 ```
 Результаты в `exports/client_<telegram_id>_<username>/`.
+
+**Тест n8n пайплайна (с сервера или через SSH):**
+```bash
+# Быстрый запуск Phase A без голосового в боте
+ssh root@72.56.121.94 "cd /opt/glava && python /tmp/test_pipeline.py"
+```
+Файл `/tmp/test_pipeline.py` — POST на webhook Phase A с тестовым транскриптом и `bot_token` из `.env`.
 
 ---
 
@@ -88,21 +95,35 @@ python scripts/run_diarized_compare.py
 | Транскрипция, диаризация | `transcribe.py`, `assemblyai_client.py` |
 | LLM: биография и вопросы | `llm_bio.py`, `biographical_prompt.py`, `clarifying_questions_prompt.py` |
 | Пайплайны (bio после транскрипта) | `pipeline_transcribe_bio.py`, `pipeline_assemblyai_bio.py`, `pipeline_plaud_bio.py`, `pipeline_mymeet_bio.py`, `pipeline_recall_bio.py` |
-| Клиенты онлайн-встреч | `recall_client.py` (Recall.ai, приоритет), `mymeet_client.py` (MyMeet, резерв), `meeting_bot.py` (self-hosted Playwright, при `MEETING_BOT_ENABLED`) |
-| **Лендинг glava.family** | `landing/` — `index.html`, `base.css`, `style.css`, `assets/`. Деплой: `bash deploy/deploy-landing.sh` (копирует в `/var/www/glava.family/`). Nginx: `deploy/nginx-glava.conf` (HTTPS + кэш ассетов + www→без www). Хедер содержит кнопку «Личный кабинет» → `https://cabinet.glava.family`. |
-| Telegram Mini App (кабинет) | `tma/index.html` (фронтенд), `cabinet/tma_api.py` (API Blueprint), `deploy/nginx-tma.conf` |
+| **Триггеры n8n** | `pipeline_n8n.py` — `trigger_phase_a_background()`, `trigger_phase_b_background()` |
+| **Оркестратор агентов** | `orchestrator.py` — циклы Fact Check, Literary Edit, Layout QA; Phase B revision |
+| **Генератор PDF книги** | `pdf_book.py` — `generate_book_pdf(bio_text, character_name, cover_spec)` → bytes, A5, reportlab |
+| Клиенты онлайн-встреч | `recall_client.py` (Recall.ai, приоритет), `mymeet_client.py` (MyMeet, резерв) |
+| **Лендинг glava.family** | `landing/` — `index.html`, `base.css`, `style.css`, `assets/`. Деплой: `bash deploy/deploy-landing.sh`. Nginx: `deploy/nginx-glava.conf`. |
+| Telegram Mini App (кабинет) | `tma/index.html` (фронтенд), `cabinet/tma_api.py` (API Blueprint) |
 | **Панель администратора** | `admin/app.py` (Flask, порт 5001), `admin/auth.py`, `admin/db_admin.py` |
-| Блюпринты панели | `admin/blueprints/dev.py` (разработчик), `admin/blueprints/dasha.py` (продакт), `admin/blueprints/lena.py` (маркетолог), `admin/blueprints/api.py` (внутренний API для n8n) |
+| Блюпринты панели | `admin/blueprints/dev.py`, `admin/blueprints/dasha.py`, `admin/blueprints/lena.py`, `admin/blueprints/api.py` |
+| **Внутренний API для n8n** | `admin/blueprints/api.py` — см. таблицу эндпоинтов ниже |
 | Шаблоны панели | `admin/templates/` (Jinja2 + Tailwind CSS) |
-| БД миграция (admin) | `scripts/migrate_admin.py` — таблицы `prompts`, `pipeline_jobs`, `mailings`, `mailing_recipients`, `mailing_triggers` |
-| n8n (AI-пайплайн) | Запуск: `docker run` (см. команду в `tasks/admin-panel/status.md`), данные: `/opt/glava/n8n-data/`, доступ: `https://admin.glava.family/n8n/` |
-| n8n workflow Phase A | `n8n-workflows/phase-a.json` — workflow v5, протестирован end-to-end. Архитектура: Webhook → Fact Extractor → [Ghostwriter → … → Proofreader] + [Photo Editor] → Merge → Layout Designer → Layout QA → Merge → Producer → 3 сообщения в Telegram. Время ~2–3 мин. Тест: `python scripts/run_n8n_test.py TELEGRAM_ID`. Producer: в промпте обязателен блок `docs/PRODUCER_PHASE_A_ADDON.md` для штатной доставки (без JSON). |
-| n8n триггер из Python | `pipeline_n8n.py` — `trigger_phase_a_background()` вызывается из `pipeline_transcribe_bio.py` после транскрипции |
-| Внутренний API для n8n | `GET /api/prompts/<role>` — промпт из БД без кеша; `POST /api/jobs/update` — статус джобы; `POST /api/send-book-pdf` — генерация PDF из bio_text и отправка файлом в Telegram (`sendDocument`). Вызывается из n8n Phase A вместо sendMessage с текстом. |
-| Генератор PDF книги | `pdf_book.py` — `generate_book_pdf(bio_text, character_name)` → bytes. Формат A5, книжный стиль, reportlab: обложка, главы, типографика, колонтитулы glava.family. |
-| Деплой admin-панели | `deploy/glava-admin.service` (systemd), `deploy/nginx-admin.conf` (включает `/n8n/` proxy) |
+| БД миграция (admin) | `scripts/migrate_admin.py` — таблицы `prompts`, `pipeline_jobs`, `book_versions`, `flow_suggestions` |
+| n8n (AI-пайплайн) | Запуск: `docker run`, данные: `/opt/glava/n8n-data/`, доступ: `https://admin.glava.family/n8n/` |
+| n8n workflow Phase A | `n8n-workflows/phase-a.json` — v12, все 14 агентов |
+| n8n workflow Phase B | `n8n-workflows/phase-b.json` — Triage B + revision + PDF v2 |
 | Автотесты бота | `tests/test_bot_flows.py` |
-| Деплой, systemd | `deploy/deploy.sh` (основной скрипт), `deploy/glava.service`, `DEPLOY_24_7.md`, `DEPLOY_TIMEWEB.md`, `deploy/DEPLOY_GLAVA_FAMILY.md` |
+| Деплой, systemd | `deploy/deploy.sh`, `deploy/glava.service`, `deploy/glava-admin.service` |
+
+### Внутренний API (`admin/blueprints/api.py`)
+
+| Метод | Путь | Назначение |
+|-------|------|-----------|
+| GET | `/api/prompts/<role>` | Промпт агента из БД (без кеша) |
+| POST | `/api/jobs/update` | Обновить статус джобы пайплайна |
+| POST | `/api/send-book-pdf` | Генерация PDF + отправка `sendDocument` в Telegram; сохраняет версию в `book_versions` |
+| GET | `/api/book-context/<telegram_id>` | Последняя версия книги для Phase B |
+| POST | `/api/orchestrate/phase-b-revision` | Запуск Phase B revision через оркестратор |
+| POST | `/api/agents/historian` | Вызов Историка через OpenAI (используется n8n-нодой) |
+| POST | `/api/state/transition` | Переход состояния проекта (state machine) |
+| GET | `/api/health` | Проверка живости сервиса |
 
 ---
 
@@ -110,21 +131,17 @@ python scripts/run_diarized_compare.py
 
 | Документ | Содержание |
 |----------|------------|
-| **docs/TESTING.md** | Система тестирования: тест-кейсы TC-01…TC-27, протокол запуска, отчёты, реагирование на падениях. |
-| **docs/OPENAI_ACCESS.md** | Доступ к OpenAI из РФ, запуск на сервере, копирование файлов, генерация bio и уточняющих вопросов. |
-| **docs/DIARIZATION.md** | Разбивка интервью по спикерам: SpeechKit, AssemblyAI, Whisper; рекомендации по длинным файлам. |
+| **docs/TESTING.md** | Система тестирования: тест-кейсы TC-01…TC-27, протокол запуска, отчёты. |
+| **docs/OPENAI_ACCESS.md** | Доступ к OpenAI из РФ, запуск на сервере, генерация bio и уточняющих вопросов. |
+| **docs/DIARIZATION.md** | Разбивка интервью по спикерам: SpeechKit, AssemblyAI, Whisper. |
 | **docs/USER_SCENARIOS.md** | Пользовательские сценарии и таблица тест-кейсов для бота. |
-| **docs/N8N_DASHA_GUIDE.md** | Инструкция для Даши (продакт): как менять промпты, логику пайплайна, добавлять агентов, тестировать изменения в n8n. |
-| **docs/PRODUCER_PHASE_A_ADDON.md** | Блок для промпта Producer: штатная доставка Phase A (без JSON). Добавить в начало промпта в админке. |
-| **tasks/meeting-bot/** | Бот записи онлайн-созвонов (Playwright + Chromium). Telemost, Zoom. `meeting_bot.py`, `MEETING_BOT_ENABLED=true`. Статус: `status.md`, план: `plan.md`, отладка имени: `MEETING_JOIN_DEBUG=true`. |
-| **tasks/finance-admin/** | ✅ Выполнено (2026-03-17). Раздел «Финансы»: расходы (название, статья, периодичность, поведение, инициатор), справочники, P&L. Все роли (dev/dasha/lena) имеют доступ ко всем разделам админки. Gunicorn service стабилизирован (--timeout 30, KillMode=mixed). |
-| **tasks/bot-flow-admin/** | ✅ Выполнено (2026-03-17→18). Сообщения бота в админке Даши: 19 ключей, редактирование через UI. Бот читает из API с кешем и fallback. `bot_messages.py`, `scripts/seed_bot_messages.py`. **Живая карта флоу** (`/dasha/bot_flow`): тексты из БД, обновление без перезагрузки, ссылки на редактирование каждого экрана. Эндпоинт `/dasha/bot_messages_json`. Сайдбар: «🗺 Карта флоу». **Предложения по флоу** (`/dev/suggestions`): на каждом экране карты кнопка «✏ предложить правку» — Даша описывает желаемое изменение логики, задача падает в раздел разработчика с фильтрами по статусу (новое / в работе / готово / отклонено). Таблица `flow_suggestions` в PostgreSQL. Эндпоинты: `POST /dasha/suggest_change`, `GET /dev/suggestions`, `POST /dev/suggestions/<id>/update`. |
+| **docs/N8N_DASHA_GUIDE.md** | Инструкция для Даши: как менять промпты, добавлять агентов, тестировать n8n. |
+| **tasks/meeting-bot/** | Бот записи онлайн-созвонов (Playwright + Chromium). |
+| **tasks/finance-admin/** | ✅ Выполнено (2026-03-17). Раздел «Финансы» в админке: расходы, P&L. |
+| **tasks/bot-flow-admin/** | ✅ Выполнено (2026-03-17→18). Сообщения бота в админке, живая карта флоу, предложения по флоу. |
 | **ARCHITECTURE.md** | Схема сервисов, бот, кабинет, БД, S3, деплой. |
 | **tasks/admin-panel/docs/ARCHITECTURE.md** | Схема admin-панели: роли, маршруты, таблицы БД, n8n интеграция. |
-| **tasks/admin-panel/plan.md** | Детальный план задачи Admin Panel + n8n. |
-| **tasks/landing/plan.md** | План задачи лендинга glava.family: фазы, блоки, дизайн-система, Nginx-конфиг. |
-| **tasks/landing/status.md** | Текущий статус лендинга: v4.1 задеплоен (2026-03-17). Новый дизайн (ZIP → `landing/`), ТГ-канал `t.me/glava_book` в футере, юридические страницы, фавиконки (ICO + PNG 16/32 + apple-touch-icon). Деплой: `bash deploy/deploy-landing.sh`. |
-| **tasks/landing/docs/DESIGN_BRIEF.md** | Дизайн-бриф: палитра, шрифты, описание всех блоков, что нужно от клиента. |
+| **tasks/landing/status.md** | Лендинг v4.1 задеплоен (2026-03-17). |
 
 ---
 
@@ -143,223 +160,214 @@ python scripts/run_diarized_compare.py
 | **status.md** | Текущий статус, версии, прогресс |
 | **plan.md** | План работ |
 
-Полный набор каталогов и файлов формируется сразу при создании задачи, чтобы сохранять контекст при переключении между задачами в рамках проекта.
-
 **Правило:** любой агент, создающий новую задачу, обязан завести такой каталог и заполнить минимальный скелет `status.md` и `plan.md`.
 
 ---
 
 ## Tools, MCP и context7
 
-В проекте используются внешние инструменты и MCP-серверы. Обязательные:
+**Context7 MCP** — актуальная документация по библиотекам. При работе с внешними API/библиотеками — сначала запрос через Context7, потом код.
 
-**Context7 MCP**
-
-- **Назначение:** актуальная документация по библиотекам, фреймворкам, SDK и внешним сервисам.
-- **Правило:** при работе с внешними библиотеками, API и инфраструктурой агент сначала должен запросить справку через Context7, а уже потом писать или править код.
-- В настройках MCP/Tools редактора (Cursor и др.) Context7 должен быть включён всегда.
-
-**Локальные тулы**
-
-- **fs/git** — чтение и запись файлов, работа с git.
-- **shell/python** — запуск скриптов из каталогов `jobs/` и `scripts/`.
-
-Все агенты работают в рамках context7: проектный контекст задаётся AGENTS.md, ARCHITECTURE.md, one-pager'ами и активной задачей (`status.md` / `plan.md`).
+**Локальные тулы:** `fs/git` — файлы и git; `shell/python` — скрипты из `jobs/` и `scripts/`.
 
 ---
 
 ## Соглашения для деплоя
 
-Правила защищают от ситуации «деплой прошёл, а пользователь видит старый текст».
-
-- **Для обновления кода используй `rsync` или `git pull`, никогда не `scp -r DIR`.**  
-  `scp -r GLAVA root@host:/opt/glava` при существующем `/opt/glava` создаёт
-  `/opt/glava/GLAVA/main.py` — systemd читает `/opt/glava/main.py` и бот запускается со
-  старым кодом.
-
-  Правильно для обновления:
-  ```bash
-  # вариант A — git на сервере
-  cd /opt/glava && git pull
-
-  # вариант B — rsync с локального ПК
-  rsync -avz --exclude=venv --exclude=__pycache__ --exclude=.git \
-    ./GLAVA/ root@SERVER:/opt/glava/
-  ```
-
-- **После любого обновления кода — обязательно `systemctl restart glava`.**  
-  Python не перечитывает модули автоматически; бот в памяти работает со снимком кода
-  на момент последнего старта.
-
-- **`deploy/deploy.sh` — эталонный скрипт для установки и обновления.**  
-  Использует `systemctl restart` (не `start`). Всегда копирует `glava.service` из репо,
-  чтобы на сервере не было самодельного юнита с неправильными путями.
-
-- **Никогда не запускать `python main.py` локально с prod-токеном.**  
-  Бот использует long polling. Если одновременно работают два экземпляра с одним токеном —  
-  возникает `telegram.error.Conflict`, оба бота перестают отвечать на сообщения.  
-  Для локальной разработки и тестирования — создай отдельного бота через @BotFather  
-  и пропиши его токен в локальном `.env`. Prod-токен — только на сервере.
-
-- **Виртуальное окружение:** `venv/` (не `.venv/`). Путь на сервере: `/opt/glava/venv/`.  
-  В systemd: `ExecStart=/opt/glava/venv/bin/python main.py`.
-
+- **Обновление кода:** `git pull` на сервере или `rsync`, никогда не `scp -r DIR`.
+- **После обновления:** `systemctl restart glava` и `systemctl restart glava-admin`.
+- **Сид промптов после обновления:** всегда запускать актуальные `_seed_prompts_vN.py` в `.venv`.
+- **Prod-токен — только на сервере.** Локально — отдельный бот через @BotFather.
+- **Виртуальное окружение:** `.venv/` на сервере (`/opt/glava/.venv/`).
 - **Проверка после деплоя:**
   ```bash
-  systemctl status glava            # active (running), время старта — свежее
-  journalctl -u glava -n 20         # нет ошибок импорта
+  systemctl status glava-admin
+  curl -s http://localhost:5001/api/health
   ```
+
+### Обновление workflow в n8n
+
+После изменения `n8n-workflows/phase-a.json` через patch-скрипт:
+1. `git push` с локального компа
+2. `ssh root@72.56.121.94 "cd /opt/glava && git pull"`
+3. `scp root@72.56.121.94:/opt/glava/n8n-workflows/phase-a.json ~/Downloads/phase-a.json`
+4. В n8n UI: три точки → Import from file → выбрать скачанный файл → Save → Publish
 
 ---
 
-## n8n пайплайн — архитектура Phase A
+## n8n пайплайн — архитектура Phase A + Phase B
 
-> Версия: **v5** (март 2026). Обновлено по постановке Даши: добавлены Фоторедактор (07), Верстальщик (08), Контролёр вёрстки (09). Файл: `n8n-workflows/phase-a.json`.
+> Версия: **v12** (март 2026). Все 14 агентов из постановки Даши реализованы и протестированы end-to-end. Время выполнения Phase A: ~12–15 мин. Файлы: `n8n-workflows/phase-a.json`, `n8n-workflows/phase-b.json`.
 
 ### Роли и порядок выполнения
 
-Пайплайн соответствует постановке Даши (продакт-менеджер). Все 12 ролей:
-
-| # | Роль | Slug в БД | В Phase A workflow | Статус |
-|---|------|-----------|-------------------|--------|
-| 01 | Транскрибатор | `transcriber` | Python (SpeechKit/AssemblyAI) до n8n | ✅ вне n8n |
+| # | Роль | Slug в БД | Реализация | Статус |
+|---|------|-----------|-----------|--------|
+| 01 | Транскрибатор | `transcriber` | Python (SpeechKit/AssemblyAI), вне n8n | ✅ |
+| T | Триажер Phase A | `triage_agent` | Нода n8n (определяет вариант пайплайна) | ✅ |
 | 02 | Фактолог | `fact_extractor` | Нода n8n | ✅ |
-| 03 | Писатель | `ghostwriter` | Нода n8n | ✅ |
-| 04 | Фактчекер | `fact_checker` | Нода n8n (1 проход, итерации — Phase B) | ✅ |
-| 05 | Литредактор | `literary_editor` | Нода n8n (1 проход, итерации — Phase B) | ✅ |
-| 06 | Корректор | `proofreader` | Нода n8n | ✅ |
-| 07 | Фоторедактор | `photo_editor` | Нода n8n, параллельный трек от Fact Map | ✅ |
-| 08 | Верстальщик | `layout_designer` | Нода n8n, layout spec (PDF — задача #214) | ✅ |
-| 09 | Контролёр вёрстки | `layout_qa` | Нода n8n, gate перед Продюсером | ✅ |
-| 10 | Продюсер | `producer` | Нода n8n, финальный оркестратор | ✅ |
+| 12 | Историк | `historian` | Flask API `/api/agents/historian` | ✅ |
+| 03 | Писатель | `ghostwriter` | Нода n8n + итерации в оркестраторе | ✅ |
+| 04 | Фактчекер | `fact_checker` | `orchestrator.py` (до 3 итераций) | ✅ |
+| 05 | Литредактор | `literary_editor` | `orchestrator.py` (до 2 итераций) | ✅ |
+| 06 | Корректор | `proofreader` | Нода n8n, вплетает `historical_backdrop` | ✅ |
+| 07 | Фоторедактор | `photo_editor` | Нода n8n, параллельный трек | ✅ |
+| 08 | Верстальщик | `layout_designer` | Нода n8n | ✅ |
+| 09 | Контролёр вёрстки | `layout_qa` | `orchestrator.py` | ✅ |
+| 10 | Продюсер | `producer` | Нода n8n, финальная сборка | ✅ |
 | 11 | Интервьюер | `interview_architect` | Нода n8n, параллельная ветка | ✅ |
-| Т | Триажер | `triage_agent` | Phase B (не реализован) | 🔲 |
+| 13 | Дизайнер обложки | `cover_designer` | Нода n8n, `cover_spec` для PDF | ✅ |
+| TB | Триажер Phase B | `triage_b` | Нода n8n (классификация правки клиента) | ✅ |
 
-### Граф Phase A v5
+### Граф Phase A v12
 
 ```
 Webhook
-  └→ Fact Extractor (02)
-       ├→ Ghostwriter (03)
-       │    ├→ Fact Checker (04) → Literary Editor (05) → Proofreader (06) ─────────→ Merge: Text+Photos
-       │    └→ Interview Architect (11) ──────────────────────────────────────────────→ Merge: Layout+Questions
-       └→ Photo Editor (07) ─────────────────────────────────────────────────────────→ Merge: Text+Photos
-                                                                                              ↓
-                                                                                   Layout Designer (08)
-                                                                                              ↓
-                                                                                    Layout QA (09) ──→ Merge: Layout+Questions
-                                                                                                              ↓
-                                                                                              Producer (10)
-                                                                                                    ↓
-                                                                         ┌─ Send Intro (тёплое вступление)
-                                                                         ├─ Send Bio (текст книги)
-                                                                         └─ Send Questions (уточняющие вопросы)
+  └→ Triage Agent (T)
+       └→ Fact Extractor (02)
+            ├→ Historian (12) [/api/agents/historian]
+            │       └→ Extract Historian → historical_context
+            │                                    ↓
+            │                         Wrap for Ghostwriter
+            │                                    ↓
+            │                      Ghostwriter (03) [gpt-4o]
+            │                                    ↓
+            │                         Extract Book Draft
+            │                                    ↓
+            │           Call Orch: Fact Check (04) [orchestrator, ≤3 iter]
+            │                                    ↓
+            │           Call Orch: Literary Edit (05) [orchestrator, ≤2 iter]
+            │                                    ↓
+            │                   Proofreader (06) [historical_backdrop вплетён]
+            │                                    ↓ bio_text (plain text)
+            ├→ Photo Editor (07) ─────────────────────────→ photo_layout
+            ├→ Interview Architect (11) ──────────────────→ questions_text
+            ├→ Cover Designer (13) ───────────────────────→ cover_spec
+            └→ Layout Designer (08) + Layout QA (09)
+                                                     ↓
+                                             Producer (10)
+                                                   ↓
+                                ┌─ Send Intro (велком в Telegram)
+                                ├─ Send Bio PDF (pdf_book.py → sendDocument)
+                                └─ Send Questions (уточняющие вопросы)
 ```
 
-### Формат данных между агентами (JSON-first)
+### Граф Phase B
 
-Каждый агент получает строго структурированный JSON и возвращает JSON:
-- **Fact Extractor** → выдаёт `fact_map` (persons, timeline, gaps, conflicts, locations…)
-- **Photo Editor** → получает `fact_map`; выдаёт `photo_layout` (photos с captions, chapter_id, position)
-- **Ghostwriter** → получает `fact_map` + `transcripts`; выдаёт `book_draft` (chapters, callouts)
-- **Fact Checker** → получает `book_draft` + `fact_map` + `transcripts`; выдаёт `verdict` + `warnings`
-- **Literary Editor** → получает `book_draft` + `fact_checker_warnings`; выдаёт отредактированные `chapters`
-- **Proofreader** → получает `book_text` (chapters); выдаёт исправленные `chapters` → `bio_text` (plain)
-- **Interview Architect** → получает `gaps/timeline/persons` из fact_map + `book_chapters_summary`; выдаёт `questions` + `question_groups`
-- **Layout Designer** → получает `bio_text` + `photo_layout`; выдаёт `layout_spec` (структура PDF)
-- **Layout QA** → получает `layout_spec`; выдаёт `verdict` (pass/fail) + `issues`
-- **Producer** → получает анонс + excerpt + layout_qa_verdict; выдаёт plain text для Telegram
+```
+Webhook (phase-b)
+  └→ Get Book Context (/api/book-context/<telegram_id>)
+       └→ Triage B (TB) → correction_type: factual/style/addition/audio/photo/structural
+            └→ State: revising_phase_b
+                 └→ Call Orch: Phase B (/api/orchestrate/phase-b-revision)
+                      └→ Ghostwriter или Literary Editor (по типу правки)
+                           └→ Proofreader
+                                └→ /api/send-book-pdf → PDF v2 → Telegram
+                                     └→ State: delivered_vN
+```
 
-Между агентами стоят **Code-ноды** (`Wrap for X`, `Extract from X`) — они парсят JSON из LLM-ответа и упаковывают вход для следующего агента.
+### State Machine
 
-> **Примечание по Layout Designer/QA:** в текущей версии они производят JSON-спецификацию вёрстки. Фактическая генерация PDF — отдельная задача (#214, подключение Gamma/Claude). Нода `Layout Designer` задаёт метаданные, по которым внешний PDF-сервис построит книгу.
+| Состояние | Описание |
+|-----------|---------|
+| `created` | Проект создан, ожидает материал |
+| `collecting` | Клиент присылает голосовые/фото |
+| `assembling_phase_a` | Запущен конвейер Phase A |
+| `delivered_v1` | PDF v1 + вопросы отправлены клиенту |
+| `revising_phase_b` | Клиент прислал правку, запущен Phase B |
+| `delivered_vN` | PDF v2+ отправлен, ожидает следующей правки |
 
-### Тестирование и фиксы (март 2026)
+Реализован в `admin/db_admin.py`. Переходы через `POST /api/state/transition`.
 
-- **Тестовый прогон:** `python scripts/run_n8n_test.py TELEGRAM_ID` — короткий транскрипт, сообщения в Telegram.
-- **Producer:** промпт в админке должен содержать блок штатной доставки Phase A (см. `docs/PRODUCER_PHASE_A_ADDON.md`). Иначе LLM возвращает JSON эскалаций → в Telegram уходит сырой JSON.
-- **Extract from Producer:** fallback — если из ответа не извлечён текст, отправляется заглушка вместо raw JSON.
+### Историк — особенности реализации
+
+Нода `Historian` в n8n вызывает **Flask API** (`/api/agents/historian`), а не OpenAI напрямую. Причина: прямые OpenAI-ноды в n8n давали `invalid syntax` и `Bad request` из-за проблем с экранированием выражений `={{ }}`.
+
+Цепочка передачи `historical_context`:
+1. Historian → `{historical_context: {period_overview, key_historical_events, cultural_context, everyday_life_notes, historical_backdrop}}`
+2. Extract Historian → Wrap for Ghostwriter (Ghostwriter пишет главы с историческим контекстом)
+3. Wrap Orch: Fact Check и Literary Edit → получают `historical_context` в payload оркестратора
+4. Wrap for Proofreader → передаёт `historical_backdrop` Корректору
+5. Корректор вплетает исторические детали в финальный текст глав
+
+### PDF генерация (`pdf_book.py`)
+
+`generate_book_pdf(bio_text, character_name, cover_spec=None)` → bytes:
+- Формат A5, шрифт DejaVuSerif (кириллица), библиотека reportlab
+- Обложка: `title`/`subtitle`/`tagline` из `cover_spec` (Cover Designer) или `character_name`
+- Контент: построчный рендер `bio_text`, автоопределение заголовков глав
+- Колонтитул: `Глава — семейная биография · glava.family`
+- Вызов из n8n: `POST /api/send-book-pdf` → bytes → Telegram `sendDocument`
+- Версия сохраняется в таблицу `book_versions` (для Phase B и панели Даши)
+
+### Маршрутизация Phase B в боте
+
+После `delivered_v1` функция `_user_book_delivered()` в `main.py` определяет статус:
+- Текст → `trigger_phase_b_background(input_type="text", content=text)`
+- Голосовое → сохранить в S3 → `trigger_phase_b_background(input_type="voice", content=storage_key)`
+- Фото с подписью → `trigger_phase_b_background(input_type="photo_caption", content=caption)`
+
+### Сид промптов на сервере
+
+```bash
+cd /opt/glava && set -a && source .env && set +a && source .venv/bin/activate
+
+# Обязательно после первого деплоя или обновления промптов:
+python scripts/_seed_prompts_v7.py   # triage_agent, historian (базовые)
+python scripts/_seed_prompts_v9.py   # triage_b
+python scripts/_seed_prompts_v10.py  # ghostwriter (с historical_context), historian (обновлён)
+python scripts/_seed_prompts_v11.py  # proofreader (вплетает historical_backdrop)
+```
+
+### Webhook и триггеры
+
+| Пайплайн | Webhook URL | Python-функция |
+|----------|-------------|----------------|
+| Phase A | `https://admin.glava.family/n8n/webhook/glava/phase-a` | `pipeline_n8n.trigger_phase_a_background()` |
+| Phase B | `https://admin.glava.family/n8n/webhook/glava/phase-b` | `pipeline_n8n.trigger_phase_b_background()` |
+
+Payload Phase A: `{telegram_id, transcript, character_name, draft_id, username, bot_token}`
+Payload Phase B: `{telegram_id, input_type, content, character_name, draft_id, username}`
 
 ### Как Даша управляет пайплайном
 
-**Промпты агентов (без перезапуска):**
-- Даша меняет текст в своей админке (`https://admin.glava.family`, роль dasha)
-- n8n при каждом запуске делает `GET http://127.0.0.1:5001/api/prompts/<slug>` — читает актуальный промпт из PostgreSQL
-- Изменение вступает в силу **немедленно** для следующего запуска
+**Промпты** — через панель `https://admin.glava.family` (роль dasha). Применяются немедленно без перезапуска.
 
-**Логика флоу (через n8n editor):**
-- Даша заходит в `https://admin.glava.family/n8n/`
-- Добавляет/удаляет ноды, меняет связи
-- Нажимает **Publish** — изменения применяются для всех последующих запросов
+**Версии книги** — в панели `/dasha/projects`: история версий, статус агентов, прогресс по шагам.
 
-**Добавление новой роли:**
-1. Даша сохраняет промпт в админке с новым slug (например, `style_checker`)
-2. Разработчик добавляет 3 ноды в n8n: `Wrap for X` (Code) → `Get Prompt: X` (HTTP GET) → `X` (HTTP POST OpenAI)
-3. Связывает в нужное место флоу → Publish
-
-### Webhook и триггер
-
-- **URL (prod):** `https://admin.glava.family/n8n/webhook/glava/phase-a`
-- **Метод:** POST
-- **Payload:** `{telegram_id, transcript, character_name, draft_id, username, bot_token}`
-- **Триггер из Python:** `pipeline_n8n.trigger_phase_a_background()` в фоновом потоке после транскрипции
-- **Ответ n8n:** `{"message": "Workflow was started"}` — пайплайн работает асинхронно
-
-### Phase B (не реализован — следующая задача)
-
-Phase B включает Триажера (Triage Agent) и 6 маршрутов обработки правок клиента:
-- ① Фактическая поправка: Писатель → Корректор → Верстальщик → QA
-- ② Стилевой комментарий: Литредактор → Корректор → Верстальщик → QA
-- ③ Дополнение текстом: Фактолог → Писатель → Фактчекер → Литредактор → Корректор → Верстальщик → QA
-- ④ Новое интервью/аудио: Транскрибатор → полный цикл
-- ⑤ Новые фотографии: Фоторедактор → Верстальщик → QA
-- ⑥ Структурная правка: Писатель → Фактчекер → Литредактор → Корректор → Верстальщик → QA
+**Добавление роли:**
+1. Сохранить промпт в админке с новым slug
+2. Добавить в n8n: `Wrap for X` (Code) → `Get Prompt: X` (HTTP GET `/api/prompts/<slug>`) → `X` (HTTP POST OpenAI)
+3. Связать → Save → Publish
 
 ---
 
 ## Разделение работы между агентами
 
-В проекте одновременно работают два AI-агента. Каждый отвечает за свою область.
-
 ### Агент A — Бэкенд и пайплайн (этот чат)
-
-Отвечает за всё серверное и инфраструктурное:
 
 | Область | Файлы |
 |---------|-------|
 | Telegram-бот | `main.py`, `prepay/`, `config.py` |
-| Пайплайны обработки | `pipeline_*.py`, `pipeline_n8n.py` |
-| n8n workflow | `n8n-workflows/`, `docker/` |
+| Пайплайны обработки | `pipeline_*.py`, `pipeline_n8n.py`, `orchestrator.py` |
+| n8n workflow | `n8n-workflows/`, `scripts/_patch_n8n_*.py` |
 | Admin-панель (Flask) | `admin/` |
-| Личный кабинет — backend | `cabinet/app.py`, `cabinet/tma_api.py` |
+| Генерация PDF | `pdf_book.py` |
 | БД и хранилище | `db.py`, `db_draft.py`, `storage.py` |
 | Транскрипция и LLM | `transcribe.py`, `llm_bio.py`, `*_client.py` |
 | Деплой и инфраструктура | `deploy/`, systemd, nginx, Docker |
 | Тесты | `tests/` |
 
-### Агент Б — Фронтенд и лендинг (отдельный чат, Sonnet)
-
-Отвечает за визуальную часть и публичные страницы:
+### Агент Б — Фронтенд и лендинг (отдельный чат)
 
 | Область | Файлы |
 |---------|-------|
-| Лендинг сайта | `landing/` — опубликован на `https://glava.family` |
+| Лендинг сайта | `landing/` — `https://glava.family` |
 | Telegram Mini App (TMA) | `tma/index.html`, `tma/` |
 | Личный кабинет — UI | `cabinet/templates/` |
 | Статика | `static/` |
 
-**Правила для Агента Б:**
-- Не трогать Python-файлы, `main.py`, `pipeline_*.py`, `admin/blueprints/`
-- Не менять `deploy/` и systemd конфиги
-- Flask-маршруты в `cabinet/app.py` — только согласовывать с Агентом А
-- Лендинг размещать в папке `landing/` (отдельно от кабинета)
-- Домен лендинга: `glava.family` (основной), Nginx конфиг: `deploy/nginx-glava.conf`
-- Домен кабинета: `cabinet.glava.family`, TMA: открывается внутри Telegram
-
-**Текущий стек фронтенда:**
-- TMA: чистый HTML/CSS/JS (файл `tma/index.html`)
-- Кабинет: Jinja2 шаблоны (Flask)
-- Лендинг: на усмотрение Агента Б (статический HTML или простой Flask blueprint)
+**Правила для Агента Б:** не трогать `main.py`, `pipeline_*.py`, `admin/blueprints/`, `deploy/`. Flask-маршруты в `cabinet/app.py` — только согласовывать с Агентом А.
 
 ---
 
@@ -368,4 +376,5 @@ Phase B включает Триажера (Triage Agent) и 6 маршрутов
 - Не отключать проверку оплаты (`_user_has_paid`) в production.
 - Секреты только в `.env`, не хардкодить в коде.
 - Логирование — через `logging`; в тестах — моки БД и внешних API.
-- Новые скрипты с вызовом OpenAI — учитывать ограничение доступа из РФ и документировать в `docs/OPENAI_ACCESS.md` при необходимости.
+- Новые скрипты с вызовом OpenAI — учитывать ограничение доступа из РФ.
+- Patch-скрипты для n8n — хранить в `scripts/_patch_n8n_vN.py`, применять локально, коммитить результат `phase-a.json`.
