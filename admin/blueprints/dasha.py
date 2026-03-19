@@ -1,5 +1,9 @@
 """Панель Даши (Product Manager) — /dasha/."""
+import json
 import os
+import subprocess
+import sys
+import time
 from datetime import datetime
 
 from flask import Blueprint, flash, jsonify, redirect, render_template, request, url_for, session
@@ -317,3 +321,138 @@ def suggest_change():
 def reports():
     stats = dba.get_pipeline_stats()
     return render_template("dasha/reports.html", stats=stats)
+
+
+# ── Авто-тесты бота ──────────────────────────────────────────────
+
+def _parse_pytest_output(raw: str, duration_s: float) -> dict:
+    """Разбирает вывод pytest -v --tb=short в структурированный результат."""
+    lines = raw.splitlines()
+    results = []
+    current = None
+    tb_lines = []
+    collecting_tb = False
+
+    for line in lines:
+        # Строка с результатом теста: "tests/foo.py::test_name PASSED [ 50%]"
+        if "PASSED" in line or "FAILED" in line or "ERROR" in line:
+            if current and collecting_tb:
+                current["traceback"] = "\n".join(tb_lines).strip()
+                results.append(current)
+                tb_lines = []
+                collecting_tb = False
+            elif current:
+                results.append(current)
+
+            status = "passed" if "PASSED" in line else "failed"
+            # Вытаскиваем имя теста
+            parts = line.strip().split()
+            test_id = parts[0] if parts else line.strip()
+            # Короткое имя (только функция)
+            short = test_id.split("::")[-1] if "::" in test_id else test_id
+            current = {
+                "id": test_id,
+                "name": short,
+                "status": status,
+                "traceback": "",
+            }
+            collecting_tb = (status == "failed")
+            tb_lines = []
+            continue
+
+        if collecting_tb and current:
+            # Собираем traceback до следующего теста
+            if line.startswith("_") and "FAILED" not in line and len(line) > 10:
+                pass  # разделитель
+            tb_lines.append(line)
+
+    if current:
+        if collecting_tb:
+            current["traceback"] = "\n".join(tb_lines).strip()
+        results.append(current)
+
+    passed = sum(1 for r in results if r["status"] == "passed")
+    failed = sum(1 for r in results if r["status"] == "failed")
+
+    # Итоговая строка
+    summary_line = next(
+        (l for l in reversed(lines) if "passed" in l or "failed" in l or "error" in l),
+        "",
+    )
+
+    return {
+        "results": results,
+        "passed": passed,
+        "failed": failed,
+        "total": len(results),
+        "duration_s": round(duration_s, 2),
+        "summary": summary_line.strip(),
+        "raw": raw,
+    }
+
+
+@bp.route("/bot_tests")
+@role_required("dev", "dasha")
+def bot_tests():
+    """Панель авто-тестов бота."""
+    history = dba.get_test_runs(limit=10)
+    return render_template("dasha/bot_tests.html", history=history)
+
+
+@bp.route("/bot_tests/run", methods=["POST"])
+@role_required("dev", "dasha")
+def bot_tests_run():
+    """Запуск pytest, сохранение результата в БД, возврат JSON."""
+    # Путь к корню проекта (два уровня вверх от admin/blueprints/)
+    project_root = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "..", "..")
+    )
+    only_v2 = request.json.get("only_v2", False) if request.is_json else False
+    test_path = "tests/test_bot_flows_v2.py" if only_v2 else "tests/"
+
+    t_start = time.time()
+    try:
+        proc = subprocess.run(
+            [sys.executable, "-m", "pytest", test_path, "-v", "--tb=short", "-q", "--no-header"],
+            capture_output=True,
+            text=True,
+            cwd=project_root,
+            timeout=120,
+        )
+        raw = proc.stdout + proc.stderr
+    except subprocess.TimeoutExpired:
+        raw = "TIMEOUT: тесты не завершились за 120 секунд"
+    except Exception as e:
+        raw = f"ERROR: {e}"
+
+    duration_s = time.time() - t_start
+    parsed = _parse_pytest_output(raw, duration_s)
+
+    # Сохраняем в БД
+    try:
+        run_id = dba.save_test_run(
+            results=parsed["results"],
+            passed=parsed["passed"],
+            failed=parsed["failed"],
+            duration_s=parsed["duration_s"],
+            summary=parsed["summary"],
+        )
+        parsed["run_id"] = run_id
+    except Exception as e:
+        parsed["run_id"] = None
+        parsed["db_error"] = str(e)
+
+    return jsonify(parsed)
+
+
+@bp.route("/bot_tests/run/<int:run_id>")
+@role_required("dev", "dasha")
+def bot_tests_run_detail(run_id: int):
+    """Детали конкретного запуска (JSON)."""
+    run = dba.get_test_run(run_id)
+    if not run:
+        return jsonify({"error": "not found"}), 404
+    results = run.get("results") or []
+    if isinstance(results, str):
+        results = json.loads(results)
+    return jsonify({**dict(run), "results": results})

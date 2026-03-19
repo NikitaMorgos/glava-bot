@@ -588,3 +588,73 @@ def get_book_versions(telegram_id: int) -> list[dict]:
             (telegram_id,),
         )
         return [dict(r) for r in cur.fetchall()]
+
+
+# ── Авто-тесты (test_runs) ────────────────────────────────────────────────
+
+import json as _json
+
+
+def ensure_test_runs_table() -> None:
+    with _conn() as conn:
+        cur = conn.cursor()
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS test_runs (
+                id          SERIAL PRIMARY KEY,
+                ran_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                duration_s  FLOAT NOT NULL DEFAULT 0,
+                total       INTEGER NOT NULL DEFAULT 0,
+                passed      INTEGER NOT NULL DEFAULT 0,
+                failed      INTEGER NOT NULL DEFAULT 0,
+                results     JSONB NOT NULL DEFAULT '[]',
+                summary     TEXT
+            )
+        """)
+
+
+def save_test_run(
+    results: list[dict],
+    passed: int,
+    failed: int,
+    duration_s: float,
+    summary: str = "",
+) -> int:
+    ensure_test_runs_table()
+    with _conn() as conn:
+        cur = conn.cursor()
+        cur.execute(
+            """
+            INSERT INTO test_runs (duration_s, total, passed, failed, results, summary)
+            VALUES (%s, %s, %s, %s, %s, %s) RETURNING id
+            """,
+            (
+                duration_s,
+                passed + failed,
+                passed,
+                failed,
+                _json.dumps(results, ensure_ascii=False),
+                summary,
+            ),
+        )
+        return cur.fetchone()["id"]
+
+
+def get_test_runs(limit: int = 10) -> list[dict]:
+    ensure_test_runs_table()
+    with _conn() as conn:
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT id, ran_at, duration_s, total, passed, failed, summary "
+            "FROM test_runs ORDER BY ran_at DESC LIMIT %s",
+            (limit,),
+        )
+        return [dict(r) for r in cur.fetchall()]
+
+
+def get_test_run(run_id: int) -> dict | None:
+    ensure_test_runs_table()
+    with _conn() as conn:
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM test_runs WHERE id = %s", (run_id,))
+        row = cur.fetchone()
+        return dict(row) if row else None

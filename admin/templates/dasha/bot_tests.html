@@ -1,0 +1,255 @@
+{% extends "base.html" %}
+{% block title %}Авто-тесты бота — GLAVA Admin{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-2xl font-bold text-gray-900">🧪 Авто-тесты бота</h1>
+  <div class="flex gap-2">
+    <button id="btn-run-v2" onclick="runTests(true)"
+      class="flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition">
+      <span id="icon-v2">▶</span> Тесты v2
+    </button>
+    <button id="btn-run-all" onclick="runTests(false)"
+      class="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-800 text-white text-sm font-medium hover:bg-gray-900 transition">
+      <span id="icon-all">▶▶</span> Все тесты
+    </button>
+  </div>
+</div>
+
+<!-- Прогресс -->
+<div id="progress-bar" class="hidden mb-4">
+  <div class="flex items-center gap-3 bg-indigo-50 border border-indigo-200 rounded-xl px-4 py-3">
+    <svg class="animate-spin h-5 w-5 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+    </svg>
+    <span class="text-indigo-700 font-medium">Запускаем тесты…</span>
+  </div>
+</div>
+
+<!-- Итог последнего запуска -->
+<div id="run-summary" class="hidden mb-6"></div>
+
+<!-- Результаты тестов -->
+<div id="results-panel" class="hidden mb-8">
+  <div class="flex items-center justify-between mb-3">
+    <h2 class="text-base font-semibold text-gray-700">Результаты последнего запуска</h2>
+    <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+      <input type="checkbox" id="filter-failed" class="accent-red-500" onchange="filterResults()">
+      Только упавшие
+    </label>
+  </div>
+  <div id="results-table" class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100"></div>
+</div>
+
+<!-- История запусков -->
+<div>
+  <h2 class="text-base font-semibold text-gray-700 mb-3">История запусков</h2>
+  {% if history %}
+  <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
+    <table class="w-full text-sm">
+      <thead class="bg-gray-50 border-b border-gray-100">
+        <tr>
+          <th class="px-4 py-2 text-left font-medium text-gray-500">#</th>
+          <th class="px-4 py-2 text-left font-medium text-gray-500">Дата/время</th>
+          <th class="px-4 py-2 text-left font-medium text-gray-500">Итог</th>
+          <th class="px-4 py-2 text-left font-medium text-gray-500">Прошло / Упало</th>
+          <th class="px-4 py-2 text-left font-medium text-gray-500">Время</th>
+          <th class="px-4 py-2 text-left font-medium text-gray-500">Заметка</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-50">
+        {% for run in history %}
+        <tr class="hover:bg-gray-50 cursor-pointer" onclick="loadRun({{ run.id }})">
+          <td class="px-4 py-2 text-gray-400 font-mono text-xs">#{{ run.id }}</td>
+          <td class="px-4 py-2 text-gray-700">{{ run.ran_at.strftime('%d.%m %H:%M') if run.ran_at else '—' }}</td>
+          <td class="px-4 py-2">
+            {% if run.failed == 0 %}
+              <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700">✅ Все прошли</span>
+            {% else %}
+              <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">❌ {{ run.failed }} упали</span>
+            {% endif %}
+          </td>
+          <td class="px-4 py-2 font-mono text-xs text-gray-600">
+            <span class="text-green-600">{{ run.passed }}</span>
+            /
+            <span class="text-red-500">{{ run.failed }}</span>
+            ({{ run.total }})
+          </td>
+          <td class="px-4 py-2 text-gray-500 text-xs">{{ '%.1f'|format(run.duration_s) }}s</td>
+          <td class="px-4 py-2 text-gray-400 text-xs truncate max-w-xs">{{ run.summary or '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="bg-white rounded-xl border border-gray-100 shadow-sm px-6 py-10 text-center text-gray-400">
+    Ни одного запуска пока нет. Нажмите ▶ чтобы запустить первый тест.
+  </div>
+  {% endif %}
+</div>
+
+<!-- Лог последнего запуска (скрытый) -->
+<div id="raw-log-section" class="hidden mt-6">
+  <div class="flex items-center justify-between mb-2">
+    <h2 class="text-sm font-semibold text-gray-600">Raw вывод pytest</h2>
+    <button onclick="document.getElementById('raw-log-section').classList.add('hidden')"
+      class="text-xs text-gray-400 hover:text-gray-600">скрыть</button>
+  </div>
+  <pre id="raw-log"
+    class="bg-gray-900 text-green-300 text-xs rounded-xl p-4 overflow-auto max-h-96 whitespace-pre-wrap font-mono"></pre>
+</div>
+
+<script>
+let _allResults = [];
+
+async function runTests(onlyV2) {
+  const btnId = onlyV2 ? 'btn-run-v2' : 'btn-run-all';
+  const iconId = onlyV2 ? 'icon-v2' : 'icon-all';
+  document.getElementById('progress-bar').classList.remove('hidden');
+  document.getElementById('run-summary').classList.add('hidden');
+  document.getElementById('results-panel').classList.add('hidden');
+  document.getElementById('raw-log-section').classList.add('hidden');
+  document.getElementById(btnId).disabled = true;
+  document.getElementById(iconId).textContent = '⏳';
+
+  try {
+    const resp = await fetch('/dasha/bot_tests/run', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({only_v2: onlyV2}),
+    });
+    const data = await resp.json();
+    renderResults(data);
+  } catch (e) {
+    document.getElementById('run-summary').innerHTML =
+      `<div class="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3">Ошибка запуска: ${e}</div>`;
+    document.getElementById('run-summary').classList.remove('hidden');
+  } finally {
+    document.getElementById('progress-bar').classList.add('hidden');
+    document.getElementById(btnId).disabled = false;
+    document.getElementById(iconId).textContent = onlyV2 ? '▶' : '▶▶';
+  }
+}
+
+function renderResults(data) {
+  _allResults = data.results || [];
+
+  // Сводка
+  const allPassed = data.failed === 0;
+  const summaryColor = allPassed ? 'green' : 'red';
+  const summaryIcon = allPassed ? '✅' : '❌';
+  document.getElementById('run-summary').innerHTML = `
+    <div class="flex flex-wrap gap-4 bg-${summaryColor}-50 border border-${summaryColor}-200 rounded-xl px-5 py-4">
+      <div class="flex items-center gap-2">
+        <span class="text-2xl">${summaryIcon}</span>
+        <div>
+          <div class="font-bold text-${summaryColor}-800 text-lg">
+            ${allPassed ? 'Все тесты прошли' : `${data.failed} упали из ${data.total}`}
+          </div>
+          <div class="text-sm text-${summaryColor}-600">${data.summary}</div>
+        </div>
+      </div>
+      <div class="ml-auto flex items-center gap-6 text-sm">
+        <div class="text-center">
+          <div class="font-mono font-bold text-green-700 text-xl">${data.passed}</div>
+          <div class="text-gray-500">прошли</div>
+        </div>
+        <div class="text-center">
+          <div class="font-mono font-bold text-red-600 text-xl">${data.failed}</div>
+          <div class="text-gray-500">упали</div>
+        </div>
+        <div class="text-center">
+          <div class="font-mono font-bold text-gray-700 text-xl">${data.duration_s}s</div>
+          <div class="text-gray-500">время</div>
+        </div>
+        <button onclick="toggleRawLog('${encodeURIComponent(data.raw || '')}')"
+          class="text-xs px-3 py-1 border border-gray-300 rounded-lg text-gray-500 hover:bg-gray-50">
+          Raw лог
+        </button>
+      </div>
+    </div>`;
+  document.getElementById('run-summary').classList.remove('hidden');
+
+  renderTable(_allResults);
+}
+
+function renderTable(results) {
+  if (!results.length) {
+    document.getElementById('results-table').innerHTML =
+      '<div class="px-6 py-8 text-center text-gray-400 text-sm">Нет результатов для отображения</div>';
+    document.getElementById('results-panel').classList.remove('hidden');
+    return;
+  }
+
+  const rows = results.map((r, i) => {
+    const statusBadge = r.status === 'passed'
+      ? '<span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700">✅ PASS</span>'
+      : '<span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">❌ FAIL</span>';
+
+    const tbHtml = r.traceback
+      ? `<div class="mt-2 bg-red-50 border border-red-100 rounded p-2 font-mono text-xs text-red-700 whitespace-pre-wrap">${escHtml(r.traceback.slice(0, 800))}</div>`
+      : '';
+
+    // TC номер из имени
+    const tcMatch = r.name.match(/tc(\d+)/i);
+    const tcLabel = tcMatch ? `TC-${tcMatch[1]}` : `#${i+1}`;
+
+    return `<tr class="${r.status === 'failed' ? 'bg-red-50' : 'hover:bg-gray-50'}">
+      <td class="px-4 py-3 text-xs font-mono text-gray-400 w-16">${tcLabel}</td>
+      <td class="px-4 py-3 text-sm text-gray-800 font-medium">
+        ${escHtml(r.name)}
+        ${tbHtml}
+      </td>
+      <td class="px-4 py-3 w-24">${statusBadge}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('results-table').innerHTML = `
+    <table class="w-full text-sm">
+      <thead class="bg-gray-50 border-b border-gray-100">
+        <tr>
+          <th class="px-4 py-2 text-left font-medium text-gray-500">TC</th>
+          <th class="px-4 py-2 text-left font-medium text-gray-500">Тест</th>
+          <th class="px-4 py-2 text-left font-medium text-gray-500">Статус</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-50">${rows}</tbody>
+    </table>`;
+  document.getElementById('results-panel').classList.remove('hidden');
+}
+
+function filterResults() {
+  const onlyFailed = document.getElementById('filter-failed').checked;
+  const filtered = onlyFailed ? _allResults.filter(r => r.status === 'failed') : _allResults;
+  renderTable(filtered);
+}
+
+async function loadRun(runId) {
+  try {
+    const resp = await fetch(`/dasha/bot_tests/run/${runId}`);
+    const data = await resp.json();
+    renderResults({...data, results: data.results || []});
+    window.scrollTo({top: 0, behavior: 'smooth'});
+  } catch (e) {
+    alert('Ошибка загрузки запуска: ' + e);
+  }
+}
+
+function toggleRawLog(encoded) {
+  const sec = document.getElementById('raw-log-section');
+  const pre = document.getElementById('raw-log');
+  pre.textContent = decodeURIComponent(encoded);
+  sec.classList.toggle('hidden');
+}
+
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+</script>
+{% endblock %}
