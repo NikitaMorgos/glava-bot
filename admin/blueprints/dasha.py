@@ -425,15 +425,17 @@ def bot_tests_run():
     t_start = time.time()
     try:
         proc = subprocess.run(
-            [python_exe, "-m", "pytest", test_path, "-v", "--tb=short", "--no-header"],
+            [python_exe, "-m", "pytest", test_path,
+             "-v", "--tb=short", "--no-header", "--color=no"],
             capture_output=True,
             text=True,
             cwd=project_root,
             timeout=120,
-            env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
+            env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1", "NO_COLOR": "1", "TERM": "dumb"},
         )
         raw = proc.stdout + proc.stderr
-        _log.getLogger(__name__).info("bot_tests_run: rc=%d, stdout_len=%d", proc.returncode, len(raw))
+        _log.getLogger(__name__).info("bot_tests_run: rc=%d, stdout_len=%d, first200=%r",
+                                      proc.returncode, len(raw), raw[:200])
     except subprocess.TimeoutExpired:
         raw = "TIMEOUT: тесты не завершились за 120 секунд"
     except Exception as e:
