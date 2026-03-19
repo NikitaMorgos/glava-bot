@@ -37,7 +37,7 @@
 ## Стек и окружение
 
 - **Python:** 3.10+
-- **Зависимости:** `requirements.txt`, для тестов — `pytest`, `pytest-asyncio` (см. `requirements-dev.txt`).
+- **Зависимости:** `requirements.txt`, для тестов — `pytest`, `pytest-asyncio`, `pytest-json-report` (см. `requirements-dev.txt`).
 - **Конфиг:** `.env` (не коммитить), шаблон — `.env.example`. Ключи: `BOT_TOKEN`, БД (PostgreSQL), S3, `YANDEX_API_KEY`, `ASSEMBLYAI_API_KEY`, `OPENAI_API_KEY`, ЮKassa, `ADMIN_SECRET_KEY`, `ADMIN_PASSWORD_DEV`, `ADMIN_PASSWORD_DASHA`, `ADMIN_PASSWORD_LENA`, `N8N_BASIC_AUTH_USER`, `N8N_BASIC_AUTH_PASSWORD`, `N8N_WEBHOOK_PHASE_A`, `N8N_WEBHOOK_PHASE_B`.
 - **Docker:** n8n запущен через `docker run` напрямую (не `docker-compose` — баг v1.29.2). Данные: `/opt/glava/n8n-data/` (владелец UID 1000). Swap 2GB включён.
 - **Сервисы на VPS:** `glava` (бот), `glava-cabinet` (кабинет, порт 5000), `glava-admin` (панель, порт 5001), `glava-n8n` (Docker, порт 5678, доступен через Nginx `/n8n/`).
@@ -51,8 +51,13 @@
 pytest tests/ -v
 # или с отчётом
 python scripts/run_test_report.py
+# v2 тесты с json-отчётом
+pytest tests/test_bot_flows_v2.py -v --json-report --json-report-file=report.json
 ```
 Тесты не требуют реальных ключей и БД (моки). Протокол и периодичность — `docs/TESTING.md`.
+
+**Тесты через admin-панель (Даша):**
+Раздел `/dasha/bot_tests` — кнопки «▶ Тесты v2» и «▶▶ Все тесты», таблица ✅/❌, history.
 
 **Бот (локально):**
 ```bash
@@ -159,7 +164,7 @@ python scripts/seed_bot_messages_v2.py    # 34 сообщения бота v2 в
 | **tasks/bot-flow-admin/** | ✅ Выполнено (2026-03-17→18). Сообщения бота в админке, живая карта флоу, предложения по флоу. |
 | **tasks/server-ops-access/** | ✅ Выполнено (2026-03-19). SSH без пароля, N8N API, ops.sh с 12 командами. |
 | **tasks/bot-scenario-v2/** | ✅ Выполнено (2026-03-19). Бот v2 по постановке Даши: нарраторы, 2 интервью, 3 круга правок, возврат, /versions. |
-| **tasks/bot-tests-panel/** | ✅ Выполнено (2026-03-19). Авто-тесты v2 (TC-28…TC-44) + панель запуска в админке `/dasha/bot_tests`. |
+| **tasks/bot-tests-panel/** | ✅ Выполнено (2026-03-19). Авто-тесты v2 (TC-28…TC-44) + панель `/dasha/bot_tests`; вывод через pytest-json-report, история в БД. |
 | **ARCHITECTURE.md** | Схема сервисов, бот, кабинет, БД, S3, деплой. |
 | **tasks/admin-panel/docs/ARCHITECTURE.md** | Схема admin-панели: роли, маршруты, таблицы БД, n8n интеграция. |
 | **tasks/landing/status.md** | Лендинг v4.1 задеплоен (2026-03-17). |
