@@ -247,7 +247,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const body = $('Webhook').first().json.body;const le = $('Call Orch: Literary Edit').first().json;const chapters = le.chapters || [];return [{ json: { wrapped_input: JSON.stringify({  phase: 'A',  project_id: String(body.draft_id || body.telegram_id),  book_text: { chapters: chapters, callouts: [], historical_notes: [] }}) }}];"
+        "jsCode": "const body = $('Webhook').first().json.body;const le = $('Call Orch: Literary Edit').first().json;const chapters = le.chapters || [];const hc = $('Extract Historian').first().json.historical_context || {};const historical_backdrop = hc.historical_backdrop || hc.period_overview || '';return [{ json: { wrapped_input: JSON.stringify({  phase: 'A',  project_id: String(body.draft_id || body.telegram_id),  historical_backdrop: historical_backdrop,  book_text: { chapters: chapters, callouts: [], historical_notes: [] }}) }}];"
       },
       "id": "2bc60e9f-4574-4066-baf4-28380ea23a48",
       "name": "Wrap for Proofreader",
@@ -693,7 +693,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const body = $('Webhook').first().json.body;const fact_map = $('Extract Fact Map').first().json.fact_map;const book_draft = $('Extract Book Draft').first().json.book_draft;return [{ json: { payload: JSON.stringify({  book_draft: book_draft,  fact_map: fact_map,  transcripts: [{ interview_id: 'int_001', speaker_name: 'Рассказчик',                  relation_to_subject: 'родственник', text: body.transcript }],  project_id: String(body.draft_id || body.telegram_id),  max_iterations: 3}) }}];"
+        "jsCode": "const body = $('Webhook').first().json.body;const fact_map = $('Extract Fact Map').first().json.fact_map;const book_draft = $('Extract Book Draft').first().json.book_draft;const historical_context = $('Extract Historian').first().json.historical_context || {};return [{ json: { payload: JSON.stringify({  book_draft: book_draft,  fact_map: fact_map,  historical_context: historical_context,  transcripts: [{ interview_id: 'int_001', speaker_name: 'Rasskazchik',    relation_to_subject: 'rodstvennik', text: body.transcript }],  project_id: String(body.draft_id || body.telegram_id),  max_iterations: 3}) }}];"
       },
       "id": "8fd05b1e-51c1-4bf3-8d08-ea4e8ef9c9eb",
       "name": "Wrap Orch: Fact Check",
@@ -736,7 +736,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const body = $('Webhook').first().json.body;const fc = $('Call Orch: Fact Check').first().json;return [{ json: { payload: JSON.stringify({  book_draft: fc.book_draft || {},  fact_checker_warnings: fc.warnings || [],  project_id: String(body.draft_id || body.telegram_id),  max_iterations: 2}) }}];"
+        "jsCode": "const body = $('Webhook').first().json.body;const fc = $('Call Orch: Fact Check').first().json;const historical_context = $('Extract Historian').first().json.historical_context || {};return [{ json: { payload: JSON.stringify({  book_draft: fc.book_draft || {},  fact_checker_warnings: fc.warnings || [],  historical_context: historical_context,  project_id: String(body.draft_id || body.telegram_id),  max_iterations: 2}) }}];"
       },
       "id": "c299ae38-a633-4767-82f7-34f4b7faf97b",
       "name": "Wrap Orch: Literary Edit",
