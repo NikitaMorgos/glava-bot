@@ -514,34 +514,45 @@ def run_phase_b_revision(
 
     result = _call_openai(agent_role, writer_prompt, writer_msg, openai_key)
 
-    revised_text = ""
-    if isinstance(result, dict):
-        revised_text = (
-            result.get("bio_text")
-            or result.get("revised_text")
-            or result.get("text")
-            or result.get("content")
-            or ""
-        )
-    if not revised_text:
-        revised_text = str(result) if result else book_text
+    def _extract_text(r) -> str:
+        """Извлекает plain text из ответа агента (dict с chapters или plain text)."""
+        if not r:
+            return ""
+        if isinstance(r, str):
+            # Если строка похожа на JSON — пробуем распарсить
+            stripped = r.strip()
+            if stripped.startswith("{") or stripped.startswith("["):
+                try:
+                    parsed = json.loads(stripped)
+                    return _extract_text(parsed)
+                except Exception:
+                    pass
+            return r if len(r) > 50 else ""
+        if isinstance(r, dict):
+            # Сначала ищем готовый plain text
+            for key in ("bio_text", "revised_text", "text", "content", "result"):
+                val = r.get(key)
+                if val and isinstance(val, str) and len(val) > 50:
+                    return val
+            # Потом пробуем chapters
+            chapters = r.get("chapters") or r.get("book", {}).get("chapters") if isinstance(r.get("book"), dict) else r.get("chapters")
+            if chapters and isinstance(chapters, list):
+                return _chapters_to_text(chapters)
+        return ""
 
-    # Прогоняем через пруфридера
+    revised_text = _extract_text(result) or book_text
+
+    # Прогоняем через пруфридера только если текст не пустой и изменился
     proofread_prompt = _get_prompt("proofreader", admin_url) or (
         "Ты корректор. Исправь опечатки, пунктуацию и грамматику. "
-        "Верни полный исправленный текст."
+        "Верни полный исправленный текст без JSON, без служебных символов."
     )
     proofread_msg = {
         "context": _build_context(project_id, "B", "final", 1, 1, agent_role, ""),
         "data": {"text": revised_text},
     }
     pr_result = _call_openai("proofreader", proofread_prompt, proofread_msg, openai_key)
-    if isinstance(pr_result, dict):
-        final_text = pr_result.get("bio_text") or pr_result.get("text") or revised_text
-    elif isinstance(pr_result, str) and len(pr_result) > 100:
-        final_text = pr_result
-    else:
-        final_text = revised_text
+    final_text = _extract_text(pr_result) or revised_text
 
     return {
         "revised_text": final_text,
