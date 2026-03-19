@@ -38,7 +38,7 @@
 
 - **Python:** 3.10+
 - **Зависимости:** `requirements.txt`, для тестов — `pytest`, `pytest-asyncio`, `pytest-json-report` (см. `requirements-dev.txt`).
-- **Конфиг:** `.env` (не коммитить), шаблон — `.env.example`. Ключи: `BOT_TOKEN`, БД (PostgreSQL), S3, `YANDEX_API_KEY`, `ASSEMBLYAI_API_KEY`, `OPENAI_API_KEY`, ЮKassa, `ADMIN_SECRET_KEY`, `ADMIN_PASSWORD_DEV`, `ADMIN_PASSWORD_DASHA`, `ADMIN_PASSWORD_LENA`, `N8N_BASIC_AUTH_USER`, `N8N_BASIC_AUTH_PASSWORD`, `N8N_WEBHOOK_PHASE_A`, `N8N_WEBHOOK_PHASE_B`.
+- **Конфиг:** `.env` (не коммитить), шаблон — `.env.example`. Ключи: `BOT_TOKEN`, БД (PostgreSQL), S3, `YANDEX_API_KEY`, `ASSEMBLYAI_API_KEY`, `OPENAI_API_KEY`, ЮKassa, `ADMIN_SECRET_KEY`, `ADMIN_PASSWORD_DEV`, `ADMIN_PASSWORD_DASHA`, `ADMIN_PASSWORD_LENA`, `N8N_BASIC_AUTH_USER`, `N8N_BASIC_AUTH_PASSWORD`, `N8N_WEBHOOK_PHASE_A`, `N8N_WEBHOOK_PHASE_B`, `REPLICATE_API_TOKEN`, `IMAGE_PROVIDER`.
 - **Docker:** n8n запущен через `docker run` напрямую (не `docker-compose` — баг v1.29.2). Данные: `/opt/glava/n8n-data/` (владелец UID 1000). Swap 2GB включён.
 - **Сервисы на VPS:** `glava` (бот), `glava-cabinet` (кабинет, порт 5000), `glava-admin` (панель, порт 5001), `glava-n8n` (Docker, порт 5678, доступен через Nginx `/n8n/`).
 
@@ -109,7 +109,8 @@ python scripts/seed_bot_messages_v2.py    # 34 сообщения бота v2 в
 | Пайплайны (bio после транскрипта) | `pipeline_transcribe_bio.py`, `pipeline_assemblyai_bio.py`, `pipeline_plaud_bio.py`, `pipeline_mymeet_bio.py`, `pipeline_recall_bio.py` |
 | **Триггеры n8n** | `pipeline_n8n.py` — `trigger_phase_a_background()`, `trigger_phase_b_background()` |
 | **Оркестратор агентов** | `orchestrator.py` — циклы Fact Check, Literary Edit, Layout QA; Phase B revision |
-| **Генератор PDF книги** | `pdf_book.py` — `generate_book_pdf(bio_text, character_name, cover_spec)` → bytes, A5, reportlab |
+| **Генератор PDF книги** | `pdf_book.py` — `generate_book_pdf(bio_text, character_name, cover_spec, cover_image_bytes)` → bytes, A5, reportlab. При `cover_image_bytes`: full-bleed AI-обложка с тёмным оверлеем, белый текст поверх. |
+| **AI-обложка книги** | `replicate_client.py` — `generate_cover_image(visual_style, character_name)` → bytes. Provайдер: Replicate FLUX Schnell (`black-forest-labs/flux-schnell`). Токен: `REPLICATE_API_TOKEN`. При `GOOGLE_API_KEY` — переключить `IMAGE_PROVIDER=google_imagen` за 5 мин. |
 | Клиенты онлайн-встреч | `recall_client.py` (Recall.ai, приоритет), `mymeet_client.py` (MyMeet, резерв) |
 | **Лендинг glava.family** | `landing/` — `index.html`, `base.css`, `style.css`, `assets/`. Деплой: `bash deploy/deploy-landing.sh`. Nginx: `deploy/nginx-glava.conf`. |
 | Telegram Mini App (кабинет) | `tma/index.html` (фронтенд), `cabinet/tma_api.py` (API Blueprint) |
