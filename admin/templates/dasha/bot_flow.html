@@ -324,13 +324,373 @@
 
     <div class="paywall-divider">
       <div class="paywall-line"></div>
-      <div class="paywall-badge">✅ ОПЛАТА ПРОШЛА</div>
+      <div class="paywall-badge">✅ ОПЛАТА ПРОШЛА · ПРОЕКТ СОЗДАН</div>
       <div class="paywall-line"></div>
     </div>
 
-    <!-- ══════ ЗАБЛОКИРОВАНО ══════ -->
-    <div class="section-label">— Блокировка · до оплаты файлы/фото</div>
+    <!-- ══════ 6. НАРРАТОРЫ ══════ -->
+    <div class="section-label">6 — Кто будет рассказывать · Post-pay</div>
     <div class="row">
+      <div class="screen">
+        <div class="badge badge-post">Post-pay</div>
+        <div class="screen-id">6.1 · narrators_setup</div>
+        <div class="screen-title">Кто расскажет о персонаже?</div>
+        <div class="screen-msg" data-key="narrators_setup"></div>
+        <a class="edit-link" href="/dasha/bot_messages/narrators_setup" target="_blank">↗ редактировать</a>
+        <div class="btns">
+          <div class="btn" style="color:var(--muted)">Ввод: имя рассказчика</div>
+          <div class="btn" style="color:var(--muted)">Ввод: родство [narrator_relation]</div>
+          <div class="btn">➕ Добавить рассказчика</div>
+          <div class="btn danger">🗑 Удалить</div>
+          <div class="btn primary">Продолжить → 7.1</div>
+        </div>
+      </div>
+    </div>
+    <div class="note note-info" style="margin-top:8px">💡 state: <strong>narrators_setup</strong> — минимум 1 рассказчик обязателен</div>
+
+    <!-- ══════ 7. ПОДГОТОВКА К ИНТЕРВЬЮ ══════ -->
+    <div class="section-label">7 — Подсказки для интервью · Post-pay</div>
+    <div class="row">
+      <div class="screen" style="max-width:260px">
+        <div class="badge badge-post">Post-pay</div>
+        <div class="screen-id">7.1 · interview_guide</div>
+        <div class="screen-title">Как провести интервью</div>
+        <div class="screen-msg" data-key="interview_guide"></div>
+        <a class="edit-link" href="/dasha/bot_messages/interview_guide" target="_blank">↗ редактировать</a>
+        <div class="btns">
+          <div class="btn primary">📋 Показать вопросы в чате → 7.2</div>
+          <div class="btn primary">📄 Скачать вопросы PDF</div>
+          <div class="btn success">📞 Получить ссылку для звонка</div>
+          <div class="btn primary">⬆️ Загрузить материалы → 8.1</div>
+          <div class="btn">← Назад → 6.1</div>
+        </div>
+      </div>
+      <div class="arrow-r">→</div>
+      <div class="screen" style="max-width:260px">
+        <div class="badge badge-post">Post-pay</div>
+        <div class="screen-id">7.2 · interview_questions</div>
+        <div class="screen-title">Вопросы в чате</div>
+        <div class="screen-msg" data-key="interview_questions"></div>
+        <a class="edit-link" href="/dasha/bot_messages/interview_questions" target="_blank">↗ редактировать</a>
+        <div class="btns">
+          <div class="btn primary">⬆️ Загрузить материалы → 8.1</div>
+          <div class="btn">← Назад → 7.1</div>
+        </div>
+      </div>
+    </div>
+    <div class="note note-warn">💡 Это статические подсказки ДО интервью — не путать с AI-вопросами Интервьюера (8.6)</div>
+
+    <!-- ══════ 8. ЗАГРУЗКА ИНТЕРВЬЮ 1 ══════ -->
+    <div class="section-label" style="margin-top:32px">8 — Загрузка первого интервью · ЭТАП 1</div>
+    <div class="row">
+      <div class="screen">
+        <div class="badge badge-post">Post-pay</div>
+        <div class="screen-id">8.1 · upload_who</div>
+        <div class="screen-title">Кто говорит?</div>
+        <div class="screen-msg" data-key="upload_who"></div>
+        <a class="edit-link" href="/dasha/bot_messages/upload_who" target="_blank">↗ редактировать</a>
+        <div class="btns">
+          <div class="btn">Анна — дочь</div>
+          <div class="btn">Сергей — внук</div>
+          <div class="btn">← Назад → 7.1</div>
+        </div>
+      </div>
+      <div class="arrow-r">→</div>
+      <div class="screen" style="max-width:250px">
+        <div class="badge badge-post">Post-pay</div>
+        <div class="screen-id">8.2 · upload_audio</div>
+        <div class="screen-title">Загрузка материалов</div>
+        <div class="screen-msg" data-key="upload_audio"></div>
+        <a class="edit-link" href="/dasha/bot_messages/upload_audio" target="_blank">↗ редактировать</a>
+        <div class="btns">
+          <div class="btn primary">🎤 Аудиофайл</div>
+          <div class="btn primary">🎙 Голосовое</div>
+          <div class="btn primary">📝 Текст</div>
+          <div class="btn">➕ Добавить ещё файл</div>
+          <div class="btn primary">Далее → 8.3</div>
+        </div>
+      </div>
+      <div class="arrow-r">→</div>
+      <div class="screen" style="max-width:250px">
+        <div class="badge badge-post">Post-pay</div>
+        <div class="screen-id">8.3 · upload_photo</div>
+        <div class="screen-title">Фотографии</div>
+        <div class="screen-msg" data-key="upload_photo"></div>
+        <a class="edit-link" href="/dasha/bot_messages/upload_photo" target="_blank">↗ редактировать</a>
+        <div class="btns">
+          <div class="btn primary">📸 Фотографии персонажа</div>
+          <div class="btn primary">📄 Фото документов</div>
+          <div class="btn">Добавить позже → 8.4</div>
+          <div class="btn primary">Далее → 8.4</div>
+        </div>
+      </div>
+      <div class="arrow-r">→</div>
+      <div class="screen" style="max-width:250px">
+        <div class="badge badge-post">Post-pay</div>
+        <div class="screen-id">8.4 · upload_summary</div>
+        <div class="screen-title">Всё загружено?</div>
+        <div class="screen-msg" data-key="upload_summary"></div>
+        <a class="edit-link" href="/dasha/bot_messages/upload_summary" target="_blank">↗ редактировать</a>
+        <div class="btns">
+          <div class="btn primary">🎤 Загрузить от другого → 8.1</div>
+          <div class="btn success">✅ Все загружены → 8.5</div>
+          <div class="btn">➕ Добавить ещё → 8.2</div>
+        </div>
+      </div>
+    </div>
+    <div class="row" style="margin-top:14px">
+      <div class="screen">
+        <div class="badge badge-wait">Ожидание</div>
+        <div class="screen-id">8.5 · upload_processing</div>
+        <div class="screen-title">⏳ Обрабатываем материалы…</div>
+        <div class="screen-msg" data-key="upload_processing"></div>
+        <a class="edit-link" href="/dasha/bot_messages/upload_processing" target="_blank">↗ редактировать</a>
+      </div>
+      <div class="arrow-r">→</div>
+      <div class="screen" style="max-width:260px">
+        <div class="badge badge-ai">AI</div>
+        <div class="screen-id">8.6 · interview_questions_ready</div>
+        <div class="screen-title">Уточняющие вопросы + Блиц</div>
+        <div class="screen-msg" data-key="interview_questions_ready"></div>
+        <a class="edit-link" href="/dasha/bot_messages/interview_questions_ready" target="_blank">↗ редактировать</a>
+        <div class="btns">
+          <div class="btn primary">📋 Перейти к этапу 2 → 9.1</div>
+          <div class="btn">⏭ Пропустить, собрать книгу → 10.1</div>
+        </div>
+      </div>
+    </div>
+    <div class="note note-warn">🔔 Push: «Мы обработали ваше интервью!» · state: <strong>processing_interview_1 → awaiting_interview_2</strong></div>
+
+    <!-- ══════ 9. ВТОРОЕ ИНТЕРВЬЮ ══════ -->
+    <div class="section-label" style="margin-top:32px">9 — Второе интервью · Этап 2 (опционально)</div>
+    <div class="row">
+      <div class="screen" style="max-width:260px">
+        <div class="badge badge-post">Post-pay</div>
+        <div class="screen-id">9.1 · interview2</div>
+        <div class="screen-title">Второе интервью</div>
+        <div class="screen-msg" data-key="interview2"></div>
+        <a class="edit-link" href="/dasha/bot_messages/interview2" target="_blank">↗ редактировать</a>
+        <div class="btns">
+          <div class="btn primary">🎤 Загрузить аудио/текст</div>
+          <div class="btn primary">📸 Добавить фотографии</div>
+          <div class="btn primary">📄 Добавить фото документов</div>
+          <div class="btn">➕ Ещё файл</div>
+          <div class="btn primary">Далее → 9.2</div>
+        </div>
+      </div>
+      <div class="arrow-r">→</div>
+      <div class="screen">
+        <div class="badge badge-post">Post-pay</div>
+        <div class="screen-id">9.2 · interview2_confirm</div>
+        <div class="screen-title">Все материалы собраны?</div>
+        <div class="screen-msg" data-key="interview2_confirm"></div>
+        <a class="edit-link" href="/dasha/bot_messages/interview2_confirm" target="_blank">↗ редактировать</a>
+        <div class="btns">
+          <div class="btn success">✅ Да, собирайте книгу → 10.1</div>
+          <div class="btn">➕ Добавить ещё → 9.1</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════ 10. СБОРКА КНИГИ ══════ -->
+    <div class="section-label" style="margin-top:32px">10 — Сборка книги · AI Pipeline</div>
+    <div class="row">
+      <div class="screen" style="max-width:260px">
+        <div class="badge badge-wait">Ожидание</div>
+        <div class="screen-id">10.1 · assembling</div>
+        <div class="screen-title">⏳ Собираем вашу книгу…</div>
+        <div class="screen-msg" data-key="assembling"></div>
+        <a class="edit-link" href="/dasha/bot_messages/assembling" target="_blank">↗ редактировать</a>
+      </div>
+      <div class="arrow-r">→</div>
+      <div class="screen">
+        <div class="badge badge-ai">AI</div>
+        <div class="screen-id">10.2 · book_ready</div>
+        <div class="screen-title">📖 Ваша книга готова!</div>
+        <div class="screen-msg" data-key="book_ready"></div>
+        <a class="edit-link" href="/dasha/bot_messages/book_ready" target="_blank">↗ редактировать</a>
+        <div class="btns">
+          <div class="btn success">📄 Открыть PDF</div>
+          <div class="btn primary">💬 Оставить комментарий → 11.1</div>
+          <div class="btn success">✅ Всё отлично, завершить → 13.1</div>
+          <div class="btn">📜 Версии книги → 12.1</div>
+        </div>
+      </div>
+      <div class="connector">
+        <div class="connector-line"></div>
+        <div class="fork-label" style="color:var(--red);border-color:rgba(224,87,87,0.25)">ошибка → E.3</div>
+      </div>
+    </div>
+    <div class="note note-warn">🔔 Push: «📖 Книга о {имя} готова!» · state: <strong>assembling → book_ready</strong></div>
+
+    <!-- ══════ 11. ПРАВКИ ══════ -->
+    <div class="section-label" style="margin-top:32px">11 — Комментарии к книге · до 3 кругов</div>
+    <div class="row">
+      <div class="screen" style="max-width:260px">
+        <div class="badge badge-post">Post-pay</div>
+        <div class="screen-id">11.1 · revision_prompt</div>
+        <div class="screen-title">Комментарий к книге</div>
+        <div class="screen-msg" data-key="revision_prompt"></div>
+        <a class="edit-link" href="/dasha/bot_messages/revision_prompt" target="_blank">↗ редактировать</a>
+        <div class="btns">
+          <div class="btn" style="color:var(--muted)">Ввод: текст комментария</div>
+          <div class="btn primary">📸 Приложить фото (опц.)</div>
+          <div class="btn primary">🎤 Голосовое (опц.)</div>
+          <div class="btn success">📤 Отправить → 11.2</div>
+          <div class="btn">← Назад к книге → 10.2</div>
+        </div>
+      </div>
+      <div class="arrow-r">→</div>
+      <div class="screen">
+        <div class="badge badge-wait">Ожидание</div>
+        <div class="screen-id">11.2 · revision_processing</div>
+        <div class="screen-title">⏳ Вносим правки…</div>
+        <div class="screen-msg" data-key="revision_processing"></div>
+        <a class="edit-link" href="/dasha/bot_messages/revision_processing" target="_blank">↗ редактировать</a>
+      </div>
+      <div class="arrow-r">→</div>
+      <div class="screen">
+        <div class="badge badge-ai">AI</div>
+        <div class="screen-id">11.3 · revision_ready</div>
+        <div class="screen-title">📖 Обновлённая книга</div>
+        <div class="screen-msg" data-key="revision_ready"></div>
+        <a class="edit-link" href="/dasha/bot_messages/revision_ready" target="_blank">↗ редактировать</a>
+        <div class="btns">
+          <div class="btn success">📄 Открыть PDF</div>
+          <div class="btn primary">💬 Ещё комментарий → 11.1</div>
+          <div class="btn success">✅ Завершить → 13.1</div>
+          <div class="btn danger">😞 Не нравится → 15.1</div>
+        </div>
+      </div>
+    </div>
+    <div class="note note-info">🔄 Debounce 3 мин — <span data-key="revision_debounce" style="display:inline;font-style:italic;font-size:10px;color:var(--muted)"></span>
+      <a class="edit-link" href="/dasha/bot_messages/revision_debounce" target="_blank">↗</a>
+    </div>
+    <div class="note note-warn">После 3-го круга кнопка «Ещё комментарий» исчезает — только «Завершить» или «Возврат» · state: <strong>revision_1/2/3 → revision_processing → book_updated</strong></div>
+
+    <!-- ══════ 12. ВЕРСИИ ══════ -->
+    <div class="section-label" style="margin-top:32px">12 — Версии книги · /versions</div>
+    <div class="row">
+      <div class="screen" style="max-width:240px">
+        <div class="badge badge-post">Post-pay</div>
+        <div class="screen-id">12.1 · versions_list</div>
+        <div class="screen-title">Версии книги</div>
+        <div class="screen-msg" data-key="versions_list"></div>
+        <a class="edit-link" href="/dasha/bot_messages/versions_list" target="_blank">↗ редактировать</a>
+        <div class="btns">
+          <div class="btn">📄 Открыть версию</div>
+          <div class="btn primary">↩️ Откатить → 12.2</div>
+          <div class="btn">← Назад</div>
+        </div>
+      </div>
+      <div class="arrow-r">→</div>
+      <div class="screen">
+        <div class="badge badge-post">Post-pay</div>
+        <div class="screen-id">12.2 · versions_rollback_confirm</div>
+        <div class="screen-title">⚠️ Подтверждение отката</div>
+        <div class="screen-msg" data-key="versions_rollback_confirm"></div>
+        <a class="edit-link" href="/dasha/bot_messages/versions_rollback_confirm" target="_blank">↗ редактировать</a>
+        <div class="btns">
+          <div class="btn danger">Да, откатить</div>
+          <div class="btn">Отмена → 12.1</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════ 13. ЗАВЕРШЕНИЕ ══════ -->
+    <div class="section-label" style="margin-top:32px">13–14 — Завершение и финал</div>
+    <div class="row">
+      <div class="screen" style="max-width:240px">
+        <div class="badge badge-post">Post-pay</div>
+        <div class="screen-id">13.1 · finalize_confirm</div>
+        <div class="screen-title">Подтверждение завершения</div>
+        <div class="screen-msg" data-key="finalize_confirm"></div>
+        <a class="edit-link" href="/dasha/bot_messages/finalize_confirm" target="_blank">↗ редактировать</a>
+        <div class="btns">
+          <div class="btn success">✅ Завершить книгу → 14.1</div>
+          <div class="btn">← Назад</div>
+        </div>
+      </div>
+      <div class="arrow-r">→</div>
+      <div class="screen" style="max-width:260px">
+        <div class="badge badge-post">Post-pay</div>
+        <div class="screen-id">14.1 · finalized</div>
+        <div class="screen-title">🎉 Ваша книга готова!</div>
+        <div class="screen-msg" data-key="finalized"></div>
+        <a class="edit-link" href="/dasha/bot_messages/finalized" target="_blank">↗ редактировать</a>
+        <div class="btns">
+          <div class="btn success">📄 Скачать PDF</div>
+          <div class="btn primary">🖨 Заказать печать → 14.2</div>
+          <div class="btn" style="color:var(--accent2)">📤 Поделиться</div>
+        </div>
+      </div>
+      <div class="arrow-r">→</div>
+      <div class="screen" style="max-width:240px">
+        <div class="badge badge-post">Post-pay</div>
+        <div class="screen-id">14.2 · print_soon</div>
+        <div class="screen-title">🖨 Печать (скоро)</div>
+        <div class="screen-msg" data-key="print_soon"></div>
+        <a class="edit-link" href="/dasha/bot_messages/print_soon" target="_blank">↗ редактировать</a>
+        <div class="btns">
+          <div class="btn primary">📩 Уведомить меня</div>
+          <div class="btn">← Назад → 14.1</div>
+        </div>
+      </div>
+    </div>
+    <div class="note note-info">После <strong>finalized</strong> правки невозможны. Доступно: скачивание PDF, печать, поделиться.</div>
+
+    <!-- ══════ 15. ВОЗВРАТ ══════ -->
+    <div class="section-label" style="margin-top:32px">15 — Возврат средств</div>
+    <div class="row">
+      <div class="screen" style="max-width:260px">
+        <div class="badge badge-post">Post-pay</div>
+        <div class="screen-id">15.1 · refund_reason</div>
+        <div class="screen-title">Что не понравилось?</div>
+        <div class="screen-msg" data-key="refund_reason"></div>
+        <a class="edit-link" href="/dasha/bot_messages/refund_reason" target="_blank">↗ редактировать</a>
+        <div class="btns">
+          <div class="btn" style="color:var(--muted)">Ввод: причина [текст, мин. 10 символов]</div>
+          <div class="btn danger">Запросить возврат → 15.2</div>
+          <div class="btn">← Передумал, назад → 11.3</div>
+        </div>
+      </div>
+      <div class="arrow-r">→</div>
+      <div class="screen">
+        <div class="badge badge-wait">Ожидание</div>
+        <div class="screen-id">15.2 · refund_submitted</div>
+        <div class="screen-title">Заявка принята</div>
+        <div class="screen-msg" data-key="refund_submitted"></div>
+        <a class="edit-link" href="/dasha/bot_messages/refund_submitted" target="_blank">↗ редактировать</a>
+      </div>
+    </div>
+    <div class="note note-warn">state: <strong>refund_requested</strong> · Доступен только после получения обновлённой книги (11.3)</div>
+
+    <!-- ══════ ОШИБКИ ══════ -->
+    <div class="section-label" style="margin-top:32px">E — Экраны ошибок</div>
+    <div class="row">
+      <div class="screen" style="border-color:rgba(224,87,87,0.3)">
+        <div class="badge badge-err">Ошибка</div>
+        <div class="screen-id">E.3 · assembly_error</div>
+        <div class="screen-title">Ошибка сборки</div>
+        <div class="screen-msg" data-key="assembly_error"></div>
+        <a class="edit-link" href="/dasha/bot_messages/assembly_error" target="_blank">↗ редактировать</a>
+        <div class="btns">
+          <div class="btn primary">🔄 Попробовать снова → 10.1</div>
+          <div class="btn">✉️ Написать в поддержку</div>
+        </div>
+      </div>
+      <div class="arrow-r" style="color:transparent">→</div>
+      <div class="screen" style="border-color:rgba(224,87,87,0.3)">
+        <div class="badge badge-err">Ошибка</div>
+        <div class="screen-id">E.4 · unsupported_file</div>
+        <div class="screen-title">Файл не поддерживается</div>
+        <div class="screen-msg" data-key="unsupported_file"></div>
+        <a class="edit-link" href="/dasha/bot_messages/unsupported_file" target="_blank">↗ редактировать</a>
+        <div class="btns">
+          <div class="btn">Загрузить другой файл → 8.2</div>
+        </div>
+      </div>
+      <div class="arrow-r" style="color:transparent">→</div>
       <div class="screen" style="border-color:rgba(224,87,87,0.3)">
         <div class="badge badge-err">Блок</div>
         <div class="screen-id">blocked_media</div>
@@ -344,7 +704,7 @@
     </div>
 
     <!-- ══════ ОНЛАЙН ВСТРЕЧА ══════ -->
-    <div class="section-label">— Онлайн-встреча · /online</div>
+    <div class="section-label" style="margin-top:32px">— Онлайн-встреча · /online</div>
     <div class="row">
       <div class="screen">
         <div class="badge" style="background:rgba(124,107,212,0.15);color:var(--accent2);">Online</div>
@@ -372,23 +732,6 @@
         <div class="screen-title">Ссылка Телемост</div>
         <div class="screen-msg" data-key="online_meeting_telemost_sent"></div>
         <a class="edit-link" href="/dasha/bot_messages/online_meeting_telemost_sent" target="_blank">↗ редактировать</a>
-      </div>
-    </div>
-    <div class="row" style="margin-top:12px">
-      <div class="screen" style="border-color:rgba(224,87,87,0.3)">
-        <div class="badge badge-err">Ошибка</div>
-        <div class="screen-id">online · bad_link</div>
-        <div class="screen-title">Неверная ссылка</div>
-        <div class="screen-msg" data-key="online_meeting_bad_link"></div>
-        <a class="edit-link" href="/dasha/bot_messages/online_meeting_bad_link" target="_blank">↗ редактировать</a>
-      </div>
-      <div class="arrow-r" style="color:transparent">→</div>
-      <div class="screen" style="border-color:rgba(224,87,87,0.3)">
-        <div class="badge badge-err">Ошибка</div>
-        <div class="screen-id">online · error</div>
-        <div class="screen-title">Ошибка записи</div>
-        <div class="screen-msg" data-key="online_meeting_error"></div>
-        <a class="edit-link" href="/dasha/bot_messages/online_meeting_error" target="_blank">↗ редактировать</a>
       </div>
     </div>
 
