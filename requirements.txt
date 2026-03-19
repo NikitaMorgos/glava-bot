@@ -44,3 +44,6 @@ playwright>=1.40.0
 # pip install librosa scikit-learn
 librosa>=0.10.0
 scikit-learn>=1.0.0
+
+# Replicate AI — генерация обложки книги (FLUX Schnell)
+replicate>=0.34.0

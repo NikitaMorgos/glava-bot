@@ -100,12 +100,40 @@ def send_book_pdf():
     if not bot_token:
         return jsonify({"error": "BOT_TOKEN not configured"}), 500
 
+    # ── AI-обложка через Replicate ──────────────────────────────────
+    cover_image_bytes: bytes | None = None
+    replicate_token = os.environ.get("REPLICATE_API_TOKEN", "")
+    visual_style = cover_spec.get("visual_style", "") if cover_spec else ""
+
+    if replicate_token and visual_style:
+        try:
+            from replicate_client import generate_cover_image
+            logger.info("send_book_pdf: генерируем AI-обложку для '%s'", character_name)
+            cover_image_bytes = generate_cover_image(
+                visual_style=visual_style,
+                character_name=character_name,
+                api_token=replicate_token,
+            )
+            if cover_image_bytes:
+                logger.info(
+                    "send_book_pdf: AI-обложка сгенерирована, %d байт", len(cover_image_bytes)
+                )
+            else:
+                logger.warning("send_book_pdf: Replicate вернул None, используем текстовую обложку")
+        except Exception as e:
+            logger.warning("send_book_pdf: ошибка Replicate, fallback на текстовую обложку: %s", e)
+    elif not visual_style:
+        logger.info("send_book_pdf: visual_style не задан, используем текстовую обложку")
+    elif not replicate_token:
+        logger.info("send_book_pdf: REPLICATE_API_TOKEN не задан, используем текстовую обложку")
+
     try:
         from pdf_book import generate_book_pdf
         pdf_bytes = generate_book_pdf(
             bio_text,
             character_name=character_name,
             cover_spec=cover_spec if cover_spec else None,
+            cover_image_bytes=cover_image_bytes,
         )
     except Exception as e:
         logger.exception("send_book_pdf: ошибка генерации PDF: %s", e)

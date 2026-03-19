@@ -90,15 +90,18 @@ def _register_cyrillic_fonts() -> tuple[str, str, str]:
 FONT_SERIF, FONT_BOLD, FONT_ITALIC = _register_cyrillic_fonts()
 
 
-def _build_styles() -> dict:
-    base = dict(fontName=FONT_SERIF, textColor=INK, leading=18)
+def _build_styles(cover_has_image: bool = False) -> dict:
+    # На обложке с изображением текст белый, иначе — стандартные тёмные цвета
+    cover_text_color  = white if cover_has_image else INK
+    cover_muted_color = HexColor("#E8DDD0") if cover_has_image else MUTED
+    cover_gold_color  = HexColor("#F5C87A") if cover_has_image else GOLD
 
     return {
         "title": ParagraphStyle(
             "title",
             fontName=FONT_BOLD,
             fontSize=26,
-            textColor=INK,
+            textColor=cover_text_color,
             alignment=TA_CENTER,
             leading=32,
             spaceAfter=6 * mm,
@@ -107,7 +110,7 @@ def _build_styles() -> dict:
             "subtitle",
             fontName=FONT_ITALIC,
             fontSize=13,
-            textColor=MUTED,
+            textColor=cover_muted_color,
             alignment=TA_CENTER,
             leading=18,
             spaceAfter=4 * mm,
@@ -116,11 +119,12 @@ def _build_styles() -> dict:
             "cover_label",
             fontName=FONT_SERIF,
             fontSize=10,
-            textColor=MUTED,
+            textColor=cover_muted_color,
             alignment=TA_CENTER,
             leading=14,
             spaceAfter=2 * mm,
         ),
+        "_cover_gold": cover_gold_color,  # используется для HRFlowable на обложке
         "chapter_heading": ParagraphStyle(
             "chapter_heading",
             fontName=FONT_BOLD,
@@ -236,11 +240,45 @@ def _add_page_border(canvas, doc):
     canvas.restoreState()
 
 
+def _make_cover_callback(cover_image_bytes: bytes | None):
+    """
+    Возвращает onFirstPage-callback для SimpleDocTemplate.
+    Если cover_image_bytes задан — рисует full-bleed изображение + тёмный оверлей
+    поверх которого платформа рендерит story-элементы (белый текст).
+    """
+    def on_first_page(canvas, doc):
+        if cover_image_bytes:
+            from io import BytesIO
+            from reportlab.lib.utils import ImageReader
+            try:
+                page_w, page_h = A5
+                img_reader = ImageReader(BytesIO(cover_image_bytes))
+                canvas.saveState()
+                # full-bleed изображение
+                canvas.drawImage(
+                    img_reader, 0, 0,
+                    width=page_w, height=page_h,
+                    preserveAspectRatio=False,
+                    mask="auto",
+                )
+                # Полупрозрачный тёмный оверлей для читаемости текста
+                canvas.setFillColor(black)
+                canvas.setFillAlpha(0.52)
+                canvas.rect(0, 0, page_w, page_h, fill=1, stroke=0)
+                canvas.setFillAlpha(1.0)
+                canvas.restoreState()
+            except Exception as e:
+                logger.warning("pdf_book: не удалось нарисовать cover image: %s", e)
+        # Колонтитул пропускаем на обложке
+    return on_first_page
+
+
 def generate_book_pdf(
     bio_text: str,
     character_name: str = "Герой книги",
     subtitle: str = "Семейная биография",
     cover_spec: dict | None = None,
+    cover_image_bytes: bytes | None = None,
 ) -> bytes:
     """
     Генерирует PDF-книгу из bio_text.
@@ -251,6 +289,9 @@ def generate_book_pdf(
         subtitle: подзаголовок (запасной)
         cover_spec: словарь от Cover Designer агента с полями
                     title, subtitle, tagline, visual_style
+        cover_image_bytes: AI-сгенерированное изображение обложки (PNG/WebP).
+                           Если задано — full-bleed обложка с тёмным оверлеем
+                           и белым текстом; иначе — текстовая обложка.
 
     Returns:
         bytes: содержимое PDF-файла
@@ -275,14 +316,17 @@ def generate_book_pdf(
         subject="Семейная биография",
     )
 
-    styles = _build_styles()
+    has_image = bool(cover_image_bytes)
+    styles = _build_styles(cover_has_image=has_image)
+    cover_hr_color = styles.pop("_cover_gold")  # цвет разделителей на обложке
     story = []
 
     # ── Обложка (title page) ───────────────────────────────────────────
-    story.append(Spacer(1, 22 * mm))
+    # При наличии изображения: больше пространства сверху, текст ниже
+    story.append(Spacer(1, 30 * mm if has_image else 22 * mm))
     story.append(Paragraph("Глава", styles["cover_label"]))
     story.append(Spacer(1, 6 * mm))
-    story.append(HRFlowable(width="60%", thickness=0.5, color=GOLD, hAlign="CENTER"))
+    story.append(HRFlowable(width="60%", thickness=0.5, color=cover_hr_color, hAlign="CENTER"))
     story.append(Spacer(1, 8 * mm))
     story.append(Paragraph(_clean(book_title), styles["title"]))
     story.append(Spacer(1, 3 * mm))
@@ -291,7 +335,7 @@ def generate_book_pdf(
         story.append(Spacer(1, 3 * mm))
         story.append(Paragraph(_clean(book_tagline), styles["cover_label"]))
     story.append(Spacer(1, 8 * mm))
-    story.append(HRFlowable(width="60%", thickness=0.5, color=GOLD, hAlign="CENTER"))
+    story.append(HRFlowable(width="60%", thickness=0.5, color=cover_hr_color, hAlign="CENTER"))
     story.append(Spacer(1, 18 * mm))
     story.append(Paragraph("glava.family", styles["cover_label"]))
     story.append(PageBreak())
@@ -338,8 +382,15 @@ def generate_book_pdf(
     story.append(Paragraph("Создано с любовью", styles["subtitle"]))
     story.append(Paragraph("glava.family", styles["cover_label"]))
 
+    cover_cb = _make_cover_callback(cover_image_bytes)
+
+    def on_first_page(canvas, doc):
+        cover_cb(canvas, doc)
+        if not has_image:
+            _add_page_border(canvas, doc)
+
     try:
-        doc.build(story, onFirstPage=_add_page_border, onLaterPages=_add_page_border)
+        doc.build(story, onFirstPage=on_first_page, onLaterPages=_add_page_border)
     except Exception as e:
         logger.error("pdf_book: ошибка сборки PDF: %s", e)
         raise

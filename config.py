@@ -83,6 +83,12 @@ OPENAI_BIO_MODEL = os.getenv("OPENAI_BIO_MODEL", "gpt-4o")
 # Anthropic Claude — верстальщик PDF (текст + фото по образцу)
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 
+# Replicate AI — генерация обложки книги
+# Токен: replicate.com → Account → API Tokens
+REPLICATE_API_TOKEN = os.getenv("REPLICATE_API_TOKEN", "")
+# Провайдер изображений: replicate | google_imagen (при появлении GOOGLE_API_KEY)
+IMAGE_PROVIDER = os.getenv("IMAGE_PROVIDER", "replicate").strip().lower()
+
 # Pre-pay: цена за 1 персонажа (в копейках). Тестовый период: 10 руб = 1000. Боевое: 990 руб = 99000
 PRICE_PER_CHARACTER = int(os.getenv("PRICE_PER_CHARACTER", "1000"))
 
