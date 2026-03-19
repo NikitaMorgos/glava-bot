@@ -326,57 +326,59 @@ def reports():
 # ── Авто-тесты бота ──────────────────────────────────────────────
 
 def _parse_pytest_output(raw: str, duration_s: float) -> dict:
-    """Разбирает вывод pytest -v --tb=short в структурированный результат."""
+    """Разбирает вывод pytest -v --tb=short в структурированный результат.
+
+    Ожидаемый формат строки теста (pytest -v):
+        tests/foo.py::test_name PASSED                          [ 50%]
+        tests/foo.py::test_name FAILED                          [ 60%]
+    """
+    import re as _re
+
     lines = raw.splitlines()
     results = []
     current = None
     tb_lines = []
-    collecting_tb = False
+
+    # Паттерн строки с результатом теста
+    test_line_re = _re.compile(
+        r"^(?P<test_id>\S+::test_\S+)\s+(?P<status>PASSED|FAILED|ERROR)\s*"
+    )
 
     for line in lines:
-        # Строка с результатом теста: "tests/foo.py::test_name PASSED [ 50%]"
-        if "PASSED" in line or "FAILED" in line or "ERROR" in line:
-            if current and collecting_tb:
+        m = test_line_re.match(line)
+        if m:
+            # Сохраняем предыдущий
+            if current is not None:
                 current["traceback"] = "\n".join(tb_lines).strip()
                 results.append(current)
                 tb_lines = []
-                collecting_tb = False
-            elif current:
-                results.append(current)
 
-            status = "passed" if "PASSED" in line else "failed"
-            # Вытаскиваем имя теста
-            parts = line.strip().split()
-            test_id = parts[0] if parts else line.strip()
-            # Короткое имя (только функция)
-            short = test_id.split("::")[-1] if "::" in test_id else test_id
+            test_id = m.group("test_id")
+            status_raw = m.group("status")
+            status = "passed" if status_raw == "PASSED" else "failed"
+            short = test_id.split("::")[-1]
             current = {
                 "id": test_id,
                 "name": short,
                 "status": status,
                 "traceback": "",
             }
-            collecting_tb = (status == "failed")
-            tb_lines = []
             continue
 
-        if collecting_tb and current:
-            # Собираем traceback до следующего теста
-            if line.startswith("_") and "FAILED" not in line and len(line) > 10:
-                pass  # разделитель
+        # Собираем traceback для упавшего теста (до следующей строки-теста)
+        if current is not None and current["status"] == "failed":
             tb_lines.append(line)
 
-    if current:
-        if collecting_tb:
-            current["traceback"] = "\n".join(tb_lines).strip()
+    if current is not None:
+        current["traceback"] = "\n".join(tb_lines).strip()
         results.append(current)
 
     passed = sum(1 for r in results if r["status"] == "passed")
     failed = sum(1 for r in results if r["status"] == "failed")
 
-    # Итоговая строка
+    # Итоговая строка вида "17 passed in 2.04s" или "1 failed, 16 passed in 2s"
     summary_line = next(
-        (l for l in reversed(lines) if "passed" in l or "failed" in l or "error" in l),
+        (l for l in reversed(lines) if _re.search(r"\d+ (passed|failed)", l)),
         "",
     )
 
@@ -403,17 +405,22 @@ def bot_tests():
 @role_required("dev", "dasha")
 def bot_tests_run():
     """Запуск pytest, сохранение результата в БД, возврат JSON."""
-    # Путь к корню проекта (два уровня вверх от admin/blueprints/)
     project_root = os.path.abspath(
         os.path.join(os.path.dirname(__file__), "..", "..")
     )
     only_v2 = request.json.get("only_v2", False) if request.is_json else False
     test_path = "tests/test_bot_flows_v2.py" if only_v2 else "tests/"
 
+    # Используем python из того же venv, где запущен Flask
+    python_exe = sys.executable
+
     t_start = time.time()
     try:
         proc = subprocess.run(
-            [sys.executable, "-m", "pytest", test_path, "-v", "--tb=short", "-q", "--no-header"],
+            # -v даёт строки "test_name PASSED/FAILED [XX%]"
+            # --tb=short — короткий traceback при падении
+            # БЕЗ -q — он перебивает -v и убирает имена тестов
+            [python_exe, "-m", "pytest", test_path, "-v", "--tb=short", "--no-header"],
             capture_output=True,
             text=True,
             cwd=project_root,
