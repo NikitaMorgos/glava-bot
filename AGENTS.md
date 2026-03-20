@@ -416,8 +416,11 @@ no_project → draft → payment_pending → paid
 ### Управление текстами бота (для Даши)
 
 Все тексты экранов хранятся в таблице `prompts` (ключ `bot_<screen_key>`).  
-Редактирование: **admin.glava.family/dasha/bot_messages** — 55 ключей, сгруппированных по номерам экранов.  
+Редактирование: **admin.glava.family/dasha/bot_messages** — 56 ключей, сгруппированных по номерам экранов.
 Живая карта флоу: **admin.glava.family/dasha/bot_flow** — все экраны 1.1…15.2 с текстами из БД и ссылками «↗ редактировать».
+
+**Ограничение файлов (E.5 — `bot_file_too_large`):**
+Telegram Bot API не позволяет скачивать файлы > 20 МБ. `handle_audio` и `handle_audio_document` проверяют `file_size` до загрузки. При превышении — бот отвечает сообщением `file_too_large` с советами (записать голосовое в Telegram, сжать до 64 кбит/с, разбить на части). Текст редактируется в панели Даши. Fallback: `prepay/messages.py → FILE_TOO_LARGE_MSG`.
 
 ### Команда `/versions`
 

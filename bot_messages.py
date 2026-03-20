@@ -71,6 +71,7 @@ _FALLBACK_MAP = {
     "refund_submitted": "REFUND_SUBMITTED_MSG",
     "assembly_error": "ASSEMBLY_ERROR_MSG",
     "unsupported_file": "UNSUPPORTED_FILE_MSG",
+    "file_too_large": "FILE_TOO_LARGE_MSG",
 }
 
 _CACHE: dict[str, tuple[str, float]] = {}
