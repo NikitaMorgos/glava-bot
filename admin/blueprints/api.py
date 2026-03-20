@@ -78,7 +78,7 @@ def update_job():
 # ── POST /api/send-book-pdf ───────────────────────────────────────
 # n8n вызывает этот endpoint вместо прямой отправки bio_text как текста.
 # Генерирует PDF-книгу из bio_text и отправляет файл в Telegram.
-# Body: {telegram_id, bio_text, character_name, draft_id?}
+# Body: {telegram_id, bio_text, character_name, draft_id?, cover_spec?, photo_layout?}
 
 @bp.post("/send-book-pdf")
 def send_book_pdf():
@@ -90,6 +90,7 @@ def send_book_pdf():
     character_name = data.get("character_name", "Герой книги")
     draft_id = data.get("draft_id", 0)
     cover_spec = data.get("cover_spec") or {}
+    photo_layout = data.get("photo_layout") or []  # от Photo Editor агента
 
     if not telegram_id:
         return jsonify({"error": "telegram_id required"}), 400
@@ -127,6 +128,46 @@ def send_book_pdf():
     elif not replicate_token:
         logger.info("send_book_pdf: REPLICATE_API_TOKEN не задан, используем текстовую обложку")
 
+    # ── Загрузка фотографий из S3 ──────────────────────────────────────
+    photo_items: list[dict] = []
+    try:
+        import db as _db
+        import storage as _storage
+        user_photos = _db.get_user_photos(int(telegram_id), limit=50)
+        # photo_layout: подписи от Photo Editor (id вида photo_001 или порядковый индекс)
+        if user_photos:
+            caption_map: dict[str, str] = {}
+            for item in (photo_layout or []):
+                pid = str(item.get("id", "") or item.get("photo_id", "") or "")
+                cap = (item.get("caption") or item.get("caption_text") or
+                       (item.get("analysis") or {}).get("description", ""))
+                if pid:
+                    caption_map[pid] = cap
+
+            for idx, ph in enumerate(user_photos):
+                photo_key = f"photo_{idx + 1:03d}"
+                # подпись: по id, по порядку в массиве layout, или пусто
+                caption = caption_map.get(photo_key, "")
+                if not caption and idx < len(photo_layout or []):
+                    alt = photo_layout[idx]
+                    caption = (alt.get("caption") or alt.get("caption_text") or
+                               (alt.get("analysis") or {}).get("description", ""))
+                try:
+                    import tempfile, os as _os
+                    with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tf:
+                        tmp_path = tf.name
+                    _storage.download_file(ph["storage_key"], tmp_path)
+                    with open(tmp_path, "rb") as f:
+                        img_bytes = f.read()
+                    _os.unlink(tmp_path)
+                    photo_items.append({"caption": caption, "image_bytes": img_bytes})
+                except Exception as pe:
+                    logger.warning("send_book_pdf: не удалось загрузить фото %s: %s",
+                                   ph.get("storage_key"), pe)
+        logger.info("send_book_pdf: загружено %d фото для вставки", len(photo_items))
+    except Exception as e:
+        logger.warning("send_book_pdf: ошибка загрузки фото, продолжаем без фото: %s", e)
+
     try:
         from pdf_book import generate_book_pdf
         pdf_bytes = generate_book_pdf(
@@ -134,6 +175,7 @@ def send_book_pdf():
             character_name=character_name,
             cover_spec=cover_spec if cover_spec else None,
             cover_image_bytes=cover_image_bytes,
+            photo_items=photo_items if photo_items else None,
         )
     except Exception as e:
         logger.exception("send_book_pdf: ошибка генерации PDF: %s", e)

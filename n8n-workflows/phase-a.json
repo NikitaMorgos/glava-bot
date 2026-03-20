@@ -617,7 +617,7 @@
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "application/json",
-        "body": "={{ JSON.stringify({ telegram_id: $('Webhook').item.json.body.telegram_id, bio_text: $('Wrap for Producer').item.json.bio_text || $('Extract from Proofreader').first().json.bio_text || '', character_name: $('Webhook').item.json.body.character_name || 'Герой книги', draft_id: $('Webhook').item.json.body.draft_id || 0, cover_spec: $('Extract Cover Designer').first().json.cover_spec || {} }) }}",
+        "body": "={{ JSON.stringify({ telegram_id: $('Webhook').item.json.body.telegram_id, bio_text: $('Wrap for Producer').item.json.bio_text || $('Extract from Proofreader').first().json.bio_text || '', character_name: $('Webhook').item.json.body.character_name || 'Герой книги', draft_id: $('Webhook').item.json.body.draft_id || 0, cover_spec: $('Extract Cover Designer').first().json.cover_spec || {}, photo_layout: $('Extract from Photo Editor').first().json.photo_layout || [] }) }}",
         "options": {
           "timeout": 120000
         }

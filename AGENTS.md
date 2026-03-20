@@ -122,7 +122,8 @@ python scripts/seed_bot_messages_v2.py    # 34 сообщения бота v2 в
 | **БД миграция bot v2** | `scripts/migrate_bot_v2.py` — поля `narrators`, `bot_state`, `revision_count`, `pending_revision`, `photo_type` |
 | **Сид сообщений бота** | `scripts/seed_bot_messages_v2.py` — 34 сообщения всех экранов v2 → `prompts` (ключи `bot_*`) |
 | n8n (AI-пайплайн) | Запуск: `docker run`, данные: `/opt/glava/n8n-data/`, доступ: `https://admin.glava.family/n8n/` |
-| n8n workflow Phase A | `n8n-workflows/phase-a.json` — v12, все 14 агентов |
+| n8n workflow Phase A | `n8n-workflows/phase-a.json` — v12, все 14 агентов; узел **Send Bio PDF** передаёт `photo_layout` в `/api/send-book-pdf` |
+| Патч промпта Ghostwriter (объём глав) | `scripts/patch_ghostwriter_prompt_volume.py` — добавляет в БД требования к длине текста (~6–9k символов суммарно); запускать на сервере после деплоя **один раз** |
 | n8n workflow Phase B | `n8n-workflows/phase-b.json` — Triage B + revision + PDF v2 |
 | Автотесты бота (pre-pay) | `tests/test_bot_flows.py` — TC-01…TC-27 |
 | **Авто-тесты бота v2** | `tests/test_bot_flows_v2.py` — TC-28…TC-44 (нарраторы, интервью, правки, финализация) |
@@ -134,7 +135,7 @@ python scripts/seed_bot_messages_v2.py    # 34 сообщения бота v2 в
 |-------|------|-----------|
 | GET | `/api/prompts/<role>` | Промпт агента из БД (без кеша) |
 | POST | `/api/jobs/update` | Обновить статус джобы пайплайна |
-| POST | `/api/send-book-pdf` | Генерация PDF + отправка `sendDocument` в Telegram; сохраняет версию в `book_versions` |
+| POST | `/api/send-book-pdf` | Генерация PDF + отправка `sendDocument` в Telegram; body: `bio_text`, `cover_spec?`, **`photo_layout?`** (подписи от Photo Editor); фото загружаются из S3 по `telegram_id` (все фото пользователя, подписи — по `photo_001`… или по порядку). Сохраняет версию в `book_versions` |
 | GET | `/api/book-context/<telegram_id>` | Последняя версия книги для Phase B |
 | POST | `/api/orchestrate/phase-b-revision` | Запуск Phase B revision через оркестратор |
 | POST | `/api/agents/historian` | Вызов Историка через OpenAI (используется n8n-нодой) |
