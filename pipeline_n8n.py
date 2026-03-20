@@ -142,12 +142,41 @@ def trigger_phase_a_background(
     draft_id: int = 0,
     username: str = "",
 ) -> None:
-    """Запускает trigger_phase_a в фоновом потоке (не блокирует бота)."""
+    """Запускает trigger_phase_a в фоновом потоке (не блокирует бота).
+
+    Если transcript пустой, ждёт до 10 минут пока фоновая транскрипция
+    не сохранит результаты в БД, затем собирает итоговый транскрипт.
+    """
+    import time
 
     def _run():
+        import db as _db
+        current_transcript = transcript.strip() if transcript else ""
+
+        if not current_transcript:
+            # Ждём завершения фоновой транскрипции (polling, макс 10 мин)
+            logger.info(
+                "n8n Phase A: транскрипт пустой, ждём БД (telegram_id=%s)...", telegram_id
+            )
+            for attempt in range(60):  # 60 × 10с = 10 мин
+                time.sleep(10)
+                current_transcript = _db.get_user_transcripts(telegram_id)
+                if current_transcript and current_transcript.strip():
+                    logger.info(
+                        "n8n Phase A: транскрипт получен (попытка %d, %d chars)",
+                        attempt + 1, len(current_transcript),
+                    )
+                    break
+            else:
+                logger.warning(
+                    "n8n Phase A: транскрипт по-прежнему пустой после 10 мин "
+                    "(telegram_id=%s) — запускаем без транскрипта",
+                    telegram_id,
+                )
+
         trigger_phase_a(
             telegram_id=telegram_id,
-            transcript=transcript,
+            transcript=current_transcript,
             character_name=character_name,
             draft_id=draft_id,
             username=username,

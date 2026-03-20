@@ -200,6 +200,30 @@ def get_user_voice_messages(telegram_id: int, limit: int = 5) -> list[dict]:
             return [dict(row) for row in cur.fetchall()]
 
 
+def get_user_transcripts(telegram_id: int) -> str:
+    """
+    Собирает все готовые транскрипты голосовых для пользователя (по telegram_id),
+    объединяет в одну строку. Используется перед запуском Phase A.
+    """
+    with get_connection() as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(
+                """
+                SELECT v.transcript, v.created_at
+                FROM voice_messages v
+                JOIN users u ON v.user_id = u.id
+                WHERE u.telegram_id = %s
+                  AND v.transcript IS NOT NULL
+                  AND v.transcript <> ''
+                ORDER BY v.created_at ASC
+                """,
+                (telegram_id,),
+            )
+            rows = cur.fetchall()
+    parts = [row["transcript"].strip() for row in rows if row["transcript"]]
+    return "\n\n".join(parts)
+
+
 def get_user_all_data(telegram_id: int) -> tuple[dict, list[dict], list[dict]]:
     """
     Возвращает все данные клиента для экспорта.

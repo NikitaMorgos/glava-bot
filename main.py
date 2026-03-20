@@ -1212,10 +1212,11 @@ async def _handle_v2_callback(query, data: str, user, context) -> bool:
         # Запускаем первичный пайплайн (транскрипция → Интервьюер)
         draft = db_draft.get_draft_by_telegram_id(user.id)
         char_name = _get_user_character_name(user.id)
+        combined_transcript = db.get_user_transcripts(user.id)
         from pipeline_n8n import trigger_phase_a_background
         trigger_phase_a_background(
             telegram_id=user.id,
-            transcript="",  # Пайплайн сам заберёт из S3
+            transcript=combined_transcript,
             character_name=char_name,
             draft_id=draft_id,
             username=user.username or "",
@@ -1250,10 +1251,11 @@ async def _handle_v2_callback(query, data: str, user, context) -> bool:
         await query.edit_message_text(bot_messages.get_message("assembling"))
         # Запускаем полный Phase A
         char_name = _get_user_character_name(user.id)
+        combined_transcript = db.get_user_transcripts(user.id)
         from pipeline_n8n import trigger_phase_a_background
         trigger_phase_a_background(
             telegram_id=user.id,
-            transcript="",
+            transcript=combined_transcript,
             character_name=char_name,
             draft_id=draft_id,
             username=user.username or "",
