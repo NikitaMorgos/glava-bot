@@ -38,8 +38,8 @@ MAX_ITER = {
 OPENAI_MODELS = {
     "fact_checker":    "gpt-4o-mini",
     "ghostwriter":     "gpt-4o",
-    "literary_editor": "gpt-4o-mini",
-    "proofreader":     "gpt-4o-mini",
+    "literary_editor": "gpt-4o",
+    "proofreader":     "gpt-4o",
     "layout_designer": "gpt-4o-mini",
     "layout_qa":       "gpt-4o-mini",
 }
@@ -56,8 +56,8 @@ OPENAI_TEMPS = {
 OPENAI_MAX_TOKENS = {
     "fact_checker":    4000,
     "ghostwriter":     12000,
-    "literary_editor": 8000,
-    "proofreader":     8000,
+    "literary_editor": 12000,
+    "proofreader":     12000,
     "layout_designer": 6000,
     "layout_qa":       3000,
 }

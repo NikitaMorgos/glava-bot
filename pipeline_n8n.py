@@ -37,12 +37,20 @@ def trigger_phase_a(
         "ADMIN_API_BASE_URL", "http://127.0.0.1:5001/api"
     )
 
+    # Добавляем количество фото — нужно Photo Editor для генерации подписей
+    try:
+        import db as _db
+        photo_count = len(_db.get_user_photos(telegram_id, limit=100))
+    except Exception:
+        photo_count = 0
+
     payload = {
         "telegram_id": telegram_id,
         "transcript": transcript,
         "character_name": character_name,
         "draft_id": draft_id,
         "username": username,
+        "photo_count": photo_count,
         "bot_token": bot_token,
         "admin_api_url": admin_api_url,
     }
