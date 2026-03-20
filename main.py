@@ -44,6 +44,16 @@ logger = logging.getLogger(__name__)
 
 AUDIO_EXTENSIONS = {".ogg", ".mp3", ".m4a", ".wav", ".opus", ".oga"}
 EMAIL_RE = re.compile(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
+# Telegram Bot API ограничивает скачивание файлов до 20 МБ
+_MAX_TG_FILE_BYTES = 20 * 1024 * 1024  # 20 МБ
+_MSG_FILE_TOO_LARGE = (
+    "Файл слишком большой — Telegram позволяет боту скачивать не более 20 МБ.\n\n"
+    "Что можно сделать:\n"
+    "• Записать голосовое сообщение прямо в Telegram (кнопка 🎤) — без ограничений по объёму\n"
+    "• Сжать аудио до битрейта 64 кбит/с: 30 минут речи = ~14 МБ\n"
+    "• Разбить файл на части по 15–20 минут\n\n"
+    "Программы для сжатия: Audacity (бесплатно) или онлайн-сервис mp3smaller.com"
+)
 
 
 def _format_characters(characters: list[dict]) -> str:
@@ -718,13 +728,17 @@ async def handle_audio(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     if not _user_has_paid(update.effective_user.id if update.effective_user else 0):
         await handle_blocked_media(update, context)
         return
-    ext = Path(update.message.audio.file_name or "").suffix or ".mp3"
+    audio = update.message.audio
+    if audio.file_size and audio.file_size > _MAX_TG_FILE_BYTES:
+        await update.message.reply_text(_MSG_FILE_TOO_LARGE)
+        return
+    ext = Path(audio.file_name or "").suffix or ".mp3"
     if ext.lower() not in AUDIO_EXTENSIONS:
         ext = ".mp3"
     await _save_audio_file(
         update, context,
-        update.message.audio.file_id, ext,
-        update.message.audio.duration,
+        audio.file_id, ext,
+        audio.duration,
     )
 
 
@@ -732,12 +746,16 @@ async def handle_audio_document(update: Update, context: ContextTypes.DEFAULT_TY
     if not _user_has_paid(update.effective_user.id if update.effective_user else 0):
         await handle_blocked_media(update, context)
         return
-    name = (update.message.document.file_name or "").lower()
+    doc = update.message.document
+    if doc.file_size and doc.file_size > _MAX_TG_FILE_BYTES:
+        await update.message.reply_text(_MSG_FILE_TOO_LARGE)
+        return
+    name = (doc.file_name or "").lower()
     ext = Path(name).suffix
     if ext not in AUDIO_EXTENSIONS:
         await update.message.reply_text("Принимаю только аудио: .ogg, .mp3, .m4a, .wav, .opus")
         return
-    await _save_audio_file(update, context, update.message.document.file_id, ext, None)
+    await _save_audio_file(update, context, doc.file_id, ext, None)
 
 
 async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
