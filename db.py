@@ -141,7 +141,7 @@ def set_web_password(user_id: int, password_hash: str) -> None:
 
 def get_user_photos(telegram_id: int, limit: int = 15) -> list[dict]:
     """
-    Возвращает последние N фото с подписями (только те, у которых есть подпись).
+    Возвращает последние N фото пользователя.
     Результат — список словарей: id, storage_key, caption, created_at
     """
     with get_connection() as conn:
@@ -151,7 +151,7 @@ def get_user_photos(telegram_id: int, limit: int = 15) -> list[dict]:
                 SELECT p.id, p.storage_key, p.caption, p.created_at
                 FROM photos p
                 JOIN users u ON p.user_id = u.id
-                WHERE u.telegram_id = %s AND p.caption IS NOT NULL
+                WHERE u.telegram_id = %s
                 ORDER BY p.created_at DESC
                 LIMIT %s
                 """,

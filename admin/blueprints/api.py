@@ -133,6 +133,7 @@ def send_book_pdf():
     try:
         import db as _db
         import storage as _storage
+        import psycopg2 as _psycopg2
         user_photos = _db.get_user_photos(int(telegram_id), limit=50)
         # photo_layout: подписи от Photo Editor (id вида photo_001 или порядковый индекс)
         if user_photos:
@@ -152,6 +153,17 @@ def send_book_pdf():
                     alt = photo_layout[idx]
                     caption = (alt.get("caption") or alt.get("caption_text") or
                                (alt.get("analysis") or {}).get("description", ""))
+                # Сохраняем подпись обратно в БД, если её ещё нет
+                if caption and not ph.get("caption"):
+                    try:
+                        with _db.get_connection() as _conn:
+                            with _conn.cursor() as _cur:
+                                _cur.execute(
+                                    "UPDATE photos SET caption=%s WHERE id=%s",
+                                    (caption, ph["id"])
+                                )
+                    except Exception:
+                        pass
                 try:
                     import tempfile, os as _os
                     with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tf:
