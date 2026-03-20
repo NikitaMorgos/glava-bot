@@ -158,7 +158,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const raw = $input.first().json.choices[0].message.content; let photo_layout = []; const t = raw.trim(); const s = t.indexOf('{'); const e = t.lastIndexOf('}'); if (s !== -1 && e > s) { try { const p = JSON.parse(t.slice(s, e + 1)); photo_layout = p.photos || []; } catch(err) {} } return [{ json: { photo_layout } }];"
+        "jsCode": "const raw = $input.first().json.choices[0].message.content; let photo_layout = []; const t = raw.trim(); const s = t.indexOf('{'); const e = t.lastIndexOf('}'); if (s !== -1 && e > s) { try { const p = JSON.parse(t.slice(s, e + 1)); photo_layout = p.photos || p.processed_photos || p.photo_layout || []; } catch(err) {} } return [{ json: { photo_layout } }];"
       },
       "id": "e2c2e4a8-b17e-4b3f-9cbf-7af925cbe9f7",
       "name": "Extract from Photo Editor",

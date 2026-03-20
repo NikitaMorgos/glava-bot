@@ -77,6 +77,18 @@ def get_or_create_draft(telegram_id: int, username: str | None = None) -> dict |
     return None
 
 
+def get_draft_by_id(draft_id: int) -> dict | None:
+    """Возвращает DraftOrder по его id."""
+    with get_connection() as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(
+                f"SELECT {_DRAFT_COLS} FROM draft_orders WHERE id = %s",
+                (draft_id,),
+            )
+            row = cur.fetchone()
+            return _hydrate(row) if row else None
+
+
 def get_draft_by_telegram_id(telegram_id: int) -> dict | None:
     """Возвращает активный DraftOrder по telegram_id."""
     import db

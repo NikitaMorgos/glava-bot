@@ -133,8 +133,17 @@ def send_book_pdf():
     try:
         import db as _db
         import storage as _storage
-        import psycopg2 as _psycopg2
-        user_photos = _db.get_user_photos(int(telegram_id), limit=50)
+        import db_draft as _db_draft
+        # Берём только фото, загруженные после создания драфта (фильтрует фото из других сессий)
+        since_dt = None
+        if draft_id:
+            try:
+                dr = _db_draft.get_draft_by_id(int(draft_id))
+                if dr and dr.get("created_at"):
+                    since_dt = dr["created_at"]
+            except Exception:
+                pass
+        user_photos = _db.get_user_photos(int(telegram_id), limit=50, since=since_dt)
         # photo_layout: подписи от Photo Editor (id вида photo_001 или порядковый индекс)
         if user_photos:
             caption_map: dict[str, str] = {}

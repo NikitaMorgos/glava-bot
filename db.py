@@ -139,24 +139,38 @@ def set_web_password(user_id: int, password_hash: str) -> None:
             )
 
 
-def get_user_photos(telegram_id: int, limit: int = 15) -> list[dict]:
+def get_user_photos(telegram_id: int, limit: int = 15, since=None) -> list[dict]:
     """
     Возвращает последние N фото пользователя.
+    since: если задан datetime — возвращает только фото, загруженные после этой даты.
     Результат — список словарей: id, storage_key, caption, created_at
     """
     with get_connection() as conn:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute(
-                """
-                SELECT p.id, p.storage_key, p.caption, p.created_at
-                FROM photos p
-                JOIN users u ON p.user_id = u.id
-                WHERE u.telegram_id = %s
-                ORDER BY p.created_at DESC
-                LIMIT %s
-                """,
-                (telegram_id, limit),
-            )
+            if since is not None:
+                cur.execute(
+                    """
+                    SELECT p.id, p.storage_key, p.caption, p.created_at
+                    FROM photos p
+                    JOIN users u ON p.user_id = u.id
+                    WHERE u.telegram_id = %s AND p.created_at >= %s
+                    ORDER BY p.created_at ASC
+                    LIMIT %s
+                    """,
+                    (telegram_id, since, limit),
+                )
+            else:
+                cur.execute(
+                    """
+                    SELECT p.id, p.storage_key, p.caption, p.created_at
+                    FROM photos p
+                    JOIN users u ON p.user_id = u.id
+                    WHERE u.telegram_id = %s
+                    ORDER BY p.created_at DESC
+                    LIMIT %s
+                    """,
+                    (telegram_id, limit),
+                )
             return [dict(row) for row in cur.fetchall()]
 
 
