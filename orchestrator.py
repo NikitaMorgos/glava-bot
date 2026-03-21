@@ -54,10 +54,10 @@ OPENAI_TEMPS = {
 }
 
 OPENAI_MAX_TOKENS = {
-    "fact_checker":    4000,
-    "ghostwriter":     12000,
-    "literary_editor": 12000,
-    "proofreader":     12000,
+    "fact_checker":    16000,
+    "ghostwriter":     16000,
+    "literary_editor": 16000,
+    "proofreader":     16000,
     "layout_designer": 6000,
     "layout_qa":       3000,
 }
