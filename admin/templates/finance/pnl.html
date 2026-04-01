@@ -15,7 +15,8 @@
         {% endfor %}
       </select>
     </form>
-    <a href="/finance/expenses" class="text-sm text-gray-500 hover:text-gray-700">← Расходы</a>
+    <a href="/finance/income" class="text-sm text-emerald-600 hover:text-emerald-800">💵 Доходы</a>
+    <a href="/finance/expenses" class="text-sm text-gray-500 hover:text-gray-700">💰 Расходы</a>
   </div>
 </div>
 
@@ -36,16 +37,66 @@
       </thead>
       <tbody class="divide-y divide-gray-100">
 
-        <!-- Блок расходов -->
+        <!-- Выручка -->
+        <tr class="bg-emerald-50">
+          <td class="px-5 py-2 font-semibold text-emerald-800 text-xs uppercase tracking-wide"
+              colspan="{{ data.months|length + 2 }}">
+            Выручка (поступления)
+          </td>
+        </tr>
+        {% if data.revenue_rows %}
+        {% for row in data.revenue_rows %}
+        <tr class="hover:bg-gray-50 transition-colors">
+          <td class="px-5 py-3 text-gray-700 pl-8">{{ row.label }}</td>
+          {% for val in row.totals %}
+          <td class="px-4 py-3 text-right font-mono text-gray-800">
+            {% if val > 0 %}
+              {{ "{:,.0f}".format(val).replace(",", " ") }}
+            {% else %}
+              <span class="text-gray-300">—</span>
+            {% endif %}
+          </td>
+          {% endfor %}
+          <td class="px-5 py-3 text-right font-mono font-semibold text-emerald-800">
+            {{ "{:,.0f}".format(row.totals | sum).replace(",", " ") }}
+          </td>
+        </tr>
+        {% endfor %}
+        {% else %}
+        <tr>
+          <td class="px-5 py-3 text-gray-400 pl-8 text-sm italic" colspan="{{ data.months|length + 2 }}">
+            Нет поступлений — <a href="/finance/income" class="text-emerald-600 hover:underline">добавить в «Доходы»</a>
+          </td>
+        </tr>
+        {% endif %}
+
+        <tr class="bg-emerald-50 border-t-2 border-emerald-200">
+          <td class="px-5 py-3 font-bold text-emerald-800">Итого выручки</td>
+          {% for val in data.revenue_totals %}
+          <td class="px-4 py-3 text-right font-mono font-bold text-emerald-800">
+            {% if val > 0 %}
+              {{ "{:,.0f}".format(val).replace(",", " ") }}
+            {% else %}
+              <span class="text-gray-300 font-normal">—</span>
+            {% endif %}
+          </td>
+          {% endfor %}
+          <td class="px-5 py-3 text-right font-mono font-bold text-emerald-900">
+            {{ "{:,.0f}".format(data.revenue_totals | sum).replace(",", " ") }}
+          </td>
+        </tr>
+
+        <!-- Расходы -->
         <tr class="bg-red-50">
           <td class="px-5 py-2 font-semibold text-red-700 text-xs uppercase tracking-wide"
               colspan="{{ data.months|length + 2 }}">
             Расходы
           </td>
         </tr>
+        {% if data.rows %}
         {% for row in data.rows %}
         <tr class="hover:bg-gray-50 transition-colors">
-          <td class="px-5 py-3 text-gray-700">{{ row.category }}</td>
+          <td class="px-5 py-3 text-gray-700 pl-8">{{ row.category }}</td>
           {% for val in row.totals %}
           <td class="px-4 py-3 text-right font-mono text-gray-800">
             {% if val > 0 %}
@@ -60,13 +111,23 @@
           </td>
         </tr>
         {% endfor %}
+        {% else %}
+        <tr>
+          <td class="px-5 py-3 text-gray-400 pl-8 text-sm italic" colspan="{{ data.months|length + 2 }}">
+            Нет расходов за период
+          </td>
+        </tr>
+        {% endif %}
 
-        <!-- Итого расходов -->
         <tr class="bg-red-50 border-t-2 border-red-200">
           <td class="px-5 py-3 font-bold text-red-700">Итого расходов</td>
           {% for val in data.expense_totals %}
           <td class="px-4 py-3 text-right font-mono font-bold text-red-700">
-            {{ "{:,.0f}".format(val).replace(",", " ") }}
+            {% if val > 0 %}
+              {{ "{:,.0f}".format(val).replace(",", " ") }}
+            {% else %}
+              <span class="text-gray-300 font-normal">—</span>
+            {% endif %}
           </td>
           {% endfor %}
           <td class="px-5 py-3 text-right font-mono font-bold text-red-700">
@@ -74,21 +135,9 @@
           </td>
         </tr>
 
-        <!-- Выручка -->
-        <tr class="bg-emerald-50 border-t-2 border-emerald-200">
-          <td class="px-5 py-3 font-bold text-emerald-700 flex items-center gap-2">
-            Выручка
-            <span class="text-xs font-normal text-gray-400">(подтянется позже)</span>
-          </td>
-          {% for val in data.revenue %}
-          <td class="px-4 py-3 text-right font-mono text-gray-400">—</td>
-          {% endfor %}
-          <td class="px-5 py-3 text-right font-mono text-gray-400">—</td>
-        </tr>
-
         <!-- Прибыль -->
         <tr class="bg-gray-800 border-t-2 border-gray-600">
-          <td class="px-5 py-3 font-bold text-white">Прибыль / Убыток</td>
+          <td class="px-5 py-3 font-bold text-white">Прибыль / Убыток (выручка − расходы)</td>
           {% for val in data.profit %}
           <td class="px-4 py-3 text-right font-mono font-bold
             {% if val >= 0 %}text-emerald-400{% else %}text-red-400{% endif %}">
@@ -107,16 +156,17 @@
 </div>
 
 <p class="mt-4 text-xs text-gray-400">
-  Суммы в рублях. Выручка будет подтягиваться из заказов автоматически — в следующей версии.
+  Суммы в рублях. Выручка вводится вручную в разделе «Доходы» (поступления с ЮKassa и др.).
 </p>
 
 {% else %}
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 text-center py-20">
   <div class="text-5xl mb-4">📭</div>
-  <div class="text-gray-400 text-sm">Расходов пока нет — нечего показывать в P&L</div>
-  <a href="/finance/expenses" class="mt-4 inline-block text-blue-600 hover:text-blue-800 text-sm">
-    Добавить первый расход →
-  </a>
+  <div class="text-gray-400 text-sm">Нет данных за выбранный период — добавьте расходы или поступления</div>
+  <div class="mt-4 flex justify-center gap-3">
+    <a href="/finance/income" class="text-emerald-600 hover:text-emerald-800 text-sm">💵 Доходы</a>
+    <a href="/finance/expenses" class="text-blue-600 hover:text-blue-800 text-sm">💰 Расходы</a>
+  </div>
 </div>
 {% endif %}
 {% endblock %}

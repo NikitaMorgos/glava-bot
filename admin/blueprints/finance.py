@@ -1,5 +1,5 @@
 """
-Blueprint «Финансы» — учёт расходов и P&L.
+Blueprint «Финансы» — расходы, доходы (ЮKassa и др.), P&L.
 Доступен всем авторизованным ролям: dev, dasha, lena.
 """
 from decimal import Decimal, InvalidOperation
@@ -50,6 +50,104 @@ def expenses():
         total=total,
         selected_month=month,
     )
+
+
+# ── Доходы (поступления, ЮKassa) ───────────────────────────────────
+
+@bp.route("/income")
+def income():
+    guard = _require_auth()
+    if guard:
+        return guard
+
+    month = request.args.get("month", "")
+    rows = dbf.get_income(month or None)
+    total = sum(r["amount"] for r in rows)
+
+    return render_template(
+        "finance/income.html",
+        rows=rows,
+        total=total,
+        selected_month=month,
+    )
+
+
+@bp.route("/income/add", methods=["POST"])
+def income_add():
+    guard = _require_auth()
+    if guard:
+        return guard
+
+    date = request.form.get("date", "").strip()
+    amount_str = request.form.get("amount", "").strip().replace(",", ".")
+    title = request.form.get("title", "").strip()
+    source = request.form.get("source", "ЮKassa").strip() or "ЮKassa"
+    comment = request.form.get("comment", "").strip()
+
+    try:
+        amount = Decimal(amount_str)
+        if amount <= 0:
+            raise ValueError
+    except (InvalidOperation, ValueError):
+        flash("Некорректная сумма", "error")
+        return redirect(url_for("finance.income"))
+
+    if not date:
+        flash("Укажите дату", "error")
+        return redirect(url_for("finance.income"))
+
+    dbf.add_income(date, amount, title, source, comment, session.get("username", ""))
+    flash("Поступление добавлено", "success")
+    month = date[:7]
+    return redirect(url_for("finance.income", month=month))
+
+
+@bp.route("/income/<int:income_id>/edit", methods=["GET", "POST"])
+def income_edit(income_id: int):
+    guard = _require_auth()
+    if guard:
+        return guard
+
+    row = dbf.get_income_row(income_id)
+    if not row:
+        flash("Запись не найдена", "error")
+        return redirect(url_for("finance.income"))
+
+    if request.method == "POST":
+        date = request.form.get("date", "").strip()
+        amount_str = request.form.get("amount", "").strip().replace(",", ".")
+        title = request.form.get("title", "").strip()
+        source = request.form.get("source", "ЮKassa").strip() or "ЮKassa"
+        comment = request.form.get("comment", "").strip()
+
+        try:
+            amount = Decimal(amount_str)
+            if amount <= 0:
+                raise ValueError
+        except (InvalidOperation, ValueError):
+            flash("Некорректная сумма", "error")
+            return redirect(url_for("finance.income_edit", income_id=income_id))
+
+        if not date:
+            flash("Укажите дату", "error")
+            return redirect(url_for("finance.income_edit", income_id=income_id))
+
+        dbf.update_income(income_id, date, amount, title, source, comment)
+        flash("Запись обновлена", "success")
+        month = date[:7]
+        return redirect(url_for("finance.income", month=month))
+
+    return render_template("finance/income_edit.html", income=row)
+
+
+@bp.route("/income/<int:income_id>/delete", methods=["POST"])
+def income_delete(income_id: int):
+    guard = _require_auth()
+    if guard:
+        return guard
+    dbf.delete_income(income_id)
+    flash("Запись удалена", "success")
+    return redirect(url_for("finance.income"))
 
 
 @bp.route("/expenses/add", methods=["POST"])

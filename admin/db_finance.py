@@ -158,34 +158,104 @@ def delete_expense(expense_id: int) -> None:
         cur.execute("DELETE FROM expenses WHERE id = %s", (expense_id,))
 
 
+# ── Доходы (поступления, в т.ч. ЮKassa) ─────────────────────────────
+
+def get_income(month: str | None = None) -> list[dict]:
+    """Поступления с полями date, amount, title, source, comment, created_by."""
+    with _conn() as conn:
+        cur = conn.cursor()
+        if month:
+            cur.execute("""
+                SELECT id, date, amount, title, source, comment, created_at, created_by
+                FROM finance_income
+                WHERE TO_CHAR(date, 'YYYY-MM') = %s
+                ORDER BY date DESC, id DESC
+            """, (month,))
+        else:
+            cur.execute("""
+                SELECT id, date, amount, title, source, comment, created_at, created_by
+                FROM finance_income
+                ORDER BY date DESC, id DESC
+                LIMIT 500
+            """)
+        return [dict(r) for r in cur.fetchall()]
+
+
+def get_income_row(income_id: int) -> dict | None:
+    with _conn() as conn:
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM finance_income WHERE id = %s", (income_id,))
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
+def add_income(
+    date: str,
+    amount: Decimal,
+    title: str,
+    source: str,
+    comment: str,
+    created_by: str,
+) -> None:
+    with _conn() as conn:
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO finance_income (date, amount, title, source, comment, created_by)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, (date, amount, title or None, source.strip() or "ЮKassa", comment or None, created_by))
+
+
+def update_income(
+    income_id: int,
+    date: str,
+    amount: Decimal,
+    title: str,
+    source: str,
+    comment: str,
+) -> None:
+    with _conn() as conn:
+        cur = conn.cursor()
+        cur.execute("""
+            UPDATE finance_income
+            SET date=%s, amount=%s, title=%s, source=%s, comment=%s
+            WHERE id=%s
+        """, (date, amount, title or None, source.strip() or "ЮKassa", comment or None, income_id))
+
+
+def delete_income(income_id: int) -> None:
+    with _conn() as conn:
+        cur = conn.cursor()
+        cur.execute("DELETE FROM finance_income WHERE id = %s", (income_id,))
+
+
 # ── P&L ────────────────────────────────────────────────────────────
 
 def get_pnl(months: int = 6) -> dict:
     """
-    Возвращает P&L за последние N месяцев.
-    Структура:
-      {
-        "months": ["2026-01", "2026-02", ...],
-        "rows": [{"category": "...", "totals": [100, 200, ...]}, ...],
-        "expense_totals": [300, 400, ...],   # итого расходов по месяцу
-        "revenue": [0, 0, ...],              # заглушка (будет из заказов)
-        "profit": [-300, -400, ...],
-      }
+    P&L за последние N календарных месяцев, встречающихся в расходах или доходах.
     """
     with _conn() as conn:
         cur = conn.cursor()
         cur.execute("""
-            SELECT DISTINCT TO_CHAR(date, 'YYYY-MM') AS month
-            FROM expenses
-            ORDER BY month DESC
+            SELECT m FROM (
+                SELECT DISTINCT TO_CHAR(date, 'YYYY-MM') AS m FROM expenses
+                UNION
+                SELECT DISTINCT TO_CHAR(date, 'YYYY-MM') AS m FROM finance_income
+            ) u
+            ORDER BY m DESC
             LIMIT %s
         """, (months,))
-        month_list = [r["month"] for r in cur.fetchall()]
-        month_list = list(reversed(month_list))
+        month_list = list(reversed([r["m"] for r in cur.fetchall()]))
 
         if not month_list:
-            return {"months": [], "rows": [], "expense_totals": [],
-                    "revenue": [], "profit": []}
+            return {
+                "months": [],
+                "rows": [],
+                "expense_totals": [],
+                "revenue_rows": [],
+                "revenue_totals": [],
+                "profit": [],
+            }
 
         cur.execute("""
             SELECT c.name AS category,
@@ -197,11 +267,22 @@ def get_pnl(months: int = 6) -> dict:
             GROUP BY c.name, month
             ORDER BY c.name, month
         """, (month_list,))
-        raw = cur.fetchall()
+        raw_exp = cur.fetchall()
 
-    # Pivot
+        cur.execute("""
+            SELECT COALESCE(NULLIF(TRIM(title), ''), 'Поступление') AS label,
+                   TO_CHAR(date, 'YYYY-MM') AS month,
+                   SUM(amount) AS total
+            FROM finance_income
+            WHERE TO_CHAR(date, 'YYYY-MM') = ANY(%s)
+            GROUP BY COALESCE(NULLIF(TRIM(title), ''), 'Поступление'),
+                     TO_CHAR(date, 'YYYY-MM')
+            ORDER BY label, month
+        """, (month_list,))
+        raw_rev = cur.fetchall()
+
     categories: dict[str, dict[str, Decimal]] = {}
-    for r in raw:
+    for r in raw_exp:
         cat = r["category"]
         if cat not in categories:
             categories[cat] = {m: Decimal(0) for m in month_list}
@@ -216,13 +297,31 @@ def get_pnl(months: int = 6) -> dict:
         sum(row["totals"][i] for row in rows)
         for i in range(len(month_list))
     ]
-    revenue = [0.0] * len(month_list)
-    profit = [revenue[i] - expense_totals[i] for i in range(len(month_list))]
+
+    rev_labels: dict[str, dict[str, Decimal]] = {}
+    for r in raw_rev:
+        lab = r["label"]
+        if lab not in rev_labels:
+            rev_labels[lab] = {m: Decimal(0) for m in month_list}
+        rev_labels[lab][r["month"]] = r["total"]
+
+    revenue_rows = [
+        {"label": lab, "totals": [float(rev_labels[lab].get(m, 0)) for m in month_list]}
+        for lab in sorted(rev_labels)
+    ]
+
+    revenue_totals = [
+        sum(row["totals"][i] for row in revenue_rows)
+        for i in range(len(month_list))
+    ]
+
+    profit = [revenue_totals[i] - expense_totals[i] for i in range(len(month_list))]
 
     return {
         "months": month_list,
         "rows": rows,
         "expense_totals": expense_totals,
-        "revenue": revenue,
+        "revenue_rows": revenue_rows,
+        "revenue_totals": revenue_totals,
         "profit": profit,
     }

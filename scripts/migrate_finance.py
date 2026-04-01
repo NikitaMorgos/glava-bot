@@ -63,6 +63,17 @@ BEGIN
         ALTER TABLE expenses ADD COLUMN title TEXT;
     END IF;
 END $$;
+
+CREATE TABLE IF NOT EXISTS finance_income (
+    id            SERIAL PRIMARY KEY,
+    date          DATE          NOT NULL,
+    amount        NUMERIC(12,2) NOT NULL,
+    title         TEXT,
+    source        TEXT          NOT NULL DEFAULT 'ЮKassa',
+    comment       TEXT,
+    created_at    TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
+    created_by    TEXT
+);
 """
 
 SEED_CATEGORIES = [
@@ -88,8 +99,18 @@ try:
                 INSERT INTO expense_initiators (name)
                 VALUES (%s) ON CONFLICT (name) DO NOTHING
             """, (name,))
+        cur.execute("""
+            INSERT INTO finance_income (date, amount, title, source, created_by)
+            SELECT '2026-03-15'::date, 1000.00, 'тестовая выручка', 'ЮKassa', 'migrate'
+            WHERE NOT EXISTS (
+                SELECT 1 FROM finance_income
+                WHERE TO_CHAR(date, 'YYYY-MM') = '2026-03'
+                  AND COALESCE(title, '') = 'тестовая выручка'
+                  AND source = 'ЮKassa'
+            )
+        """)
     conn.commit()
-    print("✅ Таблицы expense_categories, expense_initiators, expenses созданы.")
+    print("✅ Таблицы expense_categories, expense_initiators, expenses, finance_income созданы.")
     print("✅ Базовые категории и инициаторы добавлены.")
 finally:
     conn.close()

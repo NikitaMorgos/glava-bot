@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}Доходы — GLAVA Finance{% endblock %}
+
+{% block content %}
+
+<div class="flex items-center justify-between mb-4">
+  <h1 class="text-xl font-bold text-gray-800">💵 Доходы</h1>
+  <div class="flex items-center gap-3">
+    <form method="get" class="flex items-center gap-2">
+      <label class="text-sm text-gray-600">Месяц:</label>
+      <input type="month" name="month" value="{{ selected_month }}"
+             class="border rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+      <button type="submit"
+              class="px-3 py-1.5 bg-emerald-600 text-white text-sm rounded-lg hover:bg-emerald-700">
+        Показать
+      </button>
+      {% if selected_month %}
+      <a href="/finance/income" class="text-sm text-gray-500 hover:text-gray-700">✕ Сбросить</a>
+      {% endif %}
+    </form>
+    <a href="/finance/expenses"
+       class="px-3 py-1.5 bg-gray-200 text-gray-800 text-sm rounded-lg hover:bg-gray-300">
+      💰 Расходы
+    </a>
+    <a href="/finance/pnl"
+       class="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">
+      📊 P&L
+    </a>
+  </div>
+</div>
+
+<p class="text-sm text-gray-600 mb-4">
+  Поступления на расчётный счёт (в т.ч. через <strong>ЮKassa</strong>). Суммы попадают в выручку в отчёте P&L.
+</p>
+
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-5">
+  <div class="text-sm font-semibold text-gray-700 mb-3">Добавить поступление</div>
+  <form method="post" action="/finance/income/add">
+    <div class="flex flex-wrap gap-2 items-end">
+      <div class="w-32">
+        <label class="block text-xs text-gray-500 mb-1">Дата *</label>
+        <input type="date" name="date" required
+               value="{{ selected_month + '-01' if selected_month else '' }}"
+               class="w-full border rounded-lg px-2 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+      </div>
+      <div class="w-28">
+        <label class="block text-xs text-gray-500 mb-1">Сумма, ₽ *</label>
+        <input type="number" name="amount" required min="0.01" step="0.01" placeholder="0.00"
+               class="w-full border rounded-lg px-2 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+      </div>
+      <div class="w-44">
+        <label class="block text-xs text-gray-500 mb-1">Название</label>
+        <input type="text" name="title" placeholder="напр. тестовая выручка"
+               class="w-full border rounded-lg px-2 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+      </div>
+      <div class="w-32">
+        <label class="block text-xs text-gray-500 mb-1">Источник</label>
+        <input type="text" name="source" value="ЮKassa"
+               class="w-full border rounded-lg px-2 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+      </div>
+      <div class="flex-1 min-w-36">
+        <label class="block text-xs text-gray-500 mb-1">Комментарий</label>
+        <input type="text" name="comment" placeholder="необязательно"
+               class="w-full border rounded-lg px-2 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+      </div>
+      <div>
+        <button type="submit"
+                class="px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 whitespace-nowrap">
+          + Добавить
+        </button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+  {% if rows %}
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="bg-gray-50 border-b border-gray-200">
+        <tr>
+          <th class="text-left px-3 py-3 font-semibold text-gray-600 whitespace-nowrap">Дата</th>
+          <th class="text-right px-3 py-3 font-semibold text-gray-600 whitespace-nowrap">Сумма, ₽</th>
+          <th class="text-left px-3 py-3 font-semibold text-gray-600">Название</th>
+          <th class="text-left px-3 py-3 font-semibold text-gray-600">Источник</th>
+          <th class="text-left px-3 py-3 font-semibold text-gray-600">Комментарий</th>
+          <th class="text-left px-3 py-3 font-semibold text-gray-600 text-xs">Кем</th>
+          <th class="px-3 py-3"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        {% for row in rows %}
+        <tr class="hover:bg-gray-50 transition-colors">
+          <td class="px-3 py-2.5 text-gray-700 whitespace-nowrap">
+            {{ row.date.strftime('%d.%m.%Y') if row.date else '—' }}
+          </td>
+          <td class="px-3 py-2.5 text-right font-mono font-medium text-emerald-800 whitespace-nowrap">
+            {{ "{:,.0f}".format(row.amount).replace(",", " ") }}
+          </td>
+          <td class="px-3 py-2.5 text-gray-800 font-medium max-w-xs truncate">{{ row.title or '—' }}</td>
+          <td class="px-3 py-2.5">
+            <span class="px-2 py-0.5 bg-emerald-50 text-emerald-800 rounded-full text-xs font-medium whitespace-nowrap">
+              {{ row.source }}
+            </span>
+          </td>
+          <td class="px-3 py-2.5 text-gray-500 max-w-xs truncate">{{ row.comment or '—' }}</td>
+          <td class="px-3 py-2.5 text-gray-500 text-xs whitespace-nowrap">{{ row.created_by or '—' }}</td>
+          <td class="px-3 py-2.5 whitespace-nowrap">
+            <a href="/finance/income/{{ row.id }}/edit"
+               class="text-emerald-600 hover:text-emerald-800 text-xs mr-2">Изм.</a>
+            <form method="post" action="/finance/income/{{ row.id }}/delete"
+                  class="inline"
+                  onsubmit="return confirm('Удалить поступление?')">
+              <button type="submit" class="text-red-500 hover:text-red-700 text-xs">Удалить</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot class="bg-emerald-50 border-t-2 border-emerald-200">
+        <tr>
+          <td class="px-3 py-2.5 font-semibold text-emerald-900">Итого</td>
+          <td class="px-3 py-2.5 text-right font-mono font-bold text-emerald-900">
+            {{ "{:,.0f}".format(total).replace(",", " ") }}
+          </td>
+          <td colspan="5"></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+  {% else %}
+  <div class="text-center py-16 text-gray-400">
+    <div class="text-4xl mb-3">📭</div>
+    <div class="text-sm">Поступлений пока нет{% if selected_month %} за этот месяц{% endif %}</div>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

@@ -30,8 +30,11 @@
       </a>
 
       <div class="text-xs text-gray-500 uppercase px-3 pt-4 pb-2">Продакт</div>
-      <a href="/dasha/prompts" class="sidebar-link {% if request.path.startswith('/dasha/prompt') and not request.path.startswith('/dasha/bot') %}active{% endif %}">
-        🤖 Скрипты агентов
+      <a href="/dasha/pipeline_prompts" class="sidebar-link {% if request.path.startswith('/dasha/pipeline_prompts') %}active{% endif %}">
+        📄 Промпты пайплайна
+      </a>
+      <a href="/dasha/stages" class="sidebar-link {% if request.path.startswith('/dasha/stages') %}active{% endif %}">
+        📋 Этапы пайплайна
       </a>
       <a href="/dasha/bot_messages" class="sidebar-link {% if request.path.startswith('/dasha/bot_messages') %}active{% endif %}">
         💬 Сообщения бота
@@ -62,10 +65,21 @@
       <a href="/lena/triggers" class="sidebar-link {% if request.path.startswith('/lena/trigger') %}active{% endif %}">
         ⚡ Триггеры
       </a>
+      <a href="/lena/promo" class="sidebar-link {% if request.path.startswith('/lena/promo') %}active{% endif %}">
+        🎟 Промо-коды
+      </a>
+
+      <div class="text-xs text-gray-500 uppercase px-3 pt-4 pb-2">CCO</div>
+      <a href="/cco/" class="sidebar-link {% if request.path.startswith('/cco') %}active{% endif %}">
+        🎯 CCO-агент
+      </a>
 
       <div class="text-xs text-gray-500 uppercase px-3 pt-4 pb-2">Финансы</div>
-      <a href="/finance/expenses" class="sidebar-link {% if request.path.startswith('/finance/expense') %}active{% endif %}">
+      <a href="/finance/expenses" class="sidebar-link {% if request.path.startswith('/finance/expenses') %}active{% endif %}">
         💰 Расходы
+      </a>
+      <a href="/finance/income" class="sidebar-link {% if request.path.startswith('/finance/income') %}active{% endif %}">
+        💵 Доходы
       </a>
       <a href="/finance/pnl" class="sidebar-link {% if request.path.startswith('/finance/pnl') %}active{% endif %}">
         📊 P&L
