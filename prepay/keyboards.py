@@ -53,11 +53,22 @@ def kb_email_back(draft_id: int) -> InlineKeyboardMarkup:
     ])
 
 
-def kb_order_summary(draft_id: int) -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup([
+def kb_order_summary(draft_id: int, promo_applied: bool = False) -> InlineKeyboardMarkup:
+    buttons = [
         [InlineKeyboardButton("💳 Перейти к оплате", callback_data=f"order_pay:{draft_id}")],
-        [InlineKeyboardButton("✏ Изменить", callback_data=f"order_edit:{draft_id}")],
-        [InlineKeyboardButton("← Назад", callback_data=f"order_back:{draft_id}")],
+    ]
+    if promo_applied:
+        buttons.append([InlineKeyboardButton("❌ Убрать промо-код", callback_data=f"promo_remove:{draft_id}")])
+    else:
+        buttons.append([InlineKeyboardButton("🎟 Ввести промо-код", callback_data=f"promo_enter:{draft_id}")])
+    buttons.append([InlineKeyboardButton("✏ Изменить", callback_data=f"order_edit:{draft_id}")])
+    buttons.append([InlineKeyboardButton("← Назад", callback_data=f"order_back:{draft_id}")])
+    return InlineKeyboardMarkup(buttons)
+
+
+def kb_promo_cancel(draft_id: int) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("← Отмена", callback_data=f"promo_cancel:{draft_id}")],
     ])
 
 
