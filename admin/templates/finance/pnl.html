@@ -37,11 +37,11 @@
       </thead>
       <tbody class="divide-y divide-gray-100">
 
-        <!-- Выручка -->
+        <!-- Доходы -->
         <tr class="bg-emerald-50">
           <td class="px-5 py-2 font-semibold text-emerald-800 text-xs uppercase tracking-wide"
               colspan="{{ data.months|length + 2 }}">
-            Выручка (поступления)
+            Доходы
           </td>
         </tr>
         {% if data.revenue_rows %}
@@ -156,7 +156,7 @@
 </div>
 
 <p class="mt-4 text-xs text-gray-400">
-  Суммы в рублях. Выручка вводится вручную в разделе «Доходы» (поступления с ЮKassa и др.).
+  Суммы в рублях. Детализация поступлений — в разделе «Доходы»; в этой таблице одна строка выручки.
 </p>
 
 {% else %}

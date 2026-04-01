@@ -269,15 +269,14 @@ def get_pnl(months: int = 6) -> dict:
         """, (month_list,))
         raw_exp = cur.fetchall()
 
+        # Одна строка выручки в P&L — без детализации по поступлениям
         cur.execute("""
-            SELECT COALESCE(NULLIF(TRIM(title), ''), 'Поступление') AS label,
-                   TO_CHAR(date, 'YYYY-MM') AS month,
+            SELECT TO_CHAR(date, 'YYYY-MM') AS month,
                    SUM(amount) AS total
             FROM finance_income
             WHERE TO_CHAR(date, 'YYYY-MM') = ANY(%s)
-            GROUP BY COALESCE(NULLIF(TRIM(title), ''), 'Поступление'),
-                     TO_CHAR(date, 'YYYY-MM')
-            ORDER BY label, month
+            GROUP BY TO_CHAR(date, 'YYYY-MM')
+            ORDER BY month
         """, (month_list,))
         raw_rev = cur.fetchall()
 
@@ -298,17 +297,19 @@ def get_pnl(months: int = 6) -> dict:
         for i in range(len(month_list))
     ]
 
-    rev_labels: dict[str, dict[str, Decimal]] = {}
+    rev_by_month: dict[str, Decimal] = {m: Decimal(0) for m in month_list}
     for r in raw_rev:
-        lab = r["label"]
-        if lab not in rev_labels:
-            rev_labels[lab] = {m: Decimal(0) for m in month_list}
-        rev_labels[lab][r["month"]] = r["total"]
+        rev_by_month[r["month"]] = r["total"]
 
-    revenue_rows = [
-        {"label": lab, "totals": [float(rev_labels[lab].get(m, 0)) for m in month_list]}
-        for lab in sorted(rev_labels)
-    ]
+    if raw_rev:
+        revenue_rows = [
+            {
+                "label": "Выручка (тестовая)",
+                "totals": [float(rev_by_month.get(m, 0)) for m in month_list],
+            }
+        ]
+    else:
+        revenue_rows = []
 
     revenue_totals = [
         sum(row["totals"][i] for row in revenue_rows)
