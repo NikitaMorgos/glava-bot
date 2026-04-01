@@ -128,18 +128,109 @@ def _unload_pulse_sink() -> None:
         logger.debug("unload pulse sink: %s", e)
 
 
+def _get_sink_state() -> str:
+    """Возвращает состояние PulseAudio sink: RUNNING | IDLE | SUSPENDED | unknown."""
+    try:
+        r = subprocess.run(
+            ["pactl", "list", "sinks", "short"],
+            capture_output=True, text=True, timeout=5,
+        )
+        for line in r.stdout.splitlines():
+            if PULSE_SINK_NAME in line:
+                parts = line.split()
+                return parts[-1] if parts else "unknown"
+    except Exception:
+        pass
+    return "unknown"
+
+
+# Фразы-индикаторы завершения встречи (проверяются в тексте страницы)
+_END_PHRASES = [
+    "встреча завершена", "звонок завершён", "звонок завершен",
+    "разговор завершён", "разговор завершен", "конференция завершена",
+    "meeting ended", "call ended", "you left the meeting",
+    "вы вышли из звонка", "вы покинули",
+]
+
+# Сколько секунд тишины (IDLE/SUSPENDED sink) означает конец встречи
+_SILENCE_TIMEOUT_SEC = 45
+
+
+def _wait_for_meeting_end(page, meeting_url: str, max_duration_sec: int) -> str:
+    """
+    Ожидает окончания встречи по одному из критериев:
+      1. URL страницы изменился с адреса встречи (редирект после завершения).
+      2. На странице появился текст «встреча завершена» (Telemost, Zoom и др.).
+      3. PulseAudio sink был тих (IDLE/SUSPENDED) дольше _SILENCE_TIMEOUT_SEC.
+      4. Истёк max_duration_sec (защитный лимит, по умолчанию 4 ч).
+
+    Возвращает строку с причиной остановки.
+    """
+    elapsed = 0
+    tick = 10
+    idle_since: float | None = None
+    meeting_domain = meeting_url.split("/")[2] if "//" in meeting_url else ""
+
+    while elapsed < max_duration_sec:
+        time.sleep(tick)
+        elapsed += tick
+
+        if elapsed % 60 == 0:
+            logger.info("Запись %s сек (макс %s)", elapsed, max_duration_sec)
+
+        # ── 1. URL изменился ──────────────────────────────────────────────────
+        try:
+            current_url = page.url or ""
+            if meeting_domain and meeting_domain not in current_url:
+                logger.info("Встреча завершена: редирект на %s", current_url[:80])
+                return "url_changed"
+        except Exception:
+            pass
+
+        # ── 2. Текст «встреча завершена» ─────────────────────────────────────
+        try:
+            body = (page.locator("body").inner_text(timeout=2000) or "").lower()
+            for phrase in _END_PHRASES:
+                if phrase in body:
+                    logger.info("Встреча завершена: обнаружен текст «%s»", phrase)
+                    return "end_text"
+        except Exception:
+            pass
+
+        # ── 3. Тишина в PulseAudio ───────────────────────────────────────────
+        state = _get_sink_state()
+        if state in ("IDLE", "SUSPENDED"):
+            if idle_since is None:
+                idle_since = elapsed
+                logger.debug("Sink %s: начало тишины (elapsed=%s)", state, elapsed)
+            elif elapsed - idle_since >= _SILENCE_TIMEOUT_SEC:
+                logger.info(
+                    "Встреча завершена: тишина %s сек (sink=%s)",
+                    elapsed - idle_since, state,
+                )
+                return "silence"
+        else:
+            if idle_since is not None:
+                logger.debug("Sink снова RUNNING после тишины %s сек", elapsed - idle_since)
+            idle_since = None
+
+    logger.info("Запись остановлена по таймауту (%s сек)", max_duration_sec)
+    return "timeout"
+
+
 def record_meeting(
     meeting_url: str,
-    duration_sec: int = 1800,
+    duration_sec: int = 14400,
     output_path: str | None = None,
     bot_name: str = "GlavaBot",
 ) -> str | None:
     """
-    Подключается к встрече по URL, записывает аудио.
+    Подключается к встрече по URL, записывает аудио до конца встречи.
 
     Args:
         meeting_url: Ссылка на Zoom, Telemost или другую WebRTC-встречу.
-        duration_sec: Максимальная длительность записи (по умолчанию 30 мин).
+        duration_sec: Максимальная длительность записи (защитный лимит, по умолчанию 4 ч).
+                      Запись останавливается раньше когда встреча заканчивается.
         output_path: Путь для сохранения аудио. Если None — временный файл.
         bot_name: Имя для отображения в meeting (если применимо).
 
@@ -348,13 +439,8 @@ def record_meeting(
                 if frame != page.main_frame:
                     _try_fill_name(frame)
 
-            # Записываем
-            elapsed = 0
-            while elapsed < duration_sec:
-                time.sleep(10)
-                elapsed += 10
-                if elapsed % 60 == 0:
-                    logger.info("Запись %s сек / %s", elapsed, duration_sec)
+            # Ждём конца встречи (или max duration_sec)
+            _wait_for_meeting_end(page, meeting_url, duration_sec)
 
             context.close()
             browser.close()
@@ -398,10 +484,10 @@ def record_meeting_background(
     meeting_url: str,
     telegram_id: int,
     username: str | None,
-    duration_sec: int = 1800,
+    duration_sec: int = 14400,
 ) -> None:
     """
-    Запускает запись в фоне, затем транскрибирует и передаёт в пайплайн.
+    Запускает запись в фоне до конца встречи, затем транскрибирует и передаёт в пайплайн.
     Вызывать из main.py после проверки оплаты.
     """
     import threading
