@@ -1,13 +1,14 @@
 """
 Бот записи онлайн-созвонов (Telemost, Zoom и др.).
 
-Self-hosted: Playwright + Chromium, захват аудио через pulseaudio.
+Self-hosted: Playwright + Chromium (non-headless + Xvfb), захват аудио через pulseaudio.
 Поддерживает:
 - Ссылки от пользователя (прислал в бот)
 - Ссылки, сгенерированные нами (Zoom API, Telemost API)
 
-Зависимости: playwright, pulseaudio (Linux), ffmpeg.
+Зависимости: playwright, xvfb, pulseaudio (Linux), ffmpeg.
 Установка: pip install playwright && playwright install chromium
+           apt install xvfb
 """
 
 import logging
@@ -22,6 +23,40 @@ logger = logging.getLogger(__name__)
 # Имена для pulseaudio (Linux)
 PULSE_SINK_NAME = "glava_meeting_rec"
 PULSE_SINK_MODULE = "module-null-sink"
+
+# Номер виртуального дисплея Xvfb (должен быть свободен)
+XVFB_DISPLAY = ":99"
+
+
+def _start_xvfb() -> subprocess.Popen | None:
+    """
+    Запускает Xvfb на XVFB_DISPLAY если ещё не запущен.
+    Возвращает Popen-объект или None если Xvfb недоступен/уже запущен.
+    """
+    try:
+        # Проверяем, не занят ли дисплей уже
+        r = subprocess.run(
+            ["xdpyinfo", "-display", XVFB_DISPLAY],
+            capture_output=True, timeout=3,
+        )
+        if r.returncode == 0:
+            logger.info("Xvfb %s уже запущен", XVFB_DISPLAY)
+            return None
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        pass
+
+    try:
+        proc = subprocess.Popen(
+            ["Xvfb", XVFB_DISPLAY, "-screen", "0", "1280x720x24", "-ac"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        time.sleep(1)
+        logger.info("Xvfb запущен на %s (pid %s)", XVFB_DISPLAY, proc.pid)
+        return proc
+    except FileNotFoundError:
+        logger.warning("Xvfb не найден: apt install xvfb")
+        return None
 
 
 def _is_zoom_url(url: str) -> bool:
@@ -135,12 +170,28 @@ def record_meeting(
 
     env = os.environ.copy()
     env["PULSE_SINK"] = PULSE_SINK_NAME
+    # Chrome в non-headless режиме выводит аудио через PulseAudio только при наличии дисплея
+    env["DISPLAY"] = os.environ.get("DISPLAY", XVFB_DISPLAY)
 
+    xvfb_proc = None
     recorder_proc = None
     ffmpeg_proc = None
     browser = None
 
     try:
+        # Запускаем Xvfb если DISPLAY не задан снаружи
+        if not os.environ.get("DISPLAY"):
+            xvfb_proc = _start_xvfb()
+            if not xvfb_proc:
+                # Xvfb уже мог быть запущен ранее — проверим
+                r = subprocess.run(
+                    ["xdpyinfo", "-display", XVFB_DISPLAY],
+                    capture_output=True, timeout=3,
+                )
+                if r.returncode != 0:
+                    logger.error("record_meeting: Xvfb недоступен, установите: apt install xvfb")
+                    return None
+
         # Запускаем запись аудио в фоне
         recorder_proc = subprocess.Popen(
             [
@@ -171,15 +222,18 @@ def record_meeting(
             stderr=subprocess.DEVNULL,
         )
 
-        # Запускаем браузер
+        # Запускаем браузер — non-headless с Xvfb для корректного вывода аудио в PulseAudio
         from playwright.sync_api import sync_playwright
 
         with sync_playwright() as p:
             browser = p.chromium.launch(
-                headless=True,
+                headless=False,
                 args=[
                     "--autoplay-policy=no-user-gesture-required",
                     "--disable-features=AudioServiceOutOfProcess",
+                    "--use-fake-ui-for-media-stream",
+                    f"--alsa-output-device=pulse",
+                    "--no-sandbox",
                 ],
                 ignore_default_args=["--mute-audio"],
                 env=env,
@@ -328,6 +382,11 @@ def record_meeting(
         if browser:
             try:
                 browser.close()
+            except Exception:
+                pass
+        if xvfb_proc and xvfb_proc.poll() is None:
+            try:
+                xvfb_proc.terminate()
             except Exception:
                 pass
         _unload_pulse_sink()

@@ -58,10 +58,10 @@ ASSEMBLYAI_API_KEY = os.getenv("ASSEMBLYAI_API_KEY", "")
 # mymeet.ai — транскрипция и запись онлайн-встреч, API: mymeet.ai/contact
 MYMEET_API_KEY = os.getenv("MYMEET_API_KEY", "")
 
-# Meeting bot — self-hosted запись Zoom/Telemost (Playwright, Linux + pulseaudio)
+# Meeting bot — основной способ записи онлайн-встреч (Playwright, Linux + pulseaudio)
 MEETING_BOT_ENABLED = os.getenv("MEETING_BOT_ENABLED", "").strip().lower() in ("1", "true", "yes")
 
-# Recall.ai — запись онлайн-встреч по URL, транскрипция через AssemblyAI
+# Recall.ai — опционально (если нет meeting_bot/mymeet); Telemost не поддерживается
 # Ключ: https://www.recall.ai/ → Settings → API Keys
 RECALL_API_KEY = os.getenv("RECALL_API_KEY", "")
 # Регион: us-east-1 (по умолчанию), eu-west-2, us-west-2
@@ -98,3 +98,11 @@ YOOKASSA_SECRET_KEY = os.getenv("YOOKASSA_SECRET_KEY", "")
 
 # Куда вернуть пользователя после оплаты (return_url). По умолчанию — ссылка на бота
 PAYMENT_RETURN_URL = os.getenv("PAYMENT_RETURN_URL", "https://t.me/glava_voice_bot")
+
+# Персональные промо-коды: параметры автоматической отправки
+# Задержка после регистрации (часов)
+PERSONAL_PROMO_DELAY_HOURS = int(os.getenv("PERSONAL_PROMO_DELAY_HOURS", "48"))
+# Скидка (%)
+PERSONAL_PROMO_DISCOUNT_PERCENT = int(os.getenv("PERSONAL_PROMO_DISCOUNT_PERCENT", "15"))
+# Срок действия персонального кода после отправки (часов)
+PERSONAL_PROMO_VALID_HOURS = int(os.getenv("PERSONAL_PROMO_VALID_HOURS", "24"))

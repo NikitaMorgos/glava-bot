@@ -22,13 +22,15 @@ import config
 import db
 import storage
 import db_draft
+import db_promo
 from payment_adapter import create_payment, check_payment
 import bot_messages
+import llm_support
 from prepay.keyboards import (
     kb_intro_main, kb_intro_example, kb_intro_price,
     kb_config_characters, kb_config_edit_list, kb_email_back,
     kb_order_summary, kb_payment, kb_resume_draft, kb_resume_payment, kb_blocked_start,
-    kb_online_meeting,
+    kb_online_meeting, kb_promo_cancel,
     # v2
     kb_narrators, kb_interview_guide, kb_interview_questions, kb_narrator_select,
     kb_upload_audio, kb_upload_photos, kb_upload_summary, kb_interview_result,
@@ -61,17 +63,17 @@ def _format_price(kopecks: int) -> str:
 def _online_meeting_provider() -> tuple[str, str]:
     """
     Возвращает (provider, api_key) для записи онлайн-встреч.
-    Приоритет: recall → mymeet → meeting_bot (self-hosted Playwright).
+    Приоритет: meeting_bot (наш Playwright) → mymeet → recall (опционально).
     """
-    recall_key = getattr(config, "RECALL_API_KEY", "") or ""
-    mymeet_key = getattr(config, "MYMEET_API_KEY", "") or ""
-    if recall_key:
-        return "recall", recall_key
-    if mymeet_key:
-        return "mymeet", mymeet_key
-    # meeting_bot — self-hosted (Linux + pulseaudio + playwright). Включить: MEETING_BOT_ENABLED=true
+    # meeting_bot — основной путь: Linux + pulseaudio + playwright
     if os.name == "posix" and getattr(config, "MEETING_BOT_ENABLED", False):
         return "meeting_bot", ""
+    mymeet_key = getattr(config, "MYMEET_API_KEY", "") or ""
+    if mymeet_key:
+        return "mymeet", mymeet_key
+    recall_key = getattr(config, "RECALL_API_KEY", "") or ""
+    if recall_key:
+        return "recall", recall_key
     return "", ""
 
 
@@ -481,7 +483,10 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             return
         try:
             import asyncio
-            result = await asyncio.get_event_loop().run_in_executor(None, lambda: create_payment(draft))
+            # Передаём итоговую цену с учётом скидки
+            payment_draft = dict(draft)
+            payment_draft["total_price"] = db_draft.get_final_price(draft)
+            result = await asyncio.get_event_loop().run_in_executor(None, lambda: create_payment(payment_draft))
         except Exception as e:
             logger.exception("create_payment error: %s", e)
             await query.answer("Ошибка создания платежа. Попробуйте позже.", show_alert=True)
@@ -510,6 +515,43 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         draft = db_draft.get_draft_by_telegram_id(user.id)
         if draft:
             await _show_email_input_callback(query, context, draft_id)
+        return
+
+    if data.startswith("promo_enter:"):
+        draft_id = int(data.split(":")[1])
+        draft = db_draft.get_draft_by_telegram_id(user.id)
+        if not draft or draft["id"] != draft_id or draft.get("status") not in ("draft", "payment_pending"):
+            await query.answer("Заказ не найден.", show_alert=True)
+            return
+        context.user_data["prepay_awaiting"] = "promo_code"
+        context.user_data["prepay_draft_id"] = draft_id
+        from prepay.messages import PROMO_ENTER_MSG
+        await query.edit_message_text(PROMO_ENTER_MSG, reply_markup=kb_promo_cancel(draft_id))
+        return
+
+    if data.startswith("promo_cancel:"):
+        draft_id = int(data.split(":")[1])
+        context.user_data.pop("prepay_awaiting", None)
+        context.user_data.pop("prepay_draft_id", None)
+        draft = db_draft.get_draft_by_telegram_id(user.id)
+        if draft:
+            await _show_order_summary_callback(query, context, draft)
+        return
+
+    if data.startswith("promo_remove:"):
+        draft_id = int(data.split(":")[1])
+        draft = db_draft.get_draft_by_telegram_id(user.id)
+        if not draft or draft["id"] != draft_id:
+            await query.answer("Заказ не найден.", show_alert=True)
+            return
+        had_pending = draft.get("status") == "payment_pending"
+        db_promo.remove_promo_from_draft(draft_id)
+        if had_pending:
+            db_draft.reset_draft_after_price_change(draft_id)
+        logger.info("event: promo_removed draft_id=%s", draft_id)
+        draft = db_draft.get_draft_by_telegram_id(user.id)
+        if draft:
+            await _show_order_summary_callback(query, context, draft)
         return
 
     if data.startswith("payment_check:"):
@@ -598,20 +640,44 @@ async def _show_email_input_callback(query, context, draft_id: int) -> None:
     await query.edit_message_text(bot_messages.get_message("email_input"), reply_markup=kb_email_back(draft_id))
 
 
-async def _show_order_summary(update: Update, context: ContextTypes.DEFAULT_TYPE, draft: dict) -> None:
+def _build_summary_msg(draft: dict) -> str:
+    """Формирует текст сводки заказа с учётом промо-кода."""
+    from prepay.messages import ORDER_SUMMARY_MSG, ORDER_SUMMARY_PROMO_MSG
     chars = draft.get("characters") or []
-    total = _format_price(draft.get("total_price", 0))
     email = draft.get("email") or ""
-    msg = bot_messages.get_message("order_summary", characters=_format_characters(chars), total=total, email=email)
-    await update.message.reply_text(msg, reply_markup=kb_order_summary(draft["id"]))
+    chars_text = _format_characters(chars)
+    discount = int(draft.get("discount_amount") or 0)
+    original = int(draft.get("total_price") or 0)
+    final = db_draft.get_final_price(draft)
+
+    if discount > 0 and draft.get("promo_code_id"):
+        promo = db_promo.get_promo_by_draft(draft["id"])
+        code = promo["code"] if promo else "PROMO"
+        return ORDER_SUMMARY_PROMO_MSG.format(
+            characters=chars_text,
+            original=_format_price(original),
+            code=code,
+            discount=_format_price(discount),
+            total=_format_price(final),
+            email=email,
+        )
+    return ORDER_SUMMARY_MSG.format(
+        characters=chars_text,
+        total=_format_price(final),
+        email=email,
+    )
+
+
+async def _show_order_summary(update: Update, context: ContextTypes.DEFAULT_TYPE, draft: dict) -> None:
+    promo_applied = bool(draft.get("promo_code_id"))
+    msg = _build_summary_msg(draft)
+    await update.message.reply_text(msg, reply_markup=kb_order_summary(draft["id"], promo_applied=promo_applied))
 
 
 async def _show_order_summary_callback(query, context, draft: dict) -> None:
-    chars = draft.get("characters") or []
-    total = _format_price(draft.get("total_price", 0))
-    email = draft.get("email") or ""
-    msg = bot_messages.get_message("order_summary", characters=_format_characters(chars), total=total, email=email)
-    await query.edit_message_text(msg, reply_markup=kb_order_summary(draft["id"]))
+    promo_applied = bool(draft.get("promo_code_id"))
+    msg = _build_summary_msg(draft)
+    await query.edit_message_text(msg, reply_markup=kb_order_summary(draft["id"], promo_applied=promo_applied))
 
 
 async def _handle_prepay_text(update: Update, context: ContextTypes.DEFAULT_TYPE, text: str, user) -> bool:
@@ -648,6 +714,59 @@ async def _handle_prepay_text(update: Update, context: ContextTypes.DEFAULT_TYPE
             draft = db_draft.get_draft_by_telegram_id(user.id)
             if draft:
                 await _show_order_summary(update, context, draft)
+        return True
+
+    if awaiting == "promo_code":
+        context.user_data.pop("prepay_awaiting", None)
+        if not draft_id:
+            return True
+        draft = db_draft.get_draft_by_telegram_id(user.id)
+        if not draft or draft["id"] != draft_id:
+            return True
+
+        import asyncio
+        import db as _db
+
+        db_user = _db.get_or_create_user(user.id, user.username)
+        promo, error = await asyncio.get_event_loop().run_in_executor(
+            None, lambda: db_promo.validate_promo(text.strip(), db_user["id"])
+        )
+        if error:
+            from prepay.messages import PROMO_ERROR_MSG
+            await update.message.reply_text(
+                PROMO_ERROR_MSG.format(reason=error),
+                reply_markup=kb_promo_cancel(draft_id),
+            )
+            context.user_data["prepay_awaiting"] = "promo_code"
+            return True
+
+        original = int(draft.get("total_price") or 0)
+        discount = db_promo.calc_discount(promo, original)
+        had_pending = draft.get("status") == "payment_pending"
+        await asyncio.get_event_loop().run_in_executor(
+            None, lambda: db_promo.apply_promo(draft_id, promo["id"], db_user["id"], discount)
+        )
+        if had_pending:
+            db_draft.reset_draft_after_price_change(draft_id)
+        logger.info("event: promo_applied draft_id=%s code=%s discount=%s", draft_id, promo["code"], discount)
+
+        from prepay.messages import PROMO_SUCCESS_MSG
+        pct = int(promo["discount_value"]) if promo["discount_type"] == "percent" else 0
+        final = max(0, original - discount)
+        success_text = PROMO_SUCCESS_MSG.format(
+            code=promo["code"],
+            discount=_format_price(discount),
+            pct=pct,
+            total=_format_price(final),
+        )
+        if had_pending:
+            success_text += (
+                "\n\nЕсли вы уже открывали страницу оплаты — нажмите «Перейти к оплате» снова: сумма обновилась."
+            )
+        await update.message.reply_text(success_text)
+        draft = db_draft.get_draft_by_telegram_id(user.id)
+        if draft:
+            await _show_order_summary(update, context, draft)
         return True
 
     return False
@@ -710,19 +829,90 @@ async def _save_audio_file(
 
 
 async def handle_voice(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if update.effective_chat and update.effective_chat.type in ("group", "supergroup"):
+        return
     if _user_has_paid(update.effective_user.id if update.effective_user else 0):
         await _save_audio_file(update, context, update.message.voice.file_id, ".ogg", update.message.voice.duration)
     else:
         await handle_blocked_media(update, context)
 
 
+async def handle_video(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Видео — предлагаем загрузить через браузер (там принимается аудио/видео)."""
+    if not update.message:
+        return
+    if update.effective_chat and update.effective_chat.type in ("group", "supergroup"):
+        return
+    if not _user_has_paid(update.effective_user.id if update.effective_user else 0):
+        await handle_blocked_media(update, context)
+        return
+    await _reply_file_too_large(update)
+
+
+async def cmd_upload(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Команда /upload — выдаёт ссылку для загрузки больших файлов через браузер."""
+    user = update.effective_user
+    if not user:
+        return
+    if not _user_has_paid(user.id):
+        await update.message.reply_text(
+            "Загрузка файлов доступна после оплаты. Оформите заказ через /start.",
+            reply_markup=kb_blocked_start(),
+        )
+        return
+    try:
+        from cabinet.upload_api import create_upload_token
+        db_user = db.get_or_create_user(user.id, user.username)
+        token = create_upload_token(telegram_id=user.id, user_id=db_user["id"])
+        upload_url = f"https://cabinet.glava.family/upload/{token}"
+        text = (
+            "Загрузите аудиофайл через браузер — без ограничения в 20 МБ.\n\n"
+            "Нажмите кнопку ниже, выберите файл или перетащите его на страницу.\n"
+            "Ссылка действует 1 час."
+        )
+        kb = InlineKeyboardMarkup([
+            [InlineKeyboardButton("📤 Загрузить файл", url=upload_url)],
+        ])
+        await update.message.reply_text(text, reply_markup=kb)
+    except Exception as e:
+        logger.exception("cmd_upload error")
+        await update.message.reply_text("Ошибка. Попробуйте позже.")
+
+
+async def _reply_file_too_large(update: Update) -> None:
+    """Отправляет сообщение о превышении лимита с кнопкой загрузки через браузер."""
+    user = update.effective_user
+    if not user:
+        await update.message.reply_text(bot_messages.get_message("file_too_large"))
+        return
+    try:
+        from cabinet.upload_api import create_upload_token
+        db_user = db.get_or_create_user(user.id, user.username)
+        token = create_upload_token(telegram_id=user.id, user_id=db_user["id"])
+        upload_url = f"https://cabinet.glava.family/upload/{token}"
+        text = (
+            "Этот файл нельзя обработать через Telegram.\n\n"
+            "Загрузите его через браузер — нажмите кнопку ниже.\n"
+            "Ссылка действует 1 час."
+        )
+        kb = InlineKeyboardMarkup([
+            [InlineKeyboardButton("📤 Загрузить через браузер", url=upload_url)],
+        ])
+        await update.message.reply_text(text, reply_markup=kb)
+    except Exception as e:
+        logger.warning("_reply_file_too_large: %s", e)
+        await update.message.reply_text(bot_messages.get_message("file_too_large"))
+
+
 async def handle_audio(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if update.effective_chat and update.effective_chat.type in ("group", "supergroup"):
+        return
     if not _user_has_paid(update.effective_user.id if update.effective_user else 0):
         await handle_blocked_media(update, context)
         return
     audio = update.message.audio
     if audio.file_size and audio.file_size > _MAX_TG_FILE_BYTES:
-        await update.message.reply_text(bot_messages.get_message("file_too_large"))
+        await _reply_file_too_large(update)
         return
     ext = Path(audio.file_name or "").suffix or ".mp3"
     if ext.lower() not in AUDIO_EXTENSIONS:
@@ -735,12 +925,14 @@ async def handle_audio(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
 
 async def handle_audio_document(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if update.effective_chat and update.effective_chat.type in ("group", "supergroup"):
+        return
     if not _user_has_paid(update.effective_user.id if update.effective_user else 0):
         await handle_blocked_media(update, context)
         return
     doc = update.message.document
     if doc.file_size and doc.file_size > _MAX_TG_FILE_BYTES:
-        await update.message.reply_text(bot_messages.get_message("file_too_large"))
+        await _reply_file_too_large(update)
         return
     name = (doc.file_name or "").lower()
     ext = Path(name).suffix
@@ -751,8 +943,9 @@ async def handle_audio_document(update: Update, context: ContextTypes.DEFAULT_TY
 
 
 async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    # update.message может быть None при редактировании постов/каналов
     if not update.message:
+        return
+    if update.effective_chat and update.effective_chat.type in ("group", "supergroup"):
         return
     if not _user_has_paid(update.effective_user.id if update.effective_user else 0):
         await handle_blocked_media(update, context)
@@ -800,6 +993,15 @@ async def handle_caption_text(update: Update, context: ContextTypes.DEFAULT_TYPE
     text = (update.message.text or "").strip()
     if not text or text.startswith("/"):
         return
+
+    if await _handle_support_message(update, context):
+        return
+
+    # В групповых чатах бот реагирует только на support (@mention / reply)
+    chat = update.effective_chat
+    if chat and chat.type in ("group", "supergroup"):
+        return
+
     if context.user_data.pop("awaiting_meeting_link", None):
         if not text.startswith("http"):
             await update.message.reply_text(bot_messages.get_message("online_meeting_bad_link"))
@@ -925,6 +1127,88 @@ async def handle_caption_text(update: Update, context: ContextTypes.DEFAULT_TYPE
             )
     else:
         await update.message.reply_text("Используйте кнопки меню или /start")
+
+
+# ── /support — AI-поддержка ───────────────────────────────────────────────────
+
+_SUPPORT_ENTER_MSG = (
+    "Вы на связи с поддержкой ГЛАВА.\n"
+    "Задайте ваш вопрос — я постараюсь помочь.\n\n"
+    "Для выхода нажмите /start."
+)
+
+
+async def cmd_support(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Переключает личный чат в режим поддержки."""
+    context.user_data["support_mode"] = True
+    await update.message.reply_text(_SUPPORT_ENTER_MSG)
+
+
+async def _handle_support_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> bool:
+    """
+    Обрабатывает сообщение поддержки. Возвращает True, если обработано.
+
+    Работает в двух режимах:
+    - Личный чат: user_data["support_mode"] == True
+    - Групповой чат: упоминание @бота или reply на сообщение бота
+    """
+    message = update.message
+    if not message or not message.text:
+        return False
+
+    user = update.effective_user
+    chat = update.effective_chat
+    if not user or not chat:
+        return False
+
+    text = message.text.strip()
+    is_group = chat.type in ("group", "supergroup")
+    is_support = False
+    bot_username = ""
+
+    if is_group:
+        try:
+            me = await context.bot.get_me()
+            bot_username = me.username or ""
+        except Exception:
+            pass
+
+        mentioned = bot_username and f"@{bot_username}" in text
+        replied_to_bot = (
+            message.reply_to_message
+            and message.reply_to_message.from_user
+            and message.reply_to_message.from_user.is_bot
+            and message.reply_to_message.from_user.username == bot_username
+        )
+        is_support = mentioned or replied_to_bot
+        if mentioned and bot_username:
+            text = text.replace(f"@{bot_username}", "").strip()
+    else:
+        is_support = bool(context.user_data.get("support_mode"))
+
+    if not is_support:
+        return False
+
+    if not text:
+        return True
+
+    await chat.send_action("typing")
+
+    user_name = user.first_name or user.username or ""
+    answer = llm_support.get_support_response(
+        user_message=text,
+        chat_id=chat.id,
+        user_name=user_name if is_group else "",
+    )
+
+    if answer:
+        await message.reply_text(answer)
+    else:
+        await message.reply_text(
+            "Не удалось обработать ваш вопрос. "
+            "Попробуйте позже или напишите на hello@glava.family."
+        )
+    return True
 
 
 async def cmd_list(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -1485,6 +1769,41 @@ async def cmd_versions(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     )
 
 
+async def _send_personal_promos(context: ContextTypes.DEFAULT_TYPE) -> None:
+    """
+    Планировщик: каждый час ищет пользователей, зарегистрированных ~48ч назад,
+    и отправляет им персональный промо-код на 15% скидку (срок — 24ч).
+    """
+    try:
+        users = db_promo.get_users_needing_personal_promo()
+    except Exception as e:
+        logger.warning("_send_personal_promos: ошибка получения пользователей: %s", e)
+        return
+
+    from prepay.messages import PERSONAL_PROMO_MSG
+    discount_pct = getattr(config, "PERSONAL_PROMO_DISCOUNT_PERCENT", 15)
+
+    for u in users:
+        telegram_id = u.get("telegram_id")
+        user_id = u.get("id")
+        if not telegram_id or not user_id:
+            continue
+        try:
+            promo = db_promo.generate_personal_promo(user_id)
+            await context.bot.send_message(
+                chat_id=telegram_id,
+                text=PERSONAL_PROMO_MSG.format(
+                    discount=discount_pct,
+                    code=promo["code"],
+                ),
+                parse_mode="HTML",
+            )
+            db_promo.mark_promo_sent(promo["id"])
+            logger.info("event: personal_promo_sent user_id=%s code=%s", user_id, promo["code"])
+        except Exception as e:
+            logger.warning("_send_personal_promos: ошибка для user_id=%s: %s", user_id, e)
+
+
 async def _post_init(app: Application) -> None:
     await app.bot.delete_webhook(drop_pending_updates=True)
     await app.bot.set_my_commands([
@@ -1493,6 +1812,8 @@ async def _post_init(app: Application) -> None:
         BotCommand("list", "Мои материалы"),
         BotCommand("online", "Записать онлайн-встречу"),
         BotCommand("cabinet", "Кабинет"),
+        BotCommand("support", "Поддержка"),
+        BotCommand("upload", "Загрузить большой файл"),
     ])
     # Кнопка меню слева — открывает Mini App кабинет
     try:
@@ -1526,12 +1847,27 @@ def main() -> None:
     app.add_handler(CommandHandler("list", cmd_list))
     app.add_handler(CommandHandler("online", cmd_online))
     app.add_handler(CommandHandler("cabinet", cmd_cabinet))
+    app.add_handler(CommandHandler("support", cmd_support))
     app.add_handler(CallbackQueryHandler(handle_callback))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_caption_text))
     app.add_handler(MessageHandler(filters.VOICE, handle_voice))
     app.add_handler(MessageHandler(filters.AUDIO, handle_audio))
     app.add_handler(MessageHandler(filters.Document.ALL, handle_audio_document))
     app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
+    app.add_handler(MessageHandler(filters.VIDEO | filters.VIDEO_NOTE, handle_video))
+    app.add_handler(CommandHandler("upload", cmd_upload))
+
+    # Планировщик персональных промо-кодов: каждый час, первый запуск через 60с
+    if app.job_queue:
+        app.job_queue.run_repeating(
+            callback=_send_personal_promos,
+            interval=3600,
+            first=60,
+            name="personal_promos",
+        )
+        logger.info("Планировщик персональных промо запущен (каждый час).")
+    else:
+        logger.warning("job_queue недоступен — планировщик промо не запущен.")
 
     logger.info("GLAVA бот запущен (Pre-pay flow). Ctrl+C — остановка.")
     app.run_polling(allowed_updates=Update.ALL_TYPES, drop_pending_updates=True)
