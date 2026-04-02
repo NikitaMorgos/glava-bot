@@ -69,7 +69,7 @@ def generate_content_plan(
 
     client = anthropic.Anthropic(api_key=key)
     resp = client.messages.create(
-        model=os.environ.get("SMM_CLAUDE_MODEL", "claude-3-5-haiku-20241022"),
+        model=os.environ.get("SMM_CLAUDE_MODEL", "claude-haiku-4-5-20251001"),
         max_tokens=2000,
         messages=[
             {"role": "user", "content": scout_system + "\n\n---\n\n" + user_message},

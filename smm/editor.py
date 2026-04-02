@@ -58,7 +58,7 @@ def review_and_generate_image(post_id: int) -> dict:
 
     client = anthropic.Anthropic(api_key=key)
     resp = client.messages.create(
-        model=os.environ.get("SMM_CLAUDE_MODEL", "claude-3-5-haiku-20241022"),
+        model=os.environ.get("SMM_CLAUDE_MODEL", "claude-haiku-4-5-20251001"),
         max_tokens=800,
         messages=[
             {"role": "user", "content": system + "\n\n---\n\n" + user_message},
