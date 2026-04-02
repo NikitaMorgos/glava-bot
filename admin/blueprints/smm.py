@@ -54,7 +54,7 @@ STATUS_COLORS = {
 # ── Главная — доска постов ─────────────────────────────────────────────────────
 
 @bp.route("/")
-@role_required("dev", "lena")
+@role_required("dev", "lena", "dasha")
 def index():
     posts = db_smm.get_all_posts(100)
     plans = db_smm.get_latest_plans(10)
@@ -86,7 +86,7 @@ def index():
 # ── Генерация контент-плана ────────────────────────────────────────────────────
 
 @bp.route("/generate-plan", methods=["POST"])
-@role_required("dev", "lena")
+@role_required("dev", "lena", "dasha")
 def generate_plan():
     manual_ideas = request.form.get("manual_ideas", "").strip()
     week_start = request.form.get("week_start", "").strip() or None
@@ -115,7 +115,7 @@ def generate_plan():
 # ── Пост — детальный вид ───────────────────────────────────────────────────────
 
 @bp.route("/post/<int:post_id>")
-@role_required("dev", "lena")
+@role_required("dev", "lena", "dasha")
 def post_detail(post_id: int):
     post = db_smm.get_post(post_id)
     if not post:
@@ -134,7 +134,7 @@ def post_detail(post_id: int):
 
 
 @bp.route("/post/<int:post_id>/generate", methods=["POST"])
-@role_required("dev", "lena")
+@role_required("dev", "lena", "dasha")
 def generate_post(post_id: int):
     """Запустить полный пайплайн: Journalist → Editor → Replicate."""
     post = db_smm.get_post(post_id)
@@ -164,7 +164,7 @@ def generate_post(post_id: int):
 
 
 @bp.route("/post/<int:post_id>/save", methods=["POST"])
-@role_required("dev", "lena")
+@role_required("dev", "lena", "dasha")
 def save_post(post_id: int):
     db_smm.update_post(
         post_id,
@@ -178,7 +178,7 @@ def save_post(post_id: int):
 
 
 @bp.route("/post/<int:post_id>/approve", methods=["POST"])
-@role_required("dev", "lena")
+@role_required("dev", "lena", "dasha")
 def approve_post(post_id: int):
     db_smm.update_post(post_id, status="approved")
     flash("Пост одобрен к публикации", "success")
@@ -186,7 +186,7 @@ def approve_post(post_id: int):
 
 
 @bp.route("/post/<int:post_id>/reject", methods=["POST"])
-@role_required("dev", "lena")
+@role_required("dev", "lena", "dasha")
 def reject_post(post_id: int):
     db_smm.update_post(post_id, status="draft")
     flash("Пост возвращён в черновик", "success")
@@ -194,7 +194,7 @@ def reject_post(post_id: int):
 
 
 @bp.route("/post/<int:post_id>/regen-image", methods=["POST"])
-@role_required("dev", "lena")
+@role_required("dev", "lena", "dasha")
 def regen_image(post_id: int):
     image_prompt = request.form.get("image_prompt", "").strip()
     if image_prompt:
@@ -221,7 +221,7 @@ def regen_image(post_id: int):
 
 
 @bp.route("/post/<int:post_id>/publish", methods=["POST"])
-@role_required("dev", "lena")
+@role_required("dev", "lena", "dasha")
 def publish_post(post_id: int):
     post = db_smm.get_post(post_id)
     if not post:
@@ -260,7 +260,7 @@ def publish_post(post_id: int):
 # ── Промпты ролей ──────────────────────────────────────────────────────────────
 
 @bp.route("/prompts")
-@role_required("dev", "lena")
+@role_required("dev", "lena", "dasha")
 def prompts():
     roles_data = []
     for role_key, role_name in SMM_ROLES:
@@ -276,7 +276,7 @@ def prompts():
 
 
 @bp.route("/prompts/save", methods=["POST"])
-@role_required("dev", "lena")
+@role_required("dev", "lena", "dasha")
 def save_prompt():
     role = request.form.get("role", "").strip()
     text = request.form.get("prompt_text", "").strip()
@@ -296,7 +296,7 @@ def save_prompt():
 # ── Утилиты ────────────────────────────────────────────────────────────────────
 
 @bp.route("/image/<filename>")
-@role_required("dev", "lena")
+@role_required("dev", "lena", "dasha")
 def serve_image(filename: str):
     import os
     images_dir = Path(os.environ.get("SMM_IMAGES_DIR", "/tmp/smm_images"))
@@ -307,6 +307,6 @@ def serve_image(filename: str):
 
 
 @bp.route("/status/<job_key>")
-@role_required("dev", "lena")
+@role_required("dev", "lena", "dasha")
 def job_status(job_key: str):
     return jsonify({"status": _jobs.get(job_key, "unknown")})

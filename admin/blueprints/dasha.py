@@ -1,17 +1,26 @@
 """Панель Даши (Product Manager) — /dasha/."""
 import json
 import os
+import shutil
 import subprocess
 import sys
 import time
 from datetime import datetime
+from pathlib import Path
 
 from flask import Blueprint, flash, jsonify, redirect, render_template, request, url_for, session
+from werkzeug.utils import secure_filename
 
 from admin.auth import role_required
 from admin import db_admin as dba
 
 bp = Blueprint("dasha", __name__, url_prefix="/dasha")
+
+# Пути к файловому пайплайну
+_ROOT_DIR = Path(__file__).resolve().parent.parent.parent
+PROMPTS_DIR = _ROOT_DIR / "prompts"
+PIPELINE_CONFIG_PATH = PROMPTS_DIR / "pipeline_config.json"
+PROMPTS_BACKUP_DIR = PROMPTS_DIR / "backups"
 
 # Сообщения бота (key → человекочитаемое имя)
 BOT_MESSAGE_KEYS = [
@@ -200,7 +209,7 @@ def project_book_versions(telegram_id: int):
 
 
 @bp.route("/projects/<int:telegram_id>/set_state", methods=["POST"])
-@role_required("dev", "dasha")
+@role_required("dev", "dasha", "lena")
 def set_project_state(telegram_id: int):
     new_state = request.form.get("state", "")
     notes     = request.form.get("notes", "")
@@ -365,7 +374,7 @@ def _parse_json_report(report: dict, raw: str, duration_s: float) -> dict:
 
 
 @bp.route("/bot_tests")
-@role_required("dev", "dasha")
+@role_required("dev", "dasha", "lena")
 def bot_tests():
     """Панель авто-тестов бота."""
     history = dba.get_test_runs(limit=10)
@@ -373,7 +382,7 @@ def bot_tests():
 
 
 @bp.route("/bot_tests/run", methods=["POST"])
-@role_required("dev", "dasha")
+@role_required("dev", "dasha", "lena")
 def bot_tests_run():
     """Запуск pytest, сохранение результата в БД, возврат JSON."""
     project_root = os.path.abspath(
@@ -457,7 +466,7 @@ def bot_tests_run():
 
 
 @bp.route("/bot_tests/debug")
-@role_required("dev", "dasha")
+@role_required("dev", "dasha", "lena")
 def bot_tests_debug():
     """Отладка: запускает pytest и возвращает сырой вывод + детали окружения."""
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
@@ -481,7 +490,7 @@ def bot_tests_debug():
 
 
 @bp.route("/bot_tests/run/<int:run_id>")
-@role_required("dev", "dasha")
+@role_required("dev", "dasha", "lena")
 def bot_tests_run_detail(run_id: int):
     """Детали конкретного запуска (JSON)."""
     run = dba.get_test_run(run_id)
@@ -491,3 +500,161 @@ def bot_tests_run_detail(run_id: int):
     if isinstance(results, str):
         results = json.loads(results)
     return jsonify({**dict(run), "results": results})
+
+
+# ── Файловые промпты пайплайна (Stage 1–3) ────────────────────────
+
+def _load_pipeline_config() -> dict:
+    if not PIPELINE_CONFIG_PATH.exists():
+        return {}
+    with open(PIPELINE_CONFIG_PATH, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def _save_pipeline_config(cfg: dict) -> None:
+    with open(PIPELINE_CONFIG_PATH, "w", encoding="utf-8") as f:
+        json.dump(cfg, f, ensure_ascii=False, indent=2)
+
+
+PIPELINE_AGENT_NAMES = {
+    "cleaner":         "01 · Очиститель транскрипта",
+    "fact_extractor":  "02 · Фактолог",
+    "ghostwriter":     "03 · Писатель",
+    "fact_checker":    "04 · Фактчекер",
+    "literary_editor": "05 · Литредактор",
+    "proofreader":     "06 · Корректор",
+    "photo_editor":    "07 · Фоторедактор",
+    "layout_designer": "08 · Верстальщик",
+    "qa_layout":       "09 · QA вёрстки",
+    "historian":       "12 · Историк-краевед",
+    "cover_designer":  "13 · Дизайнер обложки",
+    "art_director":    "15 · Арт-директор",
+}
+
+
+@bp.route("/pipeline_prompts")
+@role_required("dev", "dasha", "lena")
+def pipeline_prompts():
+    """Страница управления файловыми промптами (Stage 1–3)."""
+    cfg = _load_pipeline_config()
+    agents = []
+    for key, display in PIPELINE_AGENT_NAMES.items():
+        agent_cfg = cfg.get(key, {})
+        prompt_file = agent_cfg.get("prompt_file", f"{key}_v1.md")
+        path = PROMPTS_DIR / prompt_file
+        agents.append({
+            "key": key,
+            "display_name": display,
+            "prompt_file": prompt_file,
+            "exists": path.exists(),
+            "size_kb": f"{path.stat().st_size / 1024:.1f}" if path.exists() else "—",
+            "modified": datetime.fromtimestamp(path.stat().st_mtime).strftime("%d.%m.%Y %H:%M")
+                        if path.exists() else "—",
+            "model": agent_cfg.get("model", "—"),
+            "temperature": agent_cfg.get("temperature", "—"),
+            "notes": agent_cfg.get("_notes", ""),
+            "last_uploaded": agent_cfg.get("_last_uploaded", "—"),
+            "uploaded_filename": agent_cfg.get("_uploaded_filename", ""),
+        })
+    return render_template("dasha/pipeline_prompts.html", agents=agents)
+
+
+@bp.route("/pipeline_prompts/upload", methods=["POST"])
+@role_required("dev", "dasha", "lena")
+def pipeline_prompts_upload():
+    """AJAX-загрузка .md-файла промпта для агента."""
+    agent_key = request.form.get("agent_key", "").strip()
+    if not agent_key or agent_key not in PIPELINE_AGENT_NAMES:
+        return jsonify({"ok": False, "error": "Неизвестный агент"}), 400
+
+    f = request.files.get("file")
+    if not f or not f.filename:
+        return jsonify({"ok": False, "error": "Файл не выбран"}), 400
+    if not f.filename.lower().endswith(".md"):
+        return jsonify({"ok": False, "error": "Только .md файлы"}), 400
+
+    cfg = _load_pipeline_config()
+    agent_cfg = cfg.get(agent_key, {})
+    target_name = agent_cfg.get("prompt_file") or f"{agent_key}_v1.md"
+    target_path = PROMPTS_DIR / target_name
+
+    # Бэкап старого файла
+    if target_path.exists():
+        PROMPTS_BACKUP_DIR.mkdir(parents=True, exist_ok=True)
+        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        backup_name = f"{target_path.stem}_{ts}{target_path.suffix}"
+        shutil.copy2(target_path, PROMPTS_BACKUP_DIR / backup_name)
+
+    PROMPTS_DIR.mkdir(parents=True, exist_ok=True)
+    f.save(str(target_path))
+    size_kb = f"{target_path.stat().st_size / 1024:.1f}"
+
+    # Обновляем метаданные в pipeline_config.json
+    if agent_key not in cfg:
+        cfg[agent_key] = {}
+    cfg[agent_key]["_last_uploaded"] = datetime.now().strftime("%d.%m.%Y %H:%M")
+    cfg[agent_key]["_uploaded_filename"] = secure_filename(f.filename)
+    _save_pipeline_config(cfg)
+
+    return jsonify({
+        "ok": True,
+        "uploaded": target_name,
+        "size_kb": size_kb,
+    })
+
+
+# ── Описания этапов пайплайна ─────────────────────────────────────
+
+_STAGES_DIR = _ROOT_DIR / "docs" / "stages"
+
+STAGE_ORDER = [
+    ("02_fact_extractor",      "02 · Фактолог"),
+    ("03_ghostwriter",         "03 · Писатель"),
+    ("04_fact_checker",        "04 · Фактчекер"),
+    ("05_literary_editor",     "05 · Литредактор"),
+    ("06_proofreader",         "06 · Корректор"),
+    ("07_photo_editor",        "07 · Фоторедактор"),
+    ("08_layout_designer",     "08 · Верстальщик"),
+    ("09_qa_layout",           "09 · QA вёрстки"),
+    ("11_interview_architect",  "11 · Интервьюер"),
+    ("12_historian",           "12 · Историк-краевед"),
+    ("13_cover_designer",      "13 · Дизайнер обложки"),
+]
+
+
+def _render_stage(path: "Path") -> str:
+    import markdown as _md
+    text = path.read_text(encoding="utf-8")
+    return _md.markdown(text, extensions=["tables", "fenced_code"])
+
+
+@bp.route("/stages")
+@role_required("dev", "dasha", "lena")
+def stages():
+    cards = []
+    existing = {p.stem: p for p in _STAGES_DIR.glob("*.md") if p.stem != "STAGE_TEMPLATE"}
+    for key, name in STAGE_ORDER:
+        if key in existing:
+            html = _render_stage(existing[key])
+            cards.append({"key": key, "name": name, "html": html, "exists": True})
+        else:
+            cards.append({"key": key, "name": name, "html": "", "exists": False})
+    known_keys = {k for k, _ in STAGE_ORDER}
+    for p in sorted(existing.values(), key=lambda x: x.stem):
+        if p.stem not in known_keys:
+            cards.append({"key": p.stem, "name": p.stem, "html": _render_stage(p), "exists": True})
+    return render_template("dasha/stages.html", cards=cards)
+
+
+@bp.route("/stages/<stage_key>/upload", methods=["POST"])
+@role_required("dev", "dasha", "lena")
+def stage_upload(stage_key: str):
+    f = request.files.get("file")
+    if not f or not f.filename:
+        return jsonify({"ok": False, "error": "Файл не выбран"}), 400
+    if not f.filename.lower().endswith(".md"):
+        return jsonify({"ok": False, "error": "Только .md файлы"}), 400
+    _STAGES_DIR.mkdir(parents=True, exist_ok=True)
+    target = _STAGES_DIR / f"{stage_key}.md"
+    f.save(str(target))
+    return jsonify({"ok": True, "key": stage_key})

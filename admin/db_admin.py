@@ -658,3 +658,133 @@ def get_test_run(run_id: int) -> dict | None:
         cur.execute("SELECT * FROM test_runs WHERE id = %s", (run_id,))
         row = cur.fetchone()
         return dict(row) if row else None
+
+
+# ── Промо-коды ────────────────────────────────────────────────────────────────
+
+def get_promo_codes() -> list[dict]:
+    """Список всех промо-кодов с количеством применений."""
+    with _conn() as conn:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT
+                p.id, p.code, p.type, p.discount_type, p.discount_value,
+                p.max_uses, p.used_count, p.expires_at,
+                p.assigned_user_id, p.sent_at, p.is_active,
+                p.created_by, p.created_at,
+                u.username AS assigned_username
+            FROM promo_codes p
+            LEFT JOIN users u ON u.id = p.assigned_user_id
+            ORDER BY p.created_at DESC
+        """)
+        return [dict(r) for r in cur.fetchall()]
+
+
+def get_promo_code(promo_id: int) -> dict | None:
+    with _conn() as conn:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT p.*, u.username AS assigned_username
+            FROM promo_codes p
+            LEFT JOIN users u ON u.id = p.assigned_user_id
+            WHERE p.id = %s
+        """, (promo_id,))
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
+def create_promo_code(
+    code: str,
+    discount_type: str,
+    discount_value: float,
+    promo_type: str = "general",
+    max_uses: int | None = None,
+    expires_at=None,
+    created_by: str = "lena",
+) -> dict:
+    """Создаёт новый промо-код. Возвращает созданную запись."""
+    with _conn() as conn:
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO promo_codes
+                (code, type, discount_type, discount_value, max_uses, expires_at, created_by)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            RETURNING id, code
+        """, (
+            code.strip().upper(),
+            promo_type,
+            discount_type,
+            float(discount_value),
+            max_uses,
+            expires_at,
+            created_by,
+        ))
+        return dict(cur.fetchone())
+
+
+def deactivate_promo_code(promo_id: int) -> None:
+    with _conn() as conn:
+        cur = conn.cursor()
+        cur.execute(
+            "UPDATE promo_codes SET is_active = FALSE WHERE id = %s",
+            (promo_id,),
+        )
+
+
+def activate_promo_code(promo_id: int) -> None:
+    with _conn() as conn:
+        cur = conn.cursor()
+        cur.execute(
+            "UPDATE promo_codes SET is_active = TRUE WHERE id = %s",
+            (promo_id,),
+        )
+
+
+def get_promo_usages(promo_id: int) -> list[dict]:
+    """Лог применений конкретного промо-кода."""
+    with _conn() as conn:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT pu.id, pu.used_at, pu.discount_amount,
+                   u.username, u.telegram_id,
+                   d.id AS draft_id, d.status AS draft_status
+            FROM promo_usages pu
+            LEFT JOIN users u ON u.id = pu.user_id
+            LEFT JOIN draft_orders d ON d.id = pu.draft_id
+            WHERE pu.promo_id = %s
+            ORDER BY pu.used_at DESC
+        """, (promo_id,))
+        return [dict(r) for r in cur.fetchall()]
+
+
+def get_promo_stats() -> dict:
+    """Общая статистика промо-кодов для дашборда."""
+    with _conn() as conn:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT
+                COUNT(*) FILTER (WHERE is_active) AS active_count,
+                COUNT(*) FILTER (WHERE NOT is_active) AS inactive_count,
+                COUNT(*) FILTER (WHERE type = 'personal') AS personal_count,
+                COUNT(*) FILTER (WHERE type = 'general') AS general_count,
+                COALESCE(SUM(used_count), 0) AS total_uses
+            FROM promo_codes
+        """)
+        row = cur.fetchone()
+        return dict(row) if row else {}
+
+
+def export_promo_codes_csv() -> str:
+    """Экспорт всех промо-кодов в CSV-строку."""
+    import csv
+    import io
+    rows = get_promo_codes()
+    output = io.StringIO()
+    fields = ["id", "code", "type", "discount_type", "discount_value",
+              "max_uses", "used_count", "expires_at", "is_active",
+              "assigned_username", "sent_at", "created_by", "created_at"]
+    writer = csv.DictWriter(output, fieldnames=fields, extrasaction="ignore")
+    writer.writeheader()
+    for r in rows:
+        writer.writerow(r)
+    return output.getvalue()

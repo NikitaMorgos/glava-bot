@@ -135,7 +135,7 @@ def dashboard():
 
 # ── Предложения по флоу ──────────────────────────────────────────
 @bp.route("/suggestions")
-@role_required("dev")
+@role_required("dev", "dasha", "lena")
 def suggestions():
     from admin import db_admin as dba
     items = dba.get_flow_suggestions()
@@ -144,7 +144,7 @@ def suggestions():
 
 
 @bp.route("/suggestions/<int:suggestion_id>/update", methods=["POST"])
-@role_required("dev")
+@role_required("dev", "dasha", "lena")
 def update_suggestion(suggestion_id: int):
     from admin import db_admin as dba
     from flask import jsonify
@@ -156,7 +156,7 @@ def update_suggestion(suggestion_id: int):
 
 
 @bp.route("/restart/<service>", methods=["POST"])
-@role_required("dev")
+@role_required("dev", "dasha", "lena")
 def restart_service(service: str):
     allowed = {"glava", "glava-cabinet", "glava-admin", "glava-n8n"}
     if service not in allowed:

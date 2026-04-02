@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}Промо-коды — GLAVA Admin{% endblock %}
+{% block content %}
+
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-2xl font-bold text-gray-900">🎟 Промо-коды</h1>
+  <div class="flex gap-2">
+    <a href="/lena/promo/export.csv"
+       class="px-4 py-2 bg-white border border-gray-200 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">
+      ↓ Экспорт CSV
+    </a>
+    <a href="/lena/promo/new"
+       class="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-700 transition-colors">
+      + Новый код
+    </a>
+  </div>
+</div>
+
+{% if stats %}
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+  <div class="bg-white rounded-xl shadow-sm p-4 text-center">
+    <div class="text-2xl font-bold text-gray-900">{{ stats.active_count }}</div>
+    <div class="text-xs text-gray-500 mt-1">Активных</div>
+  </div>
+  <div class="bg-white rounded-xl shadow-sm p-4 text-center">
+    <div class="text-2xl font-bold text-gray-900">{{ stats.personal_count }}</div>
+    <div class="text-xs text-gray-500 mt-1">Персональных</div>
+  </div>
+  <div class="bg-white rounded-xl shadow-sm p-4 text-center">
+    <div class="text-2xl font-bold text-gray-900">{{ stats.general_count }}</div>
+    <div class="text-xs text-gray-500 mt-1">Общих</div>
+  </div>
+  <div class="bg-white rounded-xl shadow-sm p-4 text-center">
+    <div class="text-2xl font-bold text-gray-900">{{ stats.total_uses }}</div>
+    <div class="text-xs text-gray-500 mt-1">Применений</div>
+  </div>
+</div>
+{% endif %}
+
+<div class="bg-white rounded-xl shadow-sm overflow-hidden">
+  <table class="w-full text-sm">
+    <thead class="bg-gray-50 border-b border-gray-100">
+      <tr>
+        <th class="px-4 py-3 text-left font-medium text-gray-600">Код</th>
+        <th class="px-4 py-3 text-left font-medium text-gray-600">Тип</th>
+        <th class="px-4 py-3 text-left font-medium text-gray-600">Скидка</th>
+        <th class="px-4 py-3 text-left font-medium text-gray-600">Исп.</th>
+        <th class="px-4 py-3 text-left font-medium text-gray-600">Срок</th>
+        <th class="px-4 py-3 text-left font-medium text-gray-600">Статус</th>
+        <th class="px-4 py-3 text-left font-medium text-gray-600">Действия</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-50">
+      {% for c in codes %}
+      <tr class="hover:bg-gray-50 {{ 'opacity-50' if not c.is_active }}">
+        <td class="px-4 py-3">
+          <span class="font-mono font-medium text-gray-800">{{ c.code }}</span>
+          {% if c.assigned_username %}
+          <div class="text-xs text-gray-400">{{ c.assigned_username }}</div>
+          {% endif %}
+        </td>
+        <td class="px-4 py-3">
+          {% if c.type == 'personal' %}
+          <span class="px-2 py-0.5 bg-purple-100 text-purple-700 rounded text-xs font-medium">Личный</span>
+          {% else %}
+          <span class="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-medium">Общий</span>
+          {% endif %}
+        </td>
+        <td class="px-4 py-3 font-medium text-gray-800">
+          {% if c.discount_type == 'percent' %}
+            {{ c.discount_value | int }}%
+          {% else %}
+            {{ (c.discount_value / 100) | int }} ₽
+          {% endif %}
+        </td>
+        <td class="px-4 py-3 text-gray-600">
+          {{ c.used_count }}{% if c.max_uses %} / {{ c.max_uses }}{% endif %}
+        </td>
+        <td class="px-4 py-3 text-xs text-gray-400">
+          {% if c.expires_at %}
+            {{ c.expires_at.strftime('%d.%m.%Y') }}
+          {% else %}
+            —
+          {% endif %}
+        </td>
+        <td class="px-4 py-3">
+          {% if c.is_active %}
+          <span class="text-green-600 font-medium text-xs">Активен</span>
+          {% else %}
+          <span class="text-gray-400 text-xs">Выключен</span>
+          {% endif %}
+        </td>
+        <td class="px-4 py-3">
+          <div class="flex gap-2">
+            <a href="/lena/promo/{{ c.id }}/usages"
+               class="text-xs text-blue-600 hover:text-blue-800 font-medium">Применения</a>
+            {% if c.is_active %}
+            <form method="POST" action="/lena/promo/{{ c.id }}/deactivate" class="inline">
+              <button type="submit"
+                      onclick="return confirm('Деактивировать код {{ c.code }}?')"
+                      class="text-xs text-red-500 hover:text-red-700 font-medium">
+                Выкл
+              </button>
+            </form>
+            {% else %}
+            <form method="POST" action="/lena/promo/{{ c.id }}/activate" class="inline">
+              <button type="submit"
+                      class="text-xs text-green-600 hover:text-green-800 font-medium">
+                Вкл
+              </button>
+            </form>
+            {% endif %}
+          </div>
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="7" class="px-4 py-8 text-center text-gray-400">Промо-кодов пока нет</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
