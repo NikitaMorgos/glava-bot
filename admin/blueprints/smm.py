@@ -1,5 +1,6 @@
 """SMM редакция — /smm/."""
 import logging
+import re
 import threading
 from pathlib import Path
 
@@ -17,13 +18,12 @@ logger = logging.getLogger(__name__)
 bp = Blueprint("smm", __name__, url_prefix="/smm")
 
 SMM_ROLES = [
-    ("smm_strategy", "Стратегия"),
-    ("smm_scout",    "SMM Скаут"),
+    ("smm_strategy",   "Стратегия"),
+    ("smm_scout",      "SMM Скаут"),
     ("smm_journalist", "Журналист"),
-    ("smm_editor",   "Редактор"),
+    ("smm_editor",     "Редактор"),
 ]
 
-# Лёгкий in-memory трекер фоновых задач {job_key: "running"|"done"|"error: ..."}
 _jobs: dict[str, str] = {}
 
 STATUS_LABELS = {
@@ -51,13 +51,23 @@ STATUS_COLORS = {
 }
 
 
+def _slug(text: str) -> str:
+    """Простая транслитерация / slug из произвольной строки."""
+    t = text.lower().strip()
+    t = re.sub(r"[^\w\s-]", "", t)
+    t = re.sub(r"[\s_-]+", "_", t)
+    return t[:40] or "item"
+
+
 # ── Главная — доска постов ─────────────────────────────────────────────────────
 
 @bp.route("/")
 @role_required("dev", "lena", "dasha")
 def index():
-    posts = db_smm.get_all_posts(100)
+    platform_filter = request.args.get("platform") or None
+    posts = db_smm.get_all_posts(100, platform_slug=platform_filter)
     plans = db_smm.get_latest_plans(10)
+    platforms = db_smm.get_all_platforms()
 
     board: dict[str, list] = {
         "draft":           [],
@@ -78,6 +88,8 @@ def index():
         "smm/index.html",
         board=board,
         plans=plans,
+        platforms=platforms,
+        active_platform=platform_filter,
         status_labels=STATUS_LABELS,
         status_colors=STATUS_COLORS,
     )
@@ -88,18 +100,24 @@ def index():
 @bp.route("/generate-plan", methods=["POST"])
 @role_required("dev", "lena", "dasha")
 def generate_plan():
-    manual_ideas = request.form.get("manual_ideas", "").strip()
-    week_start = request.form.get("week_start", "").strip() or None
-    num_topics = int(request.form.get("num_topics", 5))
+    manual_ideas  = request.form.get("manual_ideas", "").strip()
+    week_start    = request.form.get("week_start", "").strip() or None
+    num_topics    = int(request.form.get("num_topics", 5))
+    platform_slug = request.form.get("platform_slug", "dzen").strip() or "dzen"
 
-    plan_id = db_smm.create_plan(week_start, manual_ideas)
+    plan_id = db_smm.create_plan(week_start, manual_ideas, platform_slug=platform_slug)
     job_key = f"plan_{plan_id}"
     _jobs[job_key] = "running"
 
     def _run():
         try:
             from smm.scout import generate_content_plan
-            generate_content_plan(plan_id, manual_ideas, num_topics)
+            generate_content_plan(
+                plan_id,
+                manual_ideas=manual_ideas,
+                num_topics=num_topics,
+                platform_slug=platform_slug,
+            )
             db_smm.update_plan_status(plan_id, "draft")
             _jobs[job_key] = "done"
         except Exception as e:
@@ -108,7 +126,7 @@ def generate_plan():
             _jobs[job_key] = f"error: {e}"
 
     threading.Thread(target=_run, daemon=True).start()
-    flash(f"Генерация контент-плана #{plan_id} запущена. Обновите страницу через ~30 секунд.", "success")
+    flash(f"Генерация контент-плана #{plan_id} для «{platform_slug}» запущена (~30 сек).", "success")
     return redirect(url_for("smm.index"))
 
 
@@ -121,13 +139,11 @@ def post_detail(post_id: int):
     if not post:
         flash("Пост не найден", "error")
         return redirect(url_for("smm.index"))
-    job_status = _jobs.get(f"post_{post_id}", "")
-    pub_status = _jobs.get(f"publish_{post_id}", "")
     return render_template(
         "smm/post.html",
         post=post,
-        job_status=job_status,
-        pub_status=pub_status,
+        job_status=_jobs.get(f"post_{post_id}", ""),
+        pub_status=_jobs.get(f"publish_{post_id}", ""),
         status_labels=STATUS_LABELS,
         status_colors=STATUS_COLORS,
     )
@@ -136,7 +152,6 @@ def post_detail(post_id: int):
 @bp.route("/post/<int:post_id>/generate", methods=["POST"])
 @role_required("dev", "lena", "dasha")
 def generate_post(post_id: int):
-    """Запустить полный пайплайн: Journalist → Editor → Replicate."""
     post = db_smm.get_post(post_id)
     if not post:
         flash("Пост не найден", "error")
@@ -159,7 +174,7 @@ def generate_post(post_id: int):
             _jobs[job_key] = f"error: {e}"
 
     threading.Thread(target=_run, daemon=True).start()
-    flash("Генерация статьи запущена. Обновите страницу через ~60 секунд.", "success")
+    flash("Генерация статьи запущена (~60 сек).", "success")
     return redirect(url_for("smm.post_detail", post_id=post_id))
 
 
@@ -253,26 +268,130 @@ def publish_post(post_id: int):
             _jobs[job_key] = f"error: {e}"
 
     threading.Thread(target=_run, daemon=True).start()
-    flash("Публикация в Яндекс Дзен запущена. Обновите страницу через ~2 минуты.", "success")
+    flash("Публикация в Яндекс Дзен запущена (~2 мин).", "success")
     return redirect(url_for("smm.post_detail", post_id=post_id))
 
 
-# ── Промпты ролей ──────────────────────────────────────────────────────────────
+# ── Настройки SMM ──────────────────────────────────────────────────────────────
+
+@bp.route("/settings")
+@role_required("dev", "lena", "dasha")
+def settings():
+    tab = request.args.get("tab", "platforms")
+
+    platforms = db_smm.get_all_platforms()
+    for p in platforms:
+        p["prompt"] = dba.get_prompt(f"smm_platform_{p['slug']}")
+
+    rubrics = db_smm.get_all_rubrics()
+    for r in rubrics:
+        r["prompt"] = dba.get_prompt(f"smm_rubric_{r['slug']}")
+
+    roles_data = []
+    for role_key, role_name in SMM_ROLES:
+        roles_data.append({
+            "key":     role_key,
+            "name":    role_name,
+            "current": dba.get_prompt(role_key),
+            "history": dba.get_prompt_history(role_key, 4),
+        })
+
+    return render_template(
+        "smm/settings.html",
+        platforms=platforms,
+        rubrics=rubrics,
+        roles_data=roles_data,
+        active_tab=tab,
+    )
+
+
+# ── Площадки ──────────────────────────────────────────────────────────────────
+
+@bp.route("/settings/platform/save", methods=["POST"])
+@role_required("dev", "lena", "dasha")
+def save_platform():
+    """Создать или обновить площадку + её промпт."""
+    slug        = request.form.get("slug", "").strip()
+    name        = request.form.get("name", "").strip()
+    prompt_text = request.form.get("prompt_text", "").strip()
+
+    if not slug or not name:
+        flash("Укажите slug и название площадки", "error")
+        return redirect(url_for("smm.settings", tab="platforms"))
+
+    db_smm.upsert_platform(slug, name)
+    if prompt_text:
+        dba.save_prompt(f"smm_platform_{slug}", prompt_text, session.get("username", "dev"))
+    flash(f"Площадка «{name}» сохранена", "success")
+    return redirect(url_for("smm.settings", tab="platforms"))
+
+
+@bp.route("/settings/platform/<int:platform_id>/toggle", methods=["POST"])
+@role_required("dev", "lena", "dasha")
+def toggle_platform(platform_id: int):
+    is_active = request.form.get("is_active") == "1"
+    db_smm.toggle_platform(platform_id, is_active)
+    return redirect(url_for("smm.settings", tab="platforms"))
+
+
+# ── Рубрики ────────────────────────────────────────────────────────────────────
+
+@bp.route("/settings/rubric/save", methods=["POST"])
+@role_required("dev", "lena", "dasha")
+def save_rubric():
+    """Создать или обновить рубрику + её промпт."""
+    slug        = request.form.get("slug", "").strip()
+    name        = request.form.get("name", "").strip()
+    prompt_text = request.form.get("prompt_text", "").strip()
+    sort_order  = int(request.form.get("sort_order", 0) or 0)
+
+    if not name:
+        flash("Укажите название рубрики", "error")
+        return redirect(url_for("smm.settings", tab="rubrics"))
+
+    if not slug:
+        slug = _slug(name)
+
+    db_smm.upsert_rubric(slug, name, sort_order)
+    if prompt_text:
+        dba.save_prompt(f"smm_rubric_{slug}", prompt_text, session.get("username", "dev"))
+    flash(f"Рубрика «{name}» сохранена", "success")
+    return redirect(url_for("smm.settings", tab="rubrics"))
+
+
+@bp.route("/settings/rubric/<int:rubric_id>/toggle", methods=["POST"])
+@role_required("dev", "lena", "dasha")
+def toggle_rubric(rubric_id: int):
+    is_active = request.form.get("is_active") == "1"
+    db_smm.toggle_rubric(rubric_id, is_active)
+    return redirect(url_for("smm.settings", tab="rubrics"))
+
+
+# ── Роли — промпты ────────────────────────────────────────────────────────────
+
+@bp.route("/settings/role/save", methods=["POST"])
+@role_required("dev", "lena", "dasha")
+def save_role_prompt():
+    role = request.form.get("role", "").strip()
+    text = request.form.get("prompt_text", "").strip()
+    valid_roles = {r[0] for r in SMM_ROLES}
+    if role not in valid_roles:
+        flash("Неверная роль", "error")
+        return redirect(url_for("smm.settings", tab="roles"))
+    if not text:
+        flash("Промпт не может быть пустым", "error")
+        return redirect(url_for("smm.settings", tab="roles"))
+    dba.save_prompt(role, text, session.get("username", "dev"))
+    flash(f"Промпт «{dict(SMM_ROLES).get(role, role)}» сохранён", "success")
+    return redirect(url_for("smm.settings", tab="roles"))
+
+
+# ── Обратная совместимость: старая страница /smm/prompts ──────────────────────
 
 @bp.route("/prompts")
 @role_required("dev", "lena", "dasha")
 def prompts():
-    roles_data = []
-    for role_key, role_name in SMM_ROLES:
-        current = dba.get_prompt(role_key)
-        history = dba.get_prompt_history(role_key, 5)
-        roles_data.append({
-            "key": role_key,
-            "name": role_name,
-            "current": current,
-            "history": history,
-        })
-    return render_template("smm/prompts.html", roles_data=roles_data)
+    return redirect(url_for("smm.settings", tab="roles"))
 
 
 @bp.route("/prompts/save", methods=["POST"])
@@ -283,14 +402,13 @@ def save_prompt():
     valid_roles = {r[0] for r in SMM_ROLES}
     if role not in valid_roles:
         flash("Неверная роль", "error")
-        return redirect(url_for("smm.prompts"))
+        return redirect(url_for("smm.settings", tab="roles"))
     if not text:
         flash("Промпт не может быть пустым", "error")
-        return redirect(url_for("smm.prompts"))
-    author = session.get("username", "dev")
-    dba.save_prompt(role, text, author)
-    flash(f"Промпт «{dict(SMM_ROLES).get(role, role)}» сохранён", "success")
-    return redirect(url_for("smm.prompts"))
+        return redirect(url_for("smm.settings", tab="roles"))
+    dba.save_prompt(role, text, session.get("username", "dev"))
+    flash(f"Промпт сохранён", "success")
+    return redirect(url_for("smm.settings", tab="roles"))
 
 
 # ── Утилиты ────────────────────────────────────────────────────────────────────

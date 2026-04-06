@@ -75,11 +75,11 @@
       </a>
 
       <div class="text-xs text-gray-500 uppercase px-3 pt-4 pb-2">SMM редакция</div>
-      <a href="/smm/" class="sidebar-link {% if request.path == '/smm/' or (request.path.startswith('/smm/') and not request.path.startswith('/smm/prompts')) %}active{% endif %}">
+      <a href="/smm/" class="sidebar-link {% if request.path == '/smm/' or (request.path.startswith('/smm/') and not request.path.startswith('/smm/settings') and not request.path.startswith('/smm/prompts')) %}active{% endif %}">
         📅 Контент-план
       </a>
-      <a href="/smm/prompts" class="sidebar-link {% if request.path.startswith('/smm/prompts') %}active{% endif %}">
-        ✏️ Промпты ролей
+      <a href="/smm/settings" class="sidebar-link {% if request.path.startswith('/smm/settings') or request.path.startswith('/smm/prompts') %}active{% endif %}">
+        ⚙️ Настройки SMM
       </a>
 
       <div class="text-xs text-gray-500 uppercase px-3 pt-4 pb-2">Финансы</div>
