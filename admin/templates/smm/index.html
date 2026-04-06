@@ -16,47 +16,81 @@
 </div>
 
 <!-- Инструкция (скрыта по умолчанию) -->
-<div id="smm-help" class="hidden mb-5 bg-amber-50 border border-amber-200 rounded-xl p-5 text-sm text-gray-700 space-y-4">
-  <div class="font-semibold text-amber-800 text-base">Как работает SMM-редакция</div>
+<div id="smm-help" class="hidden mb-5 bg-amber-50 border border-amber-200 rounded-xl p-5 text-sm text-gray-700">
+  <div class="font-semibold text-amber-800 text-base mb-4">Как работает SMM-редакция</div>
 
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-    <div class="space-y-3">
-      <div class="font-semibold text-gray-800">Шаг 1 — Контент-план</div>
-      <p>Нажми <strong>«Сгенерировать план»</strong>. AI-скаут (Claude) придумает 3–7 тем для статей.
-      Можно добавить свои идеи в поле «Ваши идеи» — они учитываются при генерации.</p>
-      <p class="text-xs text-gray-500">Генерация занимает ~30 секунд. После — обнови страницу, новые темы появятся в колонке «Черновик».</p>
+  <!-- Рабочий процесс -->
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-5">
+    <div class="bg-white rounded-lg p-3 border border-amber-100">
+      <div class="text-xs font-bold text-amber-700 mb-1">① Настрой</div>
+      <p class="text-xs text-gray-600">
+        Зайди в <a href="/smm/settings?tab=rubrics" class="underline text-amber-700">Рубрики</a> — добавь направления:
+        «Отзывы клиентов», «Бэкстейдж», «Истории знаменитостей» и т.д. Каждой рубрике дай промпт — что и как писать.
+        В <a href="/smm/settings?tab=platforms" class="underline text-amber-700">Площадках</a> опиши специфику канала.
+        В <a href="/smm/settings?tab=roles" class="underline text-amber-700">Ролях</a> настрой стиль Журналиста.
+      </p>
     </div>
-
-    <div class="space-y-3">
-      <div class="font-semibold text-gray-800">Шаг 2 — Статья</div>
-      <p>Открой карточку темы → нажми <strong>«Написать статью»</strong>. Журналист (GPT-4o) напишет текст
-      в стиле, заданном в промпте, Редактор (Claude) проверит и сгенерирует обложку.</p>
-      <p class="text-xs text-gray-500">~60 секунд. Обнови страницу — увидишь текст, оценку редактора и картинку.</p>
+    <div class="bg-white rounded-lg p-3 border border-amber-100">
+      <div class="text-xs font-bold text-amber-700 mb-1">② Контент-план</div>
+      <p class="text-xs text-gray-600">
+        Выбери площадку, укажи кол-во тем, добавь свои идеи (необязательно) →
+        нажми <strong>«✨ Сгенерировать план»</strong>.
+        Скаут (Claude) придумает темы с учётом рубрик и особенностей площадки.
+        <br><span class="text-gray-400">~30 сек, потом обнови страницу.</span>
+      </p>
     </div>
-
-    <div class="space-y-3">
-      <div class="font-semibold text-gray-800">Шаг 3 — Правки и одобрение</div>
-      <p>В карточке поста можно отредактировать заголовок и текст руками, перегенерировать обложку
-      с другим промптом. Когда всё устраивает — нажми <strong>«Одобрить»</strong>.</p>
+    <div class="bg-white rounded-lg p-3 border border-amber-100">
+      <div class="text-xs font-bold text-amber-700 mb-1">③ Статья</div>
+      <p class="text-xs text-gray-600">
+        Открой карточку темы → нажми <strong>«Написать статью»</strong>.
+        Журналист (GPT-4o) напишет текст в твоём стиле, Редактор (Claude) проверит и сгенерирует обложку.
+        <br><span class="text-gray-400">~60 сек, потом обнови страницу.</span>
+      </p>
     </div>
-
-    <div class="space-y-3">
-      <div class="font-semibold text-gray-800">Шаг 4 — Публикация в Дзен</div>
-      <p>После одобрения появится кнопка <strong>«Опубликовать в Яндекс Дзен»</strong>. Требует
-      сохранённой сессии (один раз запускается скрипт авторизации — попроси разработчика).</p>
+    <div class="bg-white rounded-lg p-3 border border-amber-100">
+      <div class="text-xs font-bold text-amber-700 mb-1">④ Одобрение и публикация</div>
+      <p class="text-xs text-gray-600">
+        Прочитай статью, отредактируй текст или перегенерируй обложку если нужно.
+        Нажми <strong>«Одобрить»</strong> → <strong>«Опубликовать в Дзен»</strong>.
+        <br><span class="text-gray-400">Публикация требует сохранённой сессии — попроси разработчика один раз настроить.</span>
+      </p>
     </div>
   </div>
 
-  <div class="border-t border-amber-200 pt-3">
-    <div class="font-semibold text-gray-800 mb-1">Настройка стиля</div>
-    <p>Весь стиль статей управляется через <a href="/smm/settings" class="underline text-amber-700">Настройки SMM</a>.
-    Самое важное — промпт <strong>Журналиста</strong> (вкладка «Роли»): именно там задаётся тон, стиль, объём.
-    На вкладке «Рубрики» настраиваешь направления тем. На вкладке «Площадки» — особенности каждого канала.</p>
+  <!-- Три сущности -->
+  <div class="border-t border-amber-200 pt-4 mb-4">
+    <div class="font-semibold text-gray-800 mb-2">Что ты настраиваешь в <a href="/smm/settings" class="underline text-amber-700">Настройках SMM</a></div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div class="text-xs text-gray-600">
+        <span class="font-semibold text-gray-700">📂 Рубрики</span> — направления контента.
+        Например: «Отзывы клиентов» (реальные истории заказчиков), «Бэкстейдж» (как делается книга),
+        «Истории знаменитостей» (публичные люди о памяти и семье). Скаут распределяет темы по активным рубрикам.
+      </div>
+      <div class="text-xs text-gray-600">
+        <span class="font-semibold text-gray-700">🌐 Площадки</span> — каналы публикации.
+        Сейчас: Яндекс Дзен. Позже добавятся ВКонтакте, Telegram и др.
+        Промпт площадки описывает её специфику: длина, формат, тональность.
+      </div>
+      <div class="text-xs text-gray-600">
+        <span class="font-semibold text-gray-700">🎭 Роли</span> — промпты AI-участников редакции.
+        Самое важное — <strong>Журналист</strong>: именно здесь задаётся стиль, тон, объём и референсы (Гришковец, Минаев и т.д.).
+        Изменения применяются сразу к следующей статье.
+      </div>
+    </div>
   </div>
 
+  <!-- Статусы -->
   <div class="border-t border-amber-200 pt-3 text-xs text-gray-500">
-    <strong>Статусы постов:</strong>
-    Черновик → Генерируется → Текст готов → Одобрен/Отклонён редактором → Готов к одобрению → Одобрен → Публикуется → Опубликован
+    <strong>Статусы поста:</strong>
+    <span class="inline-flex flex-wrap gap-1 mt-1">
+      <span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded">Черновик</span> →
+      <span class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded">Генерируется</span> →
+      <span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded">Текст готов</span> →
+      <span class="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded">Готов к одобрению</span> →
+      <span class="bg-green-100 text-green-700 px-2 py-0.5 rounded">Одобрен</span> →
+      <span class="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded">Опубликован</span>
+    </span>
+    <span class="ml-2">· Если редактор отклонил — просто перегенерируй или отредактируй текст руками и одобри вручную.</span>
   </div>
 </div>
 
