@@ -132,17 +132,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         return
 
     # Проверяем, просят ли сделать отчёт/презу по конкуренту
-    report_keywords = ("презу", "отчёт", "отчет", "report", "анализ скрин", "проанализируй скрин")
+    report_keywords = ("презу", "отчёт", "отчет", "report", "анализ скрин", "проанализируй скрин",
+                       "поизучал сервис", "изучил сервис", "исследовал сервис", "скрины сервис",
+                       "пользовательский путь", "ux", "конкурент")
     if any(kw in text.lower() for kw in report_keywords):
-        # Извлекаем тему из сообщения
-        topic_match = None
-        for word in text.split():
-            w = word.strip(".,!?").lower()
-            if w not in {"сделай", "составь", "создай", "по", "про", "для", "и", "презу", "отчёт",
-                         "отчет", "report", "анализ", "скрины", "скриншоты", "конкуренту"}:
-                topic_match = w
-                break
-        topic = topic_match or "storyworth"
+        topic = _extract_topic(text)
 
         await update.message.reply_text(
             f"Читаю скрины из tasks/audience-research/{topic}-screens/ "
@@ -192,7 +186,43 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             await message.reply_text(chunk)
 
 
-def _split_message(text: str, max_len: int = 4000) -> list[str]:
+def _extract_topic(text: str) -> str:
+    """Извлекает название темы/продукта из произвольного сообщения.
+
+    Стратегии (по приоритету):
+    1. Слово после маркера «сервис/продукт/приложение X»
+    2. Известное название продукта в тексте (storyworth, storium, etc.)
+    3. Слово после «по/про» рядом с отчётными словами
+    4. Fallback → storyworth
+    """
+    import re as _re
+
+    lower = text.lower()
+
+    # 1. После маркера «сервис/продукт/приложение»
+    m = _re.search(r"(?:сервис|продукт|приложение|платформу?)\s+([a-zа-яё0-9_\-]{3,})", lower)
+    if m:
+        return m.group(1).strip(".,!?")
+
+    # 2. Известные названия продуктов
+    known = ["storyworth", "storium", "chatbooks", "artifact", "legacybox",
+             "unforgettable", "memorymixer", "remento", "forever"]
+    for name in known:
+        if name in lower:
+            return name
+
+    # 3. После «по/про» — берём следующее слово, если оно не стоп-слово
+    stop = {"мне", "нас", "нам", "это", "той", "той", "той", "всем", "всё",
+            "все", "нашему", "нашей", "нашего", "такой", "такому", "скринам",
+            "скринам", "скрины", "скриншотам", "материалу"}
+    m = _re.search(r"(?:по|про)\s+([a-zа-яё0-9_\-]{3,})", lower)
+    if m and m.group(1) not in stop:
+        return m.group(1).strip(".,!?")
+
+    return "storyworth"
+
+
+
     """Разбивает длинное сообщение на части для Telegram."""
     if len(text) <= max_len:
         return [text]
