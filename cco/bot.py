@@ -116,19 +116,21 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     except Exception:
         pass
 
-    mentioned = bot_username and f"@{bot_username}" in text
+    text_lower = text.lower()
+    bot_username_lower = (bot_username or "").lower()
+    mentioned = bool(bot_username_lower and f"@{bot_username_lower}" in text_lower)
     replied_to_bot = (
         message.reply_to_message
         and message.reply_to_message.from_user
         and message.reply_to_message.from_user.is_bot
-        and message.reply_to_message.from_user.username == bot_username
+        and (message.reply_to_message.from_user.username or "").lower() == bot_username_lower
     )
 
     if not mentioned and not replied_to_bot:
         return
 
     if mentioned and bot_username:
-        text = text.replace(f"@{bot_username}", "").strip()
+        text = text.replace(f"@{bot_username}", "").replace(f"@{bot_username_lower}", "").strip()
 
     if not text:
         return
