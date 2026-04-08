@@ -17,6 +17,7 @@ MAX_HISTORY = 30
 MAX_RESPONSE_TOKENS = 2000
 TEMPERATURE = 0.4
 TIMEOUT = 60.0
+VISION_TIMEOUT = 120.0
 
 _histories: dict[int, list[dict[str, str]]] = {}
 _last_activity: dict[int, float] = {}
@@ -192,7 +193,7 @@ def analyze_images_from_folder(
 
     try:
         from anthropic import Anthropic
-        client = Anthropic(api_key=key)
+        client = Anthropic(api_key=key, timeout=VISION_TIMEOUT)
         resp = client.messages.create(
             model=CCO_ANALYSIS_MODEL,
             max_tokens=4000,

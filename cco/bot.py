@@ -4,6 +4,7 @@ CCO-бот ГЛАВА — AI Chief Customer Officer.
 Работает в групповом чате с командой. Отвечает по @mention.
 Запуск: python -m cco.bot
 """
+import asyncio
 import logging
 import os
 import sys
@@ -66,7 +67,7 @@ async def cmd_report(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
         f"Это займёт ~30-60 секунд."
     )
 
-    analysis = analyze_images_from_folder(topic=topic)
+    analysis = await asyncio.to_thread(analyze_images_from_folder, topic)
     if not analysis or analysis.startswith("Папка") or analysis.startswith("В папке"):
         await update.message.reply_text(analysis or "Не удалось проанализировать скрины.")
         return
@@ -78,15 +79,16 @@ async def cmd_report(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     screens_dir = project_root / "tasks" / "audience-research" / f"{topic}-screens"
     screen_count = len([f for f in screens_dir.iterdir() if f.suffix.lower() in {".jpg", ".jpeg", ".png", ".webp"}]) if screens_dir.exists() else 0
 
-    report_path = generate_html_report(
-        topic=topic.capitalize(),
-        analysis_md=analysis,
-        screen_count=screen_count,
+    report_path = await asyncio.to_thread(
+        generate_html_report,
+        topic.capitalize(),
+        analysis,
+        screen_count,
     )
 
     # Также сохраняем/обновляем md-версию
     md_path = project_root / "tasks" / "audience-research" / "docs" / f"{topic}-analysis.md"
-    md_path.write_text(analysis, encoding="utf-8")
+    await asyncio.to_thread(md_path.write_text, analysis, "utf-8")
 
     await update.message.reply_text(f"Готово! Отправляю файл...")
     with open(report_path, "rb") as f:
@@ -146,7 +148,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         from pathlib import Path
         project_root = Path(__file__).resolve().parent.parent
 
-        analysis = analyze_images_from_folder(topic=topic)
+        analysis = await asyncio.to_thread(analyze_images_from_folder, topic)
         if not analysis or analysis.startswith("Папка") or analysis.startswith("В папке"):
             await message.reply_text(analysis or "Не удалось проанализировать скрины.")
             return
@@ -157,13 +159,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             if f.suffix.lower() in {".jpg", ".jpeg", ".png", ".webp"}
         ]) if screens_dir.exists() else 0
 
-        report_path = generate_html_report(
-            topic=topic.capitalize(),
-            analysis_md=analysis,
-            screen_count=screen_count,
+        report_path = await asyncio.to_thread(
+            generate_html_report,
+            topic.capitalize(),
+            analysis,
+            screen_count,
         )
         md_path = project_root / "tasks" / "audience-research" / "docs" / f"{topic}-analysis.md"
-        md_path.write_text(analysis, encoding="utf-8")
+        await asyncio.to_thread(md_path.write_text, analysis, "utf-8")
 
         with open(report_path, "rb") as f:
             await message.reply_document(
@@ -176,10 +179,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     user_name = user.first_name or user.username or "" if user else ""
     logger.info("CCO query from %s: %s", user_name, text[:100])
 
-    answer = get_cco_response(
-        user_message=text,
-        chat_id=chat.id,
-        user_name=user_name,
+    answer = await asyncio.to_thread(
+        get_cco_response,
+        text,
+        chat.id,
+        user_name,
     )
     if answer:
         for chunk in _split_message(answer):
@@ -220,9 +224,7 @@ def _extract_topic(text: str) -> str:
         return m.group(1).strip(".,!?")
 
     return "storyworth"
-
-
-
+def _split_message(text: str, max_len: int = 4000) -> list[str]:
     """Разбивает длинное сообщение на части для Telegram."""
     if len(text) <= max_len:
         return [text]
