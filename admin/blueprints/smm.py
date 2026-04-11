@@ -18,10 +18,11 @@ logger = logging.getLogger(__name__)
 bp = Blueprint("smm", __name__, url_prefix="/smm")
 
 SMM_ROLES = [
-    ("smm_strategy",   "Стратегия"),
-    ("smm_scout",      "SMM Скаут"),
-    ("smm_journalist", "Журналист"),
-    ("smm_editor",     "Редактор"),
+    ("smm_strategy",     "Стратегия"),
+    ("smm_scout",        "SMM Скаут"),
+    ("smm_journalist",   "Журналист"),
+    ("smm_editor",       "Редактор"),
+    ("smm_illustrator",  "Иллюстратор"),
 ]
 
 _jobs: dict[str, str] = {}

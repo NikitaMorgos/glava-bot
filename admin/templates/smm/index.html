@@ -19,69 +19,101 @@
 <div id="smm-help" class="hidden mb-5 bg-amber-50 border border-amber-200 rounded-xl p-5 text-sm text-gray-700">
   <div class="font-semibold text-amber-800 text-base mb-4">Как работает SMM-редакция</div>
 
-  <!-- Рабочий процесс -->
-  <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-5">
-    <div class="bg-white rounded-lg p-3 border border-amber-100">
-      <div class="text-xs font-bold text-amber-700 mb-1">① Настрой</div>
-      <p class="text-xs text-gray-600">
-        Зайди в <a href="/smm/settings?tab=rubrics" class="underline text-amber-700">Рубрики</a> — добавь направления:
-        «Отзывы клиентов», «Бэкстейдж», «Истории знаменитостей» и т.д. Каждой рубрике дай промпт — что и как писать.
-        В <a href="/smm/settings?tab=platforms" class="underline text-amber-700">Площадках</a> опиши специфику канала.
-        В <a href="/smm/settings?tab=roles" class="underline text-amber-700">Ролях</a> настрой стиль Журналиста.
-      </p>
-    </div>
-    <div class="bg-white rounded-lg p-3 border border-amber-100">
-      <div class="text-xs font-bold text-amber-700 mb-1">② Контент-план</div>
-      <p class="text-xs text-gray-600">
-        Выбери площадку, укажи кол-во тем, добавь свои идеи (необязательно) →
-        нажми <strong>«✨ Сгенерировать план»</strong>.
-        Скаут (Claude) придумает темы с учётом рубрик и особенностей площадки.
-        <br><span class="text-gray-400">~30 сек, потом обнови страницу.</span>
-      </p>
-    </div>
-    <div class="bg-white rounded-lg p-3 border border-amber-100">
-      <div class="text-xs font-bold text-amber-700 mb-1">③ Статья</div>
-      <p class="text-xs text-gray-600">
-        Открой карточку темы → нажми <strong>«Написать статью»</strong>.
-        Журналист (GPT-4o) напишет текст в твоём стиле, Редактор (Claude) проверит и сгенерирует обложку.
-        <br><span class="text-gray-400">~60 сек, потом обнови страницу.</span>
-      </p>
-    </div>
-    <div class="bg-white rounded-lg p-3 border border-amber-100">
-      <div class="text-xs font-bold text-amber-700 mb-1">④ Одобрение и публикация</div>
-      <p class="text-xs text-gray-600">
-        Прочитай статью, отредактируй текст или перегенерируй обложку если нужно.
-        Нажми <strong>«Одобрить»</strong> → <strong>«Опубликовать в Дзен»</strong>.
-        <br><span class="text-gray-400">Публикация требует сохранённой сессии — попроси разработчика один раз настроить.</span>
-      </p>
+  <!-- Полная цепочка -->
+  <div class="mb-5">
+    <div class="text-xs font-semibold text-gray-500 uppercase mb-3">Полная последовательность от материала до публикации</div>
+    <div class="flex flex-col gap-0">
+
+      <div class="flex gap-3 items-start">
+        <div class="flex flex-col items-center">
+          <div class="w-7 h-7 rounded-full bg-purple-100 text-purple-700 text-xs font-bold flex items-center justify-center flex-shrink-0">1</div>
+          <div class="w-px flex-1 bg-gray-200 my-1"></div>
+        </div>
+        <div class="pb-4 flex-1">
+          <div class="font-semibold text-gray-800 text-xs mb-0.5">🔍 Скаут собирает материал и генерирует темы</div>
+          <p class="text-xs text-gray-500">Берёт: промпт Стратегии + промпт Скаута + промпт Площадки + все активные Рубрики + отзывы клиентов из БД + твои ручные идеи. Отдаёт Claude → получает список тем с рубриками.</p>
+        </div>
+      </div>
+
+      <div class="flex gap-3 items-start">
+        <div class="flex flex-col items-center">
+          <div class="w-7 h-7 rounded-full bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center flex-shrink-0">2</div>
+          <div class="w-px flex-1 bg-gray-200 my-1"></div>
+        </div>
+        <div class="pb-4 flex-1">
+          <div class="font-semibold text-gray-800 text-xs mb-0.5">✍️ Журналист пишет статью</div>
+          <p class="text-xs text-gray-500">Берёт тему → пишет через GPT-4o в стиле, заданном промптом Журналиста (твой стиль: Гришковец, Минаев, личные интонации). Без жёсткого шаблона структуры — всё управляется промптом.</p>
+        </div>
+      </div>
+
+      <div class="flex gap-3 items-start">
+        <div class="flex flex-col items-center">
+          <div class="w-7 h-7 rounded-full bg-red-100 text-red-700 text-xs font-bold flex items-center justify-center flex-shrink-0">3</div>
+          <div class="w-px flex-1 bg-gray-200 my-1"></div>
+        </div>
+        <div class="pb-4 flex-1">
+          <div class="font-semibold text-gray-800 text-xs mb-0.5">📋 Редактор проверяет текст</div>
+          <p class="text-xs text-gray-500">Claude с промптом Редактора: одобряет если статья по теме и без грубых ошибок, отклоняет только явно неподходящий контент. Оставляет комментарий с рекомендациями.</p>
+        </div>
+      </div>
+
+      <div class="flex gap-3 items-start">
+        <div class="flex flex-col items-center">
+          <div class="w-7 h-7 rounded-full bg-orange-100 text-orange-700 text-xs font-bold flex items-center justify-center flex-shrink-0">4</div>
+          <div class="w-px flex-1 bg-gray-200 my-1"></div>
+        </div>
+        <div class="pb-4 flex-1">
+          <div class="font-semibold text-gray-800 text-xs mb-0.5">🎨 Иллюстратор создаёт обложку</div>
+          <p class="text-xs text-gray-500">Claude с промптом Иллюстратора читает текст статьи → формулирует визуальный концепт (image prompt на английском, стиль nana-banana) → Replicate генерирует картинку.</p>
+        </div>
+      </div>
+
+      <div class="flex gap-3 items-start">
+        <div class="flex flex-col items-center">
+          <div class="w-7 h-7 rounded-full bg-green-100 text-green-700 text-xs font-bold flex items-center justify-center flex-shrink-0">5</div>
+          <div class="w-px flex-1 bg-gray-200 my-1"></div>
+        </div>
+        <div class="pb-4 flex-1">
+          <div class="font-semibold text-gray-800 text-xs mb-0.5">👁 Ты проверяешь и одобряешь</div>
+          <p class="text-xs text-gray-500">Открываешь пост, читаешь текст, смотришь картинку. Можно отредактировать текст руками, перегенерировать обложку с другим промптом. Нажимаешь «Одобрить».</p>
+        </div>
+      </div>
+
+      <div class="flex gap-3 items-start">
+        <div class="flex flex-col items-center">
+          <div class="w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold flex items-center justify-center flex-shrink-0">6</div>
+        </div>
+        <div class="pb-1 flex-1">
+          <div class="font-semibold text-gray-800 text-xs mb-0.5">🚀 Публикация на площадке</div>
+          <p class="text-xs text-gray-500">Playwright автоматически открывает Яндекс Дзен, вставляет заголовок, текст, загружает обложку, нажимает «Опубликовать». Требует сохранённой сессии (один раз).</p>
+        </div>
+      </div>
+
     </div>
   </div>
 
-  <!-- Три сущности -->
+  <!-- Что настраивать -->
   <div class="border-t border-amber-200 pt-4 mb-4">
     <div class="font-semibold text-gray-800 mb-2">Что ты настраиваешь в <a href="/smm/settings" class="underline text-amber-700">Настройках SMM</a></div>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
       <div class="text-xs text-gray-600">
         <span class="font-semibold text-gray-700">📂 Рубрики</span> — направления контента.
-        Например: «Отзывы клиентов» (реальные истории заказчиков), «Бэкстейдж» (как делается книга),
-        «Истории знаменитостей» (публичные люди о памяти и семье). Скаут распределяет темы по активным рубрикам.
+        Например: «Отзывы клиентов», «Бэкстейдж», «Истории знаменитостей». Скаут распределяет темы по активным рубрикам.
       </div>
       <div class="text-xs text-gray-600">
         <span class="font-semibold text-gray-700">🌐 Площадки</span> — каналы публикации.
-        Сейчас: Яндекс Дзен. Позже добавятся ВКонтакте, Telegram и др.
-        Промпт площадки описывает её специфику: длина, формат, тональность.
+        Промпт площадки задаёт формат, длину, тональность конкретно для Дзена, ВКонтакте и т.д.
       </div>
       <div class="text-xs text-gray-600">
-        <span class="font-semibold text-gray-700">🎭 Роли</span> — промпты AI-участников редакции.
-        Самое важное — <strong>Журналист</strong>: именно здесь задаётся стиль, тон, объём и референсы (Гришковец, Минаев и т.д.).
-        Изменения применяются сразу к следующей статье.
+        <span class="font-semibold text-gray-700">🎭 Роли</span> — промпты всех участников редакции:
+        Скаут, Журналист (стиль текста), Редактор (критерии проверки), <strong>Иллюстратор</strong> (стиль визуала, nana-banana).
       </div>
     </div>
   </div>
 
   <!-- Статусы -->
   <div class="border-t border-amber-200 pt-3 text-xs text-gray-500">
-    <strong>Статусы поста:</strong>
+    <strong>Статусы:</strong>
     <span class="inline-flex flex-wrap gap-1 mt-1">
       <span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded">Черновик</span> →
       <span class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded">Генерируется</span> →
@@ -90,7 +122,7 @@
       <span class="bg-green-100 text-green-700 px-2 py-0.5 rounded">Одобрен</span> →
       <span class="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded">Опубликован</span>
     </span>
-    <span class="ml-2">· Если редактор отклонил — просто перегенерируй или отредактируй текст руками и одобри вручную.</span>
+    <span class="ml-2">· Если редактор отклонил — отредактируй руками и одобри вручную.</span>
   </div>
 </div>
 
