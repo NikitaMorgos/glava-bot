@@ -14,18 +14,21 @@ EDITOR_ROLE      = "smm_editor"
 ILLUSTRATOR_ROLE = "smm_illustrator"
 
 _DEFAULT_EDITOR_PROMPT = """\
-Ты главный редактор GLAVA. Проверяешь статьи перед публикацией.
+Ты выпускающий редактор GLAVA. Ты принимаешь финальное решение о публикации,
+глядя на полностью собранный материал: заголовок, текст статьи и визуальный концепт обложки.
 
-Правило одобрения: одобряй статью (approved=true) если она:
-— По теме: семья, память, поколения, история жизни
-— Написана на русском языке без грубых ошибок
-— Не содержит оскорблений, фейков, рекламы чужих брендов
+Оцени пакет как единое целое по трём критериям:
 
-Отклоняй (approved=false) только если статья явно нарушает ценности GLAVA
-(агрессия, депрессивный тон, полностью не по теме) или содержит фактические ошибки.
-Наличие клише и неидеальный стиль — НЕ повод для отклонения, оставь замечание в comment.
+1. ТЕКСТ: по теме (семья, память, поколения), грамотный русский, нет оскорблений/фейков/рекламы.
+2. ЕДИНСТВО: визуальный концепт соответствует теме и тональности текста.
+3. ЦЕННОСТИ GLAVA: тёплый, уважительный, жизнеутверждающий тон.
 
-В comment: одна-две конкретных рекомендации по улучшению.
+Рекомендуй к публикации (approved=true) если материал проходит по всем трём критериям.
+Отклоняй (approved=false) только при явных нарушениях: агрессия, депрессивный тон,
+полное несоответствие теме, фактические ошибки, разрыв между текстом и визуалом.
+
+Клише и неидеальный стиль — НЕ повод для отклонения. Оставь комментарий с рекомендациями.
+В comment: одна-две конкретных правки, если нужны. Если всё хорошо — напиши «Рекомендован к публикации».
 
 Верни только JSON без пояснений:
 {"approved": true/false, "comment": "..."}
@@ -51,8 +54,9 @@ _DEFAULT_ILLUSTRATOR_PROMPT = """\
 
 def review_and_generate_image(post_id: int) -> dict:
     """
-    Шаг 1: Редактор (Claude) проверяет текст → approved/comment.
-    Шаг 2: Иллюстратор (Claude) создаёт image_prompt → Replicate генерирует картинку.
+    Шаг 1: Иллюстратор (Claude) создаёт image_prompt → Replicate рисует обложку.
+    Шаг 2: Выпускающий редактор (Claude) смотрит на полный пакет (текст + визуал)
+            и выносит решение о публикации.
     Возвращает {approved, comment, image_url}.
     """
     from smm.db_smm import get_post, update_post
@@ -61,18 +65,19 @@ def review_and_generate_image(post_id: int) -> dict:
     if not post:
         raise ValueError(f"Пост {post_id} не найден")
 
-    # ── Шаг 1: редакторская проверка ──────────────────────────────────────────
-    approved, comment = _editorial_review(post)
-    update_post(post_id, editor_feedback=comment)
-
-    # ── Шаг 2: иллюстратор создаёт image_prompt ───────────────────────────────
+    # ── Шаг 1: иллюстратор создаёт image_prompt ───────────────────────────────
     image_prompt = _illustrator_prompt(post)
     update_post(post_id, image_prompt=image_prompt)
 
-    # ── Шаг 3: Replicate генерирует картинку ──────────────────────────────────
+    # ── Шаг 2: Replicate генерирует картинку ──────────────────────────────────
     image_url = _generate_image(post_id, image_prompt)
+    if image_url:
+        update_post(post_id, image_url=image_url)
+
+    # ── Шаг 3: выпускающий редактор смотрит на весь пакет ─────────────────────
+    approved, comment = _editorial_review(post, image_prompt)
     status = "ready" if approved else "editor_rejected"
-    update_post(post_id, status=status, image_url=image_url or "")
+    update_post(post_id, editor_feedback=comment, status=status)
 
     logger.info(
         "Editor+Illustrator: пост_ид=%d approved=%s image=%s",
@@ -81,8 +86,8 @@ def review_and_generate_image(post_id: int) -> dict:
     return {"approved": approved, "comment": comment, "image_url": image_url}
 
 
-def _editorial_review(post: dict) -> tuple[bool, str]:
-    """Редактор проверяет текст через Claude, возвращает (approved, comment)."""
+def _editorial_review(post: dict, image_prompt: str = "") -> tuple[bool, str]:
+    """Выпускающий редактор проверяет полный пакет (текст + визуал) через Claude."""
     import anthropic
     from admin import db_admin as dba
 
@@ -93,9 +98,15 @@ def _editorial_review(post: dict) -> tuple[bool, str]:
     editor_row = dba.get_prompt(EDITOR_ROLE)
     system = editor_row["prompt_text"] if editor_row else _DEFAULT_EDITOR_PROMPT
 
+    visual_block = (
+        f"\n\nВизуальный концепт обложки (image prompt):\n{image_prompt}"
+        if image_prompt else ""
+    )
     user_message = (
-        f"Статья:\n\n# {post['article_title']}\n\n{post['article_body']}\n\n"
-        "Проверь текст и верни только JSON без пояснений:\n"
+        f"Заголовок: {post['article_title']}\n\n"
+        f"Текст статьи:\n{post['article_body']}"
+        f"{visual_block}\n\n"
+        "Оцени полный пакет и верни только JSON без пояснений:\n"
         '{"approved": true/false, "comment": "..."}'
     )
 
