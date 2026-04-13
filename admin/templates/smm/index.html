@@ -32,6 +32,12 @@
         <div class="pb-4 flex-1">
           <div class="font-semibold text-gray-800 text-xs mb-0.5">🔍 Скаут собирает материал и генерирует темы</div>
           <p class="text-xs text-gray-500">Берёт: промпт Стратегии + промпт Скаута + промпт Площадки + все активные Рубрики + отзывы клиентов из БД + твои ручные идеи. Отдаёт Claude → получает список тем с рубриками.</p>
+          <div class="mt-1.5 flex flex-wrap gap-1">
+            <span class="text-xs bg-purple-50 text-purple-600 border border-purple-200 rounded px-1.5 py-0.5">system: Скаут</span>
+            <span class="text-xs bg-gray-50 text-gray-500 border border-gray-200 rounded px-1.5 py-0.5">context: Стратегия</span>
+            <span class="text-xs bg-gray-50 text-gray-500 border border-gray-200 rounded px-1.5 py-0.5">context: Площадка</span>
+            <span class="text-xs bg-gray-50 text-gray-500 border border-gray-200 rounded px-1.5 py-0.5">context: все Рубрики</span>
+          </div>
         </div>
       </div>
 
@@ -43,6 +49,10 @@
         <div class="pb-4 flex-1">
           <div class="font-semibold text-gray-800 text-xs mb-0.5">✍️ Журналист пишет статью</div>
           <p class="text-xs text-gray-500">Берёт тему → пишет через GPT-4o в стиле, заданном промптом Журналиста (твой стиль: Гришковец, Минаев, личные интонации). Без жёсткого шаблона структуры — всё управляется промптом.</p>
+          <div class="mt-1.5 flex flex-wrap gap-1">
+            <span class="text-xs bg-blue-50 text-blue-600 border border-blue-200 rounded px-1.5 py-0.5">system: Журналист</span>
+            <span class="text-xs bg-yellow-50 text-yellow-600 border border-yellow-200 rounded px-1.5 py-0.5">только тема — без стратегии и рубрик</span>
+          </div>
         </div>
       </div>
 
@@ -54,6 +64,10 @@
         <div class="pb-4 flex-1">
           <div class="font-semibold text-gray-800 text-xs mb-0.5">🎨 Иллюстратор создаёт обложку</div>
           <p class="text-xs text-gray-500">Claude с промптом Иллюстратора читает текст статьи → формулирует визуальный концепт (image prompt на английском, стиль nana-banana) → Replicate генерирует картинку.</p>
+          <div class="mt-1.5 flex flex-wrap gap-1">
+            <span class="text-xs bg-orange-50 text-orange-600 border border-orange-200 rounded px-1.5 py-0.5">system: Иллюстратор</span>
+            <span class="text-xs bg-gray-50 text-gray-500 border border-gray-200 rounded px-1.5 py-0.5">context: заголовок + фрагмент текста</span>
+          </div>
         </div>
       </div>
 
@@ -65,6 +79,12 @@
         <div class="pb-4 flex-1">
           <div class="font-semibold text-gray-800 text-xs mb-0.5">📋 Выпускающий редактор принимает пакет</div>
           <p class="text-xs text-gray-500">Claude с промптом Редактора видит полный материал: заголовок + текст + визуальный концепт обложки. Оценивает единство, тональность, соответствие ценностям GLAVA. Рекомендует к публикации или отклоняет с комментарием.</p>
+          <div class="mt-1.5 flex flex-wrap gap-1">
+            <span class="text-xs bg-red-50 text-red-600 border border-red-200 rounded px-1.5 py-0.5">system: Редактор</span>
+            <span class="text-xs bg-gray-50 text-gray-500 border border-gray-200 rounded px-1.5 py-0.5">context: текст статьи</span>
+            <span class="text-xs bg-gray-50 text-gray-500 border border-gray-200 rounded px-1.5 py-0.5">context: image prompt от иллюстратора</span>
+            <span class="text-xs bg-yellow-50 text-yellow-600 border border-yellow-200 rounded px-1.5 py-0.5">рубрики и площадку не видит</span>
+          </div>
         </div>
       </div>
 
