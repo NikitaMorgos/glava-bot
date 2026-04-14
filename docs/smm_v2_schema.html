@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GLAVA SMM-редакция v2 — Схема</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+  body { font-family: 'Inter', sans-serif; }
+  .slide { min-height: 100vh; scroll-snap-align: start; }
+  html { scroll-snap-type: y mandatory; scroll-behavior: smooth; }
+  .arrow-down { animation: bounce 2s infinite; }
+  @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(8px)} }
+  .card-hover { transition: transform .15s, box-shadow .15s; }
+  .card-hover:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,.08); }
+</style>
+</head>
+<body class="bg-stone-50 text-gray-800">
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     SLIDE 1 — СУЩНОСТИ
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<section class="slide flex flex-col justify-center px-6 md:px-16 py-12">
+
+  <div class="max-w-6xl mx-auto w-full">
+
+    <!-- Заголовок -->
+    <div class="mb-10">
+      <div class="text-xs font-semibold text-amber-600 tracking-widest uppercase mb-1">GLAVA SMM v2</div>
+      <h1 class="text-3xl md:text-4xl font-extrabold text-gray-900 leading-tight">Слайд 1 / 4 — Четыре сущности</h1>
+      <p class="text-base text-gray-500 mt-2">Что настраивает Лена в админке. Каждая — отдельная вкладка.</p>
+    </div>
+
+    <!-- 4 карточки -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-10">
+
+      <!-- Площадки -->
+      <div class="card-hover bg-white rounded-2xl border border-gray-100 p-6">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-10 h-10 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center text-lg font-bold">🌐</div>
+          <div>
+            <div class="font-bold text-lg text-gray-900">Площадки</div>
+            <div class="text-xs text-gray-400">smm_platforms</div>
+          </div>
+        </div>
+        <p class="text-sm text-gray-600 mb-3">Каналы публикации: Дзен, ВК, Telegram и т.д. У каждой площадки — промпт с описанием ЦА и общих требований.</p>
+        <div class="bg-sky-50 rounded-lg p-3 text-xs text-sky-800">
+          <span class="font-semibold">Вложенные форматы:</span> внутри каждой площадки — список форматов (статья, карточка с текстом, сторис).
+          У каждого формата: название, slug, описание (длина, структура, визуальные требования).
+        </div>
+        <div class="mt-3 text-xs text-gray-400 italic">Пример: Дзен → Статья (1500–3000 знаков, подзаголовки, обложка) · Карточка (изображение + 300 знаков)</div>
+      </div>
+
+      <!-- Рубрики -->
+      <div class="card-hover bg-white rounded-2xl border border-gray-100 p-6">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-10 h-10 rounded-xl bg-violet-100 text-violet-700 flex items-center justify-center text-lg font-bold">📂</div>
+          <div>
+            <div class="font-bold text-lg text-gray-900">Рубрики</div>
+            <div class="text-xs text-gray-400">smm_rubrics</div>
+          </div>
+        </div>
+        <p class="text-sm text-gray-600 mb-3">Тематические направления: о чём пишем. Промпт описывает содержание, тональность, источники.</p>
+        <div class="bg-violet-50 rounded-lg p-3 text-xs text-violet-800">
+          <span class="font-semibold">Редактируется название:</span> можно менять заголовок рубрики (не только промпт).
+          Есть порядок сортировки, вкл/выкл.
+        </div>
+        <div class="mt-3 text-xs text-gray-400 italic">Примеры: Советы по архивам · Истории клиентов · Бэкстейдж · Знаменитости</div>
+      </div>
+
+      <!-- Журналисты -->
+      <div class="card-hover bg-white rounded-2xl border border-gray-100 p-6">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center text-lg font-bold">✍️</div>
+          <div>
+            <div class="font-bold text-lg text-gray-900">Журналисты</div>
+            <div class="text-xs text-gray-400">smm_journalists <span class="text-red-400 font-semibold">NEW</span></div>
+          </div>
+        </div>
+        <p class="text-sm text-gray-600 mb-3">Три автора вместо одного. У каждого — свой промпт (стиль, тон, лицо повествования).</p>
+        <div class="bg-amber-50 rounded-lg p-3 text-xs text-amber-800">
+          <span class="font-semibold">Назначения (галочки):</span> под промптом — чекбоксы, какие <strong>рубрики</strong> и какие <strong>форматы</strong> журналист обслуживает. Не в тексте промпта — через UI.
+        </div>
+        <div class="mt-3 space-y-1.5">
+          <div class="flex items-center gap-2 text-xs">
+            <span class="inline-block w-5 h-5 rounded-full bg-amber-200 text-amber-800 text-center leading-5 font-bold text-[10px]">Н</span>
+            <span class="text-gray-700"><strong>Никита</strong> — советы, how-to, техническое, мужское лицо</span>
+          </div>
+          <div class="flex items-center gap-2 text-xs">
+            <span class="inline-block w-5 h-5 rounded-full bg-rose-200 text-rose-800 text-center leading-5 font-bold text-[10px]">Д</span>
+            <span class="text-gray-700"><strong>Даша</strong> — клиентский сервис, истории клиентов, от лица сотрудника</span>
+          </div>
+          <div class="flex items-center gap-2 text-xs">
+            <span class="inline-block w-5 h-5 rounded-full bg-purple-200 text-purple-800 text-center leading-5 font-bold text-[10px]">Л</span>
+            <span class="text-gray-700"><strong>Лена</strong> — общие темы, женское лицо, совладелец</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Служебные роли -->
+      <div class="card-hover bg-white rounded-2xl border border-gray-100 p-6">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-lg font-bold">🎭</div>
+          <div>
+            <div class="font-bold text-lg text-gray-900">Служебные роли</div>
+            <div class="text-xs text-gray-400">prompts (существующие)</div>
+          </div>
+        </div>
+        <p class="text-sm text-gray-600 mb-3">Остаются как есть: Стратегия, Скаут, Редактор, Иллюстратор. Промпт каждой роли — одна текстовая область.</p>
+        <div class="bg-emerald-50 rounded-lg p-3 text-xs text-emerald-800">
+          <span class="font-semibold">Что убирается:</span> единственный «Журналист» из ролей — его заменяют три персонажа выше.
+        </div>
+        <div class="mt-3 text-xs text-gray-400 italic">Стратегия · Скаут · Редактор (выпускающий) · Иллюстратор</div>
+      </div>
+
+    </div>
+
+    <!-- Навигация -->
+    <div class="flex justify-center">
+      <a href="#slide2" class="arrow-down text-gray-300 hover:text-gray-500 text-3xl">↓</a>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     SLIDE 2 — СВЯЗИ И МАРШРУТИЗАЦИЯ
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<section id="slide2" class="slide flex flex-col justify-center px-6 md:px-16 py-12 bg-white">
+
+  <div class="max-w-6xl mx-auto w-full">
+
+    <div class="mb-10">
+      <div class="text-xs font-semibold text-amber-600 tracking-widest uppercase mb-1">GLAVA SMM v2</div>
+      <h1 class="text-3xl md:text-4xl font-extrabold text-gray-900 leading-tight">Слайд 2 / 4 — Связи и маршрутизация</h1>
+      <p class="text-base text-gray-500 mt-2">Как система выбирает журналиста для конкретной темы.</p>
+    </div>
+
+    <!-- ER-диаграмма текстом -->
+    <div class="bg-gray-50 rounded-2xl p-6 md:p-8 mb-8 border border-gray-100">
+
+      <div class="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_auto_1fr] gap-4 items-center">
+
+        <!-- Площадка + Форматы -->
+        <div class="bg-sky-50 rounded-xl p-4 border border-sky-200">
+          <div class="font-bold text-sky-800 text-sm mb-2">🌐 Площадка</div>
+          <div class="text-xs text-gray-600 mb-2">slug · name · prompt</div>
+          <div class="border-t border-sky-200 pt-2 mt-1">
+            <div class="text-xs font-semibold text-sky-700 mb-1">Форматы (1:N)</div>
+            <div class="space-y-1">
+              <div class="bg-white rounded px-2 py-1 text-xs border border-sky-100">📄 Статья</div>
+              <div class="bg-white rounded px-2 py-1 text-xs border border-sky-100">🖼 Карточка</div>
+              <div class="bg-white rounded px-2 py-1 text-xs border border-sky-100 text-gray-400">+ добавить</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Стрелки -->
+        <div class="hidden md:flex flex-col items-center text-gray-300 text-2xl">
+          <div>→</div>
+        </div>
+
+        <!-- Журналист -->
+        <div class="bg-amber-50 rounded-xl p-4 border border-amber-200">
+          <div class="font-bold text-amber-800 text-sm mb-2">✍️ Журналист</div>
+          <div class="text-xs text-gray-600 mb-2">slug · name · prompt</div>
+          <div class="border-t border-amber-200 pt-2 mt-1">
+            <div class="text-xs font-semibold text-amber-700 mb-1">Назначения (M:N)</div>
+            <div class="space-y-1 text-xs">
+              <div class="flex gap-1 flex-wrap">
+                <span class="font-semibold text-gray-600">Форматы:</span>
+                <span class="bg-sky-100 text-sky-700 rounded px-1.5">☑ Статья</span>
+                <span class="bg-gray-100 text-gray-400 rounded px-1.5">☐ Карточка</span>
+              </div>
+              <div class="flex gap-1 flex-wrap">
+                <span class="font-semibold text-gray-600">Рубрики:</span>
+                <span class="bg-violet-100 text-violet-700 rounded px-1.5">☑ Советы</span>
+                <span class="bg-violet-100 text-violet-700 rounded px-1.5">☑ Бэкстейдж</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Стрелки -->
+        <div class="hidden md:flex flex-col items-center text-gray-300 text-2xl">
+          <div>←</div>
+        </div>
+
+        <!-- Рубрика -->
+        <div class="bg-violet-50 rounded-xl p-4 border border-violet-200">
+          <div class="font-bold text-violet-800 text-sm mb-2">📂 Рубрика</div>
+          <div class="text-xs text-gray-600 mb-2">slug · name · prompt · sort_order</div>
+          <div class="border-t border-violet-200 pt-2 mt-1">
+            <div class="text-xs text-gray-500">Описывает содержание рубрики: источники, тон, подпись автора.</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Логика маршрутизации -->
+      <div class="mt-6 bg-white rounded-xl p-5 border border-gray-200">
+        <div class="font-bold text-sm text-gray-800 mb-3">Как система выбирает журналиста</div>
+        <div class="flex flex-col md:flex-row gap-3 text-xs">
+          <div class="flex-1 bg-purple-50 rounded-lg p-3 border border-purple-100">
+            <div class="font-semibold text-purple-700 mb-1">① Скаут генерирует тему</div>
+            <div class="text-gray-600">Тема приходит с <code class="bg-gray-100 px-1 rounded">rubric_slug</code> (рубрика) + <code class="bg-gray-100 px-1 rounded">format_slug</code> (формат площадки)</div>
+          </div>
+          <div class="flex-1 bg-amber-50 rounded-lg p-3 border border-amber-100">
+            <div class="font-semibold text-amber-700 mb-1">② Поиск журналиста</div>
+            <div class="text-gray-600">Система ищет журналиста, у которого <strong>оба чекбокса</strong> стоят: и эта рубрика, и этот формат. Если несколько — первый по приоритету.</div>
+          </div>
+          <div class="flex-1 bg-blue-50 rounded-lg p-3 border border-blue-100">
+            <div class="font-semibold text-blue-700 mb-1">③ Генерация текста</div>
+            <div class="text-gray-600"><code class="bg-gray-100 px-1 rounded">system</code> = промпт выбранного журналиста. <code class="bg-gray-100 px-1 rounded">user</code> = тема + промпт рубрики + описание формата.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex justify-center">
+      <a href="#slide3" class="arrow-down text-gray-300 hover:text-gray-500 text-3xl">↓</a>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     SLIDE 3 — ПАЙПЛАЙН (ПОЛНАЯ ЦЕПОЧКА)
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<section id="slide3" class="slide flex flex-col justify-center px-6 md:px-16 py-12">
+
+  <div class="max-w-6xl mx-auto w-full">
+
+    <div class="mb-10">
+      <div class="text-xs font-semibold text-amber-600 tracking-widest uppercase mb-1">GLAVA SMM v2</div>
+      <h1 class="text-3xl md:text-4xl font-extrabold text-gray-900 leading-tight">Слайд 3 / 4 — Пайплайн: от идеи до публикации</h1>
+      <p class="text-base text-gray-500 mt-2">Полная цепочка и что на вход получает каждый агент.</p>
+    </div>
+
+    <!-- Пайплайн -->
+    <div class="space-y-0">
+
+      <!-- Скаут -->
+      <div class="flex gap-4 items-start">
+        <div class="flex flex-col items-center flex-shrink-0">
+          <div class="w-10 h-10 rounded-full bg-purple-600 text-white text-sm font-bold flex items-center justify-center">1</div>
+          <div class="w-0.5 flex-1 bg-gray-200 my-1"></div>
+        </div>
+        <div class="pb-5 flex-1">
+          <div class="font-bold text-base text-gray-900 mb-1">🔍 Скаут — генерирует контент-план</div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+            <div class="bg-purple-50 rounded-lg p-3 border border-purple-100">
+              <div class="font-semibold text-purple-700 mb-1">Получает (промпты):</div>
+              <div class="space-y-0.5 text-gray-600">
+                <div>✦ <strong>system:</strong> Скаут (роль)</div>
+                <div>✦ <strong>context:</strong> Стратегия (роль)</div>
+                <div>✦ <strong>context:</strong> Площадка (промпт выбранной площадки)</div>
+                <div>✦ <strong>context:</strong> все активные Рубрики (промпты)</div>
+                <div>✦ <strong>context:</strong> список Форматов этой площадки</div>
+                <div>✦ <strong>context:</strong> отзывы клиентов из БД</div>
+                <div>✦ <strong>context:</strong> идеи от Лены (если введены)</div>
+              </div>
+            </div>
+            <div class="bg-green-50 rounded-lg p-3 border border-green-100">
+              <div class="font-semibold text-green-700 mb-1">Отдаёт:</div>
+              <div class="text-gray-600">JSON-массив тем. Каждая тема содержит:
+                <code class="bg-gray-100 px-1 rounded">topic</code>,
+                <code class="bg-gray-100 px-1 rounded">angle</code>,
+                <code class="bg-gray-100 px-1 rounded">rubric_slug</code>,
+                <code class="bg-gray-100 px-1 rounded">format_slug</code>
+              </div>
+              <div class="mt-2 text-gray-500 italic">Скаут теперь указывает и рубрику, и формат для каждой темы.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Журналист -->
+      <div class="flex gap-4 items-start">
+        <div class="flex flex-col items-center flex-shrink-0">
+          <div class="w-10 h-10 rounded-full bg-amber-500 text-white text-sm font-bold flex items-center justify-center">2</div>
+          <div class="w-0.5 flex-1 bg-gray-200 my-1"></div>
+        </div>
+        <div class="pb-5 flex-1">
+          <div class="font-bold text-base text-gray-900 mb-1">✍️ Журналист (автоматически выбранный) — пишет текст</div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+            <div class="bg-amber-50 rounded-lg p-3 border border-amber-100">
+              <div class="font-semibold text-amber-700 mb-1">Получает (промпты):</div>
+              <div class="space-y-0.5 text-gray-600">
+                <div>✦ <strong>system:</strong> промпт конкретного журналиста (стиль, тон, лицо)</div>
+                <div>✦ <strong>user:</strong> тема</div>
+                <div>✦ <strong>user:</strong> промпт рубрики (содержание, источники)</div>
+                <div>✦ <strong>user:</strong> описание формата (длина, структура)</div>
+              </div>
+            </div>
+            <div class="bg-green-50 rounded-lg p-3 border border-green-100">
+              <div class="font-semibold text-green-700 mb-1">Отдаёт:</div>
+              <div class="text-gray-600">Готовый текст: заголовок + тело статьи</div>
+              <div class="mt-2 bg-amber-100 rounded px-2 py-1 text-amber-800">
+                <strong>Изменение vs. v1:</strong> журналист теперь получает промпт рубрики + описание формата. Раньше получал только тему.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Иллюстратор -->
+      <div class="flex gap-4 items-start">
+        <div class="flex flex-col items-center flex-shrink-0">
+          <div class="w-10 h-10 rounded-full bg-orange-500 text-white text-sm font-bold flex items-center justify-center">3</div>
+          <div class="w-0.5 flex-1 bg-gray-200 my-1"></div>
+        </div>
+        <div class="pb-5 flex-1">
+          <div class="font-bold text-base text-gray-900 mb-1">🎨 Иллюстратор — визуальный концепт + картинка</div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+            <div class="bg-orange-50 rounded-lg p-3 border border-orange-100">
+              <div class="font-semibold text-orange-700 mb-1">Получает (промпты):</div>
+              <div class="space-y-0.5 text-gray-600">
+                <div>✦ <strong>system:</strong> Иллюстратор (роль)</div>
+                <div>✦ <strong>user:</strong> заголовок + фрагмент текста статьи</div>
+              </div>
+            </div>
+            <div class="bg-green-50 rounded-lg p-3 border border-green-100">
+              <div class="font-semibold text-green-700 mb-1">Отдаёт:</div>
+              <div class="text-gray-600">Image prompt → Replicate → файл обложки</div>
+              <div class="mt-1 text-gray-400">Без изменений vs. v1</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Редактор -->
+      <div class="flex gap-4 items-start">
+        <div class="flex flex-col items-center flex-shrink-0">
+          <div class="w-10 h-10 rounded-full bg-red-500 text-white text-sm font-bold flex items-center justify-center">4</div>
+          <div class="w-0.5 flex-1 bg-gray-200 my-1"></div>
+        </div>
+        <div class="pb-5 flex-1">
+          <div class="font-bold text-base text-gray-900 mb-1">📋 Выпускающий редактор — решение о публикации</div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+            <div class="bg-red-50 rounded-lg p-3 border border-red-100">
+              <div class="font-semibold text-red-700 mb-1">Получает (промпты):</div>
+              <div class="space-y-0.5 text-gray-600">
+                <div>✦ <strong>system:</strong> Редактор (роль)</div>
+                <div>✦ <strong>user:</strong> заголовок + полный текст + image prompt</div>
+              </div>
+            </div>
+            <div class="bg-green-50 rounded-lg p-3 border border-green-100">
+              <div class="font-semibold text-green-700 mb-1">Отдаёт:</div>
+              <div class="text-gray-600">{approved, comment} → статус «ready» или «editor_rejected»</div>
+              <div class="mt-1 text-gray-400">Без изменений vs. v1</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Лена -->
+      <div class="flex gap-4 items-start">
+        <div class="flex flex-col items-center flex-shrink-0">
+          <div class="w-10 h-10 rounded-full bg-green-600 text-white text-sm font-bold flex items-center justify-center">5</div>
+          <div class="w-0.5 flex-1 bg-gray-200 my-1"></div>
+        </div>
+        <div class="pb-5 flex-1">
+          <div class="font-bold text-base text-gray-900 mb-1">👁 Лена — одобряет, ставит дату, публикует</div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+            <div class="bg-green-50 rounded-lg p-3 border border-green-100">
+              <div class="font-semibold text-green-700 mb-1">Новые действия в v2:</div>
+              <div class="space-y-0.5 text-gray-600">
+                <div>✦ Назначить <strong>дату публикации</strong> (date-picker)</div>
+                <div>✦ <strong>Удалить</strong> пост с любой стадии</div>
+                <div>✦ Сортировка/фильтрация по дате</div>
+              </div>
+            </div>
+            <div class="bg-emerald-50 rounded-lg p-3 border border-emerald-100">
+              <div class="font-semibold text-emerald-700 mb-1">Далее:</div>
+              <div class="text-gray-600">Одобренный пост с датой → публикация на площадке (Playwright / API)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="flex justify-center mt-4">
+      <a href="#slide4" class="arrow-down text-gray-300 hover:text-gray-500 text-3xl">↓</a>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     SLIDE 4 — ИЗМЕНЕНИЯ В UI КОНТЕНТ-ПЛАНА + БД СХЕМА
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<section id="slide4" class="slide flex flex-col justify-center px-6 md:px-16 py-12 bg-white">
+
+  <div class="max-w-6xl mx-auto w-full">
+
+    <div class="mb-10">
+      <div class="text-xs font-semibold text-amber-600 tracking-widest uppercase mb-1">GLAVA SMM v2</div>
+      <h1 class="text-3xl md:text-4xl font-extrabold text-gray-900 leading-tight">Слайд 4 / 4 — UI контент-плана и БД</h1>
+      <p class="text-base text-gray-500 mt-2">Новые поля, удаление, даты, схема таблиц.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+      <!-- UI изменения -->
+      <div>
+        <div class="font-bold text-lg text-gray-800 mb-4">Изменения в интерфейсе</div>
+
+        <div class="space-y-3">
+          <div class="bg-blue-50 rounded-xl p-4 border border-blue-100 card-hover">
+            <div class="font-semibold text-sm text-blue-800 mb-1">📅 Дата публикации</div>
+            <div class="text-xs text-gray-600">
+              Новая колонка <code>publish_date</code> на карточке поста.
+              Лена ставит / снимает дату через date-picker.
+              Посты сортируются по дате (ближайшие сверху).
+            </div>
+          </div>
+
+          <div class="bg-red-50 rounded-xl p-4 border border-red-100 card-hover">
+            <div class="font-semibold text-sm text-red-800 mb-1">🗑 Удаление постов</div>
+            <div class="text-xs text-gray-600">
+              Кнопка удаления на каждой карточке, на любой стадии.
+              Подтверждение через модалку. Мягкое удаление (статус → <code>deleted</code>) или жёсткое — обсудим.
+            </div>
+          </div>
+
+          <div class="bg-violet-50 rounded-xl p-4 border border-violet-100 card-hover">
+            <div class="font-semibold text-sm text-violet-800 mb-1">🏷 Бейджи на карточках</div>
+            <div class="text-xs text-gray-600">
+              Каждый пост показывает: <strong>рубрику</strong>, <strong>формат</strong>, <strong>журналиста</strong> (кто написал), <strong>площадку</strong>.
+              Цвет бейджа — по журналисту.
+            </div>
+          </div>
+
+          <div class="bg-amber-50 rounded-xl p-4 border border-amber-100 card-hover">
+            <div class="font-semibold text-sm text-amber-800 mb-1">✍️ Настройки → Журналисты (новая вкладка)</div>
+            <div class="text-xs text-gray-600">
+              Вместо одной роли «Журналист» — вкладка со списком авторов.
+              Для каждого: имя, промпт, чекбоксы рубрик и форматов.
+              Удаление журналиста автоматически снимает все назначения.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- БД схема -->
+      <div>
+        <div class="font-bold text-lg text-gray-800 mb-4">Новые таблицы / поля в БД</div>
+
+        <div class="bg-gray-900 rounded-2xl p-5 text-xs font-mono text-gray-300 space-y-4 overflow-x-auto">
+
+          <div>
+            <div class="text-green-400 mb-1">-- Новая таблица: форматы площадок</div>
+            <div class="text-amber-300">CREATE TABLE</div> smm_formats (
+            <div class="pl-4">
+              id &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="text-sky-300">SERIAL PRIMARY KEY</span>,<br>
+              platform_id &nbsp;<span class="text-sky-300">INTEGER REFERENCES smm_platforms(id)</span>,<br>
+              slug &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="text-sky-300">TEXT NOT NULL</span>,<br>
+              name &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="text-sky-300">TEXT NOT NULL</span>,<br>
+              description &nbsp;<span class="text-sky-300">TEXT DEFAULT ''</span>,<br>
+              is_active &nbsp;&nbsp;&nbsp;<span class="text-sky-300">BOOLEAN DEFAULT TRUE</span>
+            </div>
+            );
+          </div>
+
+          <div>
+            <div class="text-green-400 mb-1">-- Новая таблица: журналисты</div>
+            <div class="text-amber-300">CREATE TABLE</div> smm_journalists (
+            <div class="pl-4">
+              id &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="text-sky-300">SERIAL PRIMARY KEY</span>,<br>
+              slug &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="text-sky-300">TEXT UNIQUE NOT NULL</span>,<br>
+              name &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="text-sky-300">TEXT NOT NULL</span>,<br>
+              prompt_key &nbsp;&nbsp;<span class="text-sky-300">TEXT NOT NULL</span>,<br>
+              is_active &nbsp;&nbsp;&nbsp;<span class="text-sky-300">BOOLEAN DEFAULT TRUE</span>
+            </div>
+            );
+          </div>
+
+          <div>
+            <div class="text-green-400 mb-1">-- Назначения: журналист ↔ рубрики + форматы</div>
+            <div class="text-amber-300">CREATE TABLE</div> smm_journalist_assignments (
+            <div class="pl-4">
+              journalist_id <span class="text-sky-300">INTEGER REFERENCES smm_journalists(id) ON DELETE CASCADE</span>,<br>
+              rubric_id &nbsp;&nbsp;&nbsp;&nbsp;<span class="text-sky-300">INTEGER REFERENCES smm_rubrics(id) ON DELETE CASCADE</span>,<br>
+              format_id &nbsp;&nbsp;&nbsp;&nbsp;<span class="text-sky-300">INTEGER REFERENCES smm_formats(id) ON DELETE CASCADE</span>
+            </div>
+            );
+          </div>
+
+          <div>
+            <div class="text-green-400 mb-1">-- Новые поля в smm_posts</div>
+            <div class="text-amber-300">ALTER TABLE</div> smm_posts <span class="text-amber-300">ADD</span>
+            <div class="pl-4">
+              journalist_id &nbsp;<span class="text-sky-300">INTEGER REFERENCES smm_journalists(id)</span>,<br>
+              format_id &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="text-sky-300">INTEGER REFERENCES smm_formats(id)</span>,<br>
+              rubric_id &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="text-sky-300">INTEGER REFERENCES smm_rubrics(id)</span>,<br>
+              publish_date &nbsp;&nbsp;<span class="text-sky-300">DATE</span>
+            </div>
+            ;
+          </div>
+        </div>
+
+        <!-- Что меняется -->
+        <div class="mt-5 bg-amber-50 rounded-xl p-4 border border-amber-200 text-xs text-gray-700">
+          <div class="font-semibold text-amber-800 mb-2">Что убирается</div>
+          <ul class="space-y-1">
+            <li>✕ Роль <code>smm_journalist</code> из SMM_ROLES — заменяется таблицей smm_journalists</li>
+            <li>✕ Понятие «один журналист на все рубрики»</li>
+          </ul>
+          <div class="font-semibold text-amber-800 mt-3 mb-2">Что не меняется</div>
+          <ul class="space-y-1">
+            <li>✓ Таблицы smm_platforms, smm_rubrics — остаются, расширяются</li>
+            <li>✓ Роли: Стратегия, Скаут, Редактор, Иллюстратор — без изменений</li>
+            <li>✓ Общий пайплайн: Скаут → Журналист → Иллюстратор → Редактор</li>
+          </ul>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Вопросы для обсуждения -->
+    <div class="mt-8 bg-gray-50 rounded-2xl p-6 border border-gray-200">
+      <div class="font-bold text-base text-gray-800 mb-3">Вопросы для обсуждения с Леной</div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-gray-600">
+        <div class="bg-white rounded-lg p-3 border border-gray-100">
+          <span class="font-semibold text-gray-800">1.</span> Удаление постов — мягкое (статус «deleted», можно восстановить) или жёсткое (DELETE из БД)?
+        </div>
+        <div class="bg-white rounded-lg p-3 border border-gray-100">
+          <span class="font-semibold text-gray-800">2.</span> Дата публикации — ставится при одобрении, или на любой стадии?
+          Пока: при одобрении. Позже — контент-план от маркетолога.
+        </div>
+        <div class="bg-white rounded-lg p-3 border border-gray-100">
+          <span class="font-semibold text-gray-800">3.</span> Если журналист не найден (нет подходящего по рубрике+формату) — fallback на дефолтный промпт, или не генерировать?
+        </div>
+        <div class="bg-white rounded-lg p-3 border border-gray-100">
+          <span class="font-semibold text-gray-800">4.</span> Форматы пока описываются текстом внутри промпта площадки, или уже отдельными полями (slug, name, description)?
+          Рекомендация: отдельные поля → чище и удобнее для назначений.
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+</body>
+</html>

@@ -10,111 +10,127 @@
 
 <!-- Табы -->
 <div class="border-b border-gray-200 mb-6">
-  <nav class="-mb-px flex gap-6">
-    <a href="?tab=platforms"
-      class="pb-3 text-sm font-medium border-b-2 transition-colors
-        {% if active_tab == 'platforms' %}border-gray-900 text-gray-900{% else %}border-transparent text-gray-500 hover:text-gray-700{% endif %}">
-      🌐 Площадки
+  <nav class="-mb-px flex gap-6 overflow-x-auto">
+    <a href="?tab=pformats"
+      class="pb-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap
+        {% if active_tab == 'pformats' %}border-gray-900 text-gray-900{% else %}border-transparent text-gray-500 hover:text-gray-700{% endif %}">
+      🌐 Площадки / Форматы
     </a>
     <a href="?tab=rubrics"
-      class="pb-3 text-sm font-medium border-b-2 transition-colors
+      class="pb-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap
         {% if active_tab == 'rubrics' %}border-gray-900 text-gray-900{% else %}border-transparent text-gray-500 hover:text-gray-700{% endif %}">
       📂 Рубрики
     </a>
+    <a href="?tab=journalists"
+      class="pb-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap
+        {% if active_tab == 'journalists' %}border-gray-900 text-gray-900{% else %}border-transparent text-gray-500 hover:text-gray-700{% endif %}">
+      ✍️ Журналисты
+    </a>
     <a href="?tab=roles"
-      class="pb-3 text-sm font-medium border-b-2 transition-colors
+      class="pb-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap
         {% if active_tab == 'roles' %}border-gray-900 text-gray-900{% else %}border-transparent text-gray-500 hover:text-gray-700{% endif %}">
-      🎭 Роли AI-редакции
+      🎭 Служебные роли
     </a>
   </nav>
 </div>
 
 
-{# ═══════════════ ТАБ: ПЛОЩАДКИ ════════════════════════════════════════════ #}
-{% if active_tab == 'platforms' %}
+{# ═══════════════ ТАБ: ПЛОЩАДКИ / ФОРМАТЫ ════════════════════════════════ #}
+{% if active_tab == 'pformats' %}
 
 <div class="mb-4 text-sm text-gray-500">
-  Каждая площадка — отдельный канал публикации. Промпт площадки описывает её специфику:
-  формат, ограничения, тональность. Скаут использует его при генерации тем.
+  Каждая запись — связка <strong>Площадка + Формат</strong> (например, «Дзен / Статья» или «ВК / Карточка»).
+  Промпт описывает требования: длину, структуру, тональность. Скаут и Журналист используют его при генерации.
+  <br><span class="text-gray-400">Ожидается ~20 связок. Лена описывает каждую отдельным промптом.</span>
 </div>
 
-<!-- Существующие площадки -->
+<!-- Существующие -->
 <div class="space-y-4 mb-8">
-  {% for p in platforms %}
+  {% for pf in pformats %}
   <div class="bg-white rounded-xl shadow-sm p-5">
     <div class="flex items-start justify-between gap-4">
       <div class="flex-1">
         <div class="flex items-center gap-3 mb-3">
-          <span class="font-semibold text-gray-800">{{ p.name }}</span>
-          <code class="text-xs bg-gray-100 px-2 py-0.5 rounded text-gray-500">{{ p.slug }}</code>
-          {% if p.is_active %}
+          <span class="font-semibold text-gray-800">{{ pf.platform_name }} / {{ pf.format_name }}</span>
+          <code class="text-xs bg-gray-100 px-2 py-0.5 rounded text-gray-500">{{ pf.slug }}</code>
+          {% if pf.is_active %}
             <span class="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded">активна</span>
           {% else %}
             <span class="text-xs bg-gray-100 text-gray-400 px-2 py-0.5 rounded">неактивна</span>
           {% endif %}
         </div>
 
-        <form method="POST" action="/smm/settings/platform/save">
-          <input type="hidden" name="slug" value="{{ p.slug }}">
-          <input type="hidden" name="name" value="{{ p.name }}">
-          <textarea name="prompt_text" rows="6"
-            placeholder="Промпт площадки {{ p.name }}: формат, ограничения, особенности..."
-            class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-gray-900 resize-y">{{ p.prompt.prompt_text if p.prompt else '' }}</textarea>
+        <form method="POST" action="/smm/settings/pformat/save">
+          <input type="hidden" name="slug" value="{{ pf.slug }}">
+          <input type="hidden" name="platform_name" value="{{ pf.platform_name }}">
+          <input type="hidden" name="format_name" value="{{ pf.format_name }}">
+          <input type="hidden" name="sort_order" value="{{ pf.sort_order }}">
+          <textarea name="prompt_text" rows="5"
+            placeholder="Промпт для {{ pf.platform_name }} / {{ pf.format_name }}: формат, длина, стиль..."
+            class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-gray-900 resize-y">{{ pf.prompt.prompt_text if pf.prompt else '' }}</textarea>
           <div class="flex items-center gap-3 mt-2">
             <button type="submit"
               class="px-4 py-1.5 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-700">
               Сохранить промпт
             </button>
-            {% if p.prompt %}
-            <span class="text-xs text-gray-400">v{{ p.prompt.version }} · {{ p.prompt.updated_at.strftime('%d.%m.%Y %H:%M') }}</span>
+            {% if pf.prompt %}
+            <span class="text-xs text-gray-400">v{{ pf.prompt.version }} · {{ pf.prompt.updated_at.strftime('%d.%m.%Y %H:%M') }}</span>
             {% endif %}
           </div>
         </form>
       </div>
 
-      <form method="POST" action="/smm/settings/platform/{{ p.id }}/toggle" class="flex-shrink-0">
-        {% if p.is_active %}
+      <form method="POST" action="/smm/settings/pformat/{{ pf.id }}/toggle" class="flex-shrink-0">
+        {% if pf.is_active %}
           <input type="hidden" name="is_active" value="0">
-          <button type="submit" class="text-xs text-gray-400 hover:text-red-500 border border-gray-200 px-3 py-1.5 rounded-lg">
-            Отключить
-          </button>
+          <button type="submit" class="text-xs text-gray-400 hover:text-red-500 border border-gray-200 px-3 py-1.5 rounded-lg">Отключить</button>
         {% else %}
           <input type="hidden" name="is_active" value="1">
-          <button type="submit" class="text-xs text-gray-400 hover:text-emerald-600 border border-gray-200 px-3 py-1.5 rounded-lg">
-            Включить
-          </button>
+          <button type="submit" class="text-xs text-gray-400 hover:text-emerald-600 border border-gray-200 px-3 py-1.5 rounded-lg">Включить</button>
         {% endif %}
       </form>
     </div>
   </div>
+  {% else %}
+  <div class="text-sm text-gray-400 py-4">Пока нет записей. Добавьте первую связку «Площадка / Формат» ниже.</div>
   {% endfor %}
 </div>
 
-<!-- Добавить новую площадку -->
+<!-- Добавить новую -->
 <div class="bg-gray-50 border border-dashed border-gray-300 rounded-xl p-5">
-  <div class="font-semibold text-gray-700 mb-3">+ Добавить площадку</div>
-  <form method="POST" action="/smm/settings/platform/save" class="space-y-3">
+  <div class="font-semibold text-gray-700 mb-3">+ Добавить площадку / формат</div>
+  <form method="POST" action="/smm/settings/pformat/save" class="space-y-3">
     <div class="flex gap-3">
       <div class="flex-1">
-        <label class="block text-xs text-gray-500 mb-1">Название</label>
-        <input type="text" name="name" placeholder="ВКонтакте"
+        <label class="block text-xs text-gray-500 mb-1">Площадка</label>
+        <input type="text" name="platform_name" placeholder="Яндекс Дзен"
           class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-300">
       </div>
-      <div class="w-40">
-        <label class="block text-xs text-gray-500 mb-1">Slug (латиница)</label>
-        <input type="text" name="slug" placeholder="vk"
+      <div class="flex-1">
+        <label class="block text-xs text-gray-500 mb-1">Формат</label>
+        <input type="text" name="format_name" placeholder="Статья"
+          class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-300">
+      </div>
+      <div class="w-32">
+        <label class="block text-xs text-gray-500 mb-1">Slug (авто)</label>
+        <input type="text" name="slug" placeholder="dzen_statya"
+          class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-300">
+      </div>
+      <div class="w-20">
+        <label class="block text-xs text-gray-500 mb-1">Порядок</label>
+        <input type="number" name="sort_order" value="0" min="0"
           class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-300">
       </div>
     </div>
     <div>
-      <label class="block text-xs text-gray-500 mb-1">Промпт площадки</label>
+      <label class="block text-xs text-gray-500 mb-1">Промпт</label>
       <textarea name="prompt_text" rows="4"
-        placeholder="Опиши особенности площадки: формат постов, ограничения по длине, стиль, что работает..."
+        placeholder="Описание формата: длина, структура, стиль, особенности площадки..."
         class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-gray-300 resize-y"></textarea>
     </div>
     <button type="submit"
       class="px-5 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-700">
-      Создать площадку
+      Создать
     </button>
   </form>
 </div>
@@ -124,8 +140,8 @@
 {% elif active_tab == 'rubrics' %}
 
 <div class="mb-4 text-sm text-gray-500">
-  Рубрики — направления контента. Скаут распределяет темы по активным рубрикам при генерации плана.
-  Промпт рубрики задаёт, <em>о чём и как</em> писать в этом направлении.
+  Рубрики — направления контента: о чём пишем. Промпт рубрики задаёт содержание, тональность,
+  подпись автора, источники вдохновения. Скаут распределяет темы по активным рубрикам.
 </div>
 
 <div class="space-y-4 mb-8">
@@ -133,27 +149,27 @@
   <div class="bg-white rounded-xl shadow-sm p-5">
     <div class="flex items-start justify-between gap-4">
       <div class="flex-1">
-        <div class="flex items-center gap-3 mb-3">
-          <span class="font-semibold text-gray-800">{{ r.name }}</span>
-          <code class="text-xs bg-gray-100 px-2 py-0.5 rounded text-gray-500">{{ r.slug }}</code>
-          {% if r.is_active %}
-            <span class="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded">активна</span>
-          {% else %}
-            <span class="text-xs bg-gray-100 text-gray-400 px-2 py-0.5 rounded">неактивна</span>
-          {% endif %}
-        </div>
-
         <form method="POST" action="/smm/settings/rubric/save">
+          <div class="flex items-center gap-3 mb-3">
+            <input type="text" name="name" value="{{ r.name }}"
+              class="font-semibold text-gray-800 bg-transparent border-b border-transparent hover:border-gray-300 focus:border-gray-500 focus:outline-none text-base px-0 py-0">
+            <code class="text-xs bg-gray-100 px-2 py-0.5 rounded text-gray-500">{{ r.slug }}</code>
+            {% if r.is_active %}
+              <span class="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded">активна</span>
+            {% else %}
+              <span class="text-xs bg-gray-100 text-gray-400 px-2 py-0.5 rounded">неактивна</span>
+            {% endif %}
+          </div>
+
           <input type="hidden" name="slug" value="{{ r.slug }}">
-          <input type="hidden" name="name" value="{{ r.name }}">
           <input type="hidden" name="sort_order" value="{{ r.sort_order }}">
           <textarea name="prompt_text" rows="4"
-            placeholder="Описание рубрики для скаута..."
+            placeholder="Описание рубрики..."
             class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-gray-900 resize-y">{{ r.prompt.prompt_text if r.prompt else '' }}</textarea>
           <div class="flex items-center gap-3 mt-2">
             <button type="submit"
               class="px-4 py-1.5 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-700">
-              Сохранить промпт
+              Сохранить
             </button>
             {% if r.prompt %}
             <span class="text-xs text-gray-400">v{{ r.prompt.version }} · {{ r.prompt.updated_at.strftime('%d.%m.%Y %H:%M') }}</span>
@@ -165,14 +181,10 @@
       <form method="POST" action="/smm/settings/rubric/{{ r.id }}/toggle" class="flex-shrink-0">
         {% if r.is_active %}
           <input type="hidden" name="is_active" value="0">
-          <button type="submit" class="text-xs text-gray-400 hover:text-red-500 border border-gray-200 px-3 py-1.5 rounded-lg">
-            Отключить
-          </button>
+          <button type="submit" class="text-xs text-gray-400 hover:text-red-500 border border-gray-200 px-3 py-1.5 rounded-lg">Отключить</button>
         {% else %}
           <input type="hidden" name="is_active" value="1">
-          <button type="submit" class="text-xs text-gray-400 hover:text-emerald-600 border border-gray-200 px-3 py-1.5 rounded-lg">
-            Включить
-          </button>
+          <button type="submit" class="text-xs text-gray-400 hover:text-emerald-600 border border-gray-200 px-3 py-1.5 rounded-lg">Включить</button>
         {% endif %}
       </form>
     </div>
@@ -193,7 +205,7 @@
           class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-300">
       </div>
       <div class="w-40">
-        <label class="block text-xs text-gray-500 mb-1">Slug (авто или своё)</label>
+        <label class="block text-xs text-gray-500 mb-1">Slug (авто)</label>
         <input type="text" name="slug" placeholder="reviews"
           class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-300">
       </div>
@@ -206,7 +218,7 @@
     <div>
       <label class="block text-xs text-gray-500 mb-1">Промпт рубрики</label>
       <textarea name="prompt_text" rows="3"
-        placeholder="Что значит эта рубрика: о чём писать, примеры тем, угол подачи..."
+        placeholder="Что значит эта рубрика: о чём писать, примеры тем, угол подачи, подпись автора..."
         class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-gray-300 resize-y"></textarea>
     </div>
     <button type="submit"
@@ -217,11 +229,177 @@
 </div>
 
 
-{# ═══════════════ ТАБ: РОЛИ ════════════════════════════════════════════════ #}
+{# ═══════════════ ТАБ: ЖУРНАЛИСТЫ ═════════════════════════════════════════ #}
+{% elif active_tab == 'journalists' %}
+
+<div class="mb-4 text-sm text-gray-500">
+  Журналисты — AI-авторы с разным стилем. Промпт задаёт лицо повествования, тон, детали.
+  <strong>Назначения</strong> (чекбоксы) определяют, какие рубрики и форматы обслуживает журналист.
+  При генерации статьи система автоматически подбирает подходящего автора.
+</div>
+
+<!-- Существующие журналисты -->
+<div class="space-y-6 mb-8">
+  {% for j in journalists %}
+  <div class="bg-white rounded-xl shadow-sm p-5">
+    <form method="POST" action="/smm/settings/journalist/save">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-sm font-bold">
+            {{ j.name[0] if j.name else '?' }}
+          </div>
+          <div>
+            <span class="font-semibold text-gray-800">{{ j.name }}</span>
+            <code class="ml-2 text-xs bg-gray-100 px-2 py-0.5 rounded text-gray-500">{{ j.slug }}</code>
+          </div>
+          {% if j.is_active %}
+            <span class="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded">активен</span>
+          {% else %}
+            <span class="text-xs bg-gray-100 text-gray-400 px-2 py-0.5 rounded">неактивен</span>
+          {% endif %}
+        </div>
+
+        <div class="flex gap-2">
+          <a href="#" onclick="event.preventDefault(); this.closest('.rounded-xl').querySelector('[data-assign]').classList.toggle('hidden')"
+            class="text-xs text-gray-400 hover:text-gray-600 border border-gray-200 px-3 py-1.5 rounded-lg">
+            Назначения ↕
+          </a>
+          <!-- Toggle active -->
+          {% if j.is_active %}
+          <form method="POST" action="/smm/settings/journalist/{{ j.id }}/toggle" class="inline">
+            <input type="hidden" name="is_active" value="0">
+            <button type="submit" class="text-xs text-gray-400 hover:text-red-500 border border-gray-200 px-3 py-1.5 rounded-lg">Отключить</button>
+          </form>
+          {% else %}
+          <form method="POST" action="/smm/settings/journalist/{{ j.id }}/toggle" class="inline">
+            <input type="hidden" name="is_active" value="1">
+            <button type="submit" class="text-xs text-gray-400 hover:text-emerald-600 border border-gray-200 px-3 py-1.5 rounded-lg">Включить</button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+
+      <input type="hidden" name="slug" value="{{ j.slug }}">
+      <input type="hidden" name="name" value="{{ j.name }}">
+
+      <!-- Промпт -->
+      <textarea name="prompt_text" rows="6"
+        placeholder="Промпт журналиста {{ j.name }}: стиль, лицо, тон, специфика..."
+        class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-gray-900 resize-y mb-2">{{ j.prompt.prompt_text if j.prompt else '' }}</textarea>
+
+      <!-- Назначения (скрываемый блок) -->
+      <div data-assign class="bg-gray-50 rounded-lg p-4 mb-3">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Рубрики -->
+          <div>
+            <div class="text-xs font-semibold text-gray-500 uppercase mb-2">📂 Рубрики</div>
+            {% for r in rubrics %}
+            <label class="flex items-center gap-2 mb-1.5 text-sm text-gray-700 cursor-pointer">
+              <input type="checkbox" name="rubric_ids" value="{{ r.id }}"
+                class="rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+                {% if r.id in j.assignments.rubric_ids %}checked{% endif %}>
+              {{ r.name }}
+            </label>
+            {% else %}
+            <div class="text-xs text-gray-400">Нет рубрик — создайте во вкладке «Рубрики»</div>
+            {% endfor %}
+          </div>
+          <!-- Площадки / Форматы -->
+          <div>
+            <div class="text-xs font-semibold text-gray-500 uppercase mb-2">🌐 Площадки / Форматы</div>
+            {% for pf in pformats %}
+            <label class="flex items-center gap-2 mb-1.5 text-sm text-gray-700 cursor-pointer">
+              <input type="checkbox" name="pformat_ids" value="{{ pf.id }}"
+                class="rounded border-gray-300 text-sky-600 focus:ring-sky-500"
+                {% if pf.id in j.assignments.pformat_ids %}checked{% endif %}>
+              {{ pf.platform_name }} / {{ pf.format_name }}
+            </label>
+            {% else %}
+            <div class="text-xs text-gray-400">Нет площадок — создайте во вкладке «Площадки / Форматы»</div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <button type="submit"
+          class="px-4 py-1.5 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-700">
+          Сохранить
+        </button>
+        {% if j.prompt %}
+        <span class="text-xs text-gray-400">v{{ j.prompt.version }} · {{ j.prompt.updated_at.strftime('%d.%m.%Y %H:%M') }}</span>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+  {% else %}
+  <div class="text-sm text-gray-400 py-4">Журналистов пока нет. Добавьте первого ниже.</div>
+  {% endfor %}
+</div>
+
+<!-- Добавить журналиста -->
+<div class="bg-gray-50 border border-dashed border-gray-300 rounded-xl p-5">
+  <div class="font-semibold text-gray-700 mb-3">+ Добавить журналиста</div>
+  <form method="POST" action="/smm/settings/journalist/save" class="space-y-3">
+    <div class="flex gap-3">
+      <div class="flex-1">
+        <label class="block text-xs text-gray-500 mb-1">Имя</label>
+        <input type="text" name="name" placeholder="Лена"
+          class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-300">
+      </div>
+      <div class="w-40">
+        <label class="block text-xs text-gray-500 mb-1">Slug (авто)</label>
+        <input type="text" name="slug" placeholder="lena"
+          class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-300">
+      </div>
+    </div>
+    <div>
+      <label class="block text-xs text-gray-500 mb-1">Промпт</label>
+      <textarea name="prompt_text" rows="4"
+        placeholder="Стиль, тон, лицо повествования. Например: «Пишу от лица женщины-совладельца GLAVA, делюсь личным опытом…»"
+        class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-gray-300 resize-y"></textarea>
+    </div>
+
+    <!-- Назначения (сразу при создании) -->
+    <div class="bg-white rounded-lg p-4 border border-gray-200">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <div class="text-xs font-semibold text-gray-500 uppercase mb-2">📂 Рубрики</div>
+          {% for r in rubrics %}
+          <label class="flex items-center gap-2 mb-1.5 text-sm text-gray-700 cursor-pointer">
+            <input type="checkbox" name="rubric_ids" value="{{ r.id }}"
+              class="rounded border-gray-300 text-amber-600 focus:ring-amber-500">
+            {{ r.name }}
+          </label>
+          {% endfor %}
+        </div>
+        <div>
+          <div class="text-xs font-semibold text-gray-500 uppercase mb-2">🌐 Площадки / Форматы</div>
+          {% for pf in pformats %}
+          <label class="flex items-center gap-2 mb-1.5 text-sm text-gray-700 cursor-pointer">
+            <input type="checkbox" name="pformat_ids" value="{{ pf.id }}"
+              class="rounded border-gray-300 text-sky-600 focus:ring-sky-500">
+            {{ pf.platform_name }} / {{ pf.format_name }}
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <button type="submit"
+      class="px-5 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-700">
+      Создать журналиста
+    </button>
+  </form>
+</div>
+
+
+{# ═══════════════ ТАБ: СЛУЖЕБНЫЕ РОЛИ ════════════════════════════════════ #}
 {% elif active_tab == 'roles' %}
 
 <div class="mb-4 text-sm text-gray-500">
-  Промпты участников AI-редакции. Изменения применяются к следующей генерации немедленно.
+  Служебные роли AI-редакции. Журналисты управляются на отдельной вкладке.
+  Изменения применяются к следующей генерации немедленно.
 </div>
 
 <div class="space-y-6">
@@ -277,18 +455,15 @@
       </div>
     </div>
 
-    <!-- Подсказка по роли -->
     <div class="mt-3 pt-3 border-t border-gray-100 text-xs text-gray-400">
       {% if role.key == 'smm_strategy' %}
         Базовый контекст GLAVA — ЦА, ценности, тональность. Используется Скаутом.
       {% elif role.key == 'smm_scout' %}
-        Генерирует темы контент-плана на основе стратегии + площадки + рубрик.
-      {% elif role.key == 'smm_journalist' %}
-        Пишет текст статьи (GPT-4o). Стиль целиком задаётся этим промптом — шаблон структуры не навязывается.
+        Генерирует темы контент-плана. Получает: стратегию + площадки/форматы + рубрики + отзывы.
       {% elif role.key == 'smm_editor' %}
-        Выпускающий редактор (Claude). Смотрит на полный пакет: текст + визуальный концепт от иллюстратора. Рекомендует к публикации или отклоняет.
+        Выпускающий редактор (Claude). Смотрит на полный пакет: текст + визуал. Рекомендует к публикации или отклоняет.
       {% elif role.key == 'smm_illustrator' %}
-        Создаёт визуальный концепт (Claude) → промпт для Replicate → картинка. Управляй стилем здесь: nana-banana, палитра, атмосфера.
+        Создаёт визуальный концепт (Claude) → промпт для Replicate → картинка. Стиль nana-banana, палитра, атмосфера.
       {% endif %}
     </div>
   </div>

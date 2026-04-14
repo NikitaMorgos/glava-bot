@@ -17,11 +17,10 @@
 
 <!-- Инструкция (скрыта по умолчанию) -->
 <div id="smm-help" class="hidden mb-5 bg-amber-50 border border-amber-200 rounded-xl p-5 text-sm text-gray-700">
-  <div class="font-semibold text-amber-800 text-base mb-4">Как работает SMM-редакция</div>
+  <div class="font-semibold text-amber-800 text-base mb-4">Как работает SMM-редакция v2</div>
 
-  <!-- Полная цепочка -->
   <div class="mb-5">
-    <div class="text-xs font-semibold text-gray-500 uppercase mb-3">Полная последовательность от материала до публикации</div>
+    <div class="text-xs font-semibold text-gray-500 uppercase mb-3">Полная цепочка</div>
     <div class="flex flex-col gap-0">
 
       <div class="flex gap-3 items-start">
@@ -30,28 +29,26 @@
           <div class="w-px flex-1 bg-gray-200 my-1"></div>
         </div>
         <div class="pb-4 flex-1">
-          <div class="font-semibold text-gray-800 text-xs mb-0.5">🔍 Скаут собирает материал и генерирует темы</div>
-          <p class="text-xs text-gray-500">Берёт: промпт Стратегии + промпт Скаута + промпт Площадки + все активные Рубрики + отзывы клиентов из БД + твои ручные идеи. Отдаёт Claude → получает список тем с рубриками.</p>
-          <div class="mt-1.5 flex flex-wrap gap-1">
+          <div class="font-semibold text-gray-800 text-xs mb-0.5">🔍 Скаут генерирует темы</div>
+          <p class="text-xs text-gray-500">Для каждой темы указывает рубрику и площадку/формат.</p>
+          <div class="mt-1 flex flex-wrap gap-1">
             <span class="text-xs bg-purple-50 text-purple-600 border border-purple-200 rounded px-1.5 py-0.5">system: Скаут</span>
-            <span class="text-xs bg-gray-50 text-gray-500 border border-gray-200 rounded px-1.5 py-0.5">context: Стратегия</span>
-            <span class="text-xs bg-gray-50 text-gray-500 border border-gray-200 rounded px-1.5 py-0.5">context: Площадка</span>
-            <span class="text-xs bg-gray-50 text-gray-500 border border-gray-200 rounded px-1.5 py-0.5">context: все Рубрики</span>
+            <span class="text-xs bg-gray-50 text-gray-500 border border-gray-200 rounded px-1.5 py-0.5">Стратегия + все Площ./Форм. + все Рубрики</span>
           </div>
         </div>
       </div>
 
       <div class="flex gap-3 items-start">
         <div class="flex flex-col items-center">
-          <div class="w-7 h-7 rounded-full bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center flex-shrink-0">2</div>
+          <div class="w-7 h-7 rounded-full bg-amber-100 text-amber-700 text-xs font-bold flex items-center justify-center flex-shrink-0">2</div>
           <div class="w-px flex-1 bg-gray-200 my-1"></div>
         </div>
         <div class="pb-4 flex-1">
-          <div class="font-semibold text-gray-800 text-xs mb-0.5">✍️ Журналист пишет статью</div>
-          <p class="text-xs text-gray-500">Берёт тему → пишет через GPT-4o в стиле, заданном промптом Журналиста (твой стиль: Гришковец, Минаев, личные интонации). Без жёсткого шаблона структуры — всё управляется промптом.</p>
-          <div class="mt-1.5 flex flex-wrap gap-1">
-            <span class="text-xs bg-blue-50 text-blue-600 border border-blue-200 rounded px-1.5 py-0.5">system: Журналист</span>
-            <span class="text-xs bg-yellow-50 text-yellow-600 border border-yellow-200 rounded px-1.5 py-0.5">только тема — без стратегии и рубрик</span>
+          <div class="font-semibold text-gray-800 text-xs mb-0.5">✍️ Журналист (автоматический подбор) пишет статью</div>
+          <p class="text-xs text-gray-500">По рубрике + формату выбирается журналист с нужными назначениями. Получает промпт рубрики + описание формата.</p>
+          <div class="mt-1 flex flex-wrap gap-1">
+            <span class="text-xs bg-amber-50 text-amber-600 border border-amber-200 rounded px-1.5 py-0.5">system: промпт журналиста</span>
+            <span class="text-xs bg-gray-50 text-gray-500 border border-gray-200 rounded px-1.5 py-0.5">+ промпт рубрики + описание формата</span>
           </div>
         </div>
       </div>
@@ -62,28 +59,24 @@
           <div class="w-px flex-1 bg-gray-200 my-1"></div>
         </div>
         <div class="pb-4 flex-1">
-          <div class="font-semibold text-gray-800 text-xs mb-0.5">🎨 Иллюстратор создаёт обложку</div>
-          <p class="text-xs text-gray-500">Claude с промптом Иллюстратора читает текст статьи → формулирует визуальный концепт (image prompt на английском, стиль nana-banana) → Replicate генерирует картинку.</p>
-          <div class="mt-1.5 flex flex-wrap gap-1">
+          <div class="font-semibold text-gray-800 text-xs mb-0.5">🎨 Иллюстратор → обложка</div>
+          <div class="mt-1 flex flex-wrap gap-1">
             <span class="text-xs bg-orange-50 text-orange-600 border border-orange-200 rounded px-1.5 py-0.5">system: Иллюстратор</span>
-            <span class="text-xs bg-gray-50 text-gray-500 border border-gray-200 rounded px-1.5 py-0.5">context: заголовок + фрагмент текста</span>
+            <span class="text-xs bg-gray-50 text-gray-500 border border-gray-200 rounded px-1.5 py-0.5">заголовок + фрагмент текста</span>
           </div>
         </div>
       </div>
 
       <div class="flex gap-3 items-start">
         <div class="flex flex-col items-center">
-          <div class="w-7 h-7 rounded-full bg-orange-100 text-orange-700 text-xs font-bold flex items-center justify-center flex-shrink-0">4</div>
+          <div class="w-7 h-7 rounded-full bg-red-100 text-red-700 text-xs font-bold flex items-center justify-center flex-shrink-0">4</div>
           <div class="w-px flex-1 bg-gray-200 my-1"></div>
         </div>
         <div class="pb-4 flex-1">
-          <div class="font-semibold text-gray-800 text-xs mb-0.5">📋 Выпускающий редактор принимает пакет</div>
-          <p class="text-xs text-gray-500">Claude с промптом Редактора видит полный материал: заголовок + текст + визуальный концепт обложки. Оценивает единство, тональность, соответствие ценностям GLAVA. Рекомендует к публикации или отклоняет с комментарием.</p>
-          <div class="mt-1.5 flex flex-wrap gap-1">
+          <div class="font-semibold text-gray-800 text-xs mb-0.5">📋 Выпускающий редактор → решение</div>
+          <div class="mt-1 flex flex-wrap gap-1">
             <span class="text-xs bg-red-50 text-red-600 border border-red-200 rounded px-1.5 py-0.5">system: Редактор</span>
-            <span class="text-xs bg-gray-50 text-gray-500 border border-gray-200 rounded px-1.5 py-0.5">context: текст статьи</span>
-            <span class="text-xs bg-gray-50 text-gray-500 border border-gray-200 rounded px-1.5 py-0.5">context: image prompt от иллюстратора</span>
-            <span class="text-xs bg-yellow-50 text-yellow-600 border border-yellow-200 rounded px-1.5 py-0.5">рубрики и площадку не видит</span>
+            <span class="text-xs bg-gray-50 text-gray-500 border border-gray-200 rounded px-1.5 py-0.5">текст + image prompt</span>
           </div>
         </div>
       </div>
@@ -91,73 +84,33 @@
       <div class="flex gap-3 items-start">
         <div class="flex flex-col items-center">
           <div class="w-7 h-7 rounded-full bg-green-100 text-green-700 text-xs font-bold flex items-center justify-center flex-shrink-0">5</div>
-          <div class="w-px flex-1 bg-gray-200 my-1"></div>
-        </div>
-        <div class="pb-4 flex-1">
-          <div class="font-semibold text-gray-800 text-xs mb-0.5">👁 Ты проверяешь и одобряешь</div>
-          <p class="text-xs text-gray-500">Открываешь пост, читаешь текст, смотришь картинку. Можно отредактировать текст руками, перегенерировать обложку с другим промптом. Нажимаешь «Одобрить».</p>
-        </div>
-      </div>
-
-      <div class="flex gap-3 items-start">
-        <div class="flex flex-col items-center">
-          <div class="w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold flex items-center justify-center flex-shrink-0">6</div>
         </div>
         <div class="pb-1 flex-1">
-          <div class="font-semibold text-gray-800 text-xs mb-0.5">🚀 Публикация на площадке</div>
-          <p class="text-xs text-gray-500">Playwright автоматически открывает Яндекс Дзен, вставляет заголовок, текст, загружает обложку, нажимает «Опубликовать». Требует сохранённой сессии (один раз).</p>
+          <div class="font-semibold text-gray-800 text-xs mb-0.5">👁 Лена одобряет → 📅 дата → 🚀 публикация</div>
+          <p class="text-xs text-gray-500">Назначь дату, одобри — и пост уйдёт на площадку.</p>
         </div>
       </div>
 
     </div>
   </div>
 
-  <!-- Что настраивать -->
-  <div class="border-t border-amber-200 pt-4 mb-4">
-    <div class="font-semibold text-gray-800 mb-2">Что ты настраиваешь в <a href="/smm/settings" class="underline text-amber-700">Настройках SMM</a></div>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-      <div class="text-xs text-gray-600">
-        <span class="font-semibold text-gray-700">📂 Рубрики</span> — направления контента.
-        Например: «Отзывы клиентов», «Бэкстейдж», «Истории знаменитостей». Скаут распределяет темы по активным рубрикам.
-      </div>
-      <div class="text-xs text-gray-600">
-        <span class="font-semibold text-gray-700">🌐 Площадки</span> — каналы публикации.
-        Промпт площадки задаёт формат, длину, тональность конкретно для Дзена, ВКонтакте и т.д.
-      </div>
-      <div class="text-xs text-gray-600">
-        <span class="font-semibold text-gray-700">🎭 Роли</span> — промпты всех участников редакции:
-        Скаут, Журналист (стиль текста), Редактор (критерии проверки), <strong>Иллюстратор</strong> (стиль визуала, nana-banana).
-      </div>
-    </div>
-  </div>
-
-  <!-- Статусы -->
   <div class="border-t border-amber-200 pt-3 text-xs text-gray-500">
-    <strong>Статусы:</strong>
-    <span class="inline-flex flex-wrap gap-1 mt-1">
-      <span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded">Черновик</span> →
-      <span class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded">Генерируется</span> →
-      <span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded">Текст готов</span> →
-      <span class="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded">Готов к одобрению</span> →
-      <span class="bg-green-100 text-green-700 px-2 py-0.5 rounded">Одобрен</span> →
-      <span class="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded">Опубликован</span>
-    </span>
-    <span class="ml-2">· Если редактор отклонил — отредактируй руками и одобри вручную.</span>
+    <a href="/smm/settings" class="underline text-amber-700">Настройки</a>: Площадки/Форматы (~20 связок) · Рубрики · Журналисты (с назначениями) · Служебные роли
   </div>
 </div>
 
 <!-- Фильтр по площадке -->
-{% if platforms %}
+{% if platform_names %}
 <div class="flex items-center gap-2 mb-4 flex-wrap">
   <span class="text-xs text-gray-500">Площадка:</span>
   <a href="/smm/" class="text-xs px-3 py-1 rounded-full border transition-colors
     {% if not active_platform %}bg-gray-900 text-white border-gray-900{% else %}border-gray-200 text-gray-500 hover:border-gray-400{% endif %}">
     Все
   </a>
-  {% for p in platforms if p.is_active %}
-  <a href="/smm/?platform={{ p.slug }}" class="text-xs px-3 py-1 rounded-full border transition-colors
-    {% if active_platform == p.slug %}bg-gray-900 text-white border-gray-900{% else %}border-gray-200 text-gray-500 hover:border-gray-400{% endif %}">
-    {{ p.name }}
+  {% for pname in platform_names %}
+  <a href="/smm/?platform={{ pname }}" class="text-xs px-3 py-1 rounded-full border transition-colors
+    {% if active_platform == pname %}bg-gray-900 text-white border-gray-900{% else %}border-gray-200 text-gray-500 hover:border-gray-400{% endif %}">
+    {{ pname }}
   </a>
   {% endfor %}
 </div>
@@ -168,12 +121,11 @@
   <div class="font-semibold text-gray-700 mb-3">Сгенерировать новый контент-план</div>
   <form method="POST" action="/smm/generate-plan" class="flex flex-wrap gap-3 items-end">
     <div>
-      <label class="block text-xs text-gray-500 mb-1">Площадка</label>
-      <select name="platform_slug" class="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-300">
-        {% for p in platforms if p.is_active %}
-        <option value="{{ p.slug }}" {% if active_platform == p.slug %}selected{% endif %}>{{ p.name }}</option>
-        {% else %}
-        <option value="dzen">Яндекс Дзен</option>
+      <label class="block text-xs text-gray-500 mb-1">Площадка (фильтр)</label>
+      <select name="platform_name" class="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-300">
+        <option value="">Все площадки</option>
+        {% for pname in platform_names %}
+        <option value="{{ pname }}" {% if active_platform == pname %}selected{% endif %}>{{ pname }}</option>
         {% endfor %}
       </select>
     </div>
@@ -188,6 +140,7 @@
         <option value="3">3</option>
         <option value="5" selected>5</option>
         <option value="7">7</option>
+        <option value="10">10</option>
       </select>
     </div>
     <div class="flex-1 min-w-48">
@@ -202,6 +155,46 @@
   </form>
 </div>
 
+<!-- ── Макро: карточка поста ─────────────────────────────────────────────────── -->
+{% macro post_card(post, border_color="gray") %}
+<div class="bg-white rounded-lg p-3 mb-2 shadow-sm hover:shadow-md transition-shadow border border-{{ border_color }}-100 relative group">
+  <a href="/smm/post/{{ post.id }}" class="block">
+    <div class="text-xs font-medium text-gray-800 line-clamp-2 mb-1.5">{{ post.article_title or post.topic or '(без темы)' }}</div>
+
+    {# Бейджи: рубрика / формат / журналист #}
+    <div class="flex flex-wrap gap-1 mb-1.5">
+      {% if post.rubric_name %}
+      <span class="text-[10px] bg-violet-50 text-violet-600 px-1.5 py-0.5 rounded">{{ post.rubric_name }}</span>
+      {% endif %}
+      {% if post.pf_platform and post.pf_format %}
+      <span class="text-[10px] bg-sky-50 text-sky-600 px-1.5 py-0.5 rounded">{{ post.pf_platform }}/{{ post.pf_format }}</span>
+      {% elif post.platform_name %}
+      <span class="text-[10px] bg-sky-50 text-sky-600 px-1.5 py-0.5 rounded">{{ post.platform_name }}</span>
+      {% endif %}
+      {% if post.journalist_name %}
+      <span class="text-[10px] bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded">✍ {{ post.journalist_name }}</span>
+      {% endif %}
+    </div>
+
+    <div class="flex items-center justify-between">
+      <span class="text-xs px-1.5 py-0.5 rounded bg-{{ status_colors.get(post.status, 'gray') }}-100 text-{{ status_colors.get(post.status, 'gray') }}-700">
+        {{ status_labels.get(post.status, post.status) }}
+      </span>
+      {% if post.publish_date %}
+      <span class="text-xs text-gray-500 font-medium">📅 {{ post.publish_date.strftime('%d.%m') if post.publish_date else '' }}</span>
+      {% endif %}
+    </div>
+  </a>
+
+  {# Кнопка удаления #}
+  <form method="POST" action="/smm/post/{{ post.id }}/delete"
+    onsubmit="return confirm('Удалить пост «{{ (post.article_title or post.topic or '')[0:40] }}»?')"
+    class="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+    <button type="submit" class="text-gray-300 hover:text-red-500 text-xs" title="Удалить">✕</button>
+  </form>
+</div>
+{% endmacro %}
+
 <!-- Доска постов по статусам -->
 <div class="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
 
@@ -212,17 +205,7 @@
       <span class="bg-gray-200 text-gray-600 text-xs px-2 py-0.5 rounded-full">{{ board.draft|length + board.generating|length }}</span>
     </div>
     {% for post in board.draft + board.generating %}
-    <a href="/smm/post/{{ post.id }}" class="block bg-white rounded-lg p-3 mb-2 shadow-sm hover:shadow-md transition-shadow border border-gray-100">
-      <div class="text-xs font-medium text-gray-800 line-clamp-2 mb-1">{{ post.topic or '(без темы)' }}</div>
-      <div class="flex items-center justify-between">
-        <span class="text-xs px-1.5 py-0.5 rounded
-          {% if post.status == 'generating' %}bg-yellow-100 text-yellow-700
-          {% else %}bg-gray-100 text-gray-500{% endif %}">
-          {{ status_labels.get(post.status, post.status) }}
-        </span>
-        <span class="text-xs text-gray-400">{{ post.platform_name or post.channel }}</span>
-      </div>
-    </a>
+      {{ post_card(post, "gray") }}
     {% endfor %}
     {% if not board.draft and not board.generating %}
     <div class="text-xs text-gray-400 text-center py-4">Пусто</div>
@@ -236,43 +219,21 @@
       <span class="bg-blue-200 text-blue-700 text-xs px-2 py-0.5 rounded-full">{{ board.journalist_done|length + board.editor_rejected|length }}</span>
     </div>
     {% for post in board.journalist_done + board.editor_rejected %}
-    <a href="/smm/post/{{ post.id }}" class="block bg-white rounded-lg p-3 mb-2 shadow-sm hover:shadow-md transition-shadow border border-blue-100">
-      <div class="text-xs font-medium text-gray-800 line-clamp-2 mb-1">{{ post.article_title or post.topic or '(без заголовка)' }}</div>
-      <div class="flex items-center justify-between">
-        <span class="text-xs px-1.5 py-0.5 rounded
-          {% if post.status == 'editor_rejected' %}bg-red-100 text-red-700
-          {% else %}bg-blue-100 text-blue-700{% endif %}">
-          {{ status_labels.get(post.status, post.status) }}
-        </span>
-        <span class="text-xs text-gray-400">{{ post.platform_name or post.channel }}</span>
-      </div>
-    </a>
+      {{ post_card(post, "blue") }}
     {% endfor %}
     {% if not board.journalist_done and not board.editor_rejected %}
     <div class="text-xs text-gray-400 text-center py-4">Пусто</div>
     {% endif %}
   </div>
 
-  <!-- Готов к публикации -->
+  <!-- К одобрению -->
   <div class="bg-indigo-50 rounded-xl p-4">
     <div class="text-xs font-semibold text-indigo-600 uppercase mb-3 flex items-center justify-between">
       К одобрению
       <span class="bg-indigo-200 text-indigo-700 text-xs px-2 py-0.5 rounded-full">{{ board.ready|length + board.approved|length }}</span>
     </div>
     {% for post in board.ready + board.approved %}
-    <a href="/smm/post/{{ post.id }}" class="block bg-white rounded-lg p-3 mb-2 shadow-sm hover:shadow-md transition-shadow border border-indigo-100">
-      <div class="text-xs font-medium text-gray-800 line-clamp-2 mb-1">{{ post.article_title or post.topic }}</div>
-      <div class="flex items-center justify-between">
-        <span class="text-xs px-1.5 py-0.5 rounded
-          {% if post.status == 'approved' %}bg-green-100 text-green-700
-          {% else %}bg-indigo-100 text-indigo-700{% endif %}">
-          {{ status_labels.get(post.status, post.status) }}
-        </span>
-        {% if post.image_url %}
-        <span class="text-xs text-gray-400">🖼</span>
-        {% endif %}
-      </div>
-    </a>
+      {{ post_card(post, "indigo") }}
     {% endfor %}
     {% if not board.ready and not board.approved %}
     <div class="text-xs text-gray-400 text-center py-4">Пусто</div>
@@ -286,21 +247,14 @@
       <span class="bg-emerald-200 text-emerald-700 text-xs px-2 py-0.5 rounded-full">{{ board.published|length }}</span>
     </div>
     {% for post in board.published %}
-    <a href="/smm/post/{{ post.id }}" class="block bg-white rounded-lg p-3 mb-2 shadow-sm hover:shadow-md transition-shadow border border-emerald-100">
-      <div class="text-xs font-medium text-gray-800 line-clamp-2 mb-1">{{ post.article_title or post.topic }}</div>
-      <div class="text-xs text-gray-400">
-        {{ post.published_at.strftime('%d.%m.%Y') if post.published_at else '—' }}
-      </div>
-    </a>
+      {{ post_card(post, "emerald") }}
     {% endfor %}
-    {% if board.publishing %}
     {% for post in board.publishing %}
     <div class="bg-white rounded-lg p-3 mb-2 border border-yellow-200">
       <div class="text-xs font-medium text-gray-800 line-clamp-2 mb-1">{{ post.article_title or post.topic }}</div>
       <span class="text-xs bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded">Публикуется...</span>
     </div>
     {% endfor %}
-    {% endif %}
     {% if not board.published and not board.publishing %}
     <div class="text-xs text-gray-400 text-center py-4">Пусто</div>
     {% endif %}
@@ -337,8 +291,7 @@
           <td class="py-2 pr-4">{{ plan.posts_count }}</td>
           <td class="py-2 pr-4">
             <span class="text-xs px-2 py-0.5 rounded-full
-              {% if plan.status == 'approved' %}bg-green-100 text-green-700
-              {% elif plan.status == 'error' %}bg-red-100 text-red-700
+              {% if plan.status == 'error' %}bg-red-100 text-red-700
               {% else %}bg-gray-100 text-gray-500{% endif %}">
               {{ plan.status }}
             </span>
