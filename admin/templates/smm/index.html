@@ -196,7 +196,7 @@
 {% endmacro %}
 
 <!-- Доска постов по статусам -->
-<div class="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
+<div class="grid grid-cols-2 xl:grid-cols-5 gap-4 mb-8">
 
   <!-- Черновики -->
   <div class="bg-gray-50 rounded-xl p-4">
@@ -256,6 +256,20 @@
     </div>
     {% endfor %}
     {% if not board.published and not board.publishing %}
+    <div class="text-xs text-gray-400 text-center py-4">Пусто</div>
+    {% endif %}
+  </div>
+
+  <!-- Ошибки -->
+  <div class="bg-red-50 rounded-xl p-4">
+    <div class="text-xs font-semibold text-red-600 uppercase mb-3 flex items-center justify-between">
+      Ошибки
+      <span class="bg-red-200 text-red-700 text-xs px-2 py-0.5 rounded-full">{{ board.error|length }}</span>
+    </div>
+    {% for post in board.error %}
+      {{ post_card(post, "red") }}
+    {% endfor %}
+    {% if not board.error %}
     <div class="text-xs text-gray-400 text-center py-4">Пусто</div>
     {% endif %}
   </div>
