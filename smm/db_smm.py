@@ -66,6 +66,7 @@ def ensure_tables() -> None:
                 id         SERIAL PRIMARY KEY,
                 slug       TEXT UNIQUE NOT NULL,
                 name       TEXT NOT NULL,
+                model_provider TEXT NOT NULL DEFAULT 'openai',
                 is_active  BOOLEAN NOT NULL DEFAULT TRUE,
                 created_at TIMESTAMPTZ DEFAULT NOW()
             );
@@ -126,6 +127,10 @@ def ensure_tables() -> None:
                 ALTER TABLE smm_posts
                     ADD COLUMN IF NOT EXISTS {col} {typ};
             """)
+        cur.execute("""
+            ALTER TABLE smm_journalists
+                ADD COLUMN IF NOT EXISTS model_provider TEXT NOT NULL DEFAULT 'openai';
+        """)
 
         # Миграция legacy
         cur.execute("""
@@ -236,16 +241,20 @@ def get_journalist(j_id: int) -> Optional[dict]:
         return dict(row) if row else None
 
 
-def upsert_journalist(slug: str, name: str) -> int:
+def upsert_journalist(slug: str, name: str, model_provider: str = "openai") -> int:
     ensure_tables()
+    allowed = {"openai", "anthropic", "deepseek"}
+    model_provider = model_provider if model_provider in allowed else "openai"
     with _conn() as conn:
         cur = conn.cursor()
         cur.execute("""
-            INSERT INTO smm_journalists (slug, name)
-            VALUES (%s, %s)
-            ON CONFLICT (slug) DO UPDATE SET name = EXCLUDED.name
+            INSERT INTO smm_journalists (slug, name, model_provider)
+            VALUES (%s, %s, %s)
+            ON CONFLICT (slug) DO UPDATE
+                SET name = EXCLUDED.name,
+                    model_provider = EXCLUDED.model_provider
             RETURNING id
-        """, (slug, name))
+        """, (slug, name, model_provider))
         return cur.fetchone()["id"]
 
 
@@ -656,3 +665,32 @@ def get_recent_reviews(limit: int = 10) -> list[str]:
     except Exception:
         pass
     return []
+
+
+def get_recent_topic_titles(limit: int = 500, platform_name: Optional[str] = None) -> list[str]:
+    """
+    Возвращает последние темы/заголовки для анти-дублей у Scout.
+    Берём и topic, и article_title, исключая удалённые.
+    """
+    ensure_tables()
+    with _conn() as conn:
+        cur = conn.cursor()
+        where = "WHERE p.status != 'deleted'"
+        params: list = []
+        if platform_name:
+            where += " AND pf.platform_name = %s"
+            params.append(platform_name)
+        params.append(limit)
+        cur.execute(
+            f"""
+            SELECT COALESCE(NULLIF(TRIM(p.article_title), ''), TRIM(p.topic)) AS title
+            FROM smm_posts p
+            LEFT JOIN smm_platform_formats pf ON pf.id = p.platform_format_id
+            {where}
+            ORDER BY p.created_at DESC
+            LIMIT %s
+            """,
+            params,
+        )
+        rows = cur.fetchall()
+        return [r["title"] for r in rows if r.get("title")]

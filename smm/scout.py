@@ -5,6 +5,7 @@ SMM Scout v2 — генерирует контент-план через Claude.
 import json
 import logging
 import os
+import re
 from typing import Optional
 
 logger = logging.getLogger(__name__)
@@ -40,7 +41,7 @@ def generate_content_plan(
     from admin import db_admin as dba
     from smm.db_smm import (
         create_post, get_active_platform_formats, get_active_rubrics,
-        get_recent_reviews, set_plan_raw,
+        get_recent_reviews, get_recent_topic_titles, set_plan_raw,
     )
 
     key = os.environ.get("ANTHROPIC_API_KEY", "")
@@ -99,13 +100,24 @@ def generate_content_plan(
     if manual_ideas.strip():
         manual_block = f"\n\nИдеи от редактора:\n{manual_ideas.strip()}"
 
+    existing_titles = get_recent_topic_titles(limit=800, platform_name=platform_name_filter)
+    existing_block = ""
+    if existing_titles:
+        sample = "\n".join(f"— {t[:120]}" for t in existing_titles[:200])
+        existing_block = (
+            "\n\nУже использованные темы/заголовки (их повторять нельзя, даже близкие формулировки):\n"
+            + sample
+        )
+
     user_message = (
         f"Стратегия GLAVA:\n{strategy_text}"
         f"{pf_block}"
         f"{rubrics_block}"
         f"{reviews_block}"
+        f"{existing_block}"
         f"{manual_block}"
         f"\n\nСгенерируй ровно {num_topics} тем для постов."
+        "\nКритично: заголовки должны быть разнообразными и НЕ пересекаться по смыслу."
         "\nКаждая тема должна указывать рубрику (rubric) и площадку_формат (platform_format)."
         "\nВерни JSON-массив без пояснений:"
         '\n[{"topic": "Название", "angle": "Угол подачи", "format": "тип", '
@@ -123,6 +135,25 @@ def generate_content_plan(
 
     raw_text = resp.content[0].text.strip()
     topics = _parse_json_list(raw_text)
+    topics = _enforce_uniqueness(topics, existing_titles)
+
+    # Если после чистки тем стало меньше нужного количества — добираем
+    if len(topics) < num_topics:
+        missing = num_topics - len(topics)
+        extra = _generate_extra_topics(
+            client=client,
+            scout_system=scout_system,
+            strategy_text=strategy_text,
+            pf_block=pf_block,
+            rubrics_block=rubrics_block,
+            reviews_block=reviews_block,
+            manual_block=manual_block,
+            existing_titles=existing_titles + [t.get("topic", "") for t in topics],
+            num_topics=missing,
+        )
+        topics.extend(_enforce_uniqueness(extra, existing_titles + [t.get("topic", "") for t in topics]))
+
+    topics = topics[:num_topics]
 
     set_plan_raw(plan_id, topics)
 
@@ -151,6 +182,65 @@ def _parse_json_list(text: str) -> list[dict]:
     if start == -1 or end == 0:
         raise ValueError(f"Scout не вернул корректный JSON-массив: {text[:300]}")
     return json.loads(text[start:end])
+
+
+def _norm_topic(text: str) -> str:
+    t = (text or "").lower().strip()
+    t = re.sub(r"[^\w\s]", " ", t)
+    t = re.sub(r"\s+", " ", t)
+    return t
+
+
+def _enforce_uniqueness(topics: list[dict], existing_titles: list[str]) -> list[dict]:
+    """Удаляет дубли внутри партии и относительно истории."""
+    seen = {_norm_topic(x) for x in existing_titles if x}
+    out: list[dict] = []
+    for item in topics:
+        topic = (item.get("topic") or "").strip()
+        key = _norm_topic(topic)
+        if not topic or not key:
+            continue
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(item)
+    return out
+
+
+def _generate_extra_topics(
+    client,
+    scout_system: str,
+    strategy_text: str,
+    pf_block: str,
+    rubrics_block: str,
+    reviews_block: str,
+    manual_block: str,
+    existing_titles: list[str],
+    num_topics: int,
+) -> list[dict]:
+    """Догенерация недостающих тем, если часть была отброшена как дубли."""
+    if num_topics <= 0:
+        return []
+    exclude = "\n".join(f"— {x[:120]}" for x in existing_titles[:300] if x)
+    user_message = (
+        f"Стратегия GLAVA:\n{strategy_text}"
+        f"{pf_block}"
+        f"{rubrics_block}"
+        f"{reviews_block}"
+        f"{manual_block}"
+        "\n\nНиже список тем, которые уже заняты. Их нельзя повторять ни дословно, ни по смыслу:\n"
+        f"{exclude}"
+        f"\n\nСгенерируй {num_topics} НОВЫХ тем, без повторов."
+        "\nВерни JSON-массив без пояснений:"
+        '\n[{"topic": "Название", "angle": "Угол подачи", "format": "тип", '
+        '"rubric": "slug рубрики", "platform_format": "slug площадки_формата"}]'
+    )
+    resp = client.messages.create(
+        model=os.environ.get("SMM_CLAUDE_MODEL", "claude-haiku-4-5-20251001"),
+        max_tokens=1200,
+        messages=[{"role": "user", "content": scout_system + "\n\n---\n\n" + user_message}],
+    )
+    return _parse_json_list(resp.content[0].text.strip())
 
 
 def _default_strategy() -> str:

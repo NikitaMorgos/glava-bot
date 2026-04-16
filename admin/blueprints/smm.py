@@ -411,6 +411,7 @@ def save_journalist():
     slug        = request.form.get("slug", "").strip()
     name        = request.form.get("name", "").strip()
     prompt_text = request.form.get("prompt_text", "").strip()
+    model_provider = request.form.get("model_provider", "openai").strip().lower()
 
     if not name:
         flash("Укажите имя журналиста", "error")
@@ -419,7 +420,7 @@ def save_journalist():
     if not slug:
         slug = _slug(name)
 
-    j_id = db_smm.upsert_journalist(slug, name)
+    j_id = db_smm.upsert_journalist(slug, name, model_provider=model_provider)
     if prompt_text:
         dba.save_prompt(f"smm_journalist_{slug}", prompt_text, session.get("username", "dev"))
 

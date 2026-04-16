@@ -1,5 +1,5 @@
 """
-SMM Journalist v2 — пишет текст статьи через GPT-4o.
+SMM Journalist v2 — пишет текст статьи через выбранную модель.
 Маршрутизация: по рубрике + площадке_формату подбирается журналист.
 Контекст: промпт журналиста (system) + тема + промпт рубрики + описание формата (user).
 """
@@ -26,13 +26,8 @@ def write_article(post_id: int) -> dict:
     4. GPT-4o пишет текст.
     5. Записывает: article_title, article_body, journalist_id, status='journalist_done'.
     """
-    from openai import OpenAI
     from admin import db_admin as dba
     from smm.db_smm import find_journalist, get_post, update_post
-
-    key = os.environ.get("OPENAI_API_KEY", "")
-    if not key:
-        raise RuntimeError("OPENAI_API_KEY не задан")
 
     post = get_post(post_id)
     if not post:
@@ -49,15 +44,17 @@ def write_article(post_id: int) -> dict:
         j_row = dba.get_prompt(prompt_key)
         system = j_row["prompt_text"] if j_row else _DEFAULT_JOURNALIST_PROMPT
         journalist_id = journalist["id"]
+        model_provider = journalist.get("model_provider") or "openai"
         logger.info(
-            "Journalist routing: пост_ид=%d → %s (id=%d)",
-            post_id, journalist["name"], journalist_id,
+            "Journalist routing: пост_ид=%d → %s (id=%d, model=%s)",
+            post_id, journalist["name"], journalist_id, model_provider,
         )
     else:
         # Fallback: legacy единый промпт smm_journalist
         legacy_row = dba.get_prompt("smm_journalist")
         system = legacy_row["prompt_text"] if legacy_row else _DEFAULT_JOURNALIST_PROMPT
         journalist_id = None
+        model_provider = "openai"
         logger.info("Journalist routing: пост_ид=%d → fallback (нет назначений)", post_id)
 
     # ── Контекст рубрики ──────────────────────────────────────────────────
@@ -85,18 +82,11 @@ def write_article(post_id: int) -> dict:
         "Дальше — только текст в твоём стиле."
     )
 
-    client = OpenAI(api_key=key, timeout=120)
-    resp = client.chat.completions.create(
-        model=os.environ.get("SMM_GPT_MODEL", "gpt-4o"),
-        messages=[
-            {"role": "system", "content": system},
-            {"role": "user", "content": user_message},
-        ],
-        max_tokens=2500,
-        temperature=0.7,
+    full_text = _generate_text(
+        model_provider=model_provider,
+        system=system,
+        user_message=user_message,
     )
-
-    full_text = (resp.choices[0].message.content or "").strip()
     title, body = _split_title_body(full_text)
 
     update_fields = dict(
@@ -124,3 +114,43 @@ def _split_title_body(text: str) -> tuple[str, str]:
         if line.strip():
             return line.strip(), "\n".join(lines[i + 1:]).strip()
     return "Без заголовка", text
+
+
+def _generate_text(model_provider: str, system: str, user_message: str) -> str:
+    provider = (model_provider or "openai").lower()
+
+    if provider == "anthropic":
+        import anthropic
+
+        key = os.environ.get("ANTHROPIC_API_KEY", "")
+        if not key:
+            raise RuntimeError("ANTHROPIC_API_KEY не задан для журналиста (Claude)")
+        client = anthropic.Anthropic(api_key=key)
+        resp = client.messages.create(
+            model=os.environ.get("SMM_CLAUDE_MODEL", "claude-haiku-4-5-20251001"),
+            max_tokens=2500,
+            messages=[{"role": "user", "content": system + "\n\n---\n\n" + user_message}],
+        )
+        return (resp.content[0].text or "").strip()
+
+    if provider == "deepseek":
+        # UI уже доступен, но реальный вызов подключим позже
+        raise RuntimeError("DeepSeek пока не подключен: добавим API ключ позже.")
+
+    # default: openai
+    from openai import OpenAI
+
+    key = os.environ.get("OPENAI_API_KEY", "")
+    if not key:
+        raise RuntimeError("OPENAI_API_KEY не задан для журналиста (OpenAI)")
+    client = OpenAI(api_key=key, timeout=120)
+    resp = client.chat.completions.create(
+        model=os.environ.get("SMM_GPT_MODEL", "gpt-4o"),
+        messages=[
+            {"role": "system", "content": system},
+            {"role": "user", "content": user_message},
+        ],
+        max_tokens=2500,
+        temperature=0.7,
+    )
+    return (resp.choices[0].message.content or "").strip()

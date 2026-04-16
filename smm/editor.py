@@ -130,8 +130,16 @@ def _illustrator_prompt(post: dict) -> str:
     if not key:
         return post.get("article_title") or "warm family memoir illustration"
 
-    illustrator_row = dba.get_prompt(ILLUSTRATOR_ROLE)
+    row_primary = dba.get_prompt(ILLUSTRATOR_ROLE)
+    row_alias = dba.get_prompt("smm_illustrations")
+    illustrator_row = row_primary or row_alias
     system = illustrator_row["prompt_text"] if illustrator_row else _DEFAULT_ILLUSTRATOR_PROMPT
+    logger.info(
+        "Illustrator prompt source: %s",
+        ILLUSTRATOR_ROLE if row_primary else (
+            "smm_illustrations" if row_alias else "default_in_code"
+        ),
+    )
 
     # Передаём заголовок + первые ~600 символов тела — достаточно для визуала
     body_preview = (post.get("article_body") or "")[:600]
