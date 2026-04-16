@@ -546,7 +546,8 @@ def get_post(post_id: int) -> Optional[dict]:
                    pl.name AS platform_name, pl.slug AS platform_slug,
                    r.name  AS rubric_name,   r.slug  AS rubric_slug_val,
                    pf.platform_name AS pf_platform, pf.format_name AS pf_format, pf.slug AS pf_slug,
-                   j.name  AS journalist_name, j.slug AS journalist_slug
+                   j.name  AS journalist_name, j.slug AS journalist_slug,
+                   j.model_provider AS journalist_model_provider
             FROM smm_posts p
             LEFT JOIN smm_content_plans cp ON cp.id = p.plan_id
             LEFT JOIN smm_platforms pl     ON pl.id = cp.platform_id
