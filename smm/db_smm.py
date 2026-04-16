@@ -6,11 +6,16 @@ DB-функции для SMM-редакции v2.
 """
 import json
 import os
+import threading
 from contextlib import contextmanager
 from typing import Optional
 
 import psycopg2
 import psycopg2.extras
+
+
+_ensure_lock = threading.Lock()
+_tables_ready = False
 
 
 @contextmanager
@@ -29,9 +34,20 @@ def _conn():
 
 def ensure_tables() -> None:
     """Создаёт все таблицы если их нет (idempotent)."""
-    with _conn() as conn:
-        cur = conn.cursor()
-        cur.execute("""
+    global _tables_ready
+    if _tables_ready:
+        return
+
+    with _ensure_lock:
+        if _tables_ready:
+            return
+
+        with _conn() as conn:
+            cur = conn.cursor()
+            # Сериализуем DDL между конкурентными воркерами/процессами.
+            cur.execute("SELECT pg_advisory_lock(hashtext('glava_smm_schema_migration_v2'))")
+            try:
+                cur.execute("""
             -- legacy: площадки (для обратной совместимости)
             CREATE TABLE IF NOT EXISTS smm_platforms (
                 id         SERIAL PRIMARY KEY,
@@ -116,36 +132,40 @@ def ensure_tables() -> None:
             CREATE INDEX IF NOT EXISTS idx_smm_posts_status  ON smm_posts(status);
         """)
 
-        # Миграции: новые колонки в smm_posts
-        for col, typ in [
-            ("journalist_id", "INTEGER REFERENCES smm_journalists(id) ON DELETE SET NULL"),
-            ("platform_format_id", "INTEGER REFERENCES smm_platform_formats(id) ON DELETE SET NULL"),
-            ("rubric_id", "INTEGER REFERENCES smm_rubrics(id) ON DELETE SET NULL"),
-            ("publish_date", "DATE"),
-            ("last_error", "TEXT DEFAULT ''"),
-        ]:
-            cur.execute(f"""
+                # Миграции: новые колонки в smm_posts
+                for col, typ in [
+                    ("journalist_id", "INTEGER REFERENCES smm_journalists(id) ON DELETE SET NULL"),
+                    ("platform_format_id", "INTEGER REFERENCES smm_platform_formats(id) ON DELETE SET NULL"),
+                    ("rubric_id", "INTEGER REFERENCES smm_rubrics(id) ON DELETE SET NULL"),
+                    ("publish_date", "DATE"),
+                    ("last_error", "TEXT DEFAULT ''"),
+                ]:
+                    cur.execute(f"""
                 ALTER TABLE smm_posts
                     ADD COLUMN IF NOT EXISTS {col} {typ};
             """)
-        cur.execute("""
+                cur.execute("""
             ALTER TABLE smm_journalists
                 ADD COLUMN IF NOT EXISTS model_provider TEXT NOT NULL DEFAULT 'openai';
         """)
 
-        # Миграция legacy
-        cur.execute("""
+                # Миграция legacy
+                cur.execute("""
             ALTER TABLE smm_content_plans
                 ADD COLUMN IF NOT EXISTS platform_id INTEGER
                     REFERENCES smm_platforms(id) ON DELETE SET NULL;
         """)
 
-        # Seed: площадка Дзен
-        cur.execute("""
+                # Seed: площадка Дзен
+                cur.execute("""
             INSERT INTO smm_platforms (slug, name)
             VALUES ('dzen', 'Яндекс Дзен')
             ON CONFLICT (slug) DO NOTHING;
         """)
+            finally:
+                cur.execute("SELECT pg_advisory_unlock(hashtext('glava_smm_schema_migration_v2'))")
+
+        _tables_ready = True
 
 
 # ── Площадки/Форматы (v2) ────────────────────────────────────────────────────
