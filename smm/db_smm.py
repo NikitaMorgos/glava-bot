@@ -122,6 +122,7 @@ def ensure_tables() -> None:
             ("platform_format_id", "INTEGER REFERENCES smm_platform_formats(id) ON DELETE SET NULL"),
             ("rubric_id", "INTEGER REFERENCES smm_rubrics(id) ON DELETE SET NULL"),
             ("publish_date", "DATE"),
+            ("last_error", "TEXT DEFAULT ''"),
         ]:
             cur.execute(f"""
                 ALTER TABLE smm_posts
@@ -611,6 +612,7 @@ _ALLOWED_POST_FIELDS = frozenset({
     "editor_feedback", "image_prompt", "image_url",
     "published_url", "published_at",
     "journalist_id", "platform_format_id", "rubric_id", "publish_date",
+    "last_error",
 })
 
 

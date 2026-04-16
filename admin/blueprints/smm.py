@@ -162,7 +162,7 @@ def generate_post(post_id: int):
         flash("Пост не найден", "error")
         return redirect(url_for("smm.index"))
 
-    db_smm.update_post(post_id, status="generating")
+    db_smm.update_post(post_id, status="generating", last_error="")
     job_key = f"post_{post_id}"
     _jobs[job_key] = "running"
 
@@ -175,7 +175,7 @@ def generate_post(post_id: int):
             _jobs[job_key] = "done"
         except Exception as e:
             logger.error("Pipeline ошибка пост_ид=%d: %s", post_id, e)
-            db_smm.update_post(post_id, status="error")
+            db_smm.update_post(post_id, status="error", last_error=str(e)[:2000])
             _jobs[job_key] = f"error: {e}"
 
     threading.Thread(target=_run, daemon=True).start()
@@ -250,6 +250,7 @@ def regen_image(post_id: int):
             _jobs[job_key] = "done"
         except Exception as e:
             logger.error("Regen image ошибка пост_ид=%d: %s", post_id, e)
+            db_smm.update_post(post_id, last_error=f"regen_image: {e}"[:2000])
             _jobs[job_key] = f"error: {e}"
 
     threading.Thread(target=_run, daemon=True).start()
@@ -286,7 +287,7 @@ def publish_post(post_id: int):
             _jobs[job_key] = "done"
         except Exception as e:
             logger.error("Publish ошибка пост_ид=%d: %s", post_id, e)
-            db_smm.update_post(post_id, status="approved")
+            db_smm.update_post(post_id, status="approved", last_error=f"publish: {e}"[:2000])
             _jobs[job_key] = f"error: {e}"
 
     threading.Thread(target=_run, daemon=True).start()

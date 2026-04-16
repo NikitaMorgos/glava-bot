@@ -174,6 +174,14 @@
     </div>
     {% endif %}
 
+    <!-- Ошибка пайплайна -->
+    {% if post.last_error %}
+    <div class="bg-red-50 border border-red-200 rounded-xl p-5">
+      <div class="font-semibold text-red-700 mb-2">⚠ Последняя ошибка пайплайна</div>
+      <pre class="text-xs text-red-700 whitespace-pre-wrap break-words">{{ post.last_error }}</pre>
+    </div>
+    {% endif %}
+
     <!-- Диагностика генерации -->
     <div class="bg-white rounded-xl shadow-sm p-5">
       <div class="font-semibold text-gray-700 mb-3">🧪 Диагностика генерации</div>

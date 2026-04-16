@@ -184,6 +184,11 @@
       <span class="text-xs text-gray-500 font-medium">📅 {{ post.publish_date.strftime('%d.%m') if post.publish_date else '' }}</span>
       {% endif %}
     </div>
+    {% if post.status == 'error' and post.last_error %}
+    <div class="mt-1.5 text-[10px] text-red-600 bg-red-50 border border-red-100 rounded px-1.5 py-1 line-clamp-2">
+      {{ post.last_error }}
+    </div>
+    {% endif %}
   </a>
 
   {# Кнопка удаления #}
