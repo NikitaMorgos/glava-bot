@@ -30,7 +30,7 @@
         </div>
         <div class="pb-4 flex-1">
           <div class="font-semibold text-gray-800 text-xs mb-0.5">🔍 Скаут генерирует темы</div>
-          <p class="text-xs text-gray-500">Для каждой темы указывает рубрику и площадку/формат.</p>
+          <p class="text-xs text-gray-500">Для каждой темы указывает рубрику и площадку/формат. Следит за уникальностью — не повторяет темы из последних планов.</p>
           <div class="mt-1 flex flex-wrap gap-1">
             <span class="text-xs bg-purple-50 text-purple-600 border border-purple-200 rounded px-1.5 py-0.5">system: Скаут</span>
             <span class="text-xs bg-gray-50 text-gray-500 border border-gray-200 rounded px-1.5 py-0.5">Стратегия + все Площ./Форм. + все Рубрики</span>
@@ -44,12 +44,13 @@
           <div class="w-px flex-1 bg-gray-200 my-1"></div>
         </div>
         <div class="pb-4 flex-1">
-          <div class="font-semibold text-gray-800 text-xs mb-0.5">✍️ Журналист (автоматический подбор) пишет статью</div>
-          <p class="text-xs text-gray-500">По рубрике + формату выбирается журналист с нужными назначениями. Получает промпт рубрики + описание формата.</p>
+          <div class="font-semibold text-gray-800 text-xs mb-0.5">✍️ Журналист пишет статью</div>
+          <p class="text-xs text-gray-500">По рубрике + формату выбирается нужный журналист. Вставляет маркер <code class="bg-white border border-gray-200 rounded px-1">[ИЛЛЮСТРАЦИЯ]</code> — место для картинки внутри текста.</p>
           <div class="mt-1 flex flex-wrap gap-1">
             <span class="text-xs bg-amber-50 text-amber-600 border border-amber-200 rounded px-1.5 py-0.5">system: промпт журналиста</span>
             <span class="text-xs bg-gray-50 text-gray-500 border border-gray-200 rounded px-1.5 py-0.5">+ промпт рубрики + описание формата</span>
           </div>
+          <p class="text-xs text-gray-400 mt-1">💬 На карточке поста можно включить <b>«Инициировать диалог»</b> — тогда журналист добавит призыв к читателям в конце.</p>
         </div>
       </div>
 
@@ -59,10 +60,11 @@
           <div class="w-px flex-1 bg-gray-200 my-1"></div>
         </div>
         <div class="pb-4 flex-1">
-          <div class="font-semibold text-gray-800 text-xs mb-0.5">🎨 Иллюстратор → обложка</div>
+          <div class="font-semibold text-gray-800 text-xs mb-0.5">🎨 Иллюстратор → 2 изображения</div>
+          <p class="text-xs text-gray-500">Генерирует <b>обложку</b> + <b>иллюстрацию внутри текста</b> (для места маркера). Стиль берёт из промпта рубрики — опиши там, нужно ли реалистичное фото или иллюстрация.</p>
           <div class="mt-1 flex flex-wrap gap-1">
             <span class="text-xs bg-orange-50 text-orange-600 border border-orange-200 rounded px-1.5 py-0.5">system: Иллюстратор</span>
-            <span class="text-xs bg-gray-50 text-gray-500 border border-gray-200 rounded px-1.5 py-0.5">заголовок + фрагмент текста</span>
+            <span class="text-xs bg-gray-50 text-gray-500 border border-gray-200 rounded px-1.5 py-0.5">+ промпт рубрики + требования площадки</span>
           </div>
         </div>
       </div>
@@ -74,9 +76,10 @@
         </div>
         <div class="pb-4 flex-1">
           <div class="font-semibold text-gray-800 text-xs mb-0.5">📋 Выпускающий редактор → решение</div>
+          <p class="text-xs text-gray-500">Оценивает текст + визуал как единый материал. Проверяет соответствие целям рубрики — видит её промпт.</p>
           <div class="mt-1 flex flex-wrap gap-1">
             <span class="text-xs bg-red-50 text-red-600 border border-red-200 rounded px-1.5 py-0.5">system: Редактор</span>
-            <span class="text-xs bg-gray-50 text-gray-500 border border-gray-200 rounded px-1.5 py-0.5">текст + image prompt</span>
+            <span class="text-xs bg-gray-50 text-gray-500 border border-gray-200 rounded px-1.5 py-0.5">текст + обложка + промпт рубрики</span>
           </div>
         </div>
       </div>
@@ -87,15 +90,17 @@
         </div>
         <div class="pb-1 flex-1">
           <div class="font-semibold text-gray-800 text-xs mb-0.5">👁 Лена одобряет → 📅 дата → 🚀 публикация</div>
-          <p class="text-xs text-gray-500">Назначь дату, одобри — и пост уйдёт на площадку.</p>
+          <p class="text-xs text-gray-500">Назначь дату публикации, одобри пост — и он уйдёт на площадку автоматически.</p>
         </div>
       </div>
 
     </div>
   </div>
 
-  <div class="border-t border-amber-200 pt-3 text-xs text-gray-500">
-    <a href="/smm/settings" class="underline text-amber-700">Настройки</a>: Площадки/Форматы (~20 связок) · Рубрики · Журналисты (с назначениями) · Служебные роли
+  <div class="border-t border-amber-200 pt-3 space-y-1 text-xs text-gray-500">
+    <div><a href="/smm/settings" class="underline text-amber-700">Настройки</a>: Площадки/Форматы · Рубрики · Журналисты · Служебные роли</div>
+    <div>💡 <b>Рубрики:</b> описывай типы изображений прямо в промпте рубрики — Иллюстратор их увидит.</div>
+    <div>💡 <b>Рубрики:</b> если в одну рубрику пишут разные журналисты на разные темы — разбей её на несколько узких.</div>
   </div>
 </div>
 
