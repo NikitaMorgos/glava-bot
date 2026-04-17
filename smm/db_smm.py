@@ -32,6 +32,28 @@ def _conn():
         conn.close()
 
 
+def _migration_is_complete() -> bool:
+    """Быстрая проверка: все ли v2-колонки уже существуют в smm_posts?
+    Только SELECT — без DDL и без блокировок, безопасно при конкуренции.
+    """
+    try:
+        with _conn() as conn:
+            cur = conn.cursor()
+            cur.execute("""
+                SELECT COUNT(*) AS cnt
+                FROM information_schema.columns
+                WHERE table_name = 'smm_posts'
+                  AND column_name IN (
+                        'journalist_id', 'platform_format_id',
+                        'rubric_id', 'publish_date', 'last_error'
+                  )
+            """)
+            row = cur.fetchone()
+            return (row["cnt"] if row else 0) >= 5
+    except Exception:
+        return False
+
+
 def ensure_tables() -> None:
     """Создаёт все таблицы если их нет (idempotent)."""
     global _tables_ready
@@ -42,130 +64,134 @@ def ensure_tables() -> None:
         if _tables_ready:
             return
 
-        with _conn() as conn:
-            cur = conn.cursor()
-            # Сериализуем DDL между конкурентными воркерами/процессами.
-            cur.execute("SELECT pg_advisory_lock(hashtext('glava_smm_schema_migration_v2'))")
-            try:
-                cur.execute("""
-            -- legacy: площадки (для обратной совместимости)
-            CREATE TABLE IF NOT EXISTS smm_platforms (
-                id         SERIAL PRIMARY KEY,
-                slug       TEXT UNIQUE NOT NULL,
-                name       TEXT NOT NULL,
-                is_active  BOOLEAN NOT NULL DEFAULT TRUE,
-                created_at TIMESTAMPTZ DEFAULT NOW()
-            );
+        # Fast-path: если схема уже актуальна — пропускаем весь DDL без блокировок.
+        # Срабатывает на каждом рестарте воркера после первой миграции, исключает
+        # конкурентный ALTER TABLE и deadlock на AccessExclusiveLock.
+        if _migration_is_complete():
+            _tables_ready = True
+            return
 
-            CREATE TABLE IF NOT EXISTS smm_rubrics (
-                id         SERIAL PRIMARY KEY,
-                slug       TEXT UNIQUE NOT NULL,
-                name       TEXT NOT NULL,
-                is_active  BOOLEAN NOT NULL DEFAULT TRUE,
-                sort_order INTEGER NOT NULL DEFAULT 0,
-                created_at TIMESTAMPTZ DEFAULT NOW()
-            );
-
-            -- v2: площадка_формат — единая сущность
-            CREATE TABLE IF NOT EXISTS smm_platform_formats (
-                id            SERIAL PRIMARY KEY,
-                slug          TEXT UNIQUE NOT NULL,
-                platform_name TEXT NOT NULL,
-                format_name   TEXT NOT NULL,
-                is_active     BOOLEAN NOT NULL DEFAULT TRUE,
-                sort_order    INTEGER NOT NULL DEFAULT 0,
-                created_at    TIMESTAMPTZ DEFAULT NOW()
-            );
-
-            -- v2: журналисты
-            CREATE TABLE IF NOT EXISTS smm_journalists (
-                id         SERIAL PRIMARY KEY,
-                slug       TEXT UNIQUE NOT NULL,
-                name       TEXT NOT NULL,
-                model_provider TEXT NOT NULL DEFAULT 'openai',
-                is_active  BOOLEAN NOT NULL DEFAULT TRUE,
-                created_at TIMESTAMPTZ DEFAULT NOW()
-            );
-
-            -- v2: назначения журналистов на рубрики (M:N)
-            CREATE TABLE IF NOT EXISTS smm_journalist_rubrics (
-                journalist_id INTEGER REFERENCES smm_journalists(id) ON DELETE CASCADE,
-                rubric_id     INTEGER REFERENCES smm_rubrics(id) ON DELETE CASCADE,
-                PRIMARY KEY (journalist_id, rubric_id)
-            );
-
-            -- v2: назначения журналистов на площадки_форматы (M:N)
-            CREATE TABLE IF NOT EXISTS smm_journalist_pformats (
-                journalist_id      INTEGER REFERENCES smm_journalists(id) ON DELETE CASCADE,
-                platform_format_id INTEGER REFERENCES smm_platform_formats(id) ON DELETE CASCADE,
-                PRIMARY KEY (journalist_id, platform_format_id)
-            );
-
-            CREATE TABLE IF NOT EXISTS smm_content_plans (
-                id           SERIAL PRIMARY KEY,
-                created_at   TIMESTAMPTZ DEFAULT NOW(),
-                week_start   DATE,
-                status       TEXT NOT NULL DEFAULT 'draft',
-                manual_ideas TEXT DEFAULT '',
-                raw_plan     JSONB DEFAULT '[]',
-                platform_id  INTEGER REFERENCES smm_platforms(id) ON DELETE SET NULL
-            );
-
-            CREATE TABLE IF NOT EXISTS smm_posts (
-                id              SERIAL PRIMARY KEY,
-                plan_id         INTEGER REFERENCES smm_content_plans(id) ON DELETE SET NULL,
-                channel         TEXT NOT NULL DEFAULT 'dzen',
-                status          TEXT NOT NULL DEFAULT 'draft',
-                topic           TEXT DEFAULT '',
-                article_title   TEXT DEFAULT '',
-                article_body    TEXT DEFAULT '',
-                editor_feedback TEXT DEFAULT '',
-                image_prompt    TEXT DEFAULT '',
-                image_url       TEXT DEFAULT '',
-                published_url   TEXT DEFAULT '',
-                published_at    TIMESTAMPTZ,
-                created_at      TIMESTAMPTZ DEFAULT NOW(),
-                updated_at      TIMESTAMPTZ DEFAULT NOW()
-            );
-
-            CREATE INDEX IF NOT EXISTS idx_smm_posts_plan_id ON smm_posts(plan_id);
-            CREATE INDEX IF NOT EXISTS idx_smm_posts_status  ON smm_posts(status);
-        """)
-
-                # Миграции: новые колонки в smm_posts
-                for col, typ in [
-                    ("journalist_id", "INTEGER REFERENCES smm_journalists(id) ON DELETE SET NULL"),
-                    ("platform_format_id", "INTEGER REFERENCES smm_platform_formats(id) ON DELETE SET NULL"),
-                    ("rubric_id", "INTEGER REFERENCES smm_rubrics(id) ON DELETE SET NULL"),
-                    ("publish_date", "DATE"),
-                    ("last_error", "TEXT DEFAULT ''"),
-                ]:
-                    cur.execute(f"""
-                ALTER TABLE smm_posts
-                    ADD COLUMN IF NOT EXISTS {col} {typ};
-            """)
-                cur.execute("""
-            ALTER TABLE smm_journalists
-                ADD COLUMN IF NOT EXISTS model_provider TEXT NOT NULL DEFAULT 'openai';
-        """)
-
-                # Миграция legacy
-                cur.execute("""
-            ALTER TABLE smm_content_plans
-                ADD COLUMN IF NOT EXISTS platform_id INTEGER
-                    REFERENCES smm_platforms(id) ON DELETE SET NULL;
-        """)
-
-                # Seed: площадка Дзен
-                cur.execute("""
-            INSERT INTO smm_platforms (slug, name)
-            VALUES ('dzen', 'Яндекс Дзен')
-            ON CONFLICT (slug) DO NOTHING;
-        """)
-            finally:
-                cur.execute("SELECT pg_advisory_unlock(hashtext('glava_smm_schema_migration_v2'))")
-
+        _run_migrations()
         _tables_ready = True
+
+
+def _run_migrations() -> None:
+    """DDL: создание/миграция таблиц. Сериализован advisory-локом между процессами."""
+    with _conn() as conn:
+        cur = conn.cursor()
+        cur.execute("SELECT pg_advisory_lock(hashtext('glava_smm_schema_migration_v2'))")
+        try:
+            cur.execute("""
+                -- legacy: площадки (для обратной совместимости)
+                CREATE TABLE IF NOT EXISTS smm_platforms (
+                    id         SERIAL PRIMARY KEY,
+                    slug       TEXT UNIQUE NOT NULL,
+                    name       TEXT NOT NULL,
+                    is_active  BOOLEAN NOT NULL DEFAULT TRUE,
+                    created_at TIMESTAMPTZ DEFAULT NOW()
+                );
+
+                CREATE TABLE IF NOT EXISTS smm_rubrics (
+                    id         SERIAL PRIMARY KEY,
+                    slug       TEXT UNIQUE NOT NULL,
+                    name       TEXT NOT NULL,
+                    is_active  BOOLEAN NOT NULL DEFAULT TRUE,
+                    sort_order INTEGER NOT NULL DEFAULT 0,
+                    created_at TIMESTAMPTZ DEFAULT NOW()
+                );
+
+                CREATE TABLE IF NOT EXISTS smm_platform_formats (
+                    id            SERIAL PRIMARY KEY,
+                    slug          TEXT UNIQUE NOT NULL,
+                    platform_name TEXT NOT NULL,
+                    format_name   TEXT NOT NULL,
+                    is_active     BOOLEAN NOT NULL DEFAULT TRUE,
+                    sort_order    INTEGER NOT NULL DEFAULT 0,
+                    created_at    TIMESTAMPTZ DEFAULT NOW()
+                );
+
+                CREATE TABLE IF NOT EXISTS smm_journalists (
+                    id             SERIAL PRIMARY KEY,
+                    slug           TEXT UNIQUE NOT NULL,
+                    name           TEXT NOT NULL,
+                    model_provider TEXT NOT NULL DEFAULT 'openai',
+                    is_active      BOOLEAN NOT NULL DEFAULT TRUE,
+                    created_at     TIMESTAMPTZ DEFAULT NOW()
+                );
+
+                CREATE TABLE IF NOT EXISTS smm_journalist_rubrics (
+                    journalist_id INTEGER REFERENCES smm_journalists(id) ON DELETE CASCADE,
+                    rubric_id     INTEGER REFERENCES smm_rubrics(id) ON DELETE CASCADE,
+                    PRIMARY KEY (journalist_id, rubric_id)
+                );
+
+                CREATE TABLE IF NOT EXISTS smm_journalist_pformats (
+                    journalist_id      INTEGER REFERENCES smm_journalists(id) ON DELETE CASCADE,
+                    platform_format_id INTEGER REFERENCES smm_platform_formats(id) ON DELETE CASCADE,
+                    PRIMARY KEY (journalist_id, platform_format_id)
+                );
+
+                CREATE TABLE IF NOT EXISTS smm_content_plans (
+                    id           SERIAL PRIMARY KEY,
+                    created_at   TIMESTAMPTZ DEFAULT NOW(),
+                    week_start   DATE,
+                    status       TEXT NOT NULL DEFAULT 'draft',
+                    manual_ideas TEXT DEFAULT '',
+                    raw_plan     JSONB DEFAULT '[]',
+                    platform_id  INTEGER REFERENCES smm_platforms(id) ON DELETE SET NULL
+                );
+
+                CREATE TABLE IF NOT EXISTS smm_posts (
+                    id              SERIAL PRIMARY KEY,
+                    plan_id         INTEGER REFERENCES smm_content_plans(id) ON DELETE SET NULL,
+                    channel         TEXT NOT NULL DEFAULT 'dzen',
+                    status          TEXT NOT NULL DEFAULT 'draft',
+                    topic           TEXT DEFAULT '',
+                    article_title   TEXT DEFAULT '',
+                    article_body    TEXT DEFAULT '',
+                    editor_feedback TEXT DEFAULT '',
+                    image_prompt    TEXT DEFAULT '',
+                    image_url       TEXT DEFAULT '',
+                    published_url   TEXT DEFAULT '',
+                    published_at    TIMESTAMPTZ,
+                    created_at      TIMESTAMPTZ DEFAULT NOW(),
+                    updated_at      TIMESTAMPTZ DEFAULT NOW()
+                );
+
+                CREATE INDEX IF NOT EXISTS idx_smm_posts_plan_id ON smm_posts(plan_id);
+                CREATE INDEX IF NOT EXISTS idx_smm_posts_status  ON smm_posts(status);
+            """)
+
+            # Миграции: новые колонки в smm_posts
+            for col, typ in [
+                ("journalist_id",       "INTEGER REFERENCES smm_journalists(id) ON DELETE SET NULL"),
+                ("platform_format_id",  "INTEGER REFERENCES smm_platform_formats(id) ON DELETE SET NULL"),
+                ("rubric_id",           "INTEGER REFERENCES smm_rubrics(id) ON DELETE SET NULL"),
+                ("publish_date",        "DATE"),
+                ("last_error",          "TEXT DEFAULT ''"),
+            ]:
+                cur.execute(
+                    f"ALTER TABLE smm_posts ADD COLUMN IF NOT EXISTS {col} {typ};"
+                )
+
+            cur.execute(
+                "ALTER TABLE smm_journalists "
+                "ADD COLUMN IF NOT EXISTS model_provider TEXT NOT NULL DEFAULT 'openai';"
+            )
+            cur.execute(
+                "ALTER TABLE smm_content_plans "
+                "ADD COLUMN IF NOT EXISTS platform_id INTEGER "
+                "REFERENCES smm_platforms(id) ON DELETE SET NULL;"
+            )
+
+            # Seed: площадка Дзен
+            cur.execute("""
+                INSERT INTO smm_platforms (slug, name)
+                VALUES ('dzen', 'Яндекс Дзен')
+                ON CONFLICT (slug) DO NOTHING;
+            """)
+        finally:
+            cur.execute("SELECT pg_advisory_unlock(hashtext('glava_smm_schema_migration_v2'))")
 
 
 # ── Площадки/Форматы (v2) ────────────────────────────────────────────────────
