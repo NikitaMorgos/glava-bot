@@ -54,10 +54,11 @@ _DEFAULT_ILLUSTRATOR_PROMPT = """\
 
 def review_and_generate_image(post_id: int) -> dict:
     """
-    Шаг 1: Иллюстратор (Claude) создаёт image_prompt → Replicate рисует обложку.
-    Шаг 2: Выпускающий редактор (Claude) смотрит на полный пакет (текст + визуал)
+    Шаг 1: Иллюстратор (Claude) создаёт два image_prompt — обложка + inline.
+    Шаг 2: Replicate рисует обе картинки.
+    Шаг 3: Выпускающий редактор (Claude) смотрит на полный пакет (текст + визуал)
             и выносит решение о публикации.
-    Возвращает {approved, comment, image_url}.
+    Возвращает {approved, comment, image_url, image_url_2}.
     """
     from smm.db_smm import get_post, update_post
 
@@ -65,25 +66,33 @@ def review_and_generate_image(post_id: int) -> dict:
     if not post:
         raise ValueError(f"Пост {post_id} не найден")
 
-    # ── Шаг 1: иллюстратор создаёт image_prompt ───────────────────────────────
-    image_prompt = _illustrator_prompt(post)
-    update_post(post_id, image_prompt=image_prompt)
+    # ── Шаг 1: иллюстратор создаёт два промпта ────────────────────────────────
+    cover_prompt, inline_prompt = _illustrator_prompts(post)
+    update_post(post_id, image_prompt=cover_prompt)
 
-    # ── Шаг 2: Replicate генерирует картинку ──────────────────────────────────
-    image_url = _generate_image(post_id, image_prompt)
+    # ── Шаг 2: Replicate генерирует обе картинки ──────────────────────────────
+    image_url = _generate_image(post_id, cover_prompt, suffix="")
     if image_url:
         update_post(post_id, image_url=image_url)
 
+    image_url_2 = None
+    if inline_prompt:
+        image_url_2 = _generate_image(post_id, inline_prompt, suffix="_2")
+        if image_url_2:
+            update_post(post_id, image_url_2=image_url_2)
+
     # ── Шаг 3: выпускающий редактор смотрит на весь пакет ─────────────────────
-    approved, comment = _editorial_review(post, image_prompt)
+    approved, comment = _editorial_review(post, cover_prompt)
     status = "ready" if approved else "editor_rejected"
     update_post(post_id, editor_feedback=comment, status=status)
 
     logger.info(
-        "Editor+Illustrator: пост_ид=%d approved=%s image=%s",
-        post_id, approved, (image_url or "—")[:80],
+        "Editor+Illustrator: пост_ид=%d approved=%s cover=%s inline=%s",
+        post_id, approved,
+        (image_url or "—")[:60],
+        (image_url_2 or "—")[:60],
     )
-    return {"approved": approved, "comment": comment, "image_url": image_url}
+    return {"approved": approved, "comment": comment, "image_url": image_url, "image_url_2": image_url_2}
 
 
 def _editorial_review(post: dict, image_prompt: str = "") -> tuple[bool, str]:
@@ -134,14 +143,19 @@ def _editorial_review(post: dict, image_prompt: str = "") -> tuple[bool, str]:
     return result.get("approved", True), result.get("comment", "")
 
 
-def _illustrator_prompt(post: dict) -> str:
-    """Иллюстратор создаёт image_prompt через Claude."""
+def _illustrator_prompts(post: dict) -> tuple[str, str]:
+    """Иллюстратор (Claude) создаёт два image_prompt: обложка и inline-иллюстрация.
+
+    Возвращает (cover_prompt, inline_prompt).
+    Если Claude недоступен — fallback на title-based промпт.
+    """
     import anthropic
     from admin import db_admin as dba
 
     key = os.environ.get("ANTHROPIC_API_KEY", "")
+    fallback = post.get("article_title") or "warm family memoir illustration"
     if not key:
-        return post.get("article_title") or "warm family memoir illustration"
+        return fallback, ""
 
     row_primary = dba.get_prompt(ILLUSTRATOR_ROLE)
     row_alias = dba.get_prompt("smm_illustrations")
@@ -166,7 +180,7 @@ def _illustrator_prompt(post: dict) -> str:
             )
             logger.info("Illustrator: рубрика %s подключена", rubric_slug)
 
-    # Контекст площадки/формата — ограничения и специфика публикации
+    # Контекст площадки/формата
     pf_slug = post.get("pf_slug") or ""
     pf_context = ""
     if pf_slug:
@@ -177,32 +191,48 @@ def _illustrator_prompt(post: dict) -> str:
                 f"{pf_row['prompt_text'][:400]}"
             )
 
-    body_preview = (post.get("article_body") or "")[:600]
+    body_preview = (post.get("article_body") or "")[:800]
     user_message = (
         f"Заголовок: {post['article_title']}\n\n"
-        f"Фрагмент текста:\n{body_preview}"
+        f"Текст статьи (с маркером [ИЛЛЮСТРАЦИЯ] где нужна иллюстрация внутри):\n{body_preview}"
         f"{rubric_context}"
         f"{pf_context}\n\n"
-        "Создай промпт для иллюстрации."
+        "Создай два промпта для генерации изображений через Replicate (flux-schnell). "
+        "Верни ТОЛЬКО JSON без пояснений:\n"
+        '{"cover": "prompt for cover image in English", '
+        '"inline": "prompt for inline image at [ИЛЛЮСТРАЦИЯ] marker in English"}'
     )
 
     try:
         client = anthropic.Anthropic(api_key=key)
         resp = client.messages.create(
             model=os.environ.get("SMM_CLAUDE_MODEL", "claude-haiku-4-5-20251001"),
-            max_tokens=300,
+            max_tokens=400,
             messages=[{"role": "user", "content": system + "\n\n---\n\n" + user_message}],
         )
-        prompt = resp.content[0].text.strip()
-        logger.info("Illustrator: пост_ид=%d prompt=%r", post["id"], prompt[:80])
-        return prompt or (post.get("article_title") or "family memoir illustration")
+        raw = resp.content[0].text.strip()
+        logger.info("Illustrator: raw response пост_ид=%d: %r", post["id"], raw[:120])
+        data = _parse_json_obj(raw)
+        cover = (data.get("cover") or "").strip() or fallback
+        inline = (data.get("inline") or "").strip()
+        return cover, inline
     except Exception as e:
         logger.error("Illustrator: ошибка пост_ид=%d: %s", post["id"], e)
-        return post.get("article_title") or "family memoir illustration"
+        return fallback, ""
 
 
-def _generate_image(post_id: int, image_prompt: str) -> Optional[str]:
-    """Генерирует обложку через Replicate и сохраняет в SMM_IMAGES_DIR."""
+def _illustrator_prompt(post: dict) -> str:
+    """Обёртка для обратной совместимости (используется в regen-image)."""
+    cover, _ = _illustrator_prompts(post)
+    return cover
+
+
+def _generate_image(post_id: int, image_prompt: str, suffix: str = "") -> Optional[str]:
+    """Генерирует картинку через Replicate и сохраняет в SMM_IMAGES_DIR.
+
+    suffix="" → post_{id}.webp (обложка)
+    suffix="_2" → post_{id}_2.webp (inline)
+    """
     import sys
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
     from replicate_client import generate_cover_image
@@ -217,15 +247,15 @@ def _generate_image(post_id: int, image_prompt: str) -> Optional[str]:
             raw=True,  # SMM: промпт иллюстратора передаётся как есть, без book-cover суффикса
         )
         if not image_bytes:
-            logger.warning("Illustrator: Replicate вернул None для пост_ид=%d", post_id)
+            logger.warning("Illustrator: Replicate вернул None для пост_ид=%d suffix=%r", post_id, suffix)
             return None
-        filename = f"post_{post_id}.webp"
+        filename = f"post_{post_id}{suffix}.webp"
         filepath = images_dir / filename
         filepath.write_bytes(image_bytes)
         logger.info("Illustrator: изображение сохранено %s (%d байт)", filepath, len(image_bytes))
         return f"/smm/image/{filename}"
     except Exception as e:
-        logger.error("Illustrator: ошибка генерации пост_ид=%d: %s", post_id, e)
+        logger.error("Illustrator: ошибка генерации пост_ид=%d suffix=%r: %s", post_id, suffix, e)
         return None
 
 

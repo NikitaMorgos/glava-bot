@@ -39,7 +39,7 @@ def _migration_is_complete() -> bool:
     """
     required = {
         'journalist_id', 'platform_format_id', 'rubric_id',
-        'publish_date', 'last_error', 'initiate_dialog',
+        'publish_date', 'last_error', 'initiate_dialog', 'image_url_2',
     }
     try:
         with _conn() as conn:
@@ -172,6 +172,7 @@ def _run_migrations() -> None:
                 ("publish_date",        "DATE"),
                 ("last_error",          "TEXT DEFAULT ''"),
                 ("initiate_dialog",     "BOOLEAN NOT NULL DEFAULT FALSE"),
+                ("image_url_2",         "TEXT DEFAULT ''"),
             ]:
                 cur.execute(
                     f"ALTER TABLE smm_posts ADD COLUMN IF NOT EXISTS {col} {typ};"
