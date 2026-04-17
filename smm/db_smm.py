@@ -33,23 +33,25 @@ def _conn():
 
 
 def _migration_is_complete() -> bool:
-    """Быстрая проверка: все ли v2-колонки уже существуют в smm_posts?
+    """Быстрая проверка: все ли колонки уже существуют в smm_posts?
     Только SELECT — без DDL и без блокировок, безопасно при конкуренции.
+    Обновляй список при каждой новой миграции.
     """
+    required = {
+        'journalist_id', 'platform_format_id', 'rubric_id',
+        'publish_date', 'last_error', 'initiate_dialog',
+    }
     try:
         with _conn() as conn:
             cur = conn.cursor()
             cur.execute("""
-                SELECT COUNT(*) AS cnt
+                SELECT column_name
                 FROM information_schema.columns
                 WHERE table_name = 'smm_posts'
-                  AND column_name IN (
-                        'journalist_id', 'platform_format_id',
-                        'rubric_id', 'publish_date', 'last_error'
-                  )
-            """)
-            row = cur.fetchone()
-            return (row["cnt"] if row else 0) >= 5
+                  AND column_name = ANY(%s)
+            """, (list(required),))
+            found = {r["column_name"] for r in cur.fetchall()}
+            return found >= required
     except Exception:
         return False
 
@@ -169,6 +171,7 @@ def _run_migrations() -> None:
                 ("rubric_id",           "INTEGER REFERENCES smm_rubrics(id) ON DELETE SET NULL"),
                 ("publish_date",        "DATE"),
                 ("last_error",          "TEXT DEFAULT ''"),
+                ("initiate_dialog",     "BOOLEAN NOT NULL DEFAULT FALSE"),
             ]:
                 cur.execute(
                     f"ALTER TABLE smm_posts ADD COLUMN IF NOT EXISTS {col} {typ};"
@@ -688,6 +691,16 @@ def set_publish_date(post_id: int, publish_date: Optional[str]) -> None:
         cur.execute(
             "UPDATE smm_posts SET publish_date = %s, updated_at = NOW() WHERE id = %s",
             (publish_date or None, post_id),
+        )
+
+
+def set_initiate_dialog(post_id: int, value: bool) -> None:
+    """Включает/выключает флаг 'инициировать диалог с читателем'."""
+    with _conn() as conn:
+        cur = conn.cursor()
+        cur.execute(
+            "UPDATE smm_posts SET initiate_dialog = %s, updated_at = NOW() WHERE id = %s",
+            (value, post_id),
         )
 
 

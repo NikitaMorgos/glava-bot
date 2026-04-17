@@ -230,6 +230,15 @@ def set_publish_date(post_id: int):
     return redirect(url_for("smm.post_detail", post_id=post_id))
 
 
+@bp.route("/post/<int:post_id>/toggle-dialog", methods=["POST"])
+@role_required("dev", "lena", "dasha")
+def toggle_dialog(post_id: int):
+    value = request.form.get("initiate_dialog") == "1"
+    db_smm.set_initiate_dialog(post_id, value)
+    flash("Диалог с читателем включён" if value else "Диалог с читателем выключен", "success")
+    return redirect(url_for("smm.post_detail", post_id=post_id))
+
+
 @bp.route("/post/<int:post_id>/regen-image", methods=["POST"])
 @role_required("dev", "lena", "dasha")
 def regen_image(post_id: int):

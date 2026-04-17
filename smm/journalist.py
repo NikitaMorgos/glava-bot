@@ -74,10 +74,20 @@ def write_article(post_id: int) -> dict:
             pf_name = f"{post.get('pf_platform', '')} / {post.get('pf_format', '')}"
             pf_context = f"\n\nТребования площадки и формата «{pf_name}»:\n{pf_row['prompt_text']}"
 
+    # ── Флаг "Инициировать диалог с читателем" ───────────────────────────────
+    dialog_instruction = ""
+    if post.get("initiate_dialog"):
+        dialog_instruction = (
+            "\n\nВАЖНО: в конце статьи добавь короткий призыв к диалогу с читателем — "
+            "задай вопрос или предложи поделиться своим опытом по теме. "
+            "1-2 предложения, тёплый тон."
+        )
+
     user_message = (
         f"Тема статьи: «{post['topic']}»"
         f"{rubric_context}"
-        f"{pf_context}\n\n"
+        f"{pf_context}"
+        f"{dialog_instruction}\n\n"
         "Первая строка — заголовок, начинается с «# ».\n"
         "Дальше — только текст в твоём стиле."
     )
