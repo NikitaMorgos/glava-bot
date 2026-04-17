@@ -11,6 +11,8 @@ from typing import Optional
 logger = logging.getLogger(__name__)
 
 _DZEN_PUBLICATIONS_URL = "https://dzen.ru/profile/editor/glava_family/publications"
+# Прямой URL создания новой статьи — используется как fallback если кнопка не найдена
+_DZEN_NEW_ARTICLE_URL  = "https://dzen.ru/editor/new"
 _SESSION_FILE = Path(os.environ.get("SMM_DZEN_SESSION", "")) or (
     Path(__file__).resolve().parent.parent / "cookies" / "dzen_session.json"
 )
@@ -35,6 +37,8 @@ def publish_to_dzen(post: dict) -> Optional[str]:
 
     title = (post.get("article_title") or "").strip()
     body = (post.get("article_body") or "").strip()
+    # Убираем маркер [ИЛЛЮСТРАЦИЯ] из публикуемого текста
+    body = body.replace("[ИЛЛЮСТРАЦИЯ]", "").strip()
     image_url_path = post.get("image_url") or ""
 
     if not title:
@@ -55,6 +59,11 @@ def publish_to_dzen(post: dict) -> Optional[str]:
         ctx = browser.new_context(
             storage_state=str(session_file) if session_file and session_file.exists() else None,
             viewport={"width": 1280, "height": 900},
+            user_agent=(
+                "Mozilla/5.0 (X11; Linux x86_64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/124.0.0.0 Safari/537.36"
+            ),
         )
         page = ctx.new_page()
 
@@ -70,10 +79,23 @@ def publish_to_dzen(post: dict) -> Optional[str]:
                     "Запустите scripts/_dzen_auth.py для сохранения сессии."
                 )
 
-            # Click "Написать статью"
-            _click_write_button(page)
+            # Click "Написать статью" или перейти на URL создания напрямую
+            editor_opened = _try_click_write_button(page)
+            if not editor_opened:
+                # Fallback: прямой переход на URL редактора
+                logger.info("Dzen publisher: кнопка не найдена, пробуем прямой URL %s", _DZEN_NEW_ARTICLE_URL)
+                page.goto(_DZEN_NEW_ARTICLE_URL, wait_until="domcontentloaded", timeout=30_000)
+                time.sleep(2)
+                # Проверяем что открылся редактор, а не страница авторизации
+                if "passport.yandex" in page.url or "login" in page.url.lower():
+                    raise RuntimeError(
+                        "Не авторизованы в Яндекс Дзен. "
+                        "Запустите scripts/_dzen_auth.py для сохранения сессии."
+                    )
+
             page.wait_for_load_state("domcontentloaded", timeout=20_000)
             time.sleep(2)
+            _save_debug_screenshot(page, post.get("id", "unknown"), "editor_opened")
 
             # Fill title
             _fill_title(page, title)
@@ -87,6 +109,8 @@ def publish_to_dzen(post: dict) -> Optional[str]:
             if image_path and image_path.exists():
                 _upload_cover(page, image_path)
 
+            _save_debug_screenshot(page, post.get("id", "unknown"), "before_publish")
+
             # Publish
             _click_publish(page)
             time.sleep(4)
@@ -98,13 +122,7 @@ def publish_to_dzen(post: dict) -> Optional[str]:
             return published_url
 
         except Exception as e:
-            # Save screenshot for debug
-            try:
-                screenshots_dir = Path(os.environ.get("SMM_IMAGES_DIR", "/tmp/smm_images"))
-                screenshots_dir.mkdir(parents=True, exist_ok=True)
-                page.screenshot(path=str(screenshots_dir / f"dzen_error_post{post.get('id', 'unknown')}.png"))
-            except Exception:
-                pass
+            _save_debug_screenshot(page, post.get("id", "unknown"), "error")
             browser.close()
             raise RuntimeError(f"Ошибка публикации в Дзен: {e}") from e
 
@@ -127,32 +145,61 @@ def _resolve_image_path(image_url: str) -> Optional[Path]:
     return candidate if candidate.exists() else None
 
 
-def _click_write_button(page) -> None:
+def _save_debug_screenshot(page, post_id, label: str) -> None:
+    try:
+        d = Path(os.environ.get("SMM_IMAGES_DIR", "/tmp/smm_images"))
+        d.mkdir(parents=True, exist_ok=True)
+        path = d / f"dzen_{label}_post{post_id}.png"
+        page.screenshot(path=str(path))
+        logger.info("Dzen publisher: скриншот сохранён %s", path)
+    except Exception as e:
+        logger.warning("Dzen publisher: не удалось сохранить скриншот %s: %s", label, e)
+
+
+def _try_click_write_button(page) -> bool:
+    """Пробует найти и нажать кнопку создания статьи. Возвращает True если успешно."""
     selectors = [
-        "text=Написать статью",
-        "text=Создать статью",
-        "[data-testid='create-article']",
-        "a[href*='/editor/new']",
+        # Текстовые варианты (Яндекс периодически меняет)
+        "button:has-text('Написать статью')",
+        "button:has-text('Создать статью')",
         "button:has-text('Написать')",
+        "button:has-text('Создать')",
+        "button:has-text('Новый материал')",
+        "button:has-text('Новая статья')",
+        "a:has-text('Написать статью')",
+        "a:has-text('Написать')",
+        "a:has-text('Создать')",
+        # data-testid
+        "[data-testid='create-article']",
+        "[data-testid='create-button']",
+        "[data-testid='write-button']",
+        # href-based
+        "a[href*='/editor/new']",
+        "a[href*='editor/new']",
+        "a[href*='/new-article']",
     ]
     for sel in selectors:
         try:
             btn = page.locator(sel).first
-            if btn.is_visible(timeout=2000):
+            if btn.is_visible(timeout=1500):
                 btn.click()
-                return
+                logger.info("Dzen publisher: нажата кнопка создания по селектору: %s", sel)
+                return True
         except Exception:
             pass
-    raise RuntimeError("Не найдена кнопка 'Написать статью' на странице Дзена")
+    return False
 
 
 def _fill_title(page, title: str) -> None:
     selectors = [
         "[data-testid='title-input']",
         "input[placeholder*='заголовок' i]",
+        "input[placeholder*='Заголовок']",
         "h1[contenteditable='true']",
         ".article-title [contenteditable='true']",
         "[placeholder*='Заголовок']",
+        "[aria-label*='заголовок' i]",
+        "[aria-label*='title' i]",
     ]
     for sel in selectors:
         try:
@@ -160,6 +207,7 @@ def _fill_title(page, title: str) -> None:
             if el.is_visible(timeout=2000):
                 el.click()
                 el.fill(title)
+                logger.info("Dzen publisher: заголовок заполнен (sel=%s)", sel)
                 return
         except Exception:
             pass
@@ -174,13 +222,13 @@ def _fill_body(page, body: str) -> None:
         ".editor-content [contenteditable='true']",
         ".article-body [contenteditable='true']",
         "[contenteditable='true']:not([data-testid='title-input'])",
+        "[role='textbox']:not([data-testid='title-input'])",
     ]
     for sel in selectors:
         try:
             el = page.locator(sel).first
             if el.is_visible(timeout=2000):
                 el.click()
-                # Clear and set via JS to handle rich editor
                 page.evaluate(
                     """(args) => {
                         const el = document.querySelector(args.sel);
@@ -192,6 +240,7 @@ def _fill_body(page, body: str) -> None:
                     }""",
                     {"sel": sel, "text": body},
                 )
+                logger.info("Dzen publisher: тело заполнено (sel=%s)", sel)
                 return
         except Exception:
             pass
@@ -204,6 +253,7 @@ def _fill_body(page, body: str) -> None:
                 "document.querySelectorAll('[contenteditable=\"true\"]')[1].innerText = arguments[0]",
                 body,
             )
+            logger.info("Dzen publisher: тело заполнено через fallback (2-й contenteditable)")
     except Exception as e:
         logger.warning("Dzen publisher: не удалось заполнить тело статьи: %s", e)
 
@@ -215,6 +265,8 @@ def _upload_cover(page, image_path: Path) -> None:
             "[data-testid='cover-upload']",
             "button:has-text('Добавить обложку')",
             "button:has-text('обложк')",
+            "button:has-text('Обложка')",
+            "[aria-label*='обложк' i]",
         ]
         for sel in upload_trigger_selectors:
             try:
@@ -224,6 +276,7 @@ def _upload_cover(page, image_path: Path) -> None:
                         btn.click()
                     fc_info.value.set_files(str(image_path))
                     time.sleep(3)
+                    logger.info("Dzen publisher: обложка загружена (sel=%s)", sel)
                     return
             except Exception:
                 pass
@@ -233,6 +286,7 @@ def _upload_cover(page, image_path: Path) -> None:
         if file_input:
             file_input.set_input_files(str(image_path))
             time.sleep(2)
+            logger.info("Dzen publisher: обложка загружена через file input")
     except Exception as e:
         logger.warning("Dzen publisher: ошибка загрузки обложки: %s", e)
 
@@ -242,12 +296,15 @@ def _click_publish(page) -> None:
         "[data-testid='publish-button']",
         "button:has-text('Опубликовать')",
         "button:has-text('Публикую')",
+        "button:has-text('Опубликовать статью')",
+        "[aria-label*='публик' i]",
     ]
     for sel in selectors:
         try:
             btn = page.locator(sel).first
             if btn.is_visible(timeout=3000):
                 btn.click()
+                logger.info("Dzen publisher: нажата кнопка публикации (sel=%s)", sel)
                 return
         except Exception:
             pass
