@@ -98,6 +98,18 @@ def _editorial_review(post: dict, image_prompt: str = "") -> tuple[bool, str]:
     editor_row = dba.get_prompt(EDITOR_ROLE)
     system = editor_row["prompt_text"] if editor_row else _DEFAULT_EDITOR_PROMPT
 
+    # Контекст рубрики — редактор знает, чему должна соответствовать рубрика
+    rubric_slug = post.get("rubric_slug_val") or ""
+    rubric_block = ""
+    if rubric_slug:
+        rubric_row = dba.get_prompt(f"smm_rubric_{rubric_slug}")
+        if rubric_row:
+            rubric_block = (
+                f"\n\nКонтекст рубрики «{post.get('rubric_name', rubric_slug)}»:\n"
+                f"{rubric_row['prompt_text'][:800]}"
+            )
+            logger.info("Editor: рубрика %s подключена", rubric_slug)
+
     visual_block = (
         f"\n\nВизуальный концепт обложки (image prompt):\n{image_prompt}"
         if image_prompt else ""
@@ -105,6 +117,7 @@ def _editorial_review(post: dict, image_prompt: str = "") -> tuple[bool, str]:
     user_message = (
         f"Заголовок: {post['article_title']}\n\n"
         f"Текст статьи:\n{post['article_body']}"
+        f"{rubric_block}"
         f"{visual_block}\n\n"
         "Оцени полный пакет и верни только JSON без пояснений:\n"
         '{"approved": true/false, "comment": "..."}'
@@ -141,11 +154,35 @@ def _illustrator_prompt(post: dict) -> str:
         ),
     )
 
-    # Передаём заголовок + первые ~600 символов тела — достаточно для визуала
+    # Контекст рубрики — Лена описывает нужный тип изображений в промпте рубрики
+    rubric_slug = post.get("rubric_slug_val") or ""
+    rubric_context = ""
+    if rubric_slug:
+        rubric_row = dba.get_prompt(f"smm_rubric_{rubric_slug}")
+        if rubric_row:
+            rubric_context = (
+                f"\n\nТипы изображений для рубрики «{post.get('rubric_name', rubric_slug)}»:\n"
+                f"{rubric_row['prompt_text'][:600]}"
+            )
+            logger.info("Illustrator: рубрика %s подключена", rubric_slug)
+
+    # Контекст площадки/формата — ограничения и специфика публикации
+    pf_slug = post.get("pf_slug") or ""
+    pf_context = ""
+    if pf_slug:
+        pf_row = dba.get_prompt(f"smm_pf_{pf_slug}")
+        if pf_row:
+            pf_context = (
+                f"\n\nТребования площадки {post.get('pf_platform','')} / {post.get('pf_format','')}:\n"
+                f"{pf_row['prompt_text'][:400]}"
+            )
+
     body_preview = (post.get("article_body") or "")[:600]
     user_message = (
         f"Заголовок: {post['article_title']}\n\n"
-        f"Фрагмент текста:\n{body_preview}\n\n"
+        f"Фрагмент текста:\n{body_preview}"
+        f"{rubric_context}"
+        f"{pf_context}\n\n"
         "Создай промпт для иллюстрации."
     )
 
@@ -177,6 +214,7 @@ def _generate_image(post_id: int, image_prompt: str) -> Optional[str]:
         image_bytes = generate_cover_image(
             visual_style=image_prompt,
             character_name="GLAVA",
+            raw=True,  # SMM: промпт иллюстратора передаётся как есть, без book-cover суффикса
         )
         if not image_bytes:
             logger.warning("Illustrator: Replicate вернул None для пост_ид=%d", post_id)
