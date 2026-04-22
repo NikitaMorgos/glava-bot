@@ -10,9 +10,9 @@ from typing import Optional
 
 logger = logging.getLogger(__name__)
 
-_DZEN_PUBLICATIONS_URL = "https://dzen.ru/editor"
+_DZEN_PUBLICATIONS_URL = "https://dzen.ru/profile/editor"
 # Прямой URL создания новой статьи — используется как fallback если кнопка не найдена
-_DZEN_NEW_ARTICLE_URL  = "https://dzen.ru/editor/new"
+_DZEN_NEW_ARTICLE_URL  = "https://dzen.ru/profile/editor/new-article"
 _SESSION_FILE = Path(os.environ.get("SMM_DZEN_SESSION", "")) or (
     Path(__file__).resolve().parent.parent / "cookies" / "dzen_session.json"
 )
@@ -167,16 +167,26 @@ def _try_click_write_button(page) -> bool:
         "button:has-text('Новый материал')",
         "button:has-text('Новая статья')",
         "a:has-text('Написать статью')",
+        "a:has-text('Статья')",
         "a:has-text('Написать')",
         "a:has-text('Создать')",
+        # Кнопка "+" (в Студии Дзен)
+        "button[aria-label*='создать' i]",
+        "button[aria-label*='новый' i]",
+        "button[aria-label*='написать' i]",
+        "button[title*='создать' i]",
+        "button[title*='написать' i]",
         # data-testid
         "[data-testid='create-article']",
         "[data-testid='create-button']",
         "[data-testid='write-button']",
+        "[data-testid='new-publication']",
         # href-based
+        "a[href*='/new-article']",
+        "a[href*='new-article']",
         "a[href*='/editor/new']",
         "a[href*='editor/new']",
-        "a[href*='/new-article']",
+        "a[href*='/new-publication']",
     ]
     for sel in selectors:
         try:
@@ -184,9 +194,26 @@ def _try_click_write_button(page) -> bool:
             if btn.is_visible(timeout=1500):
                 btn.click()
                 logger.info("Dzen publisher: нажата кнопка создания по селектору: %s", sel)
+                time.sleep(2)
                 return True
         except Exception:
             pass
+    # Ищем любую ссылку с "статья" в тексте
+    try:
+        links = page.locator("a, button").all()
+        for link in links:
+            try:
+                text = link.inner_text(timeout=500).lower()
+                if "статья" in text or "написать" in text or "создать" in text:
+                    if link.is_visible(timeout=500):
+                        link.click()
+                        logger.info("Dzen publisher: нажата ссылка по тексту: %s", text[:30])
+                        time.sleep(2)
+                        return True
+            except Exception:
+                pass
+    except Exception:
+        pass
     return False
 
 

@@ -526,6 +526,74 @@ def serve_image(filename: str):
     return send_file(str(filepath))
 
 
+# ── Dzen auth UI ───────────────────────────────────────────────────────────────
+
+@bp.route("/dzen-auth")
+@role_required("dev", "lena", "dasha")
+def dzen_auth():
+    return render_template("smm/dzen_auth.html")
+
+
+@bp.route("/dzen-auth/start", methods=["POST"])
+@role_required("dev", "lena", "dasha")
+def dzen_auth_start():
+    from smm import dzen_auth_server
+    dzen_auth_server.start()
+    return jsonify({"ok": True})
+
+
+@bp.route("/dzen-auth/state")
+@role_required("dev", "lena", "dasha")
+def dzen_auth_state():
+    from smm import dzen_auth_server
+    return jsonify(dzen_auth_server.get_state())
+
+
+@bp.route("/dzen-auth/click", methods=["POST"])
+@role_required("dev", "lena", "dasha")
+def dzen_auth_click():
+    data = request.json or {}
+    from smm import dzen_auth_server
+    dzen_auth_server.click(int(data.get("x", 0)), int(data.get("y", 0)))
+    return jsonify({"ok": True})
+
+
+@bp.route("/dzen-auth/type", methods=["POST"])
+@role_required("dev", "lena", "dasha")
+def dzen_auth_type():
+    data = request.json or {}
+    from smm import dzen_auth_server
+    dzen_auth_server.type_text(data.get("text", ""))
+    return jsonify({"ok": True})
+
+
+@bp.route("/dzen-auth/key", methods=["POST"])
+@role_required("dev", "lena", "dasha")
+def dzen_auth_key():
+    data = request.json or {}
+    from smm import dzen_auth_server
+    dzen_auth_server.press_key(data.get("key", "Enter"))
+    return jsonify({"ok": True})
+
+
+@bp.route("/dzen-auth/navigate", methods=["POST"])
+@role_required("dev", "lena", "dasha")
+def dzen_auth_navigate():
+    data = request.json or {}
+    from smm import dzen_auth_server
+    dzen_auth_server.navigate(data.get("url", "https://dzen.ru"))
+    return jsonify({"ok": True})
+
+
+@bp.route("/dzen-auth/save", methods=["POST"])
+@role_required("dev", "lena", "dasha")
+def dzen_auth_save():
+    from smm import dzen_auth_server
+    ok = dzen_auth_server.save_session()
+    state = dzen_auth_server.get_state()
+    return jsonify({"ok": ok, "message": state["message"]})
+
+
 @bp.route("/status/<job_key>")
 @role_required("dev", "lena", "dasha")
 def job_status(job_key: str):

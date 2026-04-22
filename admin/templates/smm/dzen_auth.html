@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+{% block title %}Авторизация Дзен{% endblock %}
+{% block content %}
+<div class="container-fluid py-3" style="max-width:1400px">
+  <div class="d-flex align-items-center gap-3 mb-3">
+    <a href="{{ url_for('smm.index') }}" class="btn btn-sm btn-outline-secondary">← SMM</a>
+    <h4 class="mb-0">🔑 Авторизация в Яндекс Дзен</h4>
+  </div>
+
+  <div class="alert alert-info">
+    <strong>Зачем это нужно?</strong>
+    Яндекс привязывает сессию к IP-адресу. Авторизация должна происходить <strong>с сервера</strong>.
+    Ниже — браузер, запущенный на сервере. Войдите в Яндекс, нажмите «Сохранить сессию».
+  </div>
+
+  <div class="row g-3">
+    <!-- Controls -->
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-body">
+          <h6 class="card-title">Управление</h6>
+
+          <div id="status-badge" class="badge bg-secondary mb-3 fs-6 d-block text-wrap">
+            Не запущен
+          </div>
+          <div id="url-display" class="text-muted small mb-3 text-truncate" style="max-width:300px"></div>
+
+          <button id="btn-start" class="btn btn-primary w-100 mb-2" onclick="startSession()">
+            ▶ Запустить браузер
+          </button>
+
+          <hr>
+          <label class="form-label fw-bold">Перейти по URL</label>
+          <div class="input-group mb-3">
+            <input id="nav-url" type="text" class="form-control form-control-sm"
+              value="https://dzen.ru" placeholder="https://...">
+            <button class="btn btn-sm btn-outline-primary" onclick="doNavigate()">Перейти</button>
+          </div>
+
+          <label class="form-label fw-bold">Напечатать текст</label>
+          <div class="input-group mb-3">
+            <input id="type-text" type="text" class="form-control form-control-sm" placeholder="Введите текст...">
+            <button class="btn btn-sm btn-outline-secondary" onclick="doType()">Печать</button>
+          </div>
+
+          <div class="d-flex gap-2 mb-3">
+            <button class="btn btn-sm btn-outline-secondary" onclick="doKey('Enter')">⏎ Enter</button>
+            <button class="btn btn-sm btn-outline-secondary" onclick="doKey('Tab')">⇥ Tab</button>
+            <button class="btn btn-sm btn-outline-secondary" onclick="doKey('Escape')">Esc</button>
+          </div>
+
+          <div class="d-flex gap-2 mb-3">
+            <button class="btn btn-sm btn-outline-info" onclick="doNavigate('https://dzen.ru')">
+              Главная Дзен
+            </button>
+            <button class="btn btn-sm btn-outline-info" onclick="doNavigate('https://id.yandex.ru')">
+              id.yandex.ru
+            </button>
+          </div>
+
+          <hr>
+          <button id="btn-save" class="btn btn-success w-100" onclick="saveSession()" disabled>
+            💾 Сохранить сессию
+          </button>
+          <div id="save-result" class="mt-2 small text-success"></div>
+
+          <div class="mt-3 text-muted small">
+            <strong>Инструкция:</strong><br>
+            1. Нажмите «Запустить браузер»<br>
+            2. Кликайте по скриншоту для взаимодействия<br>
+            3. Войдите в Яндекс → перейдите на dzen.ru<br>
+            4. Нажмите «Сохранить сессию»
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Screenshot -->
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-body p-0">
+          <div id="screenshot-container" style="position:relative; cursor:crosshair; background:#222; min-height:500px; display:flex; align-items:center; justify-content:center;">
+            <div id="screenshot-placeholder" class="text-white text-center p-4">
+              <div style="font-size:3rem">🖥️</div>
+              <div class="mt-2">Браузер не запущен.<br>Нажмите «Запустить браузер».</div>
+            </div>
+            <img id="screenshot-img" src="" alt="screenshot"
+              style="display:none; max-width:100%; max-height:700px; cursor:crosshair"
+              onclick="handleScreenshotClick(event)">
+          </div>
+        </div>
+      </div>
+      <div class="text-muted small mt-1">
+        Кликайте по скриншоту для взаимодействия с браузером (автообновление каждые 1.5 сек).
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let polling = null;
+let sessionRunning = false;
+
+function startSession() {
+  document.getElementById('btn-start').disabled = true;
+  setStatus('Запуск…', 'warning');
+  fetch("{{ url_for('smm.dzen_auth_start') }}", {method:'POST', headers:{'X-Requested-With':'XMLHttpRequest'}})
+    .then(r => r.json())
+    .then(d => {
+      if (d.ok) {
+        sessionRunning = true;
+        document.getElementById('btn-save').disabled = false;
+        startPolling();
+      }
+    })
+    .catch(e => setStatus('Ошибка: ' + e, 'danger'));
+}
+
+function startPolling() {
+  if (polling) clearInterval(polling);
+  polling = setInterval(pollState, 1500);
+}
+
+function pollState() {
+  fetch("{{ url_for('smm.dzen_auth_state') }}")
+    .then(r => r.json())
+    .then(updateUI)
+    .catch(() => {});
+}
+
+function updateUI(d) {
+  setStatus(d.message || d.status, d.status === 'saved' ? 'success' : d.status === 'error' ? 'danger' : 'info');
+  if (d.url) {
+    const el = document.getElementById('url-display');
+    el.textContent = d.url;
+    el.title = d.url;
+  }
+  if (d.screenshot_b64) {
+    const img = document.getElementById('screenshot-img');
+    const ph = document.getElementById('screenshot-placeholder');
+    img.src = 'data:image/jpeg;base64,' + d.screenshot_b64;
+    img.style.display = 'block';
+    ph.style.display = 'none';
+  }
+  if (d.status === 'saved') {
+    if (polling) clearInterval(polling);
+    document.getElementById('save-result').textContent = d.message || '✓ Сессия сохранена!';
+  }
+}
+
+function handleScreenshotClick(evt) {
+  const img = evt.currentTarget;
+  const rect = img.getBoundingClientRect();
+  // Translate click to 1280x900 space
+  const scaleX = 1280 / img.naturalWidth;
+  const scaleY = 900 / img.naturalHeight;
+  const imgX = (evt.clientX - rect.left) / rect.width * img.naturalWidth;
+  const imgY = (evt.clientY - rect.top) / rect.height * img.naturalHeight;
+  const x = Math.round(imgX);
+  const y = Math.round(imgY);
+  fetch("{{ url_for('smm.dzen_auth_click') }}", {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
+    body: JSON.stringify({x, y})
+  }).catch(() => {});
+}
+
+function doNavigate(url) {
+  const u = url || document.getElementById('nav-url').value.trim();
+  if (!u) return;
+  fetch("{{ url_for('smm.dzen_auth_navigate') }}", {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
+    body: JSON.stringify({url: u})
+  }).then(() => setTimeout(pollState, 500)).catch(() => {});
+}
+
+function doType() {
+  const text = document.getElementById('type-text').value;
+  if (!text) return;
+  fetch("{{ url_for('smm.dzen_auth_type') }}", {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
+    body: JSON.stringify({text})
+  }).then(() => setTimeout(pollState, 300)).catch(() => {});
+}
+
+function doKey(key) {
+  fetch("{{ url_for('smm.dzen_auth_key') }}", {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
+    body: JSON.stringify({key})
+  }).then(() => setTimeout(pollState, 500)).catch(() => {});
+}
+
+function saveSession() {
+  fetch("{{ url_for('smm.dzen_auth_save') }}", {
+    method: 'POST',
+    headers: {'X-Requested-With': 'XMLHttpRequest'}
+  })
+    .then(r => r.json())
+    .then(d => {
+      const el = document.getElementById('save-result');
+      el.textContent = d.message || (d.ok ? '✓ Сохранено!' : '✗ Ошибка');
+      el.className = 'mt-2 small ' + (d.ok ? 'text-success' : 'text-danger');
+      if (d.ok && polling) clearInterval(polling);
+    });
+}
+
+function setStatus(msg, type) {
+  const el = document.getElementById('status-badge');
+  el.textContent = msg;
+  el.className = 'badge fs-6 d-block text-wrap mb-3 bg-' + type;
+}
+</script>
+{% endblock %}
