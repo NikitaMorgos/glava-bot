@@ -10,7 +10,7 @@ from typing import Optional
 
 logger = logging.getLogger(__name__)
 
-_DZEN_PUBLICATIONS_URL = "https://dzen.ru/profile/editor/glava_family/publications"
+_DZEN_PUBLICATIONS_URL = "https://dzen.ru/editor"
 # Прямой URL создания новой статьи — используется как fallback если кнопка не найдена
 _DZEN_NEW_ARTICLE_URL  = "https://dzen.ru/editor/new"
 _SESSION_FILE = Path(os.environ.get("SMM_DZEN_SESSION", "")) or (
@@ -71,8 +71,8 @@ def publish_to_dzen(post: dict) -> Optional[str]:
             page.goto(_DZEN_PUBLICATIONS_URL, wait_until="domcontentloaded", timeout=30_000)
             time.sleep(2)
 
-            # Check auth
-            if "passport.yandex" in page.url or "login" in page.url.lower():
+            # Check auth — только настоящие редиректы на логин, не autologin_ya параметры
+            if "passport.yandex" in page.url or "id.yandex.ru" in page.url:
                 browser.close()
                 raise RuntimeError(
                     "Не авторизованы в Яндекс Дзен. "
@@ -87,7 +87,7 @@ def publish_to_dzen(post: dict) -> Optional[str]:
                 page.goto(_DZEN_NEW_ARTICLE_URL, wait_until="domcontentloaded", timeout=30_000)
                 time.sleep(2)
                 # Проверяем что открылся редактор, а не страница авторизации
-                if "passport.yandex" in page.url or "login" in page.url.lower():
+                if "passport.yandex" in page.url or "id.yandex.ru" in page.url:
                     raise RuntimeError(
                         "Не авторизованы в Яндекс Дзен. "
                         "Запустите scripts/_dzen_auth.py для сохранения сессии."

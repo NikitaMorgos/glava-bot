@@ -31,7 +31,7 @@ from dotenv import load_dotenv
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 _AUTH_URL = "https://passport.yandex.ru/auth"
-_DZEN_CHANNEL_URL = "https://dzen.ru/profile/editor/publications"
+_DZEN_CHANNEL_URL = "https://dzen.ru/editor"
 _DZEN_CHECK_URL = "https://dzen.ru"
 
 _DEFAULT_SESSION_DIR = Path(__file__).resolve().parent.parent / "cookies"
@@ -66,46 +66,40 @@ def main() -> None:
         ctx = browser.new_context(viewport={"width": 1280, "height": 900})
         page = ctx.new_page()
 
-        print(f"Открываем: {_AUTH_URL}")
-        page.goto(_AUTH_URL, wait_until="domcontentloaded", timeout=30_000)
+        # Идём сразу на редактор Дзен — он сам перенаправит на id.yandex.ru
+        print(f"Открываем редактор Дзен: {_DZEN_CHANNEL_URL}")
+        print("(Браузер перейдёт на id.yandex.ru или passport.yandex.ru для входа)\n")
+        try:
+            page.goto(_DZEN_CHANNEL_URL, wait_until="domcontentloaded", timeout=30_000)
+        except Exception:
+            pass
 
-        print("\nВойдите в аккаунт Яндекса в открывшемся браузере.")
-        print("Когда авторизация завершится, нажмите Enter здесь...")
+        print("Войдите в аккаунт Яндекса в открывшемся браузере.")
+        print("После входа вы должны оказаться на странице публикаций Дзен.")
+        print("\nКогда страница Дзен полностью загрузится — нажмите Enter здесь...")
         input()
 
-        # Проверяем, что залогинились
-        page.goto(_DZEN_CHECK_URL, wait_until="domcontentloaded", timeout=30_000)
-        time.sleep(3)
-
         current_url = page.url
-        if "passport.yandex" in current_url or "login" in current_url.lower():
-            print("\nОШИБКА: Авторизация не завершена. Попробуйте ещё раз.")
-            browser.close()
-            sys.exit(1)
+        print(f"Текущий URL: {current_url}")
 
-        print(f"\nАвторизация подтверждена (URL: {current_url})")
+        if "dzen.ru" not in current_url and ("passport.yandex" in current_url or "id.yandex" in current_url):
+            print("\nВНИМАНИЕ: Браузер ещё на странице входа.")
+            print("Завершите авторизацию в браузере и нажмите Enter ещё раз...")
+            input()
+            current_url = page.url
+            print(f"Текущий URL: {current_url}")
 
-        # Проверяем доступ к редакторскому профилю
-        print(f"Проверяем доступ к каналу: {_DZEN_CHANNEL_URL}")
-        page.goto(_DZEN_CHANNEL_URL, wait_until="domcontentloaded", timeout=30_000)
-        time.sleep(2)
-
-        editor_url = page.url
-        if "login" in editor_url.lower() or "passport" in editor_url:
-            print("\nПРЕДУПРЕЖДЕНИЕ: Нет доступа к редакторскому каналу Дзен.")
-            print("Убедитесь, что аккаунт подключён к каналу GLAVA на Дзене.")
-            print("Сессия всё равно будет сохранена — попробуйте вручную.")
-        else:
-            print(f"Редакторский профиль доступен (URL: {editor_url})")
-
-        # Сохраняем сессию
+        # Сохраняем сессию — в ней должны быть cookies dzen.ru + yandex.ru
         ctx.storage_state(path=str(session_file))
-        browser.close()
+        print(f"\n✓ Сессия сохранена: {session_file}")
 
-    print(f"\n✓ Сессия сохранена: {session_file}")
-    print("  Теперь publisher_dzen.py сможет публиковать статьи автоматически.")
-    print("\nДля проверки запустите:")
-    print("  python scripts/_dzen_auth.py --check")
+        if "dzen.ru" in current_url:
+            print("Авторизация подтверждена — cookies Дзен получены.")
+        else:
+            print(f"Предупреждение: URL не dzen.ru ({current_url})")
+            print("Попробуйте запустить скрипт ещё раз и дождитесь загрузки Дзен.")
+
+        browser.close()
 
 
 def check_session() -> None:
