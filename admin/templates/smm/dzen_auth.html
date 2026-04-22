@@ -90,8 +90,9 @@
           </div>
         </div>
       </div>
-      <div class="text-muted small mt-1">
-        Кликайте по скриншоту для взаимодействия с браузером (автообновление каждые 1.5 сек).
+      <div class="text-muted small mt-1 d-flex gap-3">
+        <span>Кликайте по скриншоту для взаимодействия (автообновление 1.5 сек).</span>
+        <span id="click-coords" class="text-info"></span>
       </div>
     </div>
   </div>
@@ -101,31 +102,46 @@
 let polling = null;
 let sessionRunning = false;
 
+function apiFetch(url, opts = {}) {
+  return fetch(url, {
+    credentials: 'same-origin',
+    headers: {'X-Requested-With': 'XMLHttpRequest', ...(opts.headers || {})},
+    ...opts,
+  });
+}
+
 function startSession() {
   document.getElementById('btn-start').disabled = true;
   setStatus('Запуск…', 'warning');
-  fetch("{{ url_for('smm.dzen_auth_start') }}", {method:'POST', headers:{'X-Requested-With':'XMLHttpRequest'}})
+  apiFetch("{{ url_for('smm.dzen_auth_start') }}", {method: 'POST'})
     .then(r => r.json())
     .then(d => {
       if (d.ok) {
         sessionRunning = true;
         document.getElementById('btn-save').disabled = false;
         startPolling();
+      } else {
+        setStatus('Ошибка запуска: ' + JSON.stringify(d), 'danger');
+        document.getElementById('btn-start').disabled = false;
       }
     })
-    .catch(e => setStatus('Ошибка: ' + e, 'danger'));
+    .catch(e => {
+      setStatus('Сетевая ошибка: ' + e, 'danger');
+      document.getElementById('btn-start').disabled = false;
+    });
 }
 
 function startPolling() {
   if (polling) clearInterval(polling);
   polling = setInterval(pollState, 1500);
+  pollState();
 }
 
 function pollState() {
-  fetch("{{ url_for('smm.dzen_auth_state') }}")
+  apiFetch("{{ url_for('smm.dzen_auth_state') }}")
     .then(r => r.json())
     .then(updateUI)
-    .catch(() => {});
+    .catch(e => console.error('poll error', e));
 }
 
 function updateUI(d) {
@@ -138,6 +154,7 @@ function updateUI(d) {
   if (d.screenshot_b64) {
     const img = document.getElementById('screenshot-img');
     const ph = document.getElementById('screenshot-placeholder');
+    img.onload = null;
     img.src = 'data:image/jpeg;base64,' + d.screenshot_b64;
     img.style.display = 'block';
     ph.style.display = 'none';
@@ -151,53 +168,61 @@ function updateUI(d) {
 function handleScreenshotClick(evt) {
   const img = evt.currentTarget;
   const rect = img.getBoundingClientRect();
-  // Translate click to 1280x900 space
-  const scaleX = 1280 / img.naturalWidth;
-  const scaleY = 900 / img.naturalHeight;
-  const imgX = (evt.clientX - rect.left) / rect.width * img.naturalWidth;
-  const imgY = (evt.clientY - rect.top) / rect.height * img.naturalHeight;
-  const x = Math.round(imgX);
-  const y = Math.round(imgY);
-  fetch("{{ url_for('smm.dzen_auth_click') }}", {
+  const displayX = evt.clientX - rect.left;
+  const displayY = evt.clientY - rect.top;
+  const x = Math.round(displayX / rect.width * 1280);
+  const y = Math.round(displayY / rect.height * 900);
+
+  // Визуальная точка клика
+  showClickDot(evt.clientX, evt.clientY);
+  document.getElementById('click-coords').textContent = `Клик: ${x}, ${y}`;
+
+  apiFetch("{{ url_for('smm.dzen_auth_click') }}", {
     method: 'POST',
-    headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
-    body: JSON.stringify({x, y})
-  }).catch(() => {});
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({x, y}),
+  }).then(() => setTimeout(pollState, 800))
+    .catch(e => console.error('click error', e));
+}
+
+function showClickDot(cx, cy) {
+  const dot = document.createElement('div');
+  dot.style.cssText = `position:fixed;left:${cx-6}px;top:${cy-6}px;width:12px;height:12px;border-radius:50%;background:red;opacity:0.8;pointer-events:none;z-index:9999;transition:opacity 1s`;
+  document.body.appendChild(dot);
+  setTimeout(() => { dot.style.opacity = '0'; }, 500);
+  setTimeout(() => dot.remove(), 1500);
 }
 
 function doNavigate(url) {
   const u = url || document.getElementById('nav-url').value.trim();
   if (!u) return;
-  fetch("{{ url_for('smm.dzen_auth_navigate') }}", {
+  apiFetch("{{ url_for('smm.dzen_auth_navigate') }}", {
     method: 'POST',
-    headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
-    body: JSON.stringify({url: u})
-  }).then(() => setTimeout(pollState, 500)).catch(() => {});
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({url: u}),
+  }).then(() => setTimeout(pollState, 800)).catch(e => console.error(e));
 }
 
 function doType() {
   const text = document.getElementById('type-text').value;
   if (!text) return;
-  fetch("{{ url_for('smm.dzen_auth_type') }}", {
+  apiFetch("{{ url_for('smm.dzen_auth_type') }}", {
     method: 'POST',
-    headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
-    body: JSON.stringify({text})
-  }).then(() => setTimeout(pollState, 300)).catch(() => {});
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({text}),
+  }).then(() => setTimeout(pollState, 400)).catch(e => console.error(e));
 }
 
 function doKey(key) {
-  fetch("{{ url_for('smm.dzen_auth_key') }}", {
+  apiFetch("{{ url_for('smm.dzen_auth_key') }}", {
     method: 'POST',
-    headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
-    body: JSON.stringify({key})
-  }).then(() => setTimeout(pollState, 500)).catch(() => {});
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({key}),
+  }).then(() => setTimeout(pollState, 700)).catch(e => console.error(e));
 }
 
 function saveSession() {
-  fetch("{{ url_for('smm.dzen_auth_save') }}", {
-    method: 'POST',
-    headers: {'X-Requested-With': 'XMLHttpRequest'}
-  })
+  apiFetch("{{ url_for('smm.dzen_auth_save') }}", {method: 'POST'})
     .then(r => r.json())
     .then(d => {
       const el = document.getElementById('save-result');
@@ -210,7 +235,7 @@ function saveSession() {
 function setStatus(msg, type) {
   const el = document.getElementById('status-badge');
   el.textContent = msg;
-  el.className = 'badge fs-6 d-block text-wrap mb-3 bg-' + type;
+  el.className = 'badge fs-6 d-block text-wrap mb-3 bg-' + (type || 'secondary');
 }
 </script>
 {% endblock %}
