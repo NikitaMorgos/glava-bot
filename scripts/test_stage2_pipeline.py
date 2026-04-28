@@ -200,6 +200,7 @@ def main():
             current_book=book_draft_v1,
             historical_context=historical_context,
             version=2,
+            force_phase="A",  # Phase A pass 2: «enrich, don't rewrite» по спеку v2.14
         )
         draft_v2_path = out_dir / f"karakulina_book_draft_v2_{ts}.json"
         draft_v2_path.write_text(json.dumps(book_draft, ensure_ascii=False, indent=2), encoding="utf-8")

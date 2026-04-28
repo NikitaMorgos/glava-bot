@@ -720,10 +720,15 @@ def run_ghostwriter(client, fact_map: dict, transcripts: list[dict],
                     current_book: dict | None = None,
                     historical_context: dict | None = None,
                     revision_scope: dict | None = None,
-                    version: int = 1) -> dict:
+                    version: int = 1,
+                    force_phase: str | None = None) -> dict:
     """
     Запускает Писателя.
     call_type: "initial" (1-й проход) | "revision" (2-й проход с историком)
+    force_phase: если задан ("A" или "B"), переопределяет автоматическое определение phase.
+      Используй force_phase="A" для historian_integration (Phase A pass 2 по спеку v2.14):
+      модель обогащает черновик, а не точечно патчит главы (Phase B семантика).
+      Используй force_phase="B" когда historian-интеграция нужна на уже готовой книге.
     Возвращает book_draft (dict).
     """
     if cfg is None:
@@ -735,7 +740,10 @@ def run_ghostwriter(client, fact_map: dict, transcripts: list[dict],
     temperature = gw_cfg.get("temperature", 0.5)
     system_prompt = load_prompt(gw_cfg["prompt_file"])
 
-    phase = "B" if (current_book is not None and call_type == "revision") else "A"
+    if force_phase is not None:
+        phase = force_phase
+    else:
+        phase = "B" if (current_book is not None and call_type == "revision") else "A"
     print(f"\n[GHOSTWRITER] Запускаю ({model}, max_tokens={max_tokens}, call_type={call_type})...")
     start = datetime.now()
 
@@ -755,8 +763,20 @@ def run_ghostwriter(client, fact_map: dict, transcripts: list[dict],
             "instructions": "Интегрируй исторический контекст от Историка-краеведа. Дополняй, не переписывай."
         }
     if historical_context:
-        user_message["historical_context"] = [historical_context] if not isinstance(historical_context, list) else historical_context
-        user_message["era_glossary"] = historical_context.get("era_glossary", []) if isinstance(historical_context, dict) else []
+        # run_historian возвращает {"historical_context": [...], "era_glossary": [...]}.
+        # Распаковываем внутренний массив, а не оборачиваем весь dict в список —
+        # Ghostwriter ожидает historical_context как список объектов с suggested_insertions.
+        if isinstance(historical_context, dict) and "historical_context" in historical_context:
+            ctx_list = historical_context["historical_context"]
+            glossary = historical_context.get("era_glossary", [])
+        elif isinstance(historical_context, list):
+            ctx_list = historical_context
+            glossary = []
+        else:
+            ctx_list = [historical_context]
+            glossary = []
+        user_message["historical_context"] = ctx_list
+        user_message["era_glossary"] = glossary
 
     # Streaming — обязательно при max_tokens >= 16000
     raw_parts = []
