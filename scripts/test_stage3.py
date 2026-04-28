@@ -453,6 +453,8 @@ async def main():
                         help="Путь к fact_map JSON (по умолчанию approved checkpoint)")
     parser.add_argument("--prefix", default=DEFAULT_PREFIX,
                         help="Префикс для имён выходных файлов (напр. korolkova)")
+    parser.add_argument("--output-dir", default=str(ROOT / "exports"),
+                        help="Папка для сохранения результатов (по умолчанию ROOT/exports/)")
     parser.add_argument("--no-strict-gates", action="store_true",
                         help="Отключить блокирующие Stage3 text-gates (не рекомендуется)")
     parser.add_argument("--variant-b", action="store_true",
@@ -461,6 +463,8 @@ async def main():
 
     cfg = load_config()
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    out_dir = Path(args.output_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
 
     # Загрузка черновика
     draft_path = Path(args.book_draft)
@@ -535,7 +539,7 @@ async def main():
     # Валидация
     result = validate_literary_editor_output(raw_result, book_draft["chapters"])
     if result is None:
-        raw_path = ROOT / "exports" / f"{args.prefix}_liteditor_raw_{ts}.json"
+        raw_path = out_dir / f"{args.prefix}_liteditor_raw_{ts}.json"
         with open(raw_path, "w", encoding="utf-8") as f:
             json.dump(raw_result, f, ensure_ascii=False, indent=2)
         print(f"[SAVED] Сырой ответ: {raw_path}")
@@ -547,12 +551,12 @@ async def main():
         "callouts": result.get("callouts", []),
         "historical_notes": result.get("historical_notes", []),
     }
-    book_le_path = ROOT / "exports" / f"{args.prefix}_book_stage3_liteditor_{ts}.json"
+    book_le_path = out_dir / f"{args.prefix}_book_stage3_liteditor_{ts}.json"
     with open(book_le_path, "w", encoding="utf-8") as f:
         json.dump({"book_draft": book_after_le}, f, ensure_ascii=False, indent=2)
     print(f"[SAVED] book после Литредактора: {book_le_path.name}")
 
-    report_path = ROOT / "exports" / f"{args.prefix}_liteditor_report_{ts}.json"
+    report_path = out_dir / f"{args.prefix}_liteditor_report_{ts}.json"
     with open(report_path, "w", encoding="utf-8") as f:
         json.dump(result, f, ensure_ascii=False, indent=2)
     print(f"[SAVED] liteditor_report: {report_path.name}")
@@ -573,7 +577,7 @@ async def main():
         print(f"  Книга: {book_le_path.name}")
         print("=" * 60)
         stage3_partial_report = run_stage3_text_gates_variant_b(book_after_le, fact_map) if args.variant_b else run_stage3_text_gates(book_after_le, fact_map)
-        stage3_partial_path = ROOT / "exports" / f"{args.prefix}_stage3_text_gates_{ts}.json"
+        stage3_partial_path = out_dir / f"{args.prefix}_stage3_text_gates_{ts}.json"
         save_gate_report(stage3_partial_path, stage3_partial_report)
         print(f"[SAVED] Stage3 text gates: {stage3_partial_path.name}")
         if summarize_failed_gates(stage3_partial_report) and not args.no_strict_gates:
@@ -607,7 +611,7 @@ async def main():
 
     pr_result = validate_proofreader_output(raw_pr, book_after_le["chapters"])
     if pr_result is None:
-        raw_pr_path = ROOT / "exports" / f"{args.prefix}_proofreader_raw_{ts}.json"
+        raw_pr_path = out_dir / f"{args.prefix}_proofreader_raw_{ts}.json"
         with open(raw_pr_path, "w", encoding="utf-8") as f:
             json.dump(raw_pr, f, ensure_ascii=False, indent=2)
         print(f"[SAVED] Сырой ответ Корректора: {raw_pr_path.name}")
@@ -637,13 +641,13 @@ async def main():
     if ch01_filled:
         print("[PATCH] ch_01 была пустой — добавлен минимальный биографический блок из fact_map")
         pr_result["chapters"] = book_final["chapters"]
-    final_path = ROOT / "exports" / f"{args.prefix}_book_FINAL_stage3_{ts}.json"
+    final_path = out_dir / f"{args.prefix}_book_FINAL_stage3_{ts}.json"
     with open(final_path, "w", encoding="utf-8") as f:
         json.dump({"book_final": book_final}, f, ensure_ascii=False, indent=2)
     print(f"[SAVED] book_FINAL_stage3: {final_path.name}")
 
     # Паспорт стиля и отчёт Корректора
-    pr_report_path = ROOT / "exports" / f"{args.prefix}_proofreader_report_{ts}.json"
+    pr_report_path = out_dir / f"{args.prefix}_proofreader_report_{ts}.json"
     with open(pr_report_path, "w", encoding="utf-8") as f:
         json.dump(pr_result, f, ensure_ascii=False, indent=2)
     print(f"[SAVED] proofreader_report: {pr_report_path.name}")
@@ -657,7 +661,7 @@ async def main():
         txt_lines.append(ch.get("content") or "")
         txt_lines.append("")
     txt_text = "\n".join(txt_lines)
-    txt_path = ROOT / "exports" / f"{args.prefix}_FINAL_stage3_{ts}.txt"
+    txt_path = out_dir / f"{args.prefix}_FINAL_stage3_{ts}.txt"
     with open(txt_path, "w", encoding="utf-8") as f:
         f.write(txt_text)
     print(f"[SAVED] FINAL TXT: {txt_path.name}")
@@ -671,13 +675,13 @@ async def main():
     print("=" * 60)
 
     stage3_report = run_stage3_text_gates_variant_b(book_final, fact_map) if args.variant_b else run_stage3_text_gates(book_final, fact_map)
-    stage3_gate_path = ROOT / "exports" / f"{args.prefix}_stage3_text_gates_{ts}.json"
+    stage3_gate_path = out_dir / f"{args.prefix}_stage3_text_gates_{ts}.json"
     save_gate_report(stage3_gate_path, stage3_report)
     print(f"[SAVED] Stage3 text gates: {stage3_gate_path.name}")
     gate_failed = bool(summarize_failed_gates(stage3_report))
 
     save_run_manifest(
-        output_dir=ROOT / "exports",
+        output_dir=out_dir,
         prefix=args.prefix,
         stage="stage3",
         project_id=PROJECT_ID,
