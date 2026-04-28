@@ -20,11 +20,11 @@
 
 ## Текущий статус (обновляется)
 
-**Дата обновления:** 2026-04-28 (gate1 ✅ PASS)
+**Дата обновления:** 2026-04-28 (Stage 3 PASS, gate1 after stage3 PASS ✅)
 
-**Текущий этап:** Stage 2 ✅ → gate1 ✅ → **следующий: Stage 3 (Literary Editor + Proofreader)**
+**Текущий этап:** Stage 3 ✅ → gate1 (after stage3) ✅ → **следующий: Stage 4 (вёрстка)**
 
-**Блокеры:** нет. gate1 пройден. Движемся к Stage 3.
+**Блокеры:** нет. Двигаемся к Stage 4.
 
 ---
 
@@ -34,7 +34,7 @@
 |---|---|---|---|
 | **Stage 1** | Cleaner + FE + Completeness Auditor + Name Normalizer → fact_map | ✅ **готов** | v36 (2026-04-28), 95% stability |
 | **Stage 2** | Historian + Ghostwriter + Fact Checker → текст книги | ✅ **готов** | v36 (2026-04-28), 4 ист.вставки, FC PASS iter 2 |
-| **Stage 3** | Literary Editor + Proofreader → отполированный текст | ⚠️ не запускали с актуальным fact_map | — |
+| **Stage 3** | Literary Editor + Proofreader → отполированный текст | ✅ **готов** | v36 (2026-04-28), LE PASS, PR 6 правок, готово к вёрстке |
 | **Phase B** | Инкрементная экстракция новых интервью | ⚠️ архитектурно заблокирован | — |
 | **Stage 4** | Photo Editor + Layout Designer + QA + Cover → PDF | ✅ один раз проходили в v_stable | 04-09 |
 
@@ -70,7 +70,7 @@
 | 2026-04-21 | v32 | 🔴 gate1 FAIL |
 | 2026-04-22 | v34 | 🔴 gate1 FAIL → анализ → v35 |
 | 2026-04-23 | v35 | 🔴 gate1 FAIL: 3 критич. проблемы (timeline=None, Историк не мержится, факты TR2 потеряны) |
-| 2026-04-28 | v36 gate1 | ✅ **gate1 PASS** | Quality gates фикс: indirect relations, bio_data scan; 10/10 critical, 3 found_in bio_data |
+| 2026-04-28 | v36 Stage 3 | ✅ LE PASS + PR 6 правок, gate1 after stage3 PASS | 12716→13216 симв, 6 callouts, 6 hist.notes, style_passport 11 имён |
 
 ---
 
@@ -124,6 +124,56 @@ Cover Designer + финальная сборка. ETA: ~0.5 дня после ga
 ---
 
 ## Лог обновлений
+
+### 2026-04-28 (поздний вечер) — Stage 3 PASS ✅, gate1 после Stage 3 PASS ✅
+
+**Команда:**
+```bash
+python scripts/test_stage3.py \
+    --book-draft /opt/glava/exports/stage2_v36/karakulina_book_FINAL_20260428_083959.json \
+    --fc-warnings /opt/glava/exports/stage2_v36/karakulina_fc_report_iter2_20260428_083959.json \
+    --fact-map /opt/glava/exports/v36a/karakulina_fact_map_full_20260428_060949_v2.json \
+    --output-dir /opt/glava/exports/stage3_v36 --prefix karakulina
+```
+
+**Артефакты:** `collab/runs/karakulina_v36_20260428/` (book_FINAL_stage3_v36.json, liteditor_report.json, proofreader_report.json, FINAL_stage3_v36.txt, gate1_after_stage3.json)
+
+**Стоимость и время:**
+
+| Агент | Время | In / Out токены |
+|---|---|---|
+| Литредактор (Sonnet) | 149с | 26354 / 8874 |
+| Корректор ch_02 (Sonnet) | 51с | 9732 / 5341 |
+| Корректор ch_03 | 33с | 10006 / 4021 |
+| Корректор ch_04 | 33с | 9446 / 3584 |
+| Корректор epilogue | 23с | 8538 / 2577 |
+| **Итого Stage 3** | **~5 мин** | **~64K / ~24K** (~$0.30 est.) |
+
+**Дельта vs Stage 2:**
+- Символов: 12716 → 13103 (LE, +387) → 13216 (PR, +113) = **+500 символов total**
+- Глав LE отредактировал: 1/5 (ch_02)
+- Глав PR исправил: 2/5 (ch_02 — 6 правок, остальные — 0)
+- Callouts: 3 kept + 3 added = **6 callouts**
+- Исторические вставки: 4 оригинальных (edited) + 2 added LE = **6 hist.notes** в итоге
+
+**Правки Литредактора (9 записей в edits_log):**
+- 3× `anti_cliche` — убраны клишированные зачины: «Трагедия обрушилась на семью» → исторический контекст голода 1933 в маркере `***...***`; обобщение о свадьбах → прямой факт; оценочное «1960-е были временем больших надежд» → убрано
+- 3× `transition_fix` — улучшены переходы: добавлен контекст мобилизации медработников, пояснение об интернате в Венгрии
+- 3× `callout_fix` — добавлены callouts ch_03/ch_04/epilogue
+
+**Паспорт стиля Корректора (11 имён):**
+- Субъект: Валентина Ивановна Рудая (Каракулина) — «Валентина Ивановна» / «Валентина»
+- Нормализованы: Иван Андреевич Рудай (отец), Пелагея Алексеевна Рудая (мать), Полина/тётя Поля, Дмитрий Каракулин, Валерий, Татьяна, Владимир Маргось, Олег Кужба, Никита, Даша
+- Топонимы: Химинститут с заглавной, тире длинное (—) в пунктуации, среднее (–) в диапазонах дат
+- Никаких переименований vs Stage 2 — PR подтвердил консистентность
+
+**Gate1 after Stage 3:**
+- `passed: True` — 10/10 critical, 0 optional missing
+- LE/PR ничего не сломали по сущностям
+
+**Следующий шаг:** Stage 4 (вёрстка). Входной файл: `collab/runs/karakulina_v36_20260428/book_FINAL_stage3_v36.json`
+
+---
 
 ### 2026-04-28 (ночь) — gate1 PASS ✅
 

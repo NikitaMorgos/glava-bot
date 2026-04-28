@@ -1,0 +1,116 @@
+{
+  "stage": "stage3",
+  "passed": true,
+  "gates": [
+    {
+      "gate": "non_empty_book",
+      "passed": true,
+      "issues": [],
+      "min_chapter_chars": 120
+    },
+    {
+      "gate": "required_entities",
+      "passed": true,
+      "required_total": 20,
+      "critical_total": 10,
+      "critical_matched_total": 10,
+      "critical_matched": [
+        {
+          "label": "Каракулина Валентина Ивановна",
+          "found_in": "narrative"
+        },
+        {
+          "label": "Рудай Иван Андреевич",
+          "found_in": "narrative"
+        },
+        {
+          "label": "Рудая Пелагея Алексеевна",
+          "found_in": "narrative"
+        },
+        {
+          "label": "младший брат",
+          "found_in": "narrative"
+        },
+        {
+          "label": "Мария",
+          "found_in": "bio_data"
+        },
+        {
+          "label": "Каракулин Дмитрий",
+          "found_in": "narrative"
+        },
+        {
+          "label": "Каракулин Валерий",
+          "found_in": "narrative"
+        },
+        {
+          "label": "Татьяна Каракулина",
+          "found_in": "narrative"
+        },
+        {
+          "label": "Римма",
+          "found_in": "bio_data"
+        },
+        {
+          "label": "Зина",
+          "found_in": "bio_data"
+        }
+      ],
+      "critical_missing_total": 0,
+      "critical_missing": [],
+      "optional_total": 10,
+      "optional_matched_total": 10,
+      "optional_matched": [
+        {
+          "label": "Маргось Владимир",
+          "found_in": "narrative"
+        },
+        {
+          "label": "Кужба Олег",
+          "found_in": "narrative"
+        },
+        {
+          "label": "Никита",
+          "found_in": "narrative"
+        },
+        {
+          "label": "Даша",
+          "found_in": "bio_data"
+        },
+        {
+          "label": "тётя Шура",
+          "found_in": "narrative"
+        },
+        {
+          "label": "Нинвана Полсачева",
+          "found_in": "narrative"
+        },
+        {
+          "label": "Толя",
+          "found_in": "bio_data"
+        },
+        {
+          "label": "Коля",
+          "found_in": "bio_data"
+        },
+        {
+          "label": "Витя",
+          "found_in": "bio_data"
+        },
+        {
+          "label": "Сафронов",
+          "found_in": "narrative"
+        }
+      ],
+      "optional_missing_total": 0,
+      "optional_missing": []
+    },
+    {
+      "gate": "cross_chapter_repetition",
+      "passed": true,
+      "ngram_size": 5,
+      "threshold": 0.22,
+      "violations": []
+    }
+  ]
+}
