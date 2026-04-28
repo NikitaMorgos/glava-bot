@@ -35,6 +35,7 @@ def _chapter_texts(book: dict) -> list[dict]:
                 "title": ch.get("title", ""),
                 "content": ch.get("content") or "",
                 "bio_data": ch.get("bio_data"),
+                "sidebars": ch.get("sidebars"),
             }
         )
     return out
@@ -42,6 +43,40 @@ def _chapter_texts(book: dict) -> list[dict]:
 
 def _content_join(book: dict) -> str:
     return "\n".join(ch["content"] for ch in _chapter_texts(book))
+
+
+def _bio_data_text(book: dict) -> str:
+    """Flatten all bio_data section values across chapters for entity scanning."""
+    parts: list[str] = []
+    for ch in book.get("chapters", []) or []:
+        bd = ch.get("bio_data") or {}
+        for section_items in bd.values():
+            if not isinstance(section_items, list):
+                continue
+            for item in section_items:
+                if isinstance(item, dict):
+                    for field in ("label", "value", "note"):
+                        val = item.get(field)
+                        if val:
+                            parts.append(str(val))
+                elif isinstance(item, str):
+                    parts.append(item)
+    return " ".join(parts)
+
+
+def _sidebars_text(book: dict) -> str:
+    """Flatten all sidebars text across chapters for entity scanning."""
+    parts: list[str] = []
+    for ch in book.get("chapters", []) or []:
+        for sb in ch.get("sidebars") or []:
+            if isinstance(sb, dict):
+                for field in ("title", "content", "text", "body"):
+                    val = sb.get(field)
+                    if val:
+                        parts.append(str(val))
+            elif isinstance(sb, str):
+                parts.append(sb)
+    return " ".join(parts)
 
 
 def _entity_variants(name: str) -> list[str]:
@@ -92,6 +127,26 @@ def _relation_text(person: dict) -> str:
     return _norm(" ".join(chunks))
 
 
+# Прямые родственники субъекта — critical (блокирующие в gate).
+# Только токен-уровень: "дочь тёти Поли" не совпадёт, потому что ниже есть INDIRECT_MARKERS.
+_DIRECT_RELATION_KEYWORDS: frozenset[str] = frozenset({
+    "мать", "отец", "муж", "жена", "сын", "дочь", "сестра", "брат",
+    "мама", "папа", "бабушка", "дедушка",
+    "mother", "father", "husband", "wife", "son", "daughter", "sister", "brother",
+})
+
+# Если в тексте отношения есть эти маркеры — персона НЕ прямой родственник субъекта,
+# даже если попутно встречается слово из DIRECT_RELATION_KEYWORDS.
+# Примеры ложных срабатываний без этого блока:
+#   «племянник (сын/дочь тёти Поли)» → "дочь" был substring → critical → false positive
+_INDIRECT_RELATION_MARKERS: frozenset[str] = frozenset({
+    "тёт", "тет", "дяд",        # тётя/тётки/дядя
+    "племянник", "племяннице",   # любой падеж племянник* ловится через `in`
+    "внук", "внучк",             # внук, внучка, внуки, внучки
+    "двоюродн", "троюродн",      # двоюродный/ая/ого/...
+})
+
+
 def _contains_place_relaxed(text: str, place: str) -> bool:
     """
     Нечёткая проверка места: совпадение хотя бы по значимым токенам/основам.
@@ -121,27 +176,29 @@ def _split_critical_optional_entities(fact_map: dict) -> tuple[list[dict], list[
 
     Блокирующие:
       - subject
-      - близкие родственники по relation/role
+      - прямые родственники субъекта (мать/отец/муж/жена/сын/дочь/брат/сестра/бабушка/дедушка)
       - fallback: первые 5 персон, если relation-поля пустые
+
+    НЕ блокирующие:
+      - племянники/племянницы, тёти/дяди, внуки — optional
+      - даже если их relation содержит слово «дочь»/«сын» как часть фразы
+        «дочь тёти Поли» (INDIRECT_RELATION_MARKERS защищают от false positive)
     """
     all_entities = collect_required_entities(fact_map)
     subject_entities = [e for e in all_entities if e["type"] == "subject"]
     persons = fact_map.get("persons", []) or []
     person_entities = [e for e in all_entities if e["type"] == "person"]
 
-    critical_keywords = [
-        "мать", "отец", "муж", "жена", "сын", "дочь", "сестра", "брат",
-        "мама", "папа", "бабушка", "дедушка",
-        "mother", "father", "husband", "wife", "son", "daughter", "sister", "brother",
-    ]
-
-    critical_labels = set()
+    critical_labels: set[str] = set()
     for p in persons:
         name = (p or {}).get("name")
         if not name:
             continue
         rel = _relation_text(p or {})
-        if any(k in rel for k in critical_keywords):
+        rel_tokens = set(_tokenize(rel))
+        has_direct = bool(rel_tokens & _DIRECT_RELATION_KEYWORDS)
+        has_indirect = any(m in rel for m in _INDIRECT_RELATION_MARKERS)
+        if has_direct and not has_indirect:
             critical_labels.add(name)
 
     critical: list[dict] = []
@@ -170,22 +227,40 @@ class GateResult:
 
 
 def gate_required_entities(book: dict, fact_map: dict) -> GateResult:
-    text = _content_join(book)
+    narrative_text = _content_join(book)
+    bio_text = _bio_data_text(book)
+    sidebars_text = _sidebars_text(book)
     critical_entities, optional_entities = _split_critical_optional_entities(fact_map)
-    missing_critical = []
-    missing_optional = []
+    missing_critical: list[dict] = []
+    missing_optional: list[dict] = []
     matched_critical = 0
     matched_optional = 0
+    matched_critical_detail: list[dict] = []
+    matched_optional_detail: list[dict] = []
+
+    def _find_location(e: dict) -> str | None:
+        """Возвращает где найдена сущность: 'narrative', 'bio_data', 'sidebars', или None."""
+        if _contains_any(narrative_text, e["variants"]):
+            return "narrative"
+        if bio_text and _contains_any(bio_text, e["variants"]):
+            return "bio_data"
+        if sidebars_text and _contains_any(sidebars_text, e["variants"]):
+            return "sidebars"
+        return None
 
     for e in critical_entities:
-        if _contains_any(text, e["variants"]):
+        loc = _find_location(e)
+        if loc:
             matched_critical += 1
+            matched_critical_detail.append({"label": e["label"], "found_in": loc})
         else:
             missing_critical.append({"type": e["type"], "label": e["label"], "variants": e["variants"][:4]})
 
     for e in optional_entities:
-        if _contains_any(text, e["variants"]):
+        loc = _find_location(e)
+        if loc:
             matched_optional += 1
+            matched_optional_detail.append({"label": e["label"], "found_in": loc})
         else:
             missing_optional.append({"type": e["type"], "label": e["label"], "variants": e["variants"][:4]})
 
@@ -196,10 +271,12 @@ def gate_required_entities(book: dict, fact_map: dict) -> GateResult:
             "required_total": len(critical_entities) + len(optional_entities),
             "critical_total": len(critical_entities),
             "critical_matched_total": matched_critical,
+            "critical_matched": matched_critical_detail,
             "critical_missing_total": len(missing_critical),
             "critical_missing": missing_critical,
             "optional_total": len(optional_entities),
             "optional_matched_total": matched_optional,
+            "optional_matched": matched_optional_detail,
             "optional_missing_total": len(missing_optional),
             "optional_missing": missing_optional,
         },

@@ -1,0 +1,217 @@
+# Задача: Сборка книги Каракулиной — пилот до gate4
+
+**Статус:** `active` (живой трекер)
+**Номер:** 015
+**Автор:** Даша / Claude
+**Дата создания:** 2026-04-28
+**Тип:** `meta-задача` / трекер прогресса
+
+> Это **живой трекер**, а не одноразовая спецификация. Обновляется после каждого прогона и при изменении статусов подзадач. Закрывается только когда Каракулина пройдёт gate4 (готовый PDF).
+
+---
+
+## Цель
+
+Довести пилотный проект «Каракулина Валентина Ивановна» до готовой книги (PDF) через все 6 gate'ов протокола приёмки (см. задача 009).
+
+Это пилот, на котором отлаживается весь пайплайн. После gate4 на Каракулиной — переход к продакшен-флоу (task 013, 016 web orders).
+
+---
+
+## Текущий статус (обновляется)
+
+**Дата обновления:** 2026-04-28 (после Stage 2 прогона v36, FIX-A + FIX-B выполнены)
+
+**Текущий этап:** Stage 2 ✅ FC PASS → gate1 required_entities FAIL (quality gates конфиг)
+
+**Блокеры до следующего gate (gate1):**
+
+1. ✅ **FIX-A закрыт** — `force_phase="A"` добавлен в `run_ghostwriter()`, historian-интеграция работает корректно
+2. ✅ **FIX-B закрыт** — historian-dict корректно распаковывается, `Ист.вставок: 4` в Stage 2 v36
+3. ⏳ **GATE-1 remaining:** `gate_required_entities` падает на 6 периферийных родственниках (Мария, Римма, Зина, Толя, Коля, Витя). **Верифицировано Claude (2026-04-28):** все 6 присутствуют в `chapters[0].bio_data.family[]` (структурный блок), в нарратив не включены намеренно (видно в `writing_notes.facts_omitted`). Реальной потери информации нет — это false positive quality gate.
+   - **Решение Даши:** фиксить quality gate (~30 мин), не обходить флагом
+   - Что фиксить в `pipeline_quality_gates.py`:
+     - Substring-match «дочь» в `relation_to_subject` племянников → false positive critical
+     - Расширить scan на `chapters[].bio_data.family[]` и sidebars (не только нарратив)
+     - Различать в отчёте «упомянуто в bio_data» vs «упомянуто в нарративе»
+   - После фикса: перепрогон gate1 на текущем `book_FINAL_stage2.json` (Stage 2 не перезапускать)
+   - **Статус:** передано Cursor, ожидаем фикс + перепрогон gate1
+
+---
+
+## Этапы сборки книги
+
+| Этап | Что делает | Статус Каракулиной | Последний прогон |
+|---|---|---|---|
+| **Stage 1** | Cleaner + FE + Completeness Auditor + Name Normalizer → fact_map | ✅ **готов** | v36 (2026-04-28), 95% stability |
+| **Stage 2** | Historian + Ghostwriter + Fact Checker → текст книги | ✅ **FC PASS**, gate1 quality-gate ⚠️ | v36 (2026-04-28), 4 ист.вставки, FC PASS iter 2 |
+| **Stage 3** | Literary Editor + Proofreader → отполированный текст | ⚠️ не запускали с актуальным fact_map | — |
+| **Phase B** | Инкрементная экстракция новых интервью | ⚠️ архитектурно заблокирован | — |
+| **Stage 4** | Photo Editor + Layout Designer + QA + Cover → PDF | ✅ один раз проходили в v_stable | 04-09 |
+
+---
+
+## Чек-лист по Acceptance Gates (протокол 009)
+
+| Gate | Что проверяет | Статус | Когда проходили |
+|---|---|---|---|
+| **Gate 1** | Текст книги: 10-пунктовый чек-лист (timeline, historical_notes, ключевые факты, объём 15-17K) | ⚠️ quality-gate config fail | v36 (2026-04-28): FC PASS, bio_struct PASS, ист.вставки PASS; FAIL на required_entities (quality gates конфиг) |
+| **Gate 2a** | Текст-only PDF (без фото и обогащений) | ✅ проходили | 04-14 |
+| **Gate 2b** | + bio_data | ✅ проходили | v28 04-18 |
+| **Gate 2c** | + callouts / историч. справки / плейсхолдеры фото | ✅ проходили (но потом откат) | v28 04-18 |
+| **Gate 3** | Реальные фото вместо плейсхолдеров | ❌ не доходили | — |
+| **Gate 4** | Финальная обложка + полный PDF | ❌ не доходили (был coverfix в 04-09, не gate4) | — |
+
+---
+
+## История регрессий (хронология)
+
+| Дата | Версия | Что произошло |
+|---|---|---|
+| 2026-04-09 | v_stable | ✅ Stage4 + QA → PASS, обложка с coverfix |
+| 2026-04-12 | runs | 🔴 Stage1-3 FAIL — Cleaner обрезал транскрипт (лимит токенов) |
+| 2026-04-13 | runs | 🔴 Stage1-3 FAIL — Proofreader пустой JSON |
+| 2026-04-14 062711 | — | 🔴 Stage2 FAIL — деплой: флаг `--variant-b` не на сервере |
+| 2026-04-14 062711 | — | ✅ ПОЛНЫЙ ПРОГОН Stage1→4 с фото — gate2a артефакты готовы |
+| 2026-04-17 | v27 | Phase B текст |
+| 2026-04-18 | v28 | ✅ gate2b → gate2c (вёрстка с bio, callouts, справками); 6 итераций gate2b |
+| 2026-04-20 | v29 | 🔴 gate1 FAIL — откат на текстовые ворота |
+| 2026-04-20 | v30 | 🔴 gate1 FAIL |
+| 2026-04-21 | v31 | 🔴 gate1 FAIL |
+| 2026-04-21 | v32 | 🔴 gate1 FAIL |
+| 2026-04-22 | v34 | 🔴 gate1 FAIL → анализ → v35 |
+| 2026-04-23 | v35 | 🔴 gate1 FAIL: 3 критич. проблемы (timeline=None, Историк не мержится, факты TR2 потеряны) |
+| 2026-04-28 | v36 Stage 2 | ✅ FIX-A + FIX-B → Stage 2 FC PASS (iter 2), 4 ист.вставки | quality gate required_entities FAIL на периферийных родственниках (конфиг) |
+
+---
+
+## Связанные подзадачи
+
+| № | Название | Статус | Что даёт пилоту |
+|---|---|---|---|
+| 007 | Архитектурные улучшения пайплайна (Proofreader, Phase B FC, Incremental FE) | dasha-review | Phase B архитектура |
+| 008 | Потеря текста в Layout Designer: ссылочная архитектура | new | Защита текста на Stage 4 |
+| 009 | Протокол ворот приёмки | dasha-review | Сами gate'ы |
+| 010 | Очистка промптов от привязки к Каракулиной | ✅ done (2026-04-28) | Готовность к тиражированию на следующих клиентов |
+| 011 | FE completeness regression | closed-superseded by 014 | — |
+| 014 | Completeness Auditor + Name Normalizer | ✅ done | Стабилизация Stage 1 (вход в этот пилот) |
+| FIX-A (внутри 015) | timeline=None — фикс `phase` логики в `pipeline_utils.py:738` | ✅ **закрыт** | `force_phase="A"` в run_ghostwriter + Stage 2 v36 |
+| FIX-B (внутри 015) | Историк-dict обёртка в `pipeline_utils.py:757-759` | ✅ **закрыт** | Корректная распаковка, 4 ист.вставки в Stage 2 v36 |
+
+---
+
+## Что осталось до каждого gate
+
+### До gate1 (текст книги PASS)
+
+1. ✅ Диагностика обоих багов получена и верифицирована (Cursor + Claude, 2026-04-28)
+2. ✅ FIX-A выполнен (`force_phase` в `run_ghostwriter()`, commit b26059f)
+3. ✅ FIX-B выполнен (распаковка historian-dict, commit b26059f)
+4. ✅ Прогон Stage 2 на v36 fact_map — FC PASS на итерации 2, 4 ист.вставки
+5. ⚠️ `gate_required_entities` падает — проблема в `pipeline_quality_gates.py`:
+   - `critical_keywords` матчит "дочь" как подстроку в `relation_to_subject` племянников → ложно критические
+   - gate не сканирует `bio_data.family` в ch_01 — там personы есть, но в структуре, не в тексте
+   - **Варианты:** (a) фикс quality gate конфига — 30 мин; (b) запуск Stage 3 с `--no-strict-gates` и ручная проверка текста
+
+### До gate2a/2b/2c (вёрстка)
+
+После gate1 — прогнать Stage 4 без фото и без обложки. У нас уже проходили в апреле, должно сработать. Но fact_map изменился — могут вылезти новые edge-cases. ETA: ~1 день после gate1.
+
+### До gate3 (фото)
+
+Photo Editor должен подобрать реальные фото из архива клиента. У Каракулиной — нужно собрать фото-альбом. ETA: зависит от готовности фото от Даши.
+
+### До gate4 (обложка + финальный PDF)
+
+Cover Designer + финальная сборка. ETA: ~0.5 дня после gate3.
+
+---
+
+## Решения, которые нужно принять
+
+- [ ] **Phase B архитектура** — после Completeness Auditor нужен ли вообще явный Phase B для нашего сценария двух транскриптов? Решить после Stage 2 прогона.
+- [ ] **Уровень эскалации completeness gaps в проде** (PRODUCT-3 из task 011) — отложено до task 013 (CJM).
+
+---
+
+## Лог обновлений
+
+### 2026-04-28 (поздно вечером) — Stage 2 прогон v36 выполнен, FIX-A + FIX-B закрыты
+
+**Прогон:** `stage2_v36` (2026-04-28, сервер `/opt/glava/exports/stage2_v36/`)
+
+**Артефакты:**
+- Историк: `karakulina_historian_20260428_083959.json` — 7291 out_tokens, 113с
+- Черновик v1 (initial): `karakulina_book_draft_v1_20260428_083959.json` — 17399 tok, 239с
+- Черновик v2 (historian integration): `karakulina_book_draft_v2_20260428_083959.json` — 18057 tok, **`Ист.вставок: 4`** ✅
+- FC итерация 1: FAIL (2 critical, 8 major — пропущены племянники в ch_01, галлюцинации)
+- Черновик v3 (after FC fix): `karakulina_book_draft_v3_20260428_083959.json`
+- FC итерация 2: **PASS** ✅ (0 critical, 0 major, 2 warnings)
+- Финальная книга: `karakulina_book_FINAL_20260428_083959.json` — 12716 символов, 5 глав, 3 выноски, 4 ист.вставки
+- Text gates: `karakulina_stage2_text_gates_20260428_083959.json`
+- Manifest: `karakulina_stage2_run_manifest_20260428_083959.json`
+
+**Локальные копии:** `collab/runs/karakulina_v36_20260428/` (book_FINAL_stage2.json, stage2_text_gates.json, manifest_s2.json)
+
+**Статус FIX-A и FIX-B:**
+- ✅ **FIX-A ЗАКРЫТ** — добавлен `force_phase` в `run_ghostwriter()`, в Stage 2 передаётся `force_phase="A"`. `ch01_bio` gate: `has_bio_struct=true`. `Ист.вставок: 4` (было 0 в v35) — Phase A pass 2 работает корректно.
+- ✅ **FIX-B ЗАКРЫТ** — historian-dict теперь корректно распаковывается. `ctx_list = historical_context["historical_context"]`, `era_glossary` отдельно. GW получает плоский массив periods с `suggested_insertions`.
+
+**Gate1 чек-лист после Stage 2 v36:**
+
+| Проверка | Статус | Деталь |
+|---|---|---|
+| FC PASS | ✅ | итерация 2 (0 crit, 0 maj) |
+| `ch_01` имеет bio_struct | ✅ | `has_bio_struct=true`, `has_birth_year`, `has_birth_place` |
+| Ист.вставки > 0 | ✅ | 4 вставки |
+| cross_chapter_repetition | ✅ | 0 нарушений |
+| required_entities (critical) | ❌ | 6 из 13 критических не в тексте: Мария, Римма, Зина, Толя, Коля, Витя |
+| Объём глав | ⚠️ | ch_01: 0 симв (структурный, ожидаемо), ch_02: 5183, ch_03: 4078, ch_04: 2571 |
+
+**Причина FAIL required_entities:**
+- Мария/Римма/Зина/Толя/Коля/Витя — периферийные родственники (племянники, тётя Маня), добавлены CA в Stage 1
+- Gate помечает их critical из-за подстроки "дочь" в поле `relation_to_subject` ("племянник, сын/дочь тёти Поли")
+- В ch_01 они добавлены в `bio_data.family` (структура), а не в `content` (текст) — gate сканирует только content
+- Это **двойная проблема quality gates**: (a) `critical_keywords` не учитывает контекст "дочь" в relation; (b) gate не сканирует bio_data.family
+- **Это НЕ регрессия пайплайна** — два исходных бага FIX-A/FIX-B закрыты
+
+**Следующий шаг:**
+- Gate1 пройдёт после фикса `gate_required_entities` в `pipeline_quality_gates.py`:
+  - Исключить `племянник/племянница/тётя/дядя` из critical_keywords (или уточнить как "прямые родственники субъекта")
+  - ИЛИ добавить сканирование `bio_data.family[]` в `collect_required_entities`
+- Это не блокирует движение к Stage 3 — можно запустить с `--no-strict-gates` для проверки текста.
+
+---
+
+### 2026-04-28 (вечер) — диагностика блокеров получена и верифицирована
+
+Cursor (на стороне Никиты) провёл диагностику обоих багов с конкретными ссылками на код:
+
+- **FIX-A:** `pipeline_utils.py:738` — `phase = "B" if (current_book is not None and call_type == "revision") else "A"` всегда уходит в B при revision+current_book. Промпт v2.14 ожидает Phase A pass 2 для historian-интеграции.
+- **FIX-B:** `pipeline_utils.py:757-759` — historian-dict оборачивается в `[dict]` вместо распаковки. GW получает структуру без `suggested_insertions` на верхнем уровне.
+
+Claude верифицировала оба диагноза самостоятельно (читала код + промпты GW v2.14 и Historian v3) — оба подтверждены. Зелёный свет на фиксы.
+
+Оба фикса — однострочники в одном файле (`pipeline_utils.py`). Решено не выделять в отдельные task-файлы (016/017), а трекать как FIX-A / FIX-B внутри 015. По сложности это «fix, не feature».
+
+Уточнение по FIX-A: предложен явный аргумент `force_phase` в `run_ghostwriter()` вместо неявной логики по `revision_scope.type` — сохраняет кейс «historian_integration на готовой книге = Phase B» для будущего.
+
+**Следующий шаг:** Cursor делает оба фикса + Stage 2 прогон + gate1 чек, отчитывается в этот файл.
+
+---
+
+### 2026-04-28 — создан трекер (Claude)
+
+Восстановили картину после долгого периода технических задач. Поняли что **Stage 1 в смысле fact_map дотюнен (v36)**, но **Stage 1 в смысле gate1 — нет** (последний gate1 PASS был в апреле на v_stable, потом серия регрессий v29-v35).
+
+Идентифицированы 2 блокирующих технических бага (timeline + Историк). Передано Cursor на стороне Никиты — ждём ответ.
+
+Создан этот трекер чтобы не теряться в технических деталях и видеть общий прогресс пилота.
+
+---
+
+## История статусов
+
+| Дата | Статус | Кто |
+|------|--------|-----|
+| 2026-04-28 | `active` (живой трекер создан) | Даша / Claude |

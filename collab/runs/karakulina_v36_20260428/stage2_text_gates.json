@@ -1,0 +1,89 @@
+{
+  "stage": "stage2",
+  "passed": false,
+  "gates": [
+    {
+      "gate": "required_entities",
+      "passed": false,
+      "required_total": 20,
+      "critical_total": 13,
+      "critical_matched_total": 7,
+      "critical_missing_total": 6,
+      "critical_missing": [
+        {
+          "type": "person",
+          "label": "Мария",
+          "variants": [
+            "мария"
+          ]
+        },
+        {
+          "type": "person",
+          "label": "Римма",
+          "variants": [
+            "римма"
+          ]
+        },
+        {
+          "type": "person",
+          "label": "Зина",
+          "variants": [
+            "зина"
+          ]
+        },
+        {
+          "type": "person",
+          "label": "Толя",
+          "variants": [
+            "толя"
+          ]
+        },
+        {
+          "type": "person",
+          "label": "Коля",
+          "variants": [
+            "коля"
+          ]
+        },
+        {
+          "type": "person",
+          "label": "Витя",
+          "variants": [
+            "витя"
+          ]
+        }
+      ],
+      "optional_total": 7,
+      "optional_matched_total": 6,
+      "optional_missing_total": 1,
+      "optional_missing": [
+        {
+          "type": "person",
+          "label": "Даша",
+          "variants": [
+            "даша"
+          ]
+        }
+      ]
+    },
+    {
+      "gate": "cross_chapter_repetition",
+      "passed": true,
+      "ngram_size": 5,
+      "threshold": 0.2,
+      "violations": []
+    },
+    {
+      "gate": "ch01_bio",
+      "passed": true,
+      "min_chars": 300,
+      "actual_chars": 0,
+      "has_bio_struct": true,
+      "checks": {
+        "content_len_ok": true,
+        "has_birth_year": true,
+        "has_birth_place": true
+      }
+    }
+  ]
+}
