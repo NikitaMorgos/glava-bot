@@ -32,6 +32,18 @@ MERGE_THRESHOLD = 0.30      # мин. доля пересечения позиц
 POSITION_WINDOW = 300       # ±N символов для сравнения позиций
 MIN_NAME_LEN = 3            # не ищем по частям короче N символов
 
+# Служебные слова, которые не могут быть единственным основанием для слияния.
+# Если matching_variants двух записей пересекаются ТОЛЬКО по этим словам — не сливать.
+STOP_TOKENS = {
+    # Роли и родство
+    "тётя", "дядя", "дед", "баба", "бабушка", "дедушка",
+    "папа", "мама", "сын", "дочь", "брат", "сестра", "внук", "внучка",
+    "зять", "сноха", "невестка", "свекровь", "тесть",
+    # Географические термины
+    "село", "деревня", "город", "посёлок", "улица", "площадь",
+    "район", "область", "край", "страна", "переулок", "проспект",
+}
+
 # Исторические и политические деятели — не добавляем в persons как персонажей биографии
 HISTORICAL_BLOCKLIST = {
     "сталин", "горбачёв", "горбачев", "ленин", "хрущёв", "хрущев", "брежнев",
@@ -77,15 +89,32 @@ def _is_historical(name: str) -> bool:
     return False
 
 
-def _generate_name_variants(name: str, aliases: list[str], asr_variants: list[str]) -> set[str]:
+def _generate_name_variants(
+    name: str,
+    aliases: list[str],
+    asr_variants: list[str],
+    use_aliases_for_matching: bool = True,
+) -> set[str]:
     """
     Генерирует множество вариантов написания для поиска в транскрипте.
     Включает: каноническое имя, aliases, asr_variants, перестановки, части, диминутивы.
+
+    use_aliases_for_matching=False: включает alias-варианты ТОЛЬКО для позиционного поиска,
+    но возвращает отдельный «core» набор только из primary name.
+    Для локаций передавать use_aliases_for_matching=False, чтобы не порождать ложных
+    общих токенов через поля asr_variants (напр. «калинин» у двух разных городов).
     """
     variants: set[str] = set()
-    all_forms = [name] + list(aliases or []) + list(asr_variants or [])
+    # Для prerequisite-проверки пересечения — берём только primary name и aliases если разрешено
+    core_forms = [name]
+    if use_aliases_for_matching:
+        core_forms += list(aliases or []) + list(asr_variants or [])
 
-    for form in all_forms:
+    all_forms = core_forms if use_aliases_for_matching else [name]
+    # Для позиционного поиска — всегда все формы
+    all_search_forms = [name] + list(aliases or []) + list(asr_variants or [])
+
+    for form in all_search_forms:
         if not form:
             continue
         form_s = form.strip()
@@ -96,7 +125,6 @@ def _generate_name_variants(name: str, aliases: list[str], asr_variants: list[st
         if len(parts) == 2:
             variants.add(f"{parts[1]} {parts[0]}".lower())
         elif len(parts) == 3:
-            # Фамилия Имя Отчество → Имя Отчество Фамилия
             variants.add(f"{parts[1]} {parts[2]} {parts[0]}".lower())
 
         # Отдельные части (только если достаточно длинные)
@@ -104,13 +132,49 @@ def _generate_name_variants(name: str, aliases: list[str], asr_variants: list[st
             if len(part) >= MIN_NAME_LEN:
                 part_lower = part.lower()
                 variants.add(part_lower)
-                # Диминутивы
-                for canonical, forms in DIMINUTIVES.items():
-                    if part_lower in forms or part_lower == canonical:
-                        variants.update(forms)
+                # Диминутивы (только для поиска, не для matching prerequisite)
+                if use_aliases_for_matching:
+                    for canonical, forms in DIMINUTIVES.items():
+                        if part_lower in forms or part_lower == canonical:
+                            variants.update(forms)
 
-    # Убираем слишком короткие и пустые
-    return {v for v in variants if v and len(v) >= MIN_NAME_LEN}
+    return variants
+
+
+def _generate_matching_variants(
+    name: str,
+    aliases: list[str],
+    asr_variants: list[str],
+    use_aliases_for_matching: bool = True,
+) -> set[str]:
+    """
+    Генерирует набор вариантов ТОЛЬКО для prerequisite-проверки пересечения имён.
+    Для persons: включает aliases, asr_variants и диминутивы.
+    Для locations: только primary name и его части (без aliases/asr_variants).
+    """
+    matching: set[str] = set()
+    if use_aliases_for_matching:
+        forms = [name] + list(aliases or []) + list(asr_variants or [])
+    else:
+        forms = [name]  # для локаций — только каноническое имя
+
+    for form in forms:
+        if not form:
+            continue
+        form_s = form.strip()
+        matching.add(form_s.lower())
+        parts = form_s.split()
+        if len(parts) == 2:
+            matching.add(f"{parts[1]} {parts[0]}".lower())
+        for part in parts:
+            if len(part) >= MIN_NAME_LEN:
+                part_lower = part.lower()
+                matching.add(part_lower)
+                if use_aliases_for_matching:
+                    for canonical, forms_set in DIMINUTIVES.items():
+                        if part_lower in forms_set or part_lower == canonical:
+                            matching.update(forms_set)
+    return matching
 
 
 def _find_positions(text: str, variant: str) -> list[int]:
@@ -260,8 +324,10 @@ def validate_fact_map_integrity(fact_map: dict) -> list[str]:
     """
     errors = []
     person_ids = {p["id"] for p in fact_map.get("persons", []) if p.get("id")}
+    # 'subject' и 'narrator_NNN' — допустимые псевдо-ID, используются в relationships/quotes
     narrator_ids = {"narrator_001", "narrator_002", "narrator_003"}
-    valid_ids = person_ids | narrator_ids
+    special_ids = {"subject"}
+    valid_ids = person_ids | narrator_ids | special_ids
 
     for event in fact_map.get("timeline", []):
         for pid in event.get("participants", []):
@@ -343,23 +409,35 @@ def normalize_named_entities(fact_map: dict, transcript: str) -> tuple[dict, lis
 
     # ── Шаги 1–4: нормализация дублей ──────────────────────────────────────────
     for field, entity_key in [("persons", "name"), ("locations", "name")]:
+        # Для локаций не используем aliases/asr_variants в prerequisite-проверке —
+        # только primary name. Это предотвращает ложные слияния через контекстные
+        # слова (напр. «калинин», «тверь» у разных городов).
+        use_aliases_matching = (field == "persons")
         entities = fm.get(field, [])
         if len(entities) < 2:
             continue
 
-        # Шаг 1: строим индекс позиций для каждой записи
-        position_index: dict[str, list[int]] = {}
+        # Шаг 1: строим индекс вариантов и позиций для каждой записи
+        # entity_id → (positions, search_variants, matching_variants)
+        entity_index: dict[str, tuple[list[int], set[str], set[str]]] = {}
         for entity in entities:
             eid = entity.get("id") or entity.get("name", "")
-            variants = _generate_name_variants(
+            search_vars = _generate_name_variants(
                 entity.get("name", ""),
                 entity.get("aliases", []),
                 entity.get("asr_variants", []),
+                use_aliases_for_matching=use_aliases_matching,
             )
-            positions = _build_position_index(transcript, variants)
-            position_index[eid] = positions
+            match_vars = _generate_matching_variants(
+                entity.get("name", ""),
+                entity.get("aliases", []),
+                entity.get("asr_variants", []),
+                use_aliases_for_matching=use_aliases_matching,
+            )
+            positions = _build_position_index(transcript, search_vars)
+            entity_index[eid] = (positions, search_vars, match_vars)
 
-        # Шаг 2: ищем пары с перекрытием ≥ MERGE_THRESHOLD
+        # Шаг 2: ищем пары-кандидаты на слияние
         merged_ids: dict[str, str] = {}  # старый_id → канонический_id
         id_to_entity: dict[str, dict] = {
             (e.get("id") or e.get("name", "")): e for e in entities
@@ -377,8 +455,23 @@ def normalize_named_entities(fact_map: dict, transcript: str) -> tuple[dict, lis
                 if canon_a == canon_b:
                     continue
 
-                pos_a = position_index.get(id_a, [])
-                pos_b = position_index.get(id_b, [])
+                pos_a, _, match_a = entity_index.get(id_a, ([], set(), set()))
+                pos_b, _, match_b = entity_index.get(id_b, ([], set(), set()))
+
+                # PREREQUISITE: matching_variants ОБЯЗАНЫ пересекаться хотя бы ДВУМЯ
+                # значимыми токенами (≥ MIN_NAME_LEN) и не только stop-токенами.
+                # Одного совпадения недостаточно — фамилия "Каракулин" общая у отца и сына,
+                # но они разные люди. Два совпадения (напр. 'маргось' + 'владимир')
+                # или три (пелагея + полина + поля) — достаточно.
+                # Исключение: идентичные односложные имена (никита = никита) дают ≥ 2
+                # через DIMINUTIVES (никита + никиша).
+                common_variants = match_a & match_b
+                significant_common = {
+                    v for v in common_variants
+                    if len(v) >= MIN_NAME_LEN and v not in STOP_TOKENS
+                }
+                if len(significant_common) < 2:
+                    continue
 
                 # Записи без позиций в транскрипте — не сливаем
                 if not pos_a or not pos_b:
@@ -402,6 +495,7 @@ def normalize_named_entities(fact_map: dict, transcript: str) -> tuple[dict, lis
                     "merged": duplicate.get("name", ""),
                     "merged_id": duplicate_id,
                     "overlap": round(overlap, 3),
+                    "shared_variants": sorted(significant_common)[:3],
                 })
 
                 merged_ids[duplicate_id] = canonical_id
@@ -411,15 +505,25 @@ def normalize_named_entities(fact_map: dict, transcript: str) -> tuple[dict, lis
 
         # Шаг 3: убираем дубли из списка, применяем слияния
         if merged_ids:
-            removed_ids = set(merged_ids.keys())
+            # Транзитивное разрешение: A→B и B→C → A→C
+            def _resolve(mid: str) -> str:
+                seen = set()
+                while mid in merged_ids and mid not in seen:
+                    seen.add(mid)
+                    mid = merged_ids[mid]
+                return mid
+
+            resolved: dict[str, str] = {k: _resolve(v) for k, v in merged_ids.items()}
+
+            removed_ids = set(resolved.keys())
             fm[field] = [
                 id_to_entity.get(eid, e)
                 for eid, e in id_to_entity.items()
                 if eid not in removed_ids
             ]
-            # Обновляем все ID-ссылки
-            fm = _remap_ids_in_fact_map(fm, merged_ids)
-            print(f"[NAME NORMALIZER] {field}: слито {len(merged_ids)} дублей")
+            # Обновляем все ID-ссылки с учётом транзитивности
+            fm = _remap_ids_in_fact_map(fm, resolved)
+            print(f"[NAME NORMALIZER] {field}: слито {len(resolved)} дублей")
 
     # Шаг 4: валидация
     errors = validate_fact_map_integrity(fm)
