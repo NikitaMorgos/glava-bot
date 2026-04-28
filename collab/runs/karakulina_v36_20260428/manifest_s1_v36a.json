@@ -1,0 +1,384 @@
+{
+  "project_id": "karakulina",
+  "stage": "stage1_full",
+  "timestamp": "20260428_060949",
+  "generated_at": "2026-04-28T06:18:08.323766Z",
+  "git_sha": "ada67b9",
+  "config_file": "/opt/glava/prompts/pipeline_config.json",
+  "config_sha256": "7e77e9b8248536895282d235d8e32b75012f237fa426feb46af6f9030f6c71ed",
+  "active_prompts": {
+    "cleaner": {
+      "prompt_file": "01_cleaner_v1.md",
+      "prompt_exists": true,
+      "prompt_sha256": "e5a7f11402313b21bcb4b44668a06704cc5c36f57c89965e4bebbae2f6f9e413",
+      "model": "claude-haiku-4-5-20251001",
+      "max_tokens": 32000,
+      "temperature": 0.1
+    },
+    "fact_extractor": {
+      "prompt_file": "02_fact_extractor_v3.4.md",
+      "prompt_exists": true,
+      "prompt_sha256": "af3af044d86b8a77a9d9ddb4fcc4423f5eb7643e946a9e3b7169b3e5be1a5d0b",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 32000,
+      "temperature": 0.15
+    },
+    "historian": {
+      "prompt_file": "12_historian_v3.md",
+      "prompt_exists": true,
+      "prompt_sha256": "b096f8904ad5e43666a596ec56e4a84185b49718b6615713585f2b0705676325",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 64000,
+      "temperature": 0.3
+    },
+    "ghostwriter": {
+      "prompt_file": "03_ghostwriter_v2.14.md",
+      "prompt_exists": true,
+      "prompt_sha256": "6e16e14d55a123b137bb70e3476b93bac9a383e0a3fc83aaaf400ca986bb1fde",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 32000,
+      "temperature": 0.4
+    },
+    "fact_checker": {
+      "prompt_file": "04_fact_checker_v2.8.md",
+      "prompt_exists": true,
+      "prompt_sha256": "0fdedfd8eee017079ae6918043b4cc4c41bff932e97b2bf66265a0fb2fdd1a2c",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 64000,
+      "temperature": 0.1
+    },
+    "literary_editor": {
+      "prompt_file": "05_literary_editor_v3.md",
+      "prompt_exists": true,
+      "prompt_sha256": "9810b8693fb2bd19d6fc417b0af1d0ce464c782403b5af38419b9fdd081bc328",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 32000,
+      "temperature": 0.5
+    },
+    "proofreader": {
+      "prompt_file": "06_proofreader_v1.md",
+      "prompt_exists": true,
+      "prompt_sha256": "5c600132d206cdc62876661662b917b17922e3779047de366485a78703758d79",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 32000,
+      "temperature": 0.0
+    },
+    "photo_editor": {
+      "prompt_file": "07_photo_editor_v1.md",
+      "prompt_exists": true,
+      "prompt_sha256": "04631d5723b1a881a43753a8d7656e035f6375526a482dfb094064590bd5e7a3",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 32000,
+      "temperature": 0.25
+    },
+    "layout_designer": {
+      "prompt_file": "08_layout_designer_v3.19.md",
+      "prompt_exists": true,
+      "prompt_sha256": "ab07a0ade1229cbd8800b075e7faa5d3172735d4b4228531d4414acfe553347e",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 64000,
+      "temperature": 0.25
+    },
+    "qa_layout": {
+      "prompt_file": "09_qa_layout_v1.md",
+      "prompt_exists": true,
+      "prompt_sha256": "04a0b4137d947ef287a3e78de08f8dd0e024c3da836a3bafb8ab9bb08e1a4c92",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 32000,
+      "temperature": 0.05
+    },
+    "cover_designer": {
+      "prompt_file": "13_cover_designer_v2.6.md",
+      "prompt_exists": true,
+      "prompt_sha256": "33d1c9917e4cc348642c21f5815c6e58ef67a46599597ce1840b7513a0aee427",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 32000,
+      "temperature": 0.65
+    },
+    "layout_art_director": {
+      "prompt_file": "15_layout_art_director_v1.8.md",
+      "prompt_exists": true,
+      "prompt_sha256": "46e0ea800893583a1f507ccccdf2eef85980ebcb7a0608cf693b996a0a99c6fc",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 64000,
+      "temperature": 0.45
+    },
+    "interview_architect": {
+      "prompt_file": "11_interview_architect_v4.1.md",
+      "prompt_exists": true,
+      "prompt_sha256": "1b4ed8ee4ea676987bae4b88f075349ad5872e57574cda5233ef4ce4f2cde3f9",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 32000,
+      "temperature": 0.5
+    },
+    "completeness_auditor": {
+      "prompt_file": "16_completeness_auditor_v1.md",
+      "prompt_exists": true,
+      "prompt_sha256": "010dfefed8e444ccefe1f0ae65708d29276dfbcf8cef2cb55453cb2dc5514033",
+      "model": "claude-haiku-4-5-20251001",
+      "max_tokens": 8000,
+      "temperature": 0.1
+    }
+  },
+  "inputs": {
+    "transcript1": "/opt/glava/exports/transcripts/karakulina_valentina_interview_assemblyai.txt",
+    "transcript2": "/opt/glava/exports/transcripts/karakulina_meeting_transcript_20260403.txt"
+  },
+  "inputs_sha256": {
+    "transcript1": "sha256:3555b3d0cb4da1ea",
+    "transcript2": "sha256:b399763715598d10"
+  },
+  "outputs": {
+    "cleaned": "/opt/glava/exports/v36a/karakulina_combined_cleaned_20260428_060949.txt",
+    "fact_map_full": "/opt/glava/exports/v36a/karakulina_fact_map_full_20260428_060949.json",
+    "fact_map_clean": "/opt/glava/exports/v36a/karakulina_fact_map_20260428_060949.json",
+    "completeness_audit": "/opt/glava/exports/v36a/karakulina_completeness_audit_20260428_060949.json"
+  },
+  "checkpoints": {},
+  "notes": {
+    "completeness_audit": {
+      "completeness_status": "ok",
+      "auto_enriched": {
+        "persons": 0,
+        "events": 0,
+        "locations": 0,
+        "traits": 0
+      },
+      "log_only_gaps": {
+        "missing_persons": [],
+        "missing_events": [],
+        "missing_locations": [],
+        "missing_traits": []
+      }
+    },
+    "name_normalization": {
+      "merged_pairs": [
+        {
+          "field": "persons",
+          "canonical": "Рудая Пелагея Алексеевна",
+          "canonical_id": "person_002",
+          "merged": "Рудай Иван Андреевич",
+          "merged_id": "person_001",
+          "overlap": 0.389
+        },
+        {
+          "field": "persons",
+          "canonical": "младший брат",
+          "canonical_id": "person_003",
+          "merged": "Рудай Иван Андреевич",
+          "merged_id": "person_001",
+          "overlap": 0.444
+        },
+        {
+          "field": "persons",
+          "canonical": "Рудай Иван Андреевич",
+          "canonical_id": "person_001",
+          "merged": "Полина Амельченко",
+          "merged_id": "person_004",
+          "overlap": 0.467
+        },
+        {
+          "field": "persons",
+          "canonical": "Рудай Иван Андреевич",
+          "canonical_id": "person_001",
+          "merged": "тётя Шура",
+          "merged_id": "person_012",
+          "overlap": 0.556
+        },
+        {
+          "field": "persons",
+          "canonical": "младший брат",
+          "canonical_id": "person_003",
+          "merged": "Рудая Пелагея Алексеевна",
+          "merged_id": "person_002",
+          "overlap": 0.333
+        },
+        {
+          "field": "persons",
+          "canonical": "Рудая Пелагея Алексеевна",
+          "canonical_id": "person_002",
+          "merged": "Полина Амельченко",
+          "merged_id": "person_004",
+          "overlap": 0.889
+        },
+        {
+          "field": "persons",
+          "canonical": "Рудая Пелагея Алексеевна",
+          "canonical_id": "person_002",
+          "merged": "Мария",
+          "merged_id": "person_005",
+          "overlap": 0.611
+        },
+        {
+          "field": "persons",
+          "canonical": "Каракулин Дмитрий",
+          "canonical_id": "person_006",
+          "merged": "Рудая Пелагея Алексеевна",
+          "merged_id": "person_002",
+          "overlap": 0.455
+        },
+        {
+          "field": "persons",
+          "canonical": "Рудая Пелагея Алексеевна",
+          "canonical_id": "person_002",
+          "merged": "тётя Шура",
+          "merged_id": "person_012",
+          "overlap": 0.722
+        },
+        {
+          "field": "persons",
+          "canonical": "младший брат",
+          "canonical_id": "person_003",
+          "merged": "Мария",
+          "merged_id": "person_005",
+          "overlap": 0.375
+        },
+        {
+          "field": "persons",
+          "canonical": "младший брат",
+          "canonical_id": "person_003",
+          "merged": "тётя Шура",
+          "merged_id": "person_012",
+          "overlap": 0.429
+        },
+        {
+          "field": "persons",
+          "canonical": "Полина Амельченко",
+          "canonical_id": "person_004",
+          "merged": "Мария",
+          "merged_id": "person_005",
+          "overlap": 0.8
+        },
+        {
+          "field": "persons",
+          "canonical": "Полина Амельченко",
+          "canonical_id": "person_004",
+          "merged": "тётя Шура",
+          "merged_id": "person_012",
+          "overlap": 0.667
+        },
+        {
+          "field": "persons",
+          "canonical": "Каракулин Дмитрий",
+          "canonical_id": "person_006",
+          "merged": "Каракулин Валерий",
+          "merged_id": "person_007",
+          "overlap": 0.727
+        },
+        {
+          "field": "locations",
+          "canonical": "село Мариевка",
+          "canonical_id": "loc_001",
+          "merged": "Кировоград",
+          "merged_id": "loc_003",
+          "overlap": 0.5
+        },
+        {
+          "field": "locations",
+          "canonical": "село Мариевка",
+          "canonical_id": "loc_001",
+          "merged": "село Глинск",
+          "merged_id": "loc_004",
+          "overlap": 0.75
+        },
+        {
+          "field": "locations",
+          "canonical": "Вышний Волочёк",
+          "canonical_id": "loc_006",
+          "merged": "Старобельск",
+          "merged_id": "loc_002",
+          "overlap": 0.333
+        },
+        {
+          "field": "locations",
+          "canonical": "Старобельск",
+          "canonical_id": "loc_002",
+          "merged": "Калинин",
+          "merged_id": "loc_007",
+          "overlap": 0.333
+        },
+        {
+          "field": "locations",
+          "canonical": "Вышний Волочёк",
+          "canonical_id": "loc_006",
+          "merged": "Калинин",
+          "merged_id": "loc_007",
+          "overlap": 0.333
+        },
+        {
+          "field": "locations",
+          "canonical": "Кечкемет",
+          "canonical_id": "loc_010",
+          "merged": "Калинин",
+          "merged_id": "loc_007",
+          "overlap": 0.333
+        },
+        {
+          "field": "locations",
+          "canonical": "Кишкунхалаш",
+          "canonical_id": "loc_011",
+          "merged": "Калинин",
+          "merged_id": "loc_007",
+          "overlap": 0.333
+        },
+        {
+          "field": "locations",
+          "canonical": "Калинин",
+          "canonical_id": "loc_007",
+          "merged": "Байя",
+          "merged_id": "loc_012",
+          "overlap": 0.333
+        },
+        {
+          "field": "locations",
+          "canonical": "Кирсанов",
+          "canonical_id": "loc_013",
+          "merged": "Калинин",
+          "merged_id": "loc_007",
+          "overlap": 0.333
+        },
+        {
+          "field": "locations",
+          "canonical": "Кишкунхалаш",
+          "canonical_id": "loc_011",
+          "merged": "Кечкемет",
+          "merged_id": "loc_010",
+          "overlap": 1.0
+        },
+        {
+          "field": "locations",
+          "canonical": "Кечкемет",
+          "canonical_id": "loc_010",
+          "merged": "Байя",
+          "merged_id": "loc_012",
+          "overlap": 1.0
+        },
+        {
+          "field": "locations",
+          "canonical": "Кечкемет",
+          "canonical_id": "loc_010",
+          "merged": "Кирсанов",
+          "merged_id": "loc_013",
+          "overlap": 0.5
+        },
+        {
+          "field": "locations",
+          "canonical": "Кишкунхалаш",
+          "canonical_id": "loc_011",
+          "merged": "Байя",
+          "merged_id": "loc_012",
+          "overlap": 1.0
+        },
+        {
+          "field": "locations",
+          "canonical": "Кишкунхалаш",
+          "canonical_id": "loc_011",
+          "merged": "Кирсанов",
+          "merged_id": "loc_013",
+          "overlap": 0.5
+        }
+      ],
+      "normalized_count": 28
+    }
+  }
+}

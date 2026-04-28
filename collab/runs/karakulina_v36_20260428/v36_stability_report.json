@@ -1,0 +1,232 @@
+{
+  "in_both": [
+    {
+      "run_a": {
+        "id": "person_001",
+        "name": "Рудай Иван Андреевич",
+        "relation": "отец"
+      },
+      "run_b": {
+        "id": "person_001",
+        "name": "Рудай Иван Андреевич",
+        "relation": "отец"
+      }
+    },
+    {
+      "run_a": {
+        "id": "person_002",
+        "name": "Рудая Пелагея Алексеевна",
+        "relation": "мать"
+      },
+      "run_b": {
+        "id": "person_004",
+        "name": "Полина Амельченко",
+        "relation": "старшая сестра"
+      }
+    },
+    {
+      "run_a": {
+        "id": "person_003",
+        "name": "младший брат",
+        "relation": "младший брат"
+      },
+      "run_b": {
+        "id": "person_003",
+        "name": "младший брат",
+        "relation": "младший брат"
+      }
+    },
+    {
+      "run_a": {
+        "id": "person_005",
+        "name": "Мария",
+        "relation": "старшая сестра"
+      },
+      "run_b": {
+        "id": "person_005",
+        "name": "Мария",
+        "relation": "старшая сестра"
+      }
+    },
+    {
+      "run_a": {
+        "id": "person_006",
+        "name": "Каракулин Дмитрий",
+        "relation": "муж"
+      },
+      "run_b": {
+        "id": "person_006",
+        "name": "Каракулин Дмитрий",
+        "relation": "муж"
+      }
+    },
+    {
+      "run_a": {
+        "id": "person_007",
+        "name": "Каракулин Валерий",
+        "relation": "сын"
+      },
+      "run_b": {
+        "id": "person_007",
+        "name": "Каракулин Валерий",
+        "relation": "сын"
+      }
+    },
+    {
+      "run_a": {
+        "id": "person_008",
+        "name": "Маргось Владимир",
+        "relation": "зять"
+      },
+      "run_b": {
+        "id": "person_008",
+        "name": "Маргось Владимир",
+        "relation": "зять"
+      }
+    },
+    {
+      "run_a": {
+        "id": "person_009",
+        "name": "Кужба Олег",
+        "relation": "зять"
+      },
+      "run_b": {
+        "id": "person_009",
+        "name": "Кужба Олег",
+        "relation": "второй зять"
+      }
+    },
+    {
+      "run_a": {
+        "id": "person_010",
+        "name": "Никита",
+        "relation": "внук"
+      },
+      "run_b": {
+        "id": "person_010",
+        "name": "Никита",
+        "relation": "внук"
+      }
+    },
+    {
+      "run_a": {
+        "id": "person_011",
+        "name": "Даша",
+        "relation": "внучка"
+      },
+      "run_b": {
+        "id": "person_011",
+        "name": "Дарья",
+        "relation": "внучка"
+      }
+    },
+    {
+      "run_a": {
+        "id": "person_012",
+        "name": "тётя Шура",
+        "relation": "золовка"
+      },
+      "run_b": {
+        "id": "person_012",
+        "name": "тётя Шура",
+        "relation": "золовка"
+      }
+    },
+    {
+      "run_a": {
+        "id": "person_013",
+        "name": "Нинвана Полсачева",
+        "relation": "врач"
+      },
+      "run_b": {
+        "id": "person_018",
+        "name": "Нинвана Полсачева",
+        "relation": "врач"
+      }
+    },
+    {
+      "run_a": {
+        "id": "person_auto_001",
+        "name": "Татьяна Каракулина",
+        "relation": "дочь"
+      },
+      "run_b": {
+        "id": "person_auto_001",
+        "name": "Татьяна Каракулина",
+        "relation": "дочь"
+      }
+    },
+    {
+      "run_a": {
+        "id": "person_auto_004",
+        "name": "Римма",
+        "relation": "племянница (дочь золовки)"
+      },
+      "run_b": {
+        "id": "person_013",
+        "name": "Римма",
+        "relation": "племянница мужа"
+      }
+    },
+    {
+      "run_a": {
+        "id": "person_auto_005",
+        "name": "Зина",
+        "relation": "племянница (дочь золовки)"
+      },
+      "run_b": {
+        "id": "person_014",
+        "name": "Зина",
+        "relation": "племянница мужа"
+      }
+    },
+    {
+      "run_a": {
+        "id": "person_auto_006",
+        "name": "Толя",
+        "relation": "племянник (сын сестры)"
+      },
+      "run_b": {
+        "id": "person_015",
+        "name": "Толя",
+        "relation": "племянник"
+      }
+    },
+    {
+      "run_a": {
+        "id": "person_auto_007",
+        "name": "Коля",
+        "relation": "племянник (сын сестры)"
+      },
+      "run_b": {
+        "id": "person_016",
+        "name": "Коля",
+        "relation": "племянник"
+      }
+    },
+    {
+      "run_a": {
+        "id": "person_auto_008",
+        "name": "Витя",
+        "relation": "племянник (сын сестры)"
+      },
+      "run_b": {
+        "id": "person_017",
+        "name": "Витя",
+        "relation": "племянник"
+      }
+    }
+  ],
+  "only_in_a": [
+    {
+      "id": "person_auto_009",
+      "name": "Сафронов",
+      "relation": "неясно"
+    }
+  ],
+  "only_in_b": [],
+  "match_count": 18,
+  "total_a": 19,
+  "total_b": 18,
+  "stability_score": 0.947
+}
