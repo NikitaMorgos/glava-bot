@@ -1,0 +1,186 @@
+# Регрессионные тесты: известные галлюцинации и ошибки по проекту Каракулиной
+#
+# Формат каждой записи:
+#   id:           уникальный идентификатор
+#   run:          прогон, где проблема впервые зафиксирована
+#   agent:        агент-источник ошибки (ghostwriter / fact_checker / phase_b_merge / ...)
+#   type:         тип нарушения (hallucination / structure_violation / framing_distortion /
+#                               data_loss / fc_miss)
+#   severity:     critical / high / medium
+#   description:  человекочитаемое описание
+#   pattern:      паттерн для детекции в тексте (regex-совместимый)
+#   chapter:      глава, в которой встречается (ch_01 / ch_02 / ...)
+#   fact_source:  что РЕАЛЬНО есть в fact_map (чтобы отличить от выдумки)
+#   fix_applied:  в каком промпте/версии исправлено
+#   verified_fix: прогон, в котором исправление подтверждено (null = ещё не проверено)
+
+known_issues:
+
+  # ── ГАЛЛЮЦИНАЦИИ / FRAMING DISTORTION ──────────────────────────────────────
+
+  - id: KAR-001
+    run: v30
+    agent: ghostwriter
+    type: framing_distortion
+    severity: critical
+    description: >
+      Ghostwriter обобщает единичный эпизод (чемодан с огурцами вместо подарков)
+      в черту характера: «раздражалась, что муж не привозит подарки».
+      В fact_map — один эпизод с конкретным предметом, обобщение в привычку недопустимо.
+    pattern: "раздражал(ась|ся).{0,40}(подарк|привёз|не привоз)"
+    chapter: ch_03, ch_04
+    fact_source: "Один эпизод: муж привёз огурцы вместо ожидаемых вещей."
+    fix_applied: "03_ghostwriter_v2.12.md (АБСОЛЮТНЫЕ ЗАПРЕТЫ §5), 04_fact_checker_v2.5.md (паттерн v2.5)"
+    verified_fix: null
+
+  - id: KAR-002
+    run: v29
+    agent: ghostwriter
+    type: hallucination
+    severity: high
+    description: >
+      Ghostwriter использует формулировку «выковыривать как символ» — натяжка,
+      не подтверждённая источником.
+    pattern: "выковыривал.{0,20}(как символ|символ)"
+    chapter: ch_02
+    fact_source: null
+    fix_applied: "03_ghostwriter_v2.11.md"
+    verified_fix: v32
+
+  - id: KAR-003
+    run: v29
+    agent: ghostwriter
+    type: hallucination
+    severity: critical
+    description: >
+      Ghostwriter вводит «семейную драму с Валерой» — персонаж и конфликт,
+      не присутствующие в fact_map.
+    pattern: "семейн.{0,20}драм.{0,20}Валер|Валер.{0,40}конфликт|драма.{0,40}сын"
+    chapter: ch_03
+    fact_source: null
+    fix_applied: "03_ghostwriter_v2.11.md"
+    verified_fix: v32
+
+  - id: KAR-004
+    run: v29
+    agent: ghostwriter
+    type: hallucination
+    severity: high
+    description: >
+      Ghostwriter упоминает «революцию» как значимое событие в биографии,
+      хотя в fact_map оно отсутствует.
+    pattern: "революци[яи].{0,60}(семь|жизн|героин|её)"
+    chapter: ch_01
+    fact_source: null
+    fix_applied: "03_ghostwriter_v2.11.md"
+    verified_fix: v32
+
+  # ── СТРУКТУРНЫЕ НАРУШЕНИЯ ───────────────────────────────────────────────────
+
+  - id: KAR-005
+    run: v32
+    agent: ghostwriter
+    type: structure_violation
+    severity: critical
+    description: >
+      ch_01.timeline пустой ([]) в финальном JSON после Phase B merge.
+      Stage 2 Ghostwriter сгенерировал timeline корректно, но Phase B merge
+      перезаписал ch_01 из Phase B, где timeline отсутствовал.
+    pattern: null
+    chapter: ch_01
+    json_check: "book_FINAL.chapters[ch_01].timeline must have length >= 4"
+    fact_source: "bio_data содержит периоды, достаточные для 4-7 этапов."
+    fix_applied: >
+      test_stage2_phase_b.py: merge_phase_b_into_book() явно копирует
+      ch_01.bio_data и ch_01.timeline из current_book если is_modified=True.
+      03_ghostwriter_v2.12.md: АБСОЛЮТНЫЕ ЗАПРЕТЫ §6 (timeline обязателен).
+      04_fact_checker_v2.5.md: ch_01 проверяется всегда (строка 180-189).
+    verified_fix: null
+
+  - id: KAR-006
+    run: v29, v32
+    agent: ghostwriter
+    type: structure_violation
+    severity: critical
+    description: >
+      historical_notes[].title и historical_notes[].content пустые ("").
+      Исторические справки помещены в chapter.content как ***текст справки***
+      вместо массива historical_notes.
+    pattern: "\\*\\*\\*[^*]{20,}\\*\\*\\*"
+    chapter: ch_02
+    json_check: >
+      book_FINAL.chapters[ch_02].historical_notes must be non-empty array,
+      each element must have non-empty title AND content.
+    fact_source: "Историк сформировал historical_notes в Stage 2."
+    fix_applied: >
+      03_ghostwriter_v2.12.md: АБСОЛЮТНЫЕ ЗАПРЕТЫ §7 (historical_notes только
+      в массиве, title/content обязательны, ***тройные звёздочки*** в content запрещены).
+      04_fact_checker_v2.5.md: паттерн v2.5 (пустые historical_notes → critical).
+    verified_fix: null
+
+  # ── FC MISS (пропуски Фактчекера) ──────────────────────────────────────────
+
+  - id: KAR-007
+    run: v32
+    agent: fact_checker
+    type: fc_miss
+    severity: critical
+    description: >
+      FC v2.4 не флагнул пустой ch_01.timeline (KAR-005) несмотря на правило #8.
+      Причина: FC не проверял ch_01 явно при phase=B итерациях.
+    pattern: null
+    chapter: ch_01
+    fix_applied: >
+      04_fact_checker_v2.5.md: явное правило «ch_01 проверяется всегда»
+      независимо от affected_chapters и phase (строки 180-189).
+    verified_fix: null
+
+  - id: KAR-008
+    run: v32
+    agent: fact_checker
+    type: fc_miss
+    severity: critical
+    description: >
+      FC v2.4 не флагнул «раздражалась на подарки» (KAR-001) — паттерн
+      «один эпизод ≠ черта характера» был недостаточно специфичен.
+    pattern: null
+    chapter: ch_03, ch_04
+    fix_applied: >
+      04_fact_checker_v2.5.md: СПЕЦИАЛЬНЫЙ ПАТТЕРН v2.5 «раздражалась на
+      подарок/вещь» с явным примером (строки 494-504).
+    verified_fix: null
+
+  - id: KAR-009
+    run: v32
+    agent: fact_checker
+    type: fc_miss
+    severity: critical
+    description: >
+      FC v2.4 не флагнул пустые historical_notes и ***triple-asterisk*** в content (KAR-006).
+    pattern: null
+    chapter: ch_02
+    fix_applied: >
+      04_fact_checker_v2.5.md: СПЕЦИАЛЬНЫЙ ПАТТЕРН v2.5 «пустые или
+      дублирующие historical_notes» (строки 506-515).
+    verified_fix: null
+
+  # ── DATA LOSS ───────────────────────────────────────────────────────────────
+
+  - id: KAR-010
+    run: v32
+    agent: phase_b_merge
+    type: data_loss
+    severity: critical
+    description: >
+      Phase B merge перезаписывает ch_01.bio_data и ch_01.timeline пустыми
+      значениями, если Phase B Ghostwriter возвращает ch_01 с is_modified=True
+      но без этих полей.
+    pattern: null
+    chapter: ch_01
+    json_check: >
+      После merge: book_FINAL.chapters[ch_01].bio_data must not be null/empty,
+      book_FINAL.chapters[ch_01].timeline must have length >= 4.
+    fix_applied: >
+      test_stage2_phase_b.py: функция merge_phase_b_into_book() строки 130-141:
+      явная защита ch_01.bio_data и ch_01.timeline от перезаписи.
+    verified_fix: null

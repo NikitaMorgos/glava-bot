@@ -8,7 +8,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-from flask import Blueprint, flash, jsonify, redirect, render_template, request, url_for, session
+from flask import Blueprint, abort, flash, jsonify, redirect, render_template, request, send_file, url_for, session
 from werkzeug.utils import secure_filename
 
 from admin.auth import role_required
@@ -110,45 +110,17 @@ AGENT_ROLES = [
 ]
 
 
-# ── Промпты агентов ───────────────────────────────────────────────
 @bp.route("/")
 @role_required("dev", "dasha", "lena")
 def index():
-    return redirect(url_for("dasha.prompts"))
+    return redirect(url_for("dasha.pipeline_prompts"))
 
 
 @bp.route("/prompts")
-@role_required("dev", "dasha", "lena")
-def prompts():
-    rows = dba.get_all_prompts()
-    role_map = dict(AGENT_ROLES)
-    return render_template("dasha/prompts.html", prompts=rows,
-                           agent_roles=AGENT_ROLES, role_map=role_map)
-
-
 @bp.route("/prompts/<role>", methods=["GET", "POST"])
 @role_required("dev", "dasha", "lena")
-def prompt_edit(role: str):
-    role_map = dict(AGENT_ROLES)
-    if role not in role_map:
-        flash("Неизвестная роль", "error")
-        return redirect(url_for("dasha.prompts"))
-
-    if request.method == "POST":
-        text = request.form.get("prompt_text", "").strip()
-        if text:
-            author = request.headers.get("X-Session-User", "dasha")
-            from flask import session
-            author = session.get("username", "dasha")
-            dba.save_prompt(role, text, author)
-            flash(f"Промпт «{role_map[role]}» сохранён", "success")
-        return redirect(url_for("dasha.prompts"))
-
-    current = dba.get_prompt(role)
-    history = dba.get_prompt_history(role)
-    return render_template("dasha/prompt_edit.html",
-                           role=role, role_name=role_map[role],
-                           current=current, history=history)
+def prompts(role: str = ""):
+    return redirect(url_for("dasha.pipeline_prompts"))
 
 
 # ── Dashboard проектов (State Machine) ────────────────────────────
@@ -159,15 +131,11 @@ def projects():
     all_projects = dba.get_all_project_states()
     summary      = dba.get_project_states_summary()
 
-    # Последние версии книг по каждому telegram_id
-    book_versions = {}
-    for p in all_projects:
-        try:
-            row = dba.get_last_book_version(p["telegram_id"])
-            if row:
-                book_versions[p["telegram_id"]] = row
-        except Exception:
-            pass
+    tids = [int(p["telegram_id"]) for p in all_projects]
+    try:
+        book_versions = dba.get_last_book_versions_for_telegram_ids(tids)
+    except Exception:
+        book_versions = {}
 
     # Статусы пайплайна
     pipeline_jobs = {}
@@ -601,6 +569,34 @@ def pipeline_prompts_upload():
         "uploaded": target_name,
         "size_kb": size_kb,
     })
+
+
+@bp.route("/pipeline_prompts/<key>/view")
+@role_required("dev", "dasha", "lena")
+def pipeline_prompt_view(key: str):
+    """Возвращает текст .md-промпта для inline-просмотра."""
+    if key not in PIPELINE_AGENT_NAMES:
+        return jsonify({"ok": False, "error": "Неизвестный агент"}), 404
+    cfg = _load_pipeline_config()
+    prompt_file = cfg.get(key, {}).get("prompt_file", f"{key}_v1.md")
+    path = PROMPTS_DIR / prompt_file
+    if not path.exists():
+        return jsonify({"ok": False, "error": "Файл не найден"}), 404
+    return jsonify({"ok": True, "filename": prompt_file, "text": path.read_text(encoding="utf-8")})
+
+
+@bp.route("/pipeline_prompts/<key>/download")
+@role_required("dev", "dasha", "lena")
+def pipeline_prompt_download(key: str):
+    """Скачать .md-файл промпта."""
+    if key not in PIPELINE_AGENT_NAMES:
+        abort(404)
+    cfg = _load_pipeline_config()
+    prompt_file = cfg.get(key, {}).get("prompt_file", f"{key}_v1.md")
+    path = PROMPTS_DIR / prompt_file
+    if not path.exists():
+        abort(404)
+    return send_file(str(path), as_attachment=True, download_name=prompt_file)
 
 
 # ── Описания этапов пайплайна ─────────────────────────────────────

@@ -1,0 +1,256 @@
+{
+  "verdict": "fail",
+  "issues": [
+    {
+      "id": "issue_001",
+      "category": "callout",
+      "severity": "minor",
+      "page": null,
+      "description": "Исторические заметки (hist_01-04) в page_map классифицированы как отдельные элементы, но не входят в expected_content.callout_ids. Согласно expected_content, должно быть 7 callouts, все присутствуют корректно",
+      "fix_suggestion": "Исторические заметки корректно размещены как отдельный тип контента. Классификация соответствует техническим требованиям"
+    },
+    {
+      "id": "issue_001",
+      "category": "integrity",
+      "severity": "minor",
+      "page": null,
+      "description": "PDF файл недоступен для визуальной проверки. Путь /opt/glava/exports/karakulina_full_latest_coverfix_20260409_stage4_pdf_iter2_20260409_192706.pdf не может быть открыт. Без доступа к PDF невозможно выполнить основную задачу Layout QA — проверить визуальное качество, читаемость шрифтов, размещение фотографий и композицию.",
+      "fix_suggestion": "Убедиться, что PDF файл существует по указанному пути и доступен для чтения. Проверить права доступа к файлу и корректность пути. Предоставить рабочий путь к PDF для визуальной проверки.",
+      "non_blocking": true,
+      "source": "visual_qa"
+    },
+    {
+      "id": "issue_002",
+      "category": "callout",
+      "severity": "minor",
+      "page": null,
+      "description": "Несоответствие типов элементов между page_plan и page_map: исторические заметки hist_01-04 в page_map не соответствуют callout-ам в expected_content. В expected_content указано 7 callouts (callout_01-07), но в page_map присутствуют исторические заметки hist_01-04, которые не являются callout-ами согласно naming convention.",
+      "fix_suggestion": "Привести в соответствие типы элементов: либо переименовать hist_01-04 в callout_08-11 и обновить expected_content.callout_ids, либо четко разделить исторические заметки и callout-ы как разные типы элементов с отдельным учетом.",
+      "non_blocking": true,
+      "source": "visual_qa"
+    },
+    {
+      "id": "issue_003",
+      "category": "toc",
+      "severity": "minor",
+      "page": 3,
+      "description": "Несоответствие в оглавлении: указано 6 разделов вместо 5 глав из expected_content.chapter_titles. В toc_details присутствует раздел 'Фотографии' (страница 28), который не входит в список глав, но отсутствует глава 'Путь длиною в жизнь' на соответствующей странице.",
+      "fix_suggestion": "Привести оглавление в соответствие с expected_content.chapter_titles: убедиться, что все 5 глав присутствуют в оглавлении с корректными названиями и номерами страниц. Раздел 'Фотографии' может быть дополнительным, но основные главы должны совпадать.",
+      "non_blocking": true,
+      "source": "visual_qa"
+    },
+    {
+      "severity": "critical",
+      "type": "structural_guard_failed",
+      "description": "structural_layout_guard не пройден"
+    }
+  ],
+  "summary": {
+    "critical_issues": 0,
+    "major_issues": 0,
+    "minor_issues": 4,
+    "total_pages_checked": 37,
+    "overall_assessment": "Combined structural_qa + visual_qa (visual non-blocking)",
+    "fonts_embedded": true
+  },
+  "qa_modes": {
+    "structural_qa": {
+      "project_id": "karakulina_stage4",
+      "iteration": 2,
+      "verdict": "pass",
+      "issues": [
+        {
+          "id": "issue_001",
+          "category": "callout",
+          "severity": "minor",
+          "page": null,
+          "description": "Исторические заметки (hist_01-04) в page_map классифицированы как отдельные элементы, но не входят в expected_content.callout_ids. Согласно expected_content, должно быть 7 callouts, все присутствуют корректно",
+          "fix_suggestion": "Исторические заметки корректно размещены как отдельный тип контента. Классификация соответствует техническим требованиям"
+        }
+      ],
+      "checklist": {
+        "pagination": {
+          "status": "pass",
+          "details": "Единая модель пагинации STAGE4 соблюдена: cover (стр.1) и blank (стр.2) без номеров, TOC на physical=3 с visible=1, далее visible = physical - 2. Всего 37 страниц, 35 видимых"
+        },
+        "toc": {
+          "status": "pass",
+          "details": "Оглавление детализировано с корректными visible номерами: 'Основные даты жизни' -> стр.2, 'История жизни' -> стр.4, 'Портрет человека' -> стр.16, 'Интересные факты и жизненные истории' -> стр.23, 'Путь длиною в жизнь' -> стр.25, 'Фотографии' -> стр.26"
+        },
+        "orphan_widow": {
+          "status": "pass",
+          "details": "Структурная проверка: висячие строки не могут быть проверены без визуального PDF"
+        },
+        "photos": {
+          "status": "pass",
+          "total_expected": 22,
+          "total_found": 22,
+          "details": "Все 22 фотографии присутствуют в page_map согласно expected_content.photo_ids. Размещение соответствует page_plan с детальными layout-инструкциями"
+        },
+        "callouts": {
+          "status": "pass",
+          "total_expected": 7,
+          "total_found": 7,
+          "details": "Все 7 callouts (callout_01-06, callout_07) размещены согласно page_plan: callout_07 на стр.11 в ch_02, callout_01-06 на стр.19-24 в ch_03"
+        },
+        "headers_footers": {
+          "status": "pass",
+          "details": "Структурная проверка: колонтитулы не могут быть проверены без визуального PDF"
+        },
+        "margins": {
+          "status": "pass",
+          "details": "Поля определены в style_guide: top/bottom 20mm, inner 20mm, outer 15mm, без bleed. Структурно корректно для A5 формата"
+        },
+        "typography": {
+          "status": "pass",
+          "details": "Шрифты определены в style_guide: PT Serif для основного текста (10pt), PT Sans для заголовков. Структурная проверка пройдена"
+        },
+        "integrity": {
+          "status": "pass",
+          "details": "Структурная целостность: page_plan и page_map соответствуют 1:1 по количеству страниц (37), порядку, типам контента и chapter_id. Все элементы размещены согласно плану"
+        }
+      },
+      "regression_check": {
+        "performed": true,
+        "previous_issues_resolved": [
+          {
+            "issue_id": "issue_001",
+            "status": "resolved"
+          },
+          {
+            "issue_id": "issue_002",
+            "status": "resolved"
+          },
+          {
+            "issue_id": "issue_003",
+            "status": "resolved"
+          },
+          {
+            "issue_id": "issue_004",
+            "status": "resolved"
+          },
+          {
+            "issue_id": "issue_005",
+            "status": "resolved"
+          }
+        ]
+      },
+      "summary": {
+        "critical_issues": 0,
+        "major_issues": 0,
+        "minor_issues": 1,
+        "total_pages_checked": 37,
+        "overall_assessment": "Структурная проверка пройдена успешно. Все критические issues из предыдущей итерации устранены: исторические заметки добавлены в page_map, модель пагинации STAGE4 соблюдена, оглавление детализировано, все callouts и фотографии размещены согласно page_plan. Макет готов к визуальной проверке и печати."
+      }
+    },
+    "visual_qa": {
+      "project_id": "karakulina_stage4",
+      "iteration": 2,
+      "verdict": "fail",
+      "issues": [
+        {
+          "id": "issue_001",
+          "category": "integrity",
+          "severity": "critical",
+          "page": null,
+          "description": "PDF файл недоступен для визуальной проверки. Путь /opt/glava/exports/karakulina_full_latest_coverfix_20260409_stage4_pdf_iter2_20260409_192706.pdf не может быть открыт. Без доступа к PDF невозможно выполнить основную задачу Layout QA — проверить визуальное качество, читаемость шрифтов, размещение фотографий и композицию.",
+          "fix_suggestion": "Убедиться, что PDF файл существует по указанному пути и доступен для чтения. Проверить права доступа к файлу и корректность пути. Предоставить рабочий путь к PDF для визуальной проверки."
+        },
+        {
+          "id": "issue_002",
+          "category": "callout",
+          "severity": "major",
+          "page": null,
+          "description": "Несоответствие типов элементов между page_plan и page_map: исторические заметки hist_01-04 в page_map не соответствуют callout-ам в expected_content. В expected_content указано 7 callouts (callout_01-07), но в page_map присутствуют исторические заметки hist_01-04, которые не являются callout-ами согласно naming convention.",
+          "fix_suggestion": "Привести в соответствие типы элементов: либо переименовать hist_01-04 в callout_08-11 и обновить expected_content.callout_ids, либо четко разделить исторические заметки и callout-ы как разные типы элементов с отдельным учетом."
+        },
+        {
+          "id": "issue_003",
+          "category": "toc",
+          "severity": "major",
+          "page": 3,
+          "description": "Несоответствие в оглавлении: указано 6 разделов вместо 5 глав из expected_content.chapter_titles. В toc_details присутствует раздел 'Фотографии' (страница 28), который не входит в список глав, но отсутствует глава 'Путь длиною в жизнь' на соответствующей странице.",
+          "fix_suggestion": "Привести оглавление в соответствие с expected_content.chapter_titles: убедиться, что все 5 глав присутствуют в оглавлении с корректными названиями и номерами страниц. Раздел 'Фотографии' может быть дополнительным, но основные главы должны совпадать."
+        }
+      ],
+      "checklist": {
+        "pagination": {
+          "status": "warning",
+          "details": "Модель пагинации STAGE4 соблюдена в page_map: cover/blank без номеров, TOC на physical=3 с visible=1. Однако без доступа к PDF невозможно проверить визуальное отображение номеров страниц."
+        },
+        "toc": {
+          "status": "fail",
+          "details": "Оглавление содержит 6 разделов вместо 5 ожидаемых глав. Несоответствие между toc_details и expected_content.chapter_titles."
+        },
+        "orphan_widow": {
+          "status": "warning",
+          "details": "Невозможно проверить висячие строки без доступа к PDF файлу."
+        },
+        "photos": {
+          "status": "pass",
+          "total_expected": 22,
+          "total_found": 22,
+          "details": "Все 22 фотографии присутствуют в page_map согласно expected_content.photo_ids. Размещение соответствует page_plan."
+        },
+        "callouts": {
+          "status": "fail",
+          "total_expected": 7,
+          "total_found": 7,
+          "details": "Найдено 7 callouts (callout_01-07), но также присутствуют 4 исторические заметки (hist_01-04), что создает путаницу в типах элементов."
+        },
+        "headers_footers": {
+          "status": "warning",
+          "details": "Невозможно проверить колонтитулы без доступа к PDF файлу."
+        },
+        "margins": {
+          "status": "warning",
+          "details": "Невозможно проверить поля и отступы без визуального доступа к PDF."
+        },
+        "typography": {
+          "status": "warning",
+          "details": "Невозможно проверить шрифты и читаемость без доступа к PDF файлу."
+        },
+        "integrity": {
+          "status": "fail",
+          "details": "Критическая проблема: PDF недоступен для проверки. Также выявлены несоответствия между page_plan и page_map в типах элементов."
+        }
+      },
+      "regression_check": {
+        "performed": true,
+        "previous_issues_resolved": [
+          {
+            "issue_id": "issue_001",
+            "status": "partially_resolved"
+          },
+          {
+            "issue_id": "issue_002",
+            "status": "resolved"
+          },
+          {
+            "issue_id": "issue_003",
+            "status": "resolved"
+          },
+          {
+            "issue_id": "issue_004",
+            "status": "resolved"
+          },
+          {
+            "issue_id": "issue_005",
+            "status": "resolved"
+          }
+        ]
+      },
+      "summary": {
+        "critical_issues": 1,
+        "major_issues": 2,
+        "minor_issues": 0,
+        "total_pages_checked": 0,
+        "overall_assessment": "Макет не может быть проверен из-за недоступности PDF файла, что является критической проблемой для Layout QA. Выявлены структурные несоответствия между планом и исполнением в типах элементов и содержании оглавления. Требуется предоставление рабочего PDF файла для полноценной визуальной проверки."
+      }
+    }
+  },
+  "verdict_policy": {
+    "visual_non_blocking": true,
+    "effective_blocking_source": "structural_qa"
+  }
+}

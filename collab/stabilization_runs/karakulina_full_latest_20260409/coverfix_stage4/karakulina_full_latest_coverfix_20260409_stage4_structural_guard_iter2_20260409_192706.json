@@ -1,0 +1,90 @@
+{
+  "gate": "structural_layout_guard",
+  "passed": false,
+  "checks": {
+    "page_map_not_empty": true,
+    "page_plan_not_empty": true,
+    "page_plan_vs_page_map_exact_len": true,
+    "technical_total_matches_page_map": true,
+    "page_plan_contract_ok": true,
+    "callouts_follow_page_plan": true,
+    "pagination_model_ok": false
+  },
+  "page_type_mapping_table": {
+    "cover": "cover",
+    "blank": "blank",
+    "toc": "toc",
+    "chapter_start": "chapter_start",
+    "text_only/text_with_photo/text_with_photos/text_with_callout/bio_timeline": "chapter_body",
+    "photo_section/photo_section_start/full_page_photo": "photo_page",
+    "final_page": "final_page"
+  },
+  "contract_violations": [],
+  "callouts": {
+    "expected_from_page_plan": {
+      "callout_07": 11,
+      "callout_01": 19,
+      "callout_02": 20,
+      "callout_03": 21,
+      "callout_04": 22,
+      "callout_05": 23,
+      "callout_06": 24
+    },
+    "found_in_page_map": {
+      "callout_07": 11,
+      "callout_01": 19,
+      "callout_02": 20,
+      "callout_03": 21,
+      "callout_04": 22,
+      "callout_05": 23,
+      "callout_06": 24
+    },
+    "violations": [],
+    "warnings": []
+  },
+  "pagination_model": {
+    "checks": {
+      "first_page_is_cover": true,
+      "second_page_is_blank": true,
+      "third_page_is_toc": true,
+      "toc_visible_numbering_matches_chapter_starts": false
+    },
+    "toc_mismatches": [
+      {
+        "index": 0,
+        "toc_page": 4,
+        "expected_visible_page": 2,
+        "chapter_id": "ch_01",
+        "chapter_physical_page": 4
+      },
+      {
+        "index": 1,
+        "toc_page": 6,
+        "expected_visible_page": 4,
+        "chapter_id": "ch_02",
+        "chapter_physical_page": 6
+      },
+      {
+        "index": 2,
+        "toc_page": 18,
+        "expected_visible_page": 16,
+        "chapter_id": "ch_03",
+        "chapter_physical_page": 18
+      },
+      {
+        "index": 3,
+        "toc_page": 25,
+        "expected_visible_page": 23,
+        "chapter_id": "ch_04",
+        "chapter_physical_page": 25
+      },
+      {
+        "index": 4,
+        "toc_page": 27,
+        "expected_visible_page": 25,
+        "chapter_id": "epilogue",
+        "chapter_physical_page": 27
+      }
+    ]
+  }
+}

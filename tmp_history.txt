@@ -1,0 +1,20 @@
+fact_map_v34.json
+  persons total: 15
+  Tatyana in persons[]: True
+  narrator_001 referenced: True
+
+karakulina_fact_map_full_20260413_042556.json
+  persons total: 20
+  Tatyana in persons[]: True
+  narrator_001 referenced: True
+
+fact_map_v29.json
+  persons total: 17
+  Tatyana in persons[]: False
+  narrator_001 referenced: True
+
+fact_map_v30.json
+  persons total: 17
+  Tatyana in persons[]: False
+  narrator_001 referenced: True
+

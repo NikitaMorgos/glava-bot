@@ -1,0 +1,77 @@
+{
+    'background': '#faf8f5',
+    'text_primary': '#111111',
+    'text_secondary': '#666666',
+    'accent': '#e8e0d4',
+    'historical_bg': '#1a1a2e',
+    'historical_text': '#ffffff'
+}
+
+class BookLayouter:
+    def __init__(self, data):
+        self.data = data
+        self.project_id = data['project_id']
+        self.book_json_path = data.get('book_json_path')
+        self.photos_dir = data.get('photos_dir')
+        self.pdf_output_path = data.get('pdf_output_path')
+        
+        # Загружаем данные из файлов
+        self.load_book_data()
+        self.setup_fonts()
+        self.create_style_guide()
+        
+    def load_book_data(self):
+        """Загружает текст и фотографии из файлов"""
+        if self.book_json_path and os.path.exists(self.book_json_path):
+            with open(self.book_json_path, 'r', encoding='utf-8') as f:
+                book_data = json.load(f)
+                # Обновляем данные из файла
+                if 'text' in book_data:
+                    self.data['text'] = book_data['text']
+                if 'photos' in book_data:
+                    self.data['photos'] = book_data['photos']
+    
+    def setup_fonts(self):
+        """Регистрирует шрифты для ReportLab"""
+        try:
+            # Пытаемся зарегистрировать PT Serif и PT Sans
+            font_paths = {
+                'PTSerif-Regular': '/usr/share/fonts/truetype/paratype/PTSerif-Regular.ttf',
+                'PTSerif-Bold': '/usr/share/fonts/truetype/paratype/PTSerif-Bold.ttf',
+                'PTSerif-Italic': '/usr/share/fonts/truetype/paratype/PTSerif-Italic.ttf',
+                'PTSans-Regular': '/usr/share/fonts/truetype/paratype/PTSans-Regular.ttf',
+                'PTSans-Bold': '/usr/share/fonts/truetype/paratype/PTSans-Bold.ttf'
+            }
+            
+            for font_name, font_path in font_paths.items():
+                if os.path.exists(font_path):
+                    pdfmetrics.registerFont(TTFont(font_name, font_path))
+                    
+            # Проверяем что шрифты зарегистрированы
+            registered = pdfmetrics.getRegisteredFontNames()
+            if 'PTSerif-Regular' not in registered:
+                print("WARNING: PT Serif не найден, используем Times-Roman")
+                
+        except Exception as e:
+            print(f"WARNING: Ошибка регистрации шрифтов: {e}")
+    
+    def create_style_guide(self):
+        """Создаёт стиль-гайд для книги"""
+        self.style_guide = {
+            "page": {
+                "format": "A5",
+                "width_mm": 148,
+                "height_mm": 210,
+                "margins": {
+                    "top_mm": 20,
+                    "bottom_mm": 20,
+                    "inner_mm": 20,
+                    "outer_mm": 15
+                }
+            },
+            "typography": {
+                "body_font": {
+                    "family": "PTSerif-Regular",
+                    "size_pt": 10,
+                    "line_height": 1.4,
+                    "color": COLORS['text_

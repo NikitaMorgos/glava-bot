@@ -1,0 +1,537 @@
+{
+  "project_id": "karakulina_stage4",
+  "page_plan": [
+    {
+      "page_number": 1,
+      "page_type": "cover",
+      "content": "cover_composition"
+    },
+    {
+      "page_number": 2,
+      "page_type": "blank",
+      "content": null
+    },
+    {
+      "page_number": 3,
+      "page_type": "toc",
+      "content": "auto_generate"
+    },
+    {
+      "page_number": 4,
+      "page_type": "chapter_start",
+      "chapter_id": "ch_01",
+      "elements": [
+        {
+          "type": "chapter_header"
+        },
+        {
+          "type": "bio_data_block"
+        }
+      ]
+    },
+    {
+      "page_number": 5,
+      "page_type": "bio_timeline",
+      "chapter_id": "ch_01",
+      "elements": [
+        {
+          "type": "timeline_block"
+        }
+      ]
+    },
+    {
+      "page_number": 6,
+      "page_type": "chapter_start",
+      "chapter_id": "ch_02",
+      "elements": [
+        {
+          "type": "chapter_header"
+        },
+        {
+          "type": "text",
+          "paragraphs": [
+            "p_ch02_001",
+            "p_ch02_002"
+          ]
+        }
+      ]
+    },
+    {
+      "page_number": 7,
+      "page_type": "text_with_photo",
+      "chapter_id": "ch_02",
+      "elements": [
+        {
+          "type": "photo",
+          "photo_id": "photo_017",
+          "orientation": "vertical",
+          "layout": "wrap_right",
+          "width_percent": 45,
+          "text_beside_photo": [
+            "p_ch02_003",
+            "p_ch02_004"
+          ],
+          "text_after_photo": [
+            "p_ch02_005"
+          ],
+          "rationale": "Довоенное фото (1938-1940) рядом с абзацем об учёбе в медицинской школе"
+        }
+      ]
+    },
+    {
+      "page_number": 8,
+      "page_type": "text_only",
+      "chapter_id": "ch_02",
+      "elements": [
+        {
+          "type": "text",
+          "paragraphs": [
+            "p_ch02_006",
+            "p_ch02_007",
+            "p_ch02_008"
+          ]
+        }
+      ]
+    },
+    {
+      "page_number": 9,
+      "page_type": "text_with_photo",
+      "chapter_id": "ch_02",
+      "elements": [
+        {
+          "type": "photo",
+          "photo_id": "photo_021",
+          "orientation": "vertical",
+          "layout": "wrap_left",
+          "width_percent": 45,
+          "text_beside_photo": [
+            "p_ch02_009",
+            "p_ch02_010"
+          ],
+          "text_after_photo": [
+            "p_ch02_011"
+          ],
+          "rationale": "Фронтовое фото рядом с абзацем о военной службе, чередование с предыдущим wrap_right"
+        }
+      ]
+    },
+    {
+      "page_number": 10,
+      "page_type": "text_with_photo",
+      "chapter_id": "ch_02",
+      "elements": [
+        {
+          "type": "text",
+          "paragraphs": [
+            "p_ch02_012"
+          ]
+        },
+        {
+          "type": "photo",
+          "photo_id": "photo_014",
+          "orientation": "horizontal",
+          "layout": "full_width",
+          "text_before_photo": [
+            "p_ch02_012"
+          ],
+          "text_after_photo": [
+            "p_ch02_013"
+          ],
+          "rationale": "Групповое фронтовое фото с подругами 1944 года — горизонтальное на полную ширину"
+        }
+      ]
+    },
+    {
+      "page_number": 11,
+      "page_type": "text_with_photo",
+      "chapter_id": "ch_02",
+      "elements": [
+        {
+          "type": "photo",
+          "photo_id": "photo_018",
+          "orientation": "horizontal",
+          "layout": "full_width",
+          "text_before_photo": [
+            "p_ch02_014"
+          ],
+          "text_after_photo": [
+            "p_ch02_015",
+            "p_ch02_016"
+          ],
+          "rationale": "Госпитальное фото 1944 года — горизонтальное на полную ширину между абзацами о войне"
+        }
+      ]
+    },
+    {
+      "page_number": 12,
+      "page_type": "text_with_photo",
+      "chapter_id": "ch_02",
+      "elements": [
+        {
+          "type": "photo",
+          "photo_id": "photo_008",
+          "orientation": "vertical",
+          "layout": "wrap_right",
+          "width_percent": 45,
+          "text_beside_photo": [
+            "p_ch02_017",
+            "p_ch02_018"
+          ],
+          "text_after_photo": [
+            "p_ch02_019"
+          ],
+          "rationale": "Семейное фото 1958 года рядом с абзацем о семье и переездах"
+        }
+      ]
+    },
+    {
+      "page_number": 13,
+      "page_type": "text_only",
+      "chapter_id": "ch_02",
+      "elements": [
+        {
+          "type": "text",
+          "paragraphs": [
+            "p_ch02_020",
+            "p_ch02_021",
+            "p_ch02_022"
+          ]
+        }
+      ]
+    },
+    {
+      "page_number": 14,
+      "page_type": "text_with_photo",
+      "chapter_id": "ch_02",
+      "elements": [
+        {
+          "type": "photo",
+          "photo_id": "photo_013",
+          "orientation": "horizontal",
+          "layout": "full_width",
+          "text_before_photo": [
+            "p_ch02_023"
+          ],
+          "text_after_photo": [
+            "p_ch02_024",
+            "p_ch02_025"
+          ],
+          "rationale": "Фото в поликлинике 1967 года — горизонтальное на полную ширину, рядом с абзацем о работе"
+        }
+      ]
+    },
+    {
+      "page_number": 15,
+      "page_type": "text_only",
+      "chapter_id": "ch_02",
+      "elements": [
+        {
+          "type": "text",
+          "paragraphs": [
+            "p_ch02_026",
+            "p_ch02_027",
+            "p_ch02_028"
+          ]
+        }
+      ]
+    },
+    {
+      "page_number": 16,
+      "page_type": "chapter_start",
+      "chapter_id": "ch_03",
+      "elements": [
+        {
+          "type": "chapter_header"
+        },
+        {
+          "type": "photo",
+          "photo_id": "photo_002",
+          "orientation": "vertical",
+          "layout": "wrap_right",
+          "width_percent": 45,
+          "text_beside_photo": [
+            "p_ch03_001",
+            "p_ch03_002"
+          ],
+          "text_after_photo": [
+            "p_ch03_003"
+          ],
+          "rationale": "Глава 03 — лучший портрет героя обязательно wrap_right с первым абзацем главы"
+        }
+      ]
+    },
+    {
+      "page_number": 17,
+      "page_type": "text_only",
+      "chapter_id": "ch_03",
+      "elements": [
+        {
+          "type": "text",
+          "paragraphs": [
+            "p_ch03_004",
+            "p_ch03_005",
+            "p_ch03_006"
+          ]
+        }
+      ]
+    },
+    {
+      "page_number": 18,
+      "page_type": "text_only",
+      "chapter_id": "ch_03",
+      "elements": [
+        {
+          "type": "text",
+          "paragraphs": [
+            "p_ch03_007",
+            "p_ch03_008",
+            "p_ch03_009"
+          ]
+        }
+      ]
+    },
+    {
+      "page_number": 19,
+      "page_type": "chapter_start",
+      "chapter_id": "ch_04",
+      "elements": [
+        {
+          "type": "chapter_header"
+        },
+        {
+          "type": "text",
+          "paragraphs": [
+            "p_ch04_001",
+            "p_ch04_002"
+          ]
+        }
+      ]
+    },
+    {
+      "page_number": 20,
+      "page_type": "text_only",
+      "chapter_id": "ch_04",
+      "elements": [
+        {
+          "type": "text",
+          "paragraphs": [
+            "p_ch04_003",
+            "p_ch04_004",
+            "p_ch04_005"
+          ]
+        }
+      ]
+    },
+    {
+      "page_number": 21,
+      "page_type": "chapter_start",
+      "chapter_id": "epilogue",
+      "elements": [
+        {
+          "type": "chapter_header"
+        },
+        {
+          "type": "text",
+          "paragraphs": [
+            "p_epilogue_001",
+            "p_epilogue_002"
+          ]
+        }
+      ]
+    },
+    {
+      "page_number": 22,
+      "page_type": "text_only",
+      "chapter_id": "epilogue",
+      "elements": [
+        {
+          "type": "text",
+          "paragraphs": [
+            "p_epilogue_003",
+            "p_epilogue_004"
+          ]
+        }
+      ]
+    },
+    {
+      "page_number": 23,
+      "page_type": "photo_section",
+      "chapter_id": null,
+      "elements": [
+        {
+          "type": "section_header",
+          "title": "Фотографии"
+        },
+        {
+          "type": "photo",
+          "photo_id": "photo_020",
+          "orientation": "vertical",
+          "layout": "full_width",
+          "rationale": "Фотопортрет — вертикальное фото на полную ширину страницы"
+        }
+      ]
+    },
+    {
+      "page_number": 24,
+      "page_type": "photo_section",
+      "chapter_id": null,
+      "elements": [
+        {
+          "type": "photo",
+          "photo_id": "photo_015",
+          "orientation": "vertical",
+          "layout": "full_width",
+          "rationale": "Прогулка в Калинине 1957 — вертикальное фото на полную ширину"
+        }
+      ]
+    },
+    {
+      "page_number": 25,
+      "page_type": "photo_section",
+      "chapter_id": null,
+      "elements": [
+        {
+          "type": "photo",
+          "photo_id": "photo_016",
+          "orientation": "vertical",
+          "layout": "full_width",
+          "rationale": "Горсад, прогулка 1957 — вертикальное фото на полную ширину"
+        }
+      ]
+    },
+    {
+      "page_number": 26,
+      "page_type": "photo_section",
+      "chapter_id": null,
+      "elements": [
+        {
+          "type": "photo",
+          "photo_id": "photo_009",
+          "orientation": "vertical",
+          "layout": "full_width",
+          "rationale": "Семейство 1957 — вертикальное фото на полную ширину"
+        }
+      ]
+    },
+    {
+      "page_number": 27,
+      "page_type": "photo_section",
+      "chapter_id": null,
+      "elements": [
+        {
+          "type": "photo",
+          "photo_id": "photo_010",
+          "orientation": "vertical",
+          "layout": "full_width",
+          "rationale": "С детьми — вертикальное фото на полную ширину"
+        }
+      ]
+    },
+    {
+      "page_number": 28,
+      "page_type": "photo_section",
+      "chapter_id": null,
+      "elements": [
+        {
+          "type": "photo",
+          "photo_id": "photo_011",
+          "orientation": "vertical",
+          "layout": "full_width",
+          "rationale": "С Валерой — вертикальное фото на полную ширину"
+        }
+      ]
+    },
+    {
+      "page_number": 29,
+      "page_type": "photo_section",
+      "chapter_id": null,
+      "elements": [
+        {
+          "type": "photo",
+          "photo_id": "photo_019",
+          "orientation": "vertical",
+          "layout": "full_width",
+          "rationale": "Возможно, в Венгрии — вертикальное фото на полную ширину"
+        }
+      ]
+    },
+    {
+      "page_number": 30,
+      "page_type": "photo_section",
+      "chapter_id": null,
+      "elements": [
+        {
+          "type": "photo_pair",
+          "layout": "pair_stack",
+          "photos": [
+            "photo_003",
+            "photo_022"
+          ],
+          "rationale": "Два горизонтальных фото из Сухуми 1960 года — стопкой на полную ширину"
+        }
+      ]
+    },
+    {
+      "page_number": 31,
+      "page_type": "photo_section",
+      "chapter_id": null,
+      "elements": [
+        {
+          "type": "photo_pair",
+          "layout": "pair_stack",
+          "photos": [
+            "photo_004",
+            "photo_005"
+          ],
+          "rationale": "Два горизонтальных фото из Сочи — стопкой на полную ширину"
+        }
+      ]
+    },
+    {
+      "page_number": 32,
+      "page_type": "photo_section",
+      "chapter_id": null,
+      "elements": [
+        {
+          "type": "photo_pair",
+          "layout": "pair_stack",
+          "photos": [
+            "photo_006",
+            "photo_007"
+          ],
+          "rationale": "Два горизонтальных фото из Сочи — стопкой на полную ширину"
+        }
+      ]
+    },
+    {
+      "page_number": 33,
+      "page_type": "photo_section",
+      "chapter_id": null,
+      "elements": [
+        {
+          "type": "photo_pair",
+          "layout": "pair_stack",
+          "photos": [
+            "photo_012",
+            "photo_001"
+          ],
+          "rationale": "Два горизонтальных фото — Алушта 1978 и поликлиника — стопкой"
+        }
+      ]
+    }
+  ],
+  "photo_distribution": {
+    "total_photos": 22,
+    "photos_in_text": 6,
+    "photos_in_section": 16,
+    "portrait_ch03": "photo_002",
+    "has_photo_section": true
+  },
+  "layout_stats": {
+    "total_pages": 33,
+    "text_only_pages": 8,
+    "text_with_photo_pages": 6,
+    "photo_section_pages": 11
+  },
+  "design_notes": "Книга построена по принципу равномерного распределения фото. В основном тексте размещено 6 фото с соблюдением хронологии и тематической привязки. Портрет photo_002 зарезервирован для главы 03 как лучший портретный снимок. Остальные 16 фото размещены в разделе 'Фотографии' — вертикальные по одному на страницу на полную ширину, горизонтальные парами стопкой. Соблюдён баланс разворотов и ритм чередования текста с изображениями. Все фото привязаны к соответствующим временным периодам."
+}

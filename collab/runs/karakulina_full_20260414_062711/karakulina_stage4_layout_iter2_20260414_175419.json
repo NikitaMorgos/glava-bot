@@ -1,0 +1,975 @@
+{
+  "project_id": "karakulina_stage4",
+  "pages": [
+    {
+      "page_number": 1,
+      "type": "cover",
+      "elements": [
+        {
+          "type": "cover_background",
+          "color": "#faf6f0"
+        },
+        {
+          "type": "cover_line_top_A",
+          "color": "#c4a070",
+          "opacity": 0.4,
+          "height_pt": 0.5,
+          "width_mm": 108
+        },
+        {
+          "type": "cover_surname",
+          "text": "КАРАКУЛИНА",
+          "font": "PT Serif Bold",
+          "size_pt": 27,
+          "color": "#3d2e1f",
+          "align": "center",
+          "transform": "uppercase",
+          "letter_spacing_px": 6
+        },
+        {
+          "type": "cover_first_name",
+          "text": "Валентина Ивановна",
+          "font": "PT Serif Italic",
+          "size_pt": 14,
+          "color": "#8b7355",
+          "align": "center",
+          "margin_top_pt": 4
+        },
+        {
+          "type": "cover_line_bottom_A",
+          "color": "#c4a070",
+          "opacity": 0.4,
+          "height_pt": 0.5,
+          "width_mm": 108
+        },
+        {
+          "type": "cover_line_top_C",
+          "color": "#c4a070",
+          "opacity": 0.4,
+          "height_pt": 0.5,
+          "width_mm": 108
+        },
+        {
+          "type": "cover_years",
+          "text": "род. 1920",
+          "font": "PT Sans",
+          "size_pt": 9,
+          "color": "#b8a88a",
+          "align": "center",
+          "letter_spacing_px": 2
+        },
+        {
+          "type": "cover_subtitle",
+          "text": "История жизни, рассказанная родными",
+          "font": "PT Sans",
+          "size_pt": 6,
+          "color": "#b8a88a",
+          "align": "center",
+          "transform": "uppercase",
+          "letter_spacing_px": 2,
+          "margin_top_pt": 4
+        }
+      ]
+    },
+    {
+      "page_number": 2,
+      "type": "blank"
+    },
+    {
+      "page_number": 3,
+      "type": "toc",
+      "items": [
+        {
+          "title": "Основные даты жизни",
+          "page": 2
+        },
+        {
+          "title": "История жизни",
+          "page": 4
+        },
+        {
+          "title": "Портрет человека",
+          "page": 9
+        },
+        {
+          "title": "Интересные факты и жизненные истории",
+          "page": 12
+        },
+        {
+          "title": "Путь длиною в жизнь",
+          "page": 14
+        },
+        {
+          "title": "Фотографии",
+          "page": 15
+        }
+      ]
+    },
+    {
+      "page_number": 4,
+      "type": "chapter_start",
+      "chapter_id": "ch_01",
+      "chapter_number": "01",
+      "chapter_title": "Основные даты жизни",
+      "chapter_subtitle": "Мариевка · 1920–2005",
+      "elements": [
+        {
+          "type": "bio_data_block",
+          "content": "Каракулина Валентина Ивановна.\nРодилась 1920 в село Мариевка, Новомиргородский район, Кировоградская область."
+        }
+      ]
+    },
+    {
+      "page_number": 5,
+      "type": "bio_timeline",
+      "chapter_id": "ch_01",
+      "elements": [
+        {
+          "type": "timeline_block",
+          "events": [
+            {
+              "year": "1920",
+              "event": "Рождение в селе Мариевка"
+            },
+            {
+              "year": "1933",
+              "event": "Голод, смерть матери, детдом"
+            },
+            {
+              "year": "1938–1940",
+              "event": "Фельдшерско-акушерская школа"
+            },
+            {
+              "year": "1941–1945",
+              "event": "Служба в военных госпиталях"
+            },
+            {
+              "year": "1946",
+              "event": "Замужество с Дмитрием Каракулиным"
+            },
+            {
+              "year": "1962–1994",
+              "event": "Работа медсестрой в поликлинике"
+            },
+            {
+              "year": "2005",
+              "event": "Перелом ноги, переезд к дочери"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "page_number": 6,
+      "type": "chapter_start",
+      "chapter_id": "ch_02",
+      "chapter_number": "02",
+      "chapter_title": "История жизни",
+      "chapter_subtitle": "От украинского села до тверской поликлиники",
+      "elements": [
+        {
+          "type": "paragraph",
+          "text": "Валентина Ивановна родилась 17 декабря 1920 года в селе Мариевка Новомиргородского района Кировоградской области. Отец Иван Андреевич работал плотником, мать Пелагея Алексеевна — в колхозе. Валентина была младшим ребёнком в семье, у неё были старшие сёстры и младший брат, который умер в детстве."
+        }
+      ]
+    },
+    {
+      "page_number": 7,
+      "type": "text_with_photo",
+      "chapter_id": "ch_02",
+      "elements": [
+        {
+          "type": "photo",
+          "photo_id": "photo_017",
+          "layout": "wrap_right",
+          "width_percent": 40,
+          "caption": "До войны"
+        },
+        {
+          "type": "paragraph",
+          "text": "В 1933 году семью настигло страшное бедствие — голод. Отец ушёл на заработки, мать умерла. Тринадцатилетняя Валентина попала в детдом, но её оттуда забрала старшая сестра Полина и увезла в Старобельск Луганской области. У сестёр был разный отец — сложная семейная история, которая сказалась на всей дальнейшей жизни."
+        },
+        {
+          "type": "paragraph",
+          "text": "В Старобельске Валентина училась в школе. В 1938 году поступила в Кировоградскую фельдшерско-акушерскую школу, которую окончила в 1940 году, получив специальность акушерки. После окончания была направлена на работу в Кировоградскую область, Светловодский район, село Глинск."
+        }
+      ]
+    },
+    {
+      "page_number": 8,
+      "type": "text_only",
+      "chapter_id": "ch_02",
+      "elements": [
+        {
+          "type": "paragraph",
+          "text": "23 июня 1941 года, на второй день войны, Валентина была призвана в Советскую армию. Всю войну служила в военных госпиталях старшей медсестрой хирургического отделения, дослужилась до младшего лейтенанта медицинской службы."
+        }
+      ]
+    },
+    {
+      "page_number": 9,
+      "type": "text_with_photo",
+      "chapter_id": "ch_02",
+      "elements": [
+        {
+          "type": "photo",
+          "photo_id": "photo_014",
+          "layout": "full_width",
+          "caption": "На фронте, с подругами, 1944"
+        },
+        {
+          "type": "paragraph",
+          "text": "Работа в поликлинике приносила Валентине особое удовлетворение. Ей очень нравилось, что её там любили и уважали. Для любого события в коллективе она обязательно пекла торты и булочки — это было её любимое занятие. Она получала удовольствие от того, что могла испечь торт, когда кто-то просил, чтобы её все похвалили и радовались."
+        }
+      ]
+    },
+    {
+      "page_number": 10,
+      "type": "text_only",
+      "chapter_id": "ch_02",
+      "elements": [
+        {
+          "type": "paragraph",
+          "text": "Работа в поликлинике приносила Валентине особое удовлетворение. Ей очень нравилось, что её там любили и уважали. Для любого события в коллективе она обязательно пекла торты и булочки — это было её любимое занятие. Она получала удовольствие от того, что могла испечь торт, когда кто-то просил, чтобы её все похвалили и радовались."
+        }
+      ]
+    },
+    {
+      "page_number": 11,
+      "type": "chapter_start",
+      "chapter_id": "ch_03",
+      "chapter_number": "03",
+      "chapter_title": "Портрет человека",
+      "chapter_subtitle": "Характер, выкованный жизнью",
+      "elements": [
+        {
+          "type": "photo",
+          "photo_id": "photo_002",
+          "layout": "wrap_right",
+          "width_percent": 40,
+          "caption": "Фотопортрет"
+        },
+        {
+          "type": "paragraph",
+          "text": "Детдом и голод 1933 года заложили в Валентине железную основу характера."
+        },
+        {
+          "type": "callout",
+          "callout_id": "callout_01",
+          "text": "Пережив сиротство, она стала очень самостоятельной и привыкла полагаться только на себя."
+        },
+        {
+          "type": "paragraph",
+          "text": "Валентина всегда была занята чем-либо. Дочь Татьяна вспоминает: «Я её мало видела отдыхающей, сидящей и смотрящей телевизор, или читающей книгу, или ещё прохлаждающей. То есть такого вообще не было». Вставала к восьми утра на первую смену, но не так рано, как муж в шесть утра."
+        }
+      ]
+    },
+    {
+      "page_number": 12,
+      "type": "text_only",
+      "chapter_id": "ch_03",
+      "elements": [
+        {
+          "type": "paragraph",
+          "text": "Валентина всегда была занята чем-либо. Дочь Татьяна вспоминает: «Я её мало видела отдыхающей, сидящей и смотрящей телевизор, или читающей книгу, или ещё прохлаждающей. То есть такого вообще не было». Вставала к восьми утра на первую смену, но не так рано, как муж в шесть утра."
+        },
+        {
+          "type": "callout",
+          "callout_id": "callout_02",
+          "text": "Валентина была как муравей, а не стрекоза из известной басни — трудолюбивая, запасливая, всегда готовая к трудностям."
+        },
+        {
+          "type": "callout",
+          "callout_id": "callout_03",
+          "text": "Это была работящая натура — не наслаждающаяся жизнью, а постоянно деятельная."
+        }
+      ]
+    },
+    {
+      "page_number": 13,
+      "type": "text_only",
+      "chapter_id": "ch_03",
+      "elements": [
+        {
+          "type": "paragraph",
+          "text": "В доме всегда пахло ванилью и кремом от её выпечки — этот запах стал главной ассоциацией с бабушкиным домом."
+        },
+        {
+          "type": "paragraph",
+          "text": "Особенно раздражала домашних её зависимость от мнения доктора Нинваны Полсачевой. Валентина постоянно ссылалась на его авторитет: «Нинвана считает так-то, а Нинвана считает это». Дочь Татьяна вспоминает: «Меня это очень раздражало, когда она всегда приходила и докладывала»."
+        },
+        {
+          "type": "callout",
+          "callout_id": "callout_04",
+          "text": "У каждой вещи должно быть своё место"
+        }
+      ]
+    },
+    {
+      "page_number": 14,
+      "type": "chapter_start",
+      "chapter_id": "ch_04",
+      "chapter_number": "04",
+      "chapter_title": "Интересные факты и жизненные истории",
+      "chapter_subtitle": "Семейные предания и характерные черты",
+      "elements": [
+        {
+          "type": "paragraph",
+          "text": "Отношения с зятем Владимиром Маргосём иллюстрирует характерная история. Валентине всегда казалось мало того, что привозил или присылал зять из Молдавии. Она могла сказать: «А почему он огурцы не привёз?» или сравнивать: «Почему кто-то там кому-то прислал груши, а вам не прислали». Однажды Владимир привёз целый чемодан огурцов в хорошем заграничном чемодане. Огурцы быстро испортились в жарком климате, испортив при этом и сам чемодан. Дочь Татьяна выкинула и огурцы, и чемодан — бабушка достала её этими огурцами."
+        }
+      ]
+    },
+    {
+      "page_number": 15,
+      "type": "text_only",
+      "chapter_id": "ch_04",
+      "elements": [
+        {
+          "type": "paragraph",
+          "text": "Любила возиться на даче, которая появилась в 1960-е годы. Это было её любимое дело до появления внуков. Продажа дачи стала одним из главных сожалений Валентины. Дочь Татьяна потом жалела: «Это была ошибка наша, что мы дачу продали. Ей там нравилось. Мы отняли у неё то, что ей нравилось». Тётя Маша сыграла свою роль в этом решении."
+        },
+        {
+          "type": "callout",
+          "callout_id": "callout_05",
+          "text": "стойким оловянным солдатиком"
+        }
+      ]
+    },
+    {
+      "page_number": 16,
+      "type": "chapter_start",
+      "chapter_id": "epilogue",
+      "chapter_number": "05",
+      "chapter_title": "Путь длиною в жизнь",
+      "chapter_subtitle": "Память о человеке своего времени",
+      "elements": [
+        {
+          "type": "paragraph",
+          "text": "Валентина Ивановна прошла путь от крестьянской девочки из украинского села до уважаемой медицинской сестры в советском городе. Голод и сиротство в тринадцать лет, четыре года войны в госпиталях, семья и постоянные переезды, тридцать лет работы в поликлинике — каждый этап закалял характер и формировал жизненные принципы."
+        },
+        {
+          "type": "paragraph",
+          "text": "Она оставила после себя детей, внуков, память коллег и пациентов. Её язык любви — забота через дело, её этика — честность без компромиссов, её мировоззрение — преданность идеалам, в которые верила всю жизнь."
+        },
+        {
+          "type": "paragraph",
+          "text": "Валентина Ивановна была человеком своего времени и своей судьбы — со всеми сложностями, противоречиями и той особенной силой, которая помогала выживать и строить жизнь в XX веке."
+        }
+      ]
+    },
+    {
+      "page_number": 17,
+      "type": "photo_section",
+      "elements": [
+        {
+          "type": "section_header",
+          "title": "Фотографии"
+        },
+        {
+          "type": "photo",
+          "photo_id": "photo_018",
+          "layout": "full_width",
+          "caption": "Госпиталь, 1944"
+        }
+      ]
+    },
+    {
+      "page_number": 18,
+      "type": "photo_section",
+      "elements": [
+        {
+          "type": "photo",
+          "photo_id": "photo_021",
+          "layout": "full_width",
+          "caption": "На фронте"
+        }
+      ]
+    },
+    {
+      "page_number": 19,
+      "type": "photo_section",
+      "elements": [
+        {
+          "type": "photo",
+          "photo_id": "photo_020",
+          "layout": "full_width",
+          "caption": "Фотопортрет"
+        }
+      ]
+    },
+    {
+      "page_number": 20,
+      "type": "photo_section",
+      "elements": [
+        {
+          "type": "photo",
+          "photo_id": "photo_019",
+          "layout": "full_width",
+          "caption": "Возможно, в Венгрии"
+        }
+      ]
+    },
+    {
+      "page_number": 21,
+      "type": "photo_section",
+      "elements": [
+        {
+          "type": "photo_pair",
+          "layout": "pair_stack",
+          "photos": [
+            {
+              "photo_id": "photo_008",
+              "caption": "Семья, 1958"
+            },
+            {
+              "photo_id": "photo_009",
+              "caption": "Семейство, 1957"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "page_number": 22,
+      "type": "photo_section",
+      "elements": [
+        {
+          "type": "photo",
+          "photo_id": "photo_010",
+          "layout": "full_width",
+          "caption": "С детьми"
+        }
+      ]
+    },
+    {
+      "page_number": 23,
+      "type": "photo_section",
+      "elements": [
+        {
+          "type": "photo",
+          "photo_id": "photo_011",
+          "layout": "full_width",
+          "caption": "С Валерой"
+        }
+      ]
+    },
+    {
+      "page_number": 24,
+      "type": "photo_section",
+      "elements": [
+        {
+          "type": "photo",
+          "photo_id": "photo_015",
+          "layout": "full_width",
+          "caption": "Калинин, на прогулке, 1957"
+        }
+      ]
+    },
+    {
+      "page_number": 25,
+      "type": "photo_section",
+      "elements": [
+        {
+          "type": "photo",
+          "photo_id": "photo_016",
+          "layout": "full_width",
+          "caption": "Горсад, на прогулке, 1957"
+        }
+      ]
+    },
+    {
+      "page_number": 26,
+      "type": "photo_section",
+      "elements": [
+        {
+          "type": "photo_pair",
+          "layout": "pair_stack",
+          "photos": [
+            {
+              "photo_id": "photo_003",
+              "caption": "Сухуми, 1960"
+            },
+            {
+              "photo_id": "photo_022",
+              "caption": "Сухуми, 1960"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "page_number": 27,
+      "type": "photo_section",
+      "elements": [
+        {
+          "type": "photo_pair",
+          "layout": "pair_stack",
+          "photos": [
+            {
+              "photo_id": "photo_004",
+              "caption": "Сочи, парк"
+            },
+            {
+              "photo_id": "photo_005",
+              "caption": "Сочи, дендрарий"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "page_number": 28,
+      "type": "photo_section",
+      "elements": [
+        {
+          "type": "photo_pair",
+          "layout": "pair_stack",
+          "photos": [
+            {
+              "photo_id": "photo_006",
+              "caption": "Сочи, дендрарий, 1955"
+            },
+            {
+              "photo_id": "photo_007",
+              "caption": "Сочи, на море, 1960"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "page_number": 29,
+      "type": "photo_section",
+      "elements": [
+        {
+          "type": "photo_pair",
+          "layout": "pair_stack",
+          "photos": [
+            {
+              "photo_id": "photo_012",
+              "caption": "Алушта, с родственниками, 1978"
+            },
+            {
+              "photo_id": "photo_013",
+              "caption": "Поликлиника №3, Химинститут, 1967"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "page_number": 30,
+      "type": "photo_section",
+      "elements": [
+        {
+          "type": "photo",
+          "photo_id": "photo_001",
+          "layout": "full_width",
+          "caption": "Поликлиника №3, Химинститут"
+        }
+      ]
+    }
+  ],
+  "photo_captions": {
+    "photo_001": "Поликлиника №3, Химинститут",
+    "photo_002": "Фотопортрет",
+    "photo_003": "Сухуми, 1960",
+    "photo_004": "Сочи, парк",
+    "photo_005": "Сочи, дендрарий",
+    "photo_006": "Сочи, дендрарий, 1955",
+    "photo_007": "Сочи, на море, 1960",
+    "photo_008": "Семья, 1958",
+    "photo_009": "Семейство, 1957",
+    "photo_010": "С детьми",
+    "photo_011": "С Валерой",
+    "photo_012": "Алушта, с родственниками, 1978",
+    "photo_013": "Поликлиника №3, Химинститут, 1967",
+    "photo_014": "На фронте, с подругами, 1944",
+    "photo_015": "Калинин, на прогулке, 1957",
+    "photo_016": "Горсад, на прогулке, 1957",
+    "photo_017": "До войны",
+    "photo_018": "Госпиталь, 1944",
+    "photo_019": "Возможно, в Венгрии",
+    "photo_020": "Фотопортрет",
+    "photo_021": "На фронте",
+    "photo_022": "Сухуми, 1960"
+  },
+  "style_guide": {
+    "page": {
+      "format": "A5",
+      "width_mm": 148,
+      "height_mm": 210,
+      "margins": {
+        "top_mm": 20,
+        "bottom_mm": 20,
+        "inner_mm": 20,
+        "outer_mm": 15
+      },
+      "bleed_mm": 0
+    },
+    "typography": {
+      "body_font": {
+        "family": "PT Serif",
+        "size_pt": 11,
+        "line_height": 1.6,
+        "color": "#111111"
+      },
+      "heading_font": {
+        "family": "PT Sans",
+        "chapter_title_size_pt": 18,
+        "section_title_size_pt": 14,
+        "color": "#111111"
+      },
+      "caption_font": {
+        "family": "PT Sans",
+        "size_pt": 9,
+        "color": "#666666"
+      },
+      "callout_font": {
+        "family": "PT Serif",
+        "size_pt": 12,
+        "style": "italic",
+        "color": "#3d2e1f"
+      },
+      "historical_note_font": {
+        "family": "PT Sans",
+        "size_pt": 10,
+        "style": "bold_italic",
+        "color": "#ffffff"
+      }
+    },
+    "colors": {
+      "background": "#faf8f5",
+      "text_primary": "#111111",
+      "text_secondary": "#666666",
+      "accent": "#e8e0d4",
+      "callout_background": "#f5f3f0",
+      "callout_border": "#e8e0d4",
+      "chapter_divider": "#e8e0d4"
+    },
+    "spacing": {
+      "paragraph_spacing_pt": 12,
+      "chapter_start_offset_pt": 40,
+      "photo_margin_pt": 15,
+      "callout_padding_pt": 12
+    }
+  },
+  "page_map": [
+    {
+      "page_number": 1,
+      "content_type": "cover",
+      "chapter_id": null,
+      "elements": [
+        "cover_composition"
+      ]
+    },
+    {
+      "page_number": 2,
+      "content_type": "blank",
+      "chapter_id": null,
+      "elements": []
+    },
+    {
+      "page_number": 3,
+      "content_type": "toc",
+      "chapter_id": null,
+      "elements": [
+        "toc_items"
+      ]
+    },
+    {
+      "page_number": 4,
+      "content_type": "chapter_start",
+      "chapter_id": "ch_01",
+      "elements": [
+        "chapter_header",
+        "bio_data_block"
+      ]
+    },
+    {
+      "page_number": 5,
+      "content_type": "bio_timeline",
+      "chapter_id": "ch_01",
+      "elements": [
+        "timeline_block"
+      ]
+    },
+    {
+      "page_number": 6,
+      "content_type": "chapter_start",
+      "chapter_id": "ch_02",
+      "elements": [
+        "chapter_header",
+        "p_02_001"
+      ]
+    },
+    {
+      "page_number": 7,
+      "content_type": "text_with_photo",
+      "chapter_id": "ch_02",
+      "elements": [
+        "photo_017",
+        "p_02_002",
+        "p_02_003"
+      ]
+    },
+    {
+      "page_number": 8,
+      "content_type": "text_only",
+      "chapter_id": "ch_02",
+      "elements": [
+        "p_02_004"
+      ]
+    },
+    {
+      "page_number": 9,
+      "content_type": "text_with_photo",
+      "chapter_id": "ch_02",
+      "elements": [
+        "photo_014",
+        "p_02_005"
+      ]
+    },
+    {
+      "page_number": 10,
+      "content_type": "text_only",
+      "chapter_id": "ch_02",
+      "elements": [
+        "p_02_005"
+      ]
+    },
+    {
+      "page_number": 11,
+      "content_type": "chapter_start",
+      "chapter_id": "ch_03",
+      "elements": [
+        "chapter_header",
+        "photo_002",
+        "p_03_001",
+        "callout_01",
+        "p_03_002"
+      ]
+    },
+    {
+      "page_number": 12,
+      "content_type": "text_only",
+      "chapter_id": "ch_03",
+      "elements": [
+        "p_03_002",
+        "callout_02",
+        "callout_03"
+      ]
+    },
+    {
+      "page_number": 13,
+      "content_type": "text_only",
+      "chapter_id": "ch_03",
+      "elements": [
+        "p_03_003",
+        "p_03_004",
+        "callout_04"
+      ]
+    },
+    {
+      "page_number": 14,
+      "content_type": "chapter_start",
+      "chapter_id": "ch_04",
+      "elements": [
+        "chapter_header",
+        "p_04_001"
+      ]
+    },
+    {
+      "page_number": 15,
+      "content_type": "text_only",
+      "chapter_id": "ch_04",
+      "elements": [
+        "p_04_002",
+        "callout_05"
+      ]
+    },
+    {
+      "page_number": 16,
+      "content_type": "chapter_start",
+      "chapter_id": "epilogue",
+      "elements": [
+        "chapter_header",
+        "epilogue_content"
+      ]
+    },
+    {
+      "page_number": 17,
+      "content_type": "photo_section",
+      "chapter_id": null,
+      "elements": [
+        "section_header",
+        "photo_018"
+      ]
+    },
+    {
+      "page_number": 18,
+      "content_type": "photo_section",
+      "chapter_id": null,
+      "elements": [
+        "photo_021"
+      ]
+    },
+    {
+      "page_number": 19,
+      "content_type": "photo_section",
+      "chapter_id": null,
+      "elements": [
+        "photo_020"
+      ]
+    },
+    {
+      "page_number": 20,
+      "content_type": "photo_section",
+      "chapter_id": null,
+      "elements": [
+        "photo_019"
+      ]
+    },
+    {
+      "page_number": 21,
+      "content_type": "photo_section",
+      "chapter_id": null,
+      "elements": [
+        "photo_008",
+        "photo_009"
+      ]
+    },
+    {
+      "page_number": 22,
+      "content_type": "photo_section",
+      "chapter_id": null,
+      "elements": [
+        "photo_010"
+      ]
+    },
+    {
+      "page_number": 23,
+      "content_type": "photo_section",
+      "chapter_id": null,
+      "elements": [
+        "photo_011"
+      ]
+    },
+    {
+      "page_number": 24,
+      "content_type": "photo_section",
+      "chapter_id": null,
+      "elements": [
+        "photo_015"
+      ]
+    },
+    {
+      "page_number": 25,
+      "content_type": "photo_section",
+      "chapter_id": null,
+      "elements": [
+        "photo_016"
+      ]
+    },
+    {
+      "page_number": 26,
+      "content_type": "photo_section",
+      "chapter_id": null,
+      "elements": [
+        "photo_003",
+        "photo_022"
+      ]
+    },
+    {
+      "page_number": 27,
+      "content_type": "photo_section",
+      "chapter_id": null,
+      "elements": [
+        "photo_004",
+        "photo_005"
+      ]
+    },
+    {
+      "page_number": 28,
+      "content_type": "photo_section",
+      "chapter_id": null,
+      "elements": [
+        "photo_006",
+        "photo_007"
+      ]
+    },
+    {
+      "page_number": 29,
+      "content_type": "photo_section",
+      "chapter_id": null,
+      "elements": [
+        "photo_012",
+        "photo_013"
+      ]
+    },
+    {
+      "page_number": 30,
+      "content_type": "photo_section",
+      "chapter_id": null,
+      "elements": [
+        "photo_001"
+      ]
+    }
+  ],
+  "technical_notes": {
+    "total_pages": 30,
+    "chapters_layout": [
+      {
+        "chapter_id": "ch_01",
+        "start_page": 4,
+        "end_page": 5,
+        "photos_placed": [],
+        "callouts_placed": []
+      },
+      {
+        "chapter_id": "ch_02",
+        "start_page": 6,
+        "end_page": 10,
+        "photos_placed": [
+          "photo_017",
+          "photo_014"
+        ],
+        "callouts_placed": []
+      },
+      {
+        "chapter_id": "ch_03",
+        "start_page": 11,
+        "end_page": 13,
+        "photos_placed": [
+          "photo_002"
+        ],
+        "callouts_placed": [
+          "callout_01",
+          "callout_02",
+          "callout_03",
+          "callout_04"
+        ]
+      },
+      {
+        "chapter_id": "ch_04",
+        "start_page": 14,
+        "end_page": 15,
+        "photos_placed": [],
+        "callouts_placed": [
+          "callout_05"
+        ]
+      },
+      {
+        "chapter_id": "epilogue",
+        "start_page": 16,
+        "end_page": 16,
+        "photos_placed": [],
+        "callouts_placed": []
+      }
+    ],
+    "potential_issues": [],
+    "print_ready": true,
+    "notes": "Исправлены все issues из QA отчёта: приведены в соответствие типы страниц между page_plan и page_map, все callouts корректно размещены согласно page_plan, соблюдена модель пагинации с visible номерами в TOC."
+  },
+  "_layout_format": "pages_json"
+}

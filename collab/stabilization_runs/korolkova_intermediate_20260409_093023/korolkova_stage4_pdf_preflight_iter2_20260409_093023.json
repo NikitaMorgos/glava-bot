@@ -1,0 +1,14 @@
+{
+  "gate": "pdf_preflight",
+  "passed": false,
+  "checks": {
+    "exists": false,
+    "readable_header_pdf": false,
+    "size_ok": false,
+    "size_bytes": 0,
+    "min_size_bytes": 12000,
+    "page_map_pages": 22,
+    "pdf_pages": null,
+    "page_count_match": false
+  }
+}

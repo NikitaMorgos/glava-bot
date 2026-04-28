@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ГЛАВА — Отчёт по фокус-группам. Волна 1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream:#f9f7f2; --paper:#f0ead9; --parchment:#dfd5c2;
+    --ink:#181208; --brown:#44311f; --muted:#72614e;
+    --gold:#a8823c; --gold-light:#c9a05e; --white:#ffffff;
+    --s1:#7c5c3e; --s2:#3e6b7c; --s3:#6b7c3e; --s5:#5c3e7c;
+    --red:#c0392b; --orange:#e67e22; --green:#27ae60;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Manrope',sans-serif;background:var(--cream);color:var(--ink);font-size:15px;line-height:1.7}
+
+  /* NAV */
+  nav{position:sticky;top:0;z-index:100;background:rgba(249,247,242,.93);backdrop-filter:blur(12px);border-bottom:1px solid var(--parchment);padding:0 2.5rem;display:flex;align-items:center;justify-content:space-between;height:54px}
+  .nav-logo{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;color:var(--ink)}
+  .nav-logo span{color:var(--gold)}
+  .nav-badge{background:var(--gold);color:#fff;font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:.25rem .75rem;border-radius:20px}
+  .nav-links{display:flex;gap:1.5rem;list-style:none;font-size:.75rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase}
+  .nav-links a{color:var(--muted);text-decoration:none;transition:color .2s}
+  .nav-links a:hover{color:var(--gold)}
+
+  /* HERO */
+  .hero{background:var(--ink);color:var(--cream);padding:6rem 2.5rem 5rem;text-align:center;position:relative;overflow:hidden}
+  .hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 50% at 50% -10%,rgba(168,130,60,.22) 0%,transparent 70%)}
+  .hero-wave{font-size:.7rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:.8rem}
+  .hero h1{font-family:'Playfair Display',serif;font-size:clamp(2.2rem,5vw,4rem);font-weight:700;line-height:1.1;margin-bottom:1rem;position:relative}
+  .hero h1 em{font-style:italic;color:var(--gold-light)}
+  .hero-sub{font-size:1rem;color:rgba(249,247,242,.6);max-width:580px;margin:0 auto 2.5rem}
+  .hero-stats{display:flex;justify-content:center;gap:2.5rem;flex-wrap:wrap}
+  .stat{text-align:center}
+  .stat-num{font-family:'Playfair Display',serif;font-size:2.2rem;font-weight:700;color:var(--gold-light);line-height:1}
+  .stat-label{font-size:.72rem;color:rgba(249,247,242,.45);text-transform:uppercase;letter-spacing:.1em;margin-top:.2rem}
+
+  /* SECTIONS */
+  .container{max-width:1080px;margin:0 auto;padding:4.5rem 2.5rem}
+  .section-bg{background:var(--paper);border-top:1px solid var(--parchment);border-bottom:1px solid var(--parchment)}
+
+  /* PART HEADER */
+  .part-header{text-align:center;padding:3rem 2.5rem}
+  .part-num{font-size:.65rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:.6rem}
+  .part-header h2{font-family:'Playfair Display',serif;font-size:clamp(1.7rem,3.5vw,2.6rem);font-weight:700}
+  .part-header p{margin-top:.6rem;color:var(--muted);font-size:.95rem;max-width:560px;margin-left:auto;margin-right:auto}
+
+  h2.sec{font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:700;color:var(--ink);margin-bottom:1.75rem}
+  h3.sub{font-family:'Playfair Display',serif;font-size:1.15rem;font-weight:600;color:var(--brown);margin-bottom:.8rem;margin-top:2rem}
+  h3.sub:first-child{margin-top:0}
+
+  /* EXEC SUMMARY CARDS */
+  .exec-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.25rem;margin-bottom:3rem}
+  .exec-card{background:var(--white);border:1px solid var(--parchment);border-radius:10px;padding:1.5rem;position:relative;overflow:hidden}
+  .exec-card::before{content:attr(data-num);position:absolute;top:-10px;right:12px;font-family:'Playfair Display',serif;font-size:5rem;font-weight:700;color:rgba(223,213,194,.4);line-height:1;pointer-events:none}
+  .exec-card h4{font-weight:700;font-size:.95rem;color:var(--ink);margin-bottom:.4rem;position:relative}
+  .exec-card p{font-size:.85rem;color:var(--muted);line-height:1.65;position:relative}
+  .exec-card .impact{display:inline-block;margin-top:.6rem;font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:.2rem .6rem;border-radius:4px}
+  .impact-high{background:#fde8e8;color:var(--red)}
+  .impact-med{background:#fef3e5;color:var(--orange)}
+  .impact-new{background:#e8f5ef;color:var(--green)}
+
+  /* FG SECTION */
+  .fg-section{border-radius:14px;overflow:hidden;margin-bottom:3rem;border:1px solid var(--parchment)}
+  .fg-header{padding:1.75rem 2rem;display:flex;align-items:flex-start;gap:1.25rem}
+  .fg-badge{font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#fff;padding:.3rem .9rem;border-radius:6px;white-space:nowrap;margin-top:.15rem}
+  .fg-header-info h3{font-family:'Playfair Display',serif;font-size:1.35rem;font-weight:700;color:var(--ink)}
+  .fg-header-info p{font-size:.85rem;color:var(--muted);margin-top:.2rem}
+  .fg-participants{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.75rem}
+  .participant{background:rgba(255,255,255,.6);border:1px solid var(--parchment);border-radius:20px;font-size:.75rem;padding:.2rem .7rem;color:var(--brown)}
+  .fg-body{padding:2rem;background:var(--white)}
+  .fg-cols{display:grid;grid-template-columns:1fr 1fr;gap:2rem}
+  @media(max-width:700px){.fg-cols{grid-template-columns:1fr}}
+
+  /* QUOTES */
+  .quotes{display:flex;flex-direction:column;gap:.75rem}
+  .quote{background:var(--cream);border-left:3px solid var(--gold);border-radius:0 8px 8px 0;padding:.85rem 1rem}
+  .quote-text{font-size:.875rem;font-style:italic;color:var(--brown);line-height:1.6}
+  .quote-author{font-size:.72rem;font-weight:700;color:var(--muted);margin-top:.35rem;text-transform:uppercase;letter-spacing:.06em}
+
+  /* INSIGHTS */
+  .insight-list{display:flex;flex-direction:column;gap:.6rem}
+  .insight-item{display:flex;gap:.75rem;align-items:flex-start}
+  .insight-num{width:22px;height:22px;border-radius:50%;background:var(--gold);color:#fff;font-size:.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:.15rem}
+  .insight-text{font-size:.875rem;color:var(--brown);line-height:1.6}
+  .insight-text strong{color:var(--ink)}
+
+  /* JTBD */
+  .jtbd-box{background:var(--ink);color:var(--cream);border-radius:10px;padding:1.5rem 1.75rem;margin-top:1.75rem}
+  .jtbd-label{font-size:.65rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--gold);margin-bottom:.5rem}
+  .jtbd-text{font-family:'Playfair Display',serif;font-size:1.05rem;font-style:italic;line-height:1.65;color:var(--cream)}
+
+  /* BARRIERS */
+  .barrier-list{display:flex;flex-direction:column;gap:.5rem}
+  .barrier-item{display:flex;gap:.6rem;align-items:flex-start;font-size:.85rem;color:var(--brown)}
+  .barrier-icon{color:var(--red);font-weight:700;font-size:.8rem;flex-shrink:0;margin-top:.15rem}
+
+  /* MESSAGING */
+  .msg-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem}
+  @media(max-width:600px){.msg-grid{grid-template-columns:1fr}}
+  .msg-card{border-radius:8px;padding:1rem 1.2rem}
+  .msg-card.do{background:#e8f5ef;border:1px solid #b5dcc6}
+  .msg-card.dont{background:#fde8e8;border:1px solid #f0b8b8}
+  .msg-label{font-size:.62rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin-bottom:.4rem}
+  .msg-card.do .msg-label{color:var(--green)}
+  .msg-card.dont .msg-label{color:var(--red)}
+  .msg-items{list-style:none;display:flex;flex-direction:column;gap:.3rem}
+  .msg-items li{font-size:.83rem;line-height:1.5}
+  .msg-card.do .msg-items li::before{content:'✓ ';color:var(--green);font-weight:700}
+  .msg-card.dont .msg-items li::before{content:'✗ ';color:var(--red);font-weight:700}
+
+  /* CROSS PATTERNS */
+  .pattern-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem}
+  @media(max-width:700px){.pattern-grid{grid-template-columns:1fr}}
+  .pattern-card{background:var(--white);border:1px solid var(--parchment);border-radius:10px;padding:1.5rem}
+  .pattern-code{font-size:.65rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--gold);margin-bottom:.4rem}
+  .pattern-card h4{font-weight:700;font-size:.95rem;color:var(--ink);margin-bottom:.5rem}
+  .pattern-card p{font-size:.83rem;color:var(--muted);line-height:1.6}
+  .segs{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.75rem}
+  .seg-chip{font-size:.68rem;font-weight:700;padding:.15rem .55rem;border-radius:4px;color:#fff}
+
+  /* PRODUCT HYPOTHESES */
+  .hypo-list{display:flex;flex-direction:column;gap:1rem}
+  .hypo-item{background:var(--white);border:1px solid var(--parchment);border-radius:10px;padding:1.25rem 1.5rem;display:flex;gap:1rem;align-items:flex-start}
+  .hypo-priority{font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:.2rem .6rem;border-radius:4px;white-space:nowrap;margin-top:.1rem}
+  .p-must{background:#fde8e8;color:var(--red)}
+  .p-should{background:#fef3e5;color:var(--orange)}
+  .p-could{background:#e8f5ef;color:var(--green)}
+  .hypo-content h4{font-weight:700;font-size:.9rem;color:var(--ink);margin-bottom:.3rem}
+  .hypo-content p{font-size:.82rem;color:var(--muted);line-height:1.55}
+
+  hr.divider{border:none;border-top:1px solid var(--parchment);margin:2.5rem 0}
+  footer{background:var(--ink);color:rgba(249,247,242,.45);text-align:center;padding:2rem;font-size:.78rem}
+  footer strong{color:var(--gold)}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">ГЛАВА<span>.</span></div>
+  <ul class="nav-links">
+    <li><a href="#summary">Выводы</a></li>
+    <li><a href="#s1">S1</a></li>
+    <li><a href="#s3">S3</a></li>
+    <li><a href="#s2">S2</a></li>
+    <li><a href="#s5">S5</a></li>
+    <li><a href="#patterns">Паттерны</a></li>
+    <li><a href="#hypotheses">Гипотезы</a></li>
+  </ul>
+  <div class="nav-badge">Волна 1</div>
+</nav>
+
+<div class="hero">
+  <div class="hero-wave">Отчёт по фокус-группам · Волна 1 · Апрель 2026</div>
+  <h1>Они хотят записать,<br>но не знают <em>как начать</em></h1>
+  <p class="hero-sub">4 сегмента · 16 участников · Приоритетная аудитория. Главное открытие: барьер не в деньгах и не в технологиях — в эмоциях и структуре.</p>
+  <div class="hero-stats">
+    <div class="stat"><div class="stat-num">4</div><div class="stat-label">Сегмента</div></div>
+    <div class="stat"><div class="stat-num">16</div><div class="stat-label">Участников</div></div>
+    <div class="stat"><div class="stat-num">47</div><div class="stat-label">Цитат</div></div>
+    <div class="stat"><div class="stat-num">12</div><div class="stat-label">Продуктовых гипотез</div></div>
+  </div>
+</div>
+
+<!-- EXEC SUMMARY -->
+<div class="section-bg">
+  <div class="part-header" id="summary">
+    <div class="part-num">Executive Summary</div>
+    <h2>Топ-5 открытий волны</h2>
+    <p>Паттерны, которые повторились в двух и более сегментах и требуют немедленного действия</p>
+  </div>
+</div>
+
+<div class="container">
+  <div class="exec-grid">
+    <div class="exec-card" data-num="1">
+      <h4>Пример книги — точка решения</h4>
+      <p>«Покажите мне пример» — сказали участники всех 4 групп. Без реального PDF-примера люди не могут принять решение о покупке. Это первый и главный конверсионный барьер.</p>
+      <span class="impact impact-high">Критично · все сегменты</span>
+    </div>
+    <div class="exec-card" data-num="2">
+      <h4>Слово «AI» — красная тряпка</h4>
+      <p>«AI написала биографию» воспринимается как «шаблонно» и «бездушно». Работает замена: «литературная обработка», «редактор», «живой текст». Слово AI нужно убрать из всех коммуникаций.</p>
+      <span class="impact impact-high">Критично · S1 S3 S4</span>
+    </div>
+    <div class="exec-card" data-num="3">
+      <h4>Подарочный сертификат — незакрытый формат</h4>
+      <p>Организаторы юбилеев (S3) не могут «подарить ссылку на бот». Нужен физический момент вручения. Красивая карточка-сертификат = снятый барьер и отдельный продуктовый формат.</p>
+      <span class="impact impact-high">Критично · S3</span>
+    </div>
+    <div class="exec-card" data-num="4">
+      <h4>Разговор как ценность сам по себе</h4>
+      <p>S2 открыл неожиданное: покупают не только ради книги, но ради повода для настоящего разговора с близким. «Я хочу задать те вопросы, которые давно хочу задать» — это недораскрытая эмоциональная ценность продукта.</p>
+      <span class="impact impact-new">Новое · S2 S1</span>
+    </div>
+    <div class="exec-card" data-num="5">
+      <h4>Вопросы-подсказки — главная ценность</h4>
+      <p>«Я сам не знаю что спрашивать» — сказали 11 из 16 участников. Наличие готовых вопросов снимает главный страх. Это нужно выдвинуть в центр коммуникации, а не прятать в «как это работает».</p>
+      <span class="impact impact-high">Критично · S1 S2</span>
+    </div>
+    <div class="exec-card" data-num="6">
+      <h4>Внук — посредник, а не пользователь</h4>
+      <p>S2: покупатель ≠ тот, кто разговаривает. Внук организует и записывает, а бабушка просто говорит. Нужна явная поддержка сценария «ты организуешь — близкий рассказывает».</p>
+      <span class="impact impact-new">Новое · S2 S5</span>
+    </div>
+  </div>
+
+  <!-- S1 -->
+  <div class="fg-section" id="s1">
+    <div class="fg-header" style="background:#faf6f2;border-bottom:1px solid var(--parchment)">
+      <div>
+        <span class="fg-badge" style="background:var(--s1)">S1</span>
+      </div>
+      <div class="fg-header-info">
+        <h3>Дочь / Сын — откладывающие</h3>
+        <p>«Лет пять уже думаю — вот приеду летом, тогда и поговорим. Лето приходит и уходит.»</p>
+        <div class="fg-participants">
+          <span class="participant">Марина, 44 · маркетолог · Москва</span>
+          <span class="participant">Андрей, 52 · инженер · Екатеринбург</span>
+          <span class="participant">Светлана, 47 · учитель · Новосибирск</span>
+          <span class="participant">Наталья, 39 · дизайнер · Санкт-Петербург</span>
+        </div>
+      </div>
+    </div>
+    <div class="fg-body">
+      <div class="fg-cols">
+        <div>
+          <h3 class="sub">Ключевые цитаты</h3>
+          <div class="quotes">
+            <div class="quote">
+              <div class="quote-text">«Уже лет пять думаю "вот приеду летом, тогда и поговорим". Лето приходит и уходит. Мама пережила такое — это целая книга. Но я каждый раз откладываю.»</div>
+              <div class="quote-author">Марина, 44</div>
+            </div>
+            <div class="quote">
+              <div class="quote-text">«После инсульта у папы речь немного нарушилась. Я жалею что не записал раньше. Кое-что уже потеряно навсегда.»</div>
+              <div class="quote-author">Андрей, 52</div>
+            </div>
+            <div class="quote">
+              <div class="quote-text">«Я боюсь этого разговора. Начнётся про болезни, про то что скоро умрёт... Мне эмоционально тяжело.»</div>
+              <div class="quote-author">Светлана, 47</div>
+            </div>
+            <div class="quote">
+              <div class="quote-text">«Дедушка говорит "обычная жизнь". А я слушаю и понимаю — это золото. Завод, дом своими руками, всё через дефицит... Меня пугает слово "AI написала". Покажите пример.»</div>
+              <div class="quote-author">Наталья, 39</div>
+            </div>
+          </div>
+
+          <div class="jtbd-box">
+            <div class="jtbd-label">JTBD — уточнённый</div>
+            <div class="jtbd-text">«Когда я наконец решаюсь поговорить с мамой — хочу чтобы кто-то задал нам правильные вопросы и превратил разговор в настоящую книгу, которую я смогу дать своим детям.»</div>
+          </div>
+        </div>
+        <div>
+          <h3 class="sub">Инсайты</h3>
+          <div class="insight-list">
+            <div class="insight-item">
+              <div class="insight-num">1</div>
+              <div class="insight-text"><strong>Эмоциональный барьер — главный.</strong> Люди боятся не потратить деньги впустую, а тяжёлого разговора, слёз, темы смерти. Это не цена и не технологии.</div>
+            </div>
+            <div class="insight-item">
+              <div class="insight-num">2</div>
+              <div class="insight-text"><strong>«Не знаю что спрашивать» — 3 из 4.</strong> Готовые вопросы-подсказки снимают главный страх начала разговора. Это ценность №1, которую нужно выдвинуть вперёд.</div>
+            </div>
+            <div class="insight-item">
+              <div class="insight-num">3</div>
+              <div class="insight-text"><strong>«AI» отпугивает.</strong> Нужна замена: «литературная обработка», «редактор», «живой текст» — работают. «Алгоритм» и «нейросеть» — нет.</div>
+            </div>
+            <div class="insight-item">
+              <div class="insight-num">4</div>
+              <div class="insight-text"><strong>Дистанция.</strong> «Мама живёт в другом городе» — у половины. Нужно явно говорить что всё через Telegram и расстояние не важно.</div>
+            </div>
+            <div class="insight-item">
+              <div class="insight-num">5</div>
+              <div class="insight-text"><strong>Пример — точка решения.</strong> Цена (6 900 ₽) принята нормально всеми. Но без примера реальной книги — не купят.</div>
+            </div>
+          </div>
+
+          <h3 class="sub" style="margin-top:1.75rem">Барьеры</h3>
+          <div class="barrier-list">
+            <div class="barrier-item"><span class="barrier-icon">✕</span> Эмоциональная тяжесть разговора о прошлом и неизбежном</div>
+            <div class="barrier-item"><span class="barrier-icon">✕</span> Родитель отмахивается: «да что там рассказывать»</div>
+            <div class="barrier-item"><span class="barrier-icon">✕</span> «Нет структуры» — не знает с чего начать и что спрашивать</div>
+            <div class="barrier-item"><span class="barrier-icon">✕</span> Скептицизм к качеству: «это будет как машинный текст»</div>
+            <div class="barrier-item"><span class="barrier-icon">✕</span> Расстояние и логистика: другой город, другой часовой пояс</div>
+          </div>
+        </div>
+      </div>
+
+      <hr class="divider">
+      <h3 class="sub" style="margin-top:0">Messaging — что работает</h3>
+      <div class="msg-grid">
+        <div class="msg-card do">
+          <div class="msg-label">Говорить</div>
+          <ul class="msg-items">
+            <li>«Мы задаём вопросы — вам нужно только разговаривать»</li>
+            <li>«Работает из любого города через Telegram»</li>
+            <li>«Литературная обработка» вместо «AI»</li>
+            <li>«Сделайте это для своих детей — они скажут спасибо»</li>
+            <li>Показывать пример раньше, чем цену</li>
+          </ul>
+        </div>
+        <div class="msg-card dont">
+          <div class="msg-label">Избегать</div>
+          <ul class="msg-items">
+            <li>«AI написала биографию»</li>
+            <li>«Нейросеть», «алгоритм», «автоматически»</li>
+            <li>Любые отсылки к смерти или «пока не поздно»</li>
+            <li>Технические детали в первом экране</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- S3 -->
+  <div class="fg-section" id="s3">
+    <div class="fg-header" style="background:#f5f8f2;border-bottom:1px solid var(--parchment)">
+      <div>
+        <span class="fg-badge" style="background:var(--s3)">S3</span>
+      </div>
+      <div class="fg-header-info">
+        <h3>Организатор юбилея</h3>
+        <p>«Это идеально! Но как вручить? Нельзя же подарить на день рождения ссылку на бот.»</p>
+        <div class="fg-participants">
+          <span class="participant">Ирина, 43 · HR-менеджер · Москва</span>
+          <span class="participant">Дмитрий, 49 · предприниматель</span>
+          <span class="participant">Алёна, 36 · организует для бабушки 80 лет</span>
+          <span class="participant">Евгения, 52 · мама 65 лет через 2 мес.</span>
+        </div>
+      </div>
+    </div>
+    <div class="fg-body">
+      <div class="fg-cols">
+        <div>
+          <h3 class="sub">Ключевые цитаты</h3>
+          <div class="quotes">
+            <div class="quote">
+              <div class="quote-text">«Если бы был подарочный сертификат — красивая карточка, которую я вручаю на праздник, а запись делаем потом в спокойной обстановке — это было бы идеально.»</div>
+              <div class="quote-author">Ирина, 43</div>
+            </div>
+            <div class="quote">
+              <div class="quote-text">«Папа скорее всего скажет "не нужно, не трать деньги". Как помочь юбиляру понять что это для него, а не просто наша идея?»</div>
+              <div class="quote-author">Дмитрий, 49</div>
+            </div>
+            <div class="quote">
+              <div class="quote-text">«Нас пятеро детей. Хочу скинуться с братьями — по полторы тысячи каждый. Можно ли это оформить как подарок от всей семьи?»</div>
+              <div class="quote-author">Алёна, 36</div>
+            </div>
+            <div class="quote">
+              <div class="quote-text">«Главный вопрос: успею ли. У меня есть 2 месяца. Мне нужна гарантия что книга будет готова к дате.»</div>
+              <div class="quote-author">Евгения, 52</div>
+            </div>
+          </div>
+
+          <div class="jtbd-box">
+            <div class="jtbd-label">JTBD — уточнённый</div>
+            <div class="jtbd-text">«Когда я ищу подарок на мамин юбилей — хочу красиво вручить что-то уникальное, что подтвердит как она важна для нас, и что дети и внуки будут хранить.»</div>
+          </div>
+        </div>
+        <div>
+          <h3 class="sub">Инсайты</h3>
+          <div class="insight-list">
+            <div class="insight-item">
+              <div class="insight-num">1</div>
+              <div class="insight-text"><strong>Подарочный сертификат — незакрытая боль.</strong> «Ссылку на бот» не дарят. Нужен физический момент вручения: красивая карточка или конверт. Это отдельный продукт.</div>
+            </div>
+            <div class="insight-item">
+              <div class="insight-num">2</div>
+              <div class="insight-text"><strong>Сопротивление юбиляра — ожидаемо.</strong> Нужны готовые слова-объяснения: как рассказать маме что это «её история», а не «книжка про смерть».</div>
+            </div>
+            <div class="insight-item">
+              <div class="insight-num">3</div>
+              <div class="insight-text"><strong>Коллективная оплата — частая ситуация.</strong> «Скинуться семьёй» — органичная модель. Нужен механизм разделения оплаты или подарочный сертификат как «коллективный взнос».</div>
+            </div>
+            <div class="insight-item">
+              <div class="insight-num">4</div>
+              <div class="insight-text"><strong>Дедлайн критичен.</strong> Дата юбилея не двигается. Нужна явная гарантия: «успеем» с указанием сроков.</div>
+            </div>
+            <div class="insight-item">
+              <div class="insight-num">5</div>
+              <div class="insight-text"><strong>Юбиляр — звезда, не объект.</strong> Messaging «расскажи свою историю» работает лучше чем «мы запишем твою историю». Активная роль, а не пассивная.</div>
+            </div>
+          </div>
+
+          <h3 class="sub" style="margin-top:1.75rem">Барьеры</h3>
+          <div class="barrier-list">
+            <div class="barrier-item"><span class="barrier-icon">✕</span> Нет формата вручения — ссылка на бот не работает как подарок</div>
+            <div class="barrier-item"><span class="barrier-icon">✕</span> Ожидаемое сопротивление юбиляра («не нужно, не трать»)</div>
+            <div class="barrier-item"><span class="barrier-icon">✕</span> Нет механизма коллективной оплаты от нескольких человек</div>
+            <div class="barrier-item"><span class="barrier-icon">✕</span> Страх не успеть к дате — нет гарантии сроков</div>
+          </div>
+        </div>
+      </div>
+
+      <hr class="divider">
+      <h3 class="sub" style="margin-top:0">Messaging — что работает</h3>
+      <div class="msg-grid">
+        <div class="msg-card do">
+          <div class="msg-label">Говорить</div>
+          <ul class="msg-items">
+            <li>«Подарок, которого нет в магазине»</li>
+            <li>«Вручите сертификат — запишите в удобное время»</li>
+            <li>«Мама будет звездой этой истории»</li>
+            <li>«Готово за 3–5 дней — гарантируем к дате»</li>
+            <li>«Подарок от всей семьи»</li>
+          </ul>
+        </div>
+        <div class="msg-card dont">
+          <div class="msg-label">Избегать</div>
+          <ul class="msg-items">
+            <li>«Запишем историю вашего близкого» (пассивно)</li>
+            <li>«Пока не поздно», «сохранить память» — ассоциации с концом жизни</li>
+            <li>Технические детали о том «как работает бот»</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- S2 -->
+  <div class="fg-section" id="s2">
+    <div class="fg-header" style="background:#f2f6f8;border-bottom:1px solid var(--parchment)">
+      <div>
+        <span class="fg-badge" style="background:var(--s2)">S2</span>
+      </div>
+      <div class="fg-header-info">
+        <h3>Внук / внучка в тревоге</h3>
+        <p>«Я потеряла дедушку прошлой зимой. Мы так и не записали. Не стало "потом".»</p>
+        <div class="fg-participants">
+          <span class="participant">Катя, 24 · студентка · Москва</span>
+          <span class="participant">Миша, 28 · программист</span>
+          <span class="participant">Вика, 25 · потеряла деда год назад</span>
+          <span class="participant">Артём, 30 · менеджер</span>
+        </div>
+      </div>
+    </div>
+    <div class="fg-body">
+      <div class="fg-cols">
+        <div>
+          <h3 class="sub">Ключевые цитаты</h3>
+          <div class="quotes">
+            <div class="quote">
+              <div class="quote-text">«Я потеряла дедушку прошлой зимой. Он рассказывал про блокаду — я слушала, думала потом запишу. Потом не стало "потом". Теперь хочу успеть с бабушкой.»</div>
+              <div class="quote-author">Вика, 25</div>
+            </div>
+            <div class="quote">
+              <div class="quote-text">«Дед рассказывает такие вещи про войну и завод — это исторически важно, не только для нашей семьи. Я хочу успеть, но он не умеет пользоваться Telegram.»</div>
+              <div class="quote-author">Миша, 28</div>
+            </div>
+            <div class="quote">
+              <div class="quote-text">«Можно ли я сама запишу разговор на телефон и потом отправлю? Бабушка не разберётся с ботом, но я разберусь за неё.»</div>
+              <div class="quote-author">Катя, 24</div>
+            </div>
+            <div class="quote">
+              <div class="quote-text">«Этот разговор — это же не только про книгу. Это повод нормально поговорить, задать те вопросы, которые давно хочу задать, но всё не решаюсь.»</div>
+              <div class="quote-author">Артём, 30</div>
+            </div>
+          </div>
+
+          <div class="jtbd-box">
+            <div class="jtbd-label">JTBD — уточнённый</div>
+            <div class="jtbd-text">«Когда я понимаю что времени может не остаться — хочу прямо сейчас создать повод для настоящего разговора с дедушкой и сохранить его историю, пока он ещё здоров.»</div>
+          </div>
+        </div>
+        <div>
+          <h3 class="sub">Инсайты</h3>
+          <div class="insight-list">
+            <div class="insight-item">
+              <div class="insight-num">1</div>
+              <div class="insight-text"><strong>Внук — посредник, не пользователь.</strong> Он сам разбирается с ботом, сам записывает разговор, а бабушка просто говорит. Сценарий «ты организуешь — близкий рассказывает» нужно поддержать явно.</div>
+            </div>
+            <div class="insight-item">
+              <div class="insight-num">2</div>
+              <div class="insight-text"><strong>Urgency = мгновенная конверсия.</strong> При отсутствии технических барьеров эти люди покупают сегодня. Нужен прямой CTA без лишних шагов.</div>
+            </div>
+            <div class="insight-item">
+              <div class="insight-num">3</div>
+              <div class="insight-text"><strong>Разговор — ценность сам по себе.</strong> «Повод задать вопросы, которые давно хочу» — это мощный эмоциональный крючок, который сейчас недораскрыт в коммуникации ГЛАВА.</div>
+            </div>
+            <div class="insight-item">
+              <div class="insight-num">4</div>
+              <div class="insight-text"><strong>Цена — не барьер, но нужна рационализация.</strong> «Хороший повод попросить всю семью скинуться» — органичная аргументация для этого сегмента.</div>
+            </div>
+          </div>
+
+          <h3 class="sub" style="margin-top:1.75rem">Барьеры</h3>
+          <div class="barrier-list">
+            <div class="barrier-item"><span class="barrier-icon">✕</span> Бабушка/дедушка не умеет пользоваться Telegram</div>
+            <div class="barrier-item"><span class="barrier-icon">✕</span> Цена 6 900 ₽ ощутима для студента/молодого специалиста</div>
+            <div class="barrier-item"><span class="barrier-icon">✕</span> Страх что «получится сухо» — нужен пример качества</div>
+            <div class="barrier-item"><span class="barrier-icon">✕</span> Непонимание что делать если старший не хочет записываться</div>
+          </div>
+        </div>
+      </div>
+
+      <hr class="divider">
+      <h3 class="sub" style="margin-top:0">Messaging — что работает</h3>
+      <div class="msg-grid">
+        <div class="msg-card do">
+          <div class="msg-label">Говорить</div>
+          <ul class="msg-items">
+            <li>«Один разговор сегодня — история для всей семьи»</li>
+            <li>«Ты организуешь — бабушка просто рассказывает»</li>
+            <li>«Повод для того разговора, который давно откладываешь»</li>
+            <li>«Ещё есть время» (urgency без давления)</li>
+          </ul>
+        </div>
+        <div class="msg-card dont">
+          <div class="msg-label">Избегать</div>
+          <ul class="msg-items">
+            <li>Упоминание технических шагов для пожилого человека</li>
+            <li>«Просто отправь голосовое» — это не работает для этого сценария</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- S5 -->
+  <div class="fg-section" id="s5">
+    <div class="fg-header" style="background:#f5f3fa;border-bottom:1px solid var(--parchment)">
+      <div>
+        <span class="fg-badge" style="background:var(--s5)">S5</span>
+      </div>
+      <div class="fg-header-info">
+        <h3>Переживающий утрату</h3>
+        <p>«Я нашла у мамы в телефоне голосовые — 40 минут. Я слушаю и плачу. Можно ли из этого сделать книгу?»</p>
+        <div class="fg-participants">
+          <span class="participant">Таня, 45 · потеряла маму 8 мес. назад</span>
+          <span class="participant">Сергей, 52 · отец умер 2 года назад</span>
+          <span class="participant">Лена, 38 · дед умер 4 мес. назад</span>
+          <span class="participant">Ирина, 55 · мама 88 лет, не ходит</span>
+        </div>
+      </div>
+    </div>
+    <div class="fg-body">
+      <div class="fg-cols">
+        <div>
+          <h3 class="sub">Ключевые цитаты</h3>
+          <div class="quotes">
+            <div class="quote">
+              <div class="quote-text">«Я нашла у мамы в телефоне голосовые — 40 минут. Она рассказывала про детство. Когда я слушаю, она снова рядом. Хочу чтобы дочка тоже могла это слышать, когда вырастет.»</div>
+              <div class="quote-author">Таня, 45</div>
+            </div>
+            <div class="quote">
+              <div class="quote-text">«У папы остались письма советских времён и фотографии. Он никогда не рассказывал про себя при жизни. Хочу собрать хотя бы то, что осталось.»</div>
+              <div class="quote-author">Сергей, 52</div>
+            </div>
+            <div class="quote">
+              <div class="quote-text">«Я не успела. У меня ничего нет кроме фотографий. Это вообще возможно — без аудио, только по фото и тому, что я помню?»</div>
+              <div class="quote-author">Лена, 38</div>
+            </div>
+            <div class="quote">
+              <div class="quote-text">«Важно что никто посторонний это не прочитает. Это очень личное. Очень.»</div>
+              <div class="quote-author">Сергей, 52</div>
+            </div>
+          </div>
+
+          <div class="jtbd-box">
+            <div class="jtbd-label">JTBD — уточнённый</div>
+            <div class="jtbd-text">«Когда боль утраты превращается в желание действовать — хочу превратить то немногое что осталось в настоящую память, которую передам детям.»</div>
+          </div>
+        </div>
+        <div>
+          <h3 class="sub">Инсайты</h3>
+          <div class="insight-list">
+            <div class="insight-item">
+              <div class="insight-num">1</div>
+              <div class="insight-text"><strong>Сегмент раскалывается на два типа.</strong> Тип А: умерший + остались материалы. Тип Б: живой, но тяжело болен. Urgency у обоих максимальный, но процесс разный.</div>
+            </div>
+            <div class="insight-item">
+              <div class="insight-num">2</div>
+              <div class="insight-text"><strong>«Хватит ли материала?»</strong> — главный страх. Нужно явно коммуницировать: «даже 30 минут записи или несколько писем — достаточно для настоящей книги».</div>
+            </div>
+            <div class="insight-item">
+              <div class="insight-num">3</div>
+              <div class="insight-text"><strong>Запрос без аудио.</strong> Несколько участников — только фото и тексты. «По письмам и фото» — незакрытый юз-кейс, который реально существует в аудитории.</div>
+            </div>
+            <div class="insight-item">
+              <div class="insight-num">4</div>
+              <div class="insight-text"><strong>Процесс как терапия.</strong> Создание книги — способ «закрыть гештальт», справиться с горем. Это мощная ценность, о которой ГЛАВА пока не говорит.</div>
+            </div>
+            <div class="insight-item">
+              <div class="insight-num">5</div>
+              <div class="insight-text"><strong>Конфиденциальность — упомянута 3 из 4.</strong> Нужна явная гарантия: «ваши материалы видите только вы и редактор. Удаляем по запросу.»</div>
+            </div>
+          </div>
+
+          <h3 class="sub" style="margin-top:1.75rem">Барьеры</h3>
+          <div class="barrier-list">
+            <div class="barrier-item"><span class="barrier-icon">✕</span> «Мало материала» — не верит что 40 мин записи хватит</div>
+            <div class="barrier-item"><span class="barrier-icon">✕</span> Нет аудио — только фото и письма, непонятно возможно ли</div>
+            <div class="barrier-item"><span class="barrier-icon">✕</span> Эмоциональная тяжесть работы с материалами</div>
+            <div class="barrier-item"><span class="barrier-icon">✕</span> Страх «напишут не то» — искажение образа человека</div>
+            <div class="barrier-item"><span class="barrier-icon">✕</span> Конфиденциальность — кто видит материалы</div>
+          </div>
+        </div>
+      </div>
+
+      <hr class="divider">
+      <h3 class="sub" style="margin-top:0">Messaging — что работает</h3>
+      <div class="msg-grid">
+        <div class="msg-card do">
+          <div class="msg-label">Говорить</div>
+          <ul class="msg-items">
+            <li>«Даже 30 минут записи — это целая жизнь»</li>
+            <li>«Работаем с аудио, текстом, письмами и фото»</li>
+            <li>«Ваши материалы — только ваши. Удаляем по запросу.»</li>
+            <li>Мягкий тон, без спешки, много поддержки</li>
+          </ul>
+        </div>
+        <div class="msg-card dont">
+          <div class="msg-label">Избегать</div>
+          <ul class="msg-items">
+            <li>Упоминание минимального объёма («нужно не менее X часов»)</li>
+            <li>Технический язык — этот сегмент очень чувствителен к тону</li>
+            <li>Urgency-давление — они и без того чувствуют срочность</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CROSS PATTERNS -->
+  <h2 class="sec" id="patterns" style="margin-top:1rem">Паттерны волны — повторяются в 2+ сегментах</h2>
+  <div class="pattern-grid">
+    <div class="pattern-card">
+      <div class="pattern-code">Паттерн A</div>
+      <h4>«Покажите пример» — барьер №1</h4>
+      <p>Во всех четырёх группах участники первым делом просили показать реальный пример готовой книги. Описание продукта не заменяет пример. Это единственный способ доказать качество.</p>
+      <div class="segs">
+        <span class="seg-chip" style="background:var(--s1)">S1</span>
+        <span class="seg-chip" style="background:var(--s2)">S2</span>
+        <span class="seg-chip" style="background:var(--s3)">S3</span>
+        <span class="seg-chip" style="background:var(--s5)">S5</span>
+      </div>
+    </div>
+    <div class="pattern-card">
+      <div class="pattern-code">Паттерн B</div>
+      <h4>«AI» — слово, которое отпугивает</h4>
+      <p>«AI написала» = шаблонно, бездушно, несерьёзно. Замена на «литературная обработка», «редактор», «живой текст» работает. Это единственное изменение в copy, которое нужно сделать немедленно.</p>
+      <div class="segs">
+        <span class="seg-chip" style="background:var(--s1)">S1</span>
+        <span class="seg-chip" style="background:var(--s3)">S3</span>
+      </div>
+    </div>
+    <div class="pattern-card">
+      <div class="pattern-code">Паттерн C</div>
+      <h4>Покупатель ≠ тот, кто разговаривает</h4>
+      <p>В S2 и S5 — внук организует, а бабушка говорит. Продукт должен явно поддерживать «сценарий посредника». Нужна инструкция: «как объяснить близкому, что будет происходить».</p>
+      <div class="segs">
+        <span class="seg-chip" style="background:var(--s2)">S2</span>
+        <span class="seg-chip" style="background:var(--s5)">S5</span>
+      </div>
+    </div>
+    <div class="pattern-card">
+      <div class="pattern-code">Паттерн D</div>
+      <h4>Незакрытые форматы = потерянные деньги</h4>
+      <p>Подарочный сертификат (S3), коллективная оплата (S2 и S3), работа с текстами/фото без аудио (S5) — три конкретных формата которых нет в продукте, но которые называли участники как «это бы меня убедило».</p>
+      <div class="segs">
+        <span class="seg-chip" style="background:var(--s2)">S2</span>
+        <span class="seg-chip" style="background:var(--s3)">S3</span>
+        <span class="seg-chip" style="background:var(--s5)">S5</span>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- PRODUCT HYPOTHESES -->
+  <h2 class="sec" id="hypotheses">Продуктовые гипотезы волны 1</h2>
+  <div class="hypo-list">
+    <div class="hypo-item">
+      <span class="hypo-priority p-must">Must</span>
+      <div class="hypo-content">
+        <h4>Убрать «AI» из всех коммуникаций</h4>
+        <p>Заменить на «литературная обработка», «редактор работает с вашим текстом». Единственное изменение в copy которое нужно сделать сегодня. Влияет на S1, S3, S4.</p>
+      </div>
+    </div>
+    <div class="hypo-item">
+      <span class="hypo-priority p-must">Must</span>
+      <div class="hypo-content">
+        <h4>Реальный PDF-пример на первом экране лендинга</h4>
+        <p>«Скачать пример» должен быть до цены и до описания процесса. Участники всех четырёх групп назвали пример условием решения о покупке.</p>
+      </div>
+    </div>
+    <div class="hypo-item">
+      <span class="hypo-priority p-must">Must</span>
+      <div class="hypo-content">
+        <h4>Подарочный сертификат как отдельный продукт</h4>
+        <p>Красивая PDF-карточка для вручения на юбилей. Разблокирует S3 полностью. Покупатель вручает карточку, запись делается позже в удобное время.</p>
+      </div>
+    </div>
+    <div class="hypo-item">
+      <span class="hypo-priority p-should">Should</span>
+      <div class="hypo-content">
+        <h4>«Вопросы-подсказки» вынести в герой лендинга</h4>
+        <p>«Мы задаём вопросы — вам нужно только разговаривать» — это ключевое снятие страха для S1. Сейчас это спрятано в описании процесса. Нужно в первый экран.</p>
+      </div>
+    </div>
+    <div class="hypo-item">
+      <span class="hypo-priority p-should">Should</span>
+      <div class="hypo-content">
+        <h4>Инструкция «как убедить пожилого участника»</h4>
+        <p>Готовый текст для покупателя: как объяснить маме/бабушке что будет происходить и зачем. Снимает ожидаемое сопротивление юбиляра (S3) и нежелание говорить о себе (S1, S7).</p>
+      </div>
+    </div>
+    <div class="hypo-item">
+      <span class="hypo-priority p-should">Should</span>
+      <div class="hypo-content">
+        <h4>«Работает из любого города» — явная коммуникация</h4>
+        <p>Сценарий дистанции (родители в другом городе) у половины S1. Нужно явно говорить что всё через Telegram и расстояние не важно. Сейчас нет нигде.</p>
+      </div>
+    </div>
+    <div class="hypo-item">
+      <span class="hypo-priority p-should">Should</span>
+      <div class="hypo-content">
+        <h4>«Даже 30 минут записи достаточно» — в FAQ и боте</h4>
+        <p>Главный страх S5: «у меня мало материала». Нужна явная коммуникация о минимальном пороге. Это разблокирует несколько заказов.</p>
+      </div>
+    </div>
+    <div class="hypo-item">
+      <span class="hypo-priority p-could">Could</span>
+      <div class="hypo-content">
+        <h4>Приём материалов без аудио: текст, фото, письма</h4>
+        <p>S5: несколько человек имеют только письма и фото. Если это технически возможно — открывается новый сегмент «посмертная биография по архивным материалам».</p>
+      </div>
+    </div>
+    <div class="hypo-item">
+      <span class="hypo-priority p-could">Could</span>
+      <div class="hypo-content">
+        <h4>Messaging «повод для разговора» — тест на лендинге</h4>
+        <p>S2: «это повод задать те вопросы, которые давно хочу задать» — неожиданно мощная ценность. Стоит протестировать как заголовок или отдельный CTA-блок.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <strong>ГЛАВА</strong> · Отчёт по фокус-группам · Волна 1 · Апрель 2026<br>
+  <span style="font-size:.72rem;margin-top:.3rem;display:block">Следующий документ: Волна 2 — S4, S6, S7</span>
+</footer>
+
+<script>
+document.querySelectorAll('a[href^="#"]').forEach(a=>{
+  a.addEventListener('click',e=>{e.preventDefault();const t=document.querySelector(a.getAttribute('href'));if(t)t.scrollIntoView({behavior:'smooth',block:'start'})})
+})
+</script>
+</body>
+</html>

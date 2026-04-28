@@ -1,0 +1,16 @@
+[Unit]
+Description=GLAVA CCO Bot (AI Chief Customer Officer)
+After=network.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/opt/glava
+ExecStart=/opt/glava/.venv/bin/python -m cco.bot
+Restart=always
+RestartSec=10
+EnvironmentFile=/opt/glava/.env
+
+[Install]
+WantedBy=multi-user.target

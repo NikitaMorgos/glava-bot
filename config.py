@@ -99,6 +99,14 @@ YOOKASSA_SECRET_KEY = os.getenv("YOOKASSA_SECRET_KEY", "")
 # Куда вернуть пользователя после оплаты (return_url). По умолчанию — ссылка на бота
 PAYMENT_RETURN_URL = os.getenv("PAYMENT_RETURN_URL", "https://t.me/glava_voice_bot")
 
+# SMSimple — SMS-рассылки (https://smsimple.ru/api-http). Опционально.
+SMSIMPLE_USER = os.getenv("SMSIMPLE_USER", "").strip()
+SMSIMPLE_PASSWORD = os.getenv("SMSIMPLE_PASSWORD", "").strip()
+# ID подписи отправителя (or_id) из личного кабинета SMSimple
+SMSIMPLE_ORIGIN_ID = os.getenv("SMSIMPLE_ORIGIN_ID", "").strip()
+# Базовый URL API (по умолчанию https://smsimple.ru)
+SMSIMPLE_BASE_URL = os.getenv("SMSIMPLE_BASE_URL", "https://smsimple.ru").strip()
+
 # Персональные промо-коды: параметры автоматической отправки
 # Задержка после регистрации (часов)
 PERSONAL_PROMO_DELAY_HOURS = int(os.getenv("PERSONAL_PROMO_DELAY_HOURS", "48"))

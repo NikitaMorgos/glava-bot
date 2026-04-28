@@ -563,19 +563,29 @@ def save_book_version(
         return cur.fetchone()["id"]
 
 
-def get_last_book_version(telegram_id: int) -> dict | None:
+def get_last_book_versions_for_telegram_ids(telegram_ids: list[int]) -> dict[int, dict]:
+    """Последняя версия книги по каждому telegram_id — один запрос (без N+1)."""
+    if not telegram_ids:
+        return {}
     ensure_book_versions_table()
     with _conn() as conn:
         cur = conn.cursor()
         cur.execute(
             """
-            SELECT * FROM book_versions
-            WHERE telegram_id = %s ORDER BY version DESC LIMIT 1
+            SELECT DISTINCT ON (telegram_id) *
+            FROM book_versions
+            WHERE telegram_id = ANY(%s)
+            ORDER BY telegram_id, version DESC
             """,
-            (telegram_id,),
+            (telegram_ids,),
         )
-        row = cur.fetchone()
-        return dict(row) if row else None
+        rows = cur.fetchall()
+    return {int(r["telegram_id"]): dict(r) for r in rows}
+
+
+def get_last_book_version(telegram_id: int) -> dict | None:
+    m = get_last_book_versions_for_telegram_ids([telegram_id])
+    return m.get(telegram_id)
 
 
 def get_book_versions(telegram_id: int) -> list[dict]:

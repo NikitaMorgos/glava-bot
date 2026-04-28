@@ -1,0 +1,81 @@
+{
+  "project_id": "karakulina_stage4",
+  "iteration": 2,
+  "verdict": "fail",
+  "issues": [
+    {
+      "id": "issue_001",
+      "category": "integrity",
+      "severity": "critical",
+      "page": null,
+      "description": "PDF файл недоступен для визуальной проверки. Путь /opt/glava/exports/karakulina_stage4_hardening_20260409_r4_stage4_pdf_iter2_20260409_173533.pdf не может быть открыт для анализа содержимого.",
+      "fix_suggestion": "Убедиться, что PDF файл корректно сгенерирован и доступен по указанному пути. Проверить права доступа к файлу и его целостность. Возможно, требуется пересоздание PDF с корректными правами доступа."
+    },
+    {
+      "id": "issue_002",
+      "category": "integrity",
+      "severity": "critical",
+      "page": null,
+      "description": "Структурная проверка не пройдена (structural_layout_guard failed). Это указывает на критические нарушения в структуре макета или несоответствие page_plan и page_map.",
+      "fix_suggestion": "Провести полную проверку соответствия page_plan и page_map. Убедиться, что все элементы размещены на правильных страницах, все callout_ids присутствуют, пагинация корректна."
+    }
+  ],
+  "checklist": {
+    "pagination": {
+      "status": "fail",
+      "details": "Невозможно проверить пагинацию из-за недоступности PDF файла"
+    },
+    "toc": {
+      "status": "fail",
+      "details": "Невозможно проверить оглавление из-за недоступности PDF файла"
+    },
+    "orphan_widow": {
+      "status": "fail",
+      "details": "Невозможно проверить висячие строки из-за недоступности PDF файла"
+    },
+    "photos": {
+      "status": "fail",
+      "total_expected": 22,
+      "total_found": 0,
+      "details": "Невозможно проверить размещение и качество 22 фотографий из-за недоступности PDF файла"
+    },
+    "callouts": {
+      "status": "fail",
+      "total_expected": 6,
+      "total_found": 0,
+      "details": "Невозможно проверить размещение и оформление 6 callout-ов из-за недоступности PDF файла"
+    },
+    "headers_footers": {
+      "status": "fail",
+      "details": "Невозможно проверить колонтитулы из-за недоступности PDF файла"
+    },
+    "margins": {
+      "status": "fail",
+      "details": "Невозможно проверить поля и отступы из-за недоступности PDF файла"
+    },
+    "typography": {
+      "status": "fail",
+      "details": "Невозможно проверить шрифты и читаемость из-за недоступности PDF файла"
+    },
+    "integrity": {
+      "status": "fail",
+      "details": "Критические проблемы: PDF недоступен, structural_layout_guard не пройден"
+    }
+  },
+  "regression_check": {
+    "performed": true,
+    "previous_issues_resolved": [
+      {
+        "issue_id": "issue_001",
+        "status": "persists"
+      }
+    ]
+  },
+  "summary": {
+    "critical_issues": 2,
+    "major_issues": 0,
+    "minor_issues": 0,
+    "total_pages_checked": 0,
+    "overall_assessment": "Макет не может быть проверен из-за недоступности PDF файла и критических структурных нарушений. Проблема с доступом к файлу сохраняется со второй итерации, что указывает на системные проблемы генерации PDF. Требуется немедленное исправление процесса создания PDF файла."
+  }
+}

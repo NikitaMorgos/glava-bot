@@ -1,0 +1,42 @@
+---
+description: После редактирования любого промпта — загрузить актуальный файл на admin.glava.family/dasha/pipeline_prompts
+globs: prompts/*.md
+alwaysApply: false
+---
+
+# Промпты пайплайна: единый источник правды
+
+**Единственное место хранения актуальных промптов** — `admin.glava.family/dasha/pipeline_prompts`
+
+## Обязательный шаг после редактирования
+
+После любого изменения `.md`-файла в `prompts/` — загрузить файл через SSH:
+
+```bash
+scp prompts/<имя_файла>.md glava:/opt/glava/prompts/<имя_файла>.md
+```
+
+Или через интерфейс: перейти на `https://admin.glava.family/dasha/pipeline_prompts`, найти агента и загрузить `.md`.
+
+## Соответствие агентов и файлов
+
+| Ключ | Агент | Файл (пример) |
+|------|-------|---------------|
+| `cleaner` | 01 · Очиститель | `01_cleaner_v1.md` |
+| `fact_extractor` | 02 · Фактолог | `02_fact_extractor_v3.1.md` |
+| `historian` | 02b · Историк | `02b_historian_v1.md` |
+| `ghostwriter` | 03 · Писатель | `03_ghostwriter_v2.5.md` |
+| `fact_checker` | 04 · Фактчекер | `04_fact_checker_v2.md` |
+| `literary_editor` | 05 · Литредактор | `05_literary_editor_v3.md` |
+| `proofreader` | 06 · Корректор | `06_proofreader_v1.md` |
+| `photo_editor` | 07 · Фоторедактор | `07_photo_editor_v1.md` |
+| `layout_designer` | 08 · Верстальщик | `08_layout_designer_v3.14.md` |
+| `qa_layout` | 09 · QA вёрстки | `09_qa_layout_v1.md` |
+| `cover_designer` | 13 · Дизайнер обложки | `13_cover_designer_v2.5.md` |
+| `art_director` | 15 · Арт-директор | `15_layout_art_director_v1.7.md` |
+
+## Важно
+
+- `admin.glava.family/dasha/prompts` — упразднён, редиректит на pipeline_prompts
+- DB-промпты больше не используются как источник правды
+- При загрузке старый файл автоматически сохраняется в `prompts/backups/`

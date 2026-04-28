@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+{% block title %}Промпты пайплайна{% endblock %}
+
+{% block head %}
+<style>
+  .page-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 2rem; padding-bottom: 1rem;
+    border-bottom: 1.5px solid #e8e0d6;
+  }
+  .page-header h1 { font-size: 1.3rem; font-weight: 600; }
+  .agent-card {
+    background: #fff; border-radius: 12px;
+    border: 1.5px solid #e8e0d6;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1rem;
+    transition: border-color .2s;
+  }
+  .agent-card:hover { border-color: var(--accent); }
+  .agent-header { display:flex; align-items:center; gap:.75rem; margin-bottom:.75rem; }
+  .agent-name { font-weight: 600; font-size: 1rem; }
+  .agent-meta { display:flex; gap:1.5rem; flex-wrap:wrap; font-size:.82rem; color:var(--muted); margin-bottom:.75rem; }
+  .agent-meta span { display:flex; align-items:center; gap:.3rem; }
+  .file-chip {
+    display: inline-block; background: var(--paper);
+    border: 1px solid #ddd5c7; border-radius: 6px;
+    padding: .2rem .6rem; font-size: .82rem;
+    font-family: monospace; color: var(--ink); letter-spacing: -.01em;
+  }
+  .file-chip.missing { background:#fff5f5; border-color:#fcc; color:#c00; }
+  .upload-row { display:flex; align-items:center; gap:.75rem; flex-wrap:wrap; }
+  .upload-label {
+    display: inline-flex; align-items: center; gap: .4rem;
+    padding: .45rem .9rem; border-radius: 7px;
+    border: 1.5px dashed #c4b8a8; background: var(--cream);
+    font-size: .85rem; color: var(--muted); cursor: pointer;
+    transition: all .2s;
+  }
+  .upload-label:hover { border-color: var(--accent); color: var(--accent); background: #f0f4f8; }
+  .upload-label input[type=file] { display:none; }
+  .btn-upload {
+    padding: .45rem 1rem; background: var(--accent); color: #fff;
+    border: none; border-radius: 7px; font-size: .85rem;
+    cursor: pointer; display: none; font-family: inherit;
+    transition: opacity .2s;
+  }
+  .btn-upload:hover { opacity: .88; }
+  .upload-status {
+    font-size: .82rem; padding: .35rem .7rem; border-radius: 6px;
+    display: none;
+  }
+  .upload-status.ok  { background: #e8f5e9; color: #2e7d32; }
+  .upload-status.err { background: #ffebee; color: #c62828; }
+  .notes-line {
+    font-size: .8rem; color: var(--muted); margin-top: .5rem;
+    padding-top: .5rem; border-top: 1px solid #f0e8de;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .badge { display:inline-block; padding:.1rem .5rem; border-radius:4px; font-size:.75rem; font-weight:500; }
+  .badge-ok  { background:#e8f5e9; color:#2e7d32; }
+  .badge-new { background:#e3f2fd; color:#1565c0; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Промпты пайплайна</h1>
+    <p class="muted" style="font-size:.85rem; margin-top:.2rem;">
+      Загрузи .md-файл чтобы обновить промпт роли. Старая версия сохраняется в backups/.
+    </p>
+  </div>
+  <a href="{{ url_for('admin_logout') }}" class="muted" style="font-size:.85rem; white-space:nowrap;">
+    Выйти →
+  </a>
+</div>
+
+{% if not agents %}
+<p class="muted">pipeline_config.json не найден или пуст.</p>
+{% endif %}
+
+{% for agent in agents %}
+<div class="agent-card" id="card-{{ agent.key }}">
+  <div class="agent-header">
+    <span class="agent-name">{{ agent.display_name }}</span>
+    {% if agent.last_uploaded != '—' %}
+      <span class="badge badge-new" title="Обновлён через кабинет">↑ загружен</span>
+    {% endif %}
+  </div>
+
+  <div class="agent-meta">
+    <span title="Текущий файл промпта">
+      📄
+      <span class="file-chip {% if not agent.exists %}missing{% endif %}">
+        {{ agent.prompt_file }}
+      </span>
+      {% if not agent.exists %}<em>(файл не найден)</em>{% endif %}
+    </span>
+    {% if agent.exists %}
+    <span title="Размер файла">📏 {{ agent.size_kb }} КБ</span>
+    <span title="Изменён на диске">🕐 {{ agent.modified }}</span>
+    {% endif %}
+    <span title="Модель">🤖 {{ agent.model }}</span>
+    <span title="Температура">🌡 {{ agent.temperature }}</span>
+  </div>
+
+  {% if agent.last_uploaded != '—' %}
+  <div style="font-size:.8rem; color:var(--muted); margin-bottom:.6rem;">
+    Последняя загрузка через кабинет:
+    <strong style="color:var(--ink);">{{ agent.last_uploaded }}</strong>
+    {% if agent.uploaded_filename %}
+      (<code style="font-size:.78rem;">{{ agent.uploaded_filename }}</code>)
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <div class="upload-row">
+    <label class="upload-label" for="file-{{ agent.key }}">
+      📎 Выбрать .md файл
+      <input type="file" id="file-{{ agent.key }}" accept=".md"
+             onchange="onFileSelected('{{ agent.key }}', this)">
+    </label>
+    <button class="btn-upload" id="btn-{{ agent.key }}"
+            onclick="uploadPrompt('{{ agent.key }}')">
+      Загрузить
+    </button>
+    <span class="upload-status" id="status-{{ agent.key }}"></span>
+  </div>
+
+  {% if agent.notes %}
+  <div class="notes-line" title="{{ agent.notes }}">
+    💬 {{ agent.notes }}
+  </div>
+  {% endif %}
+</div>
+{% endfor %}
+
+<script>
+function onFileSelected(key, input) {
+  const btn = document.getElementById('btn-' + key);
+  const status = document.getElementById('status-' + key);
+  if (input.files.length > 0) {
+    btn.style.display = 'inline-block';
+    btn.textContent = 'Загрузить: ' + input.files[0].name;
+    status.style.display = 'none';
+  } else {
+    btn.style.display = 'none';
+  }
+}
+
+async function uploadPrompt(key) {
+  const input = document.getElementById('file-' + key);
+  const btn   = document.getElementById('btn-' + key);
+  const status = document.getElementById('status-' + key);
+
+  if (!input.files.length) return;
+
+  const fd = new FormData();
+  fd.append('agent_key', key);
+  fd.append('file', input.files[0]);
+
+  btn.disabled = true;
+  btn.textContent = 'Загружаю…';
+  status.style.display = 'none';
+
+  try {
+    const res  = await fetch('{{ url_for("admin_prompts_upload") }}', { method: 'POST', body: fd });
+    const data = await res.json();
+
+    if (data.ok) {
+      status.className = 'upload-status ok';
+      status.textContent = '✅ Загружен ' + data.uploaded + ' · ' + data.size_kb + ' КБ';
+      status.style.display = 'inline-block';
+
+      // Обновить метаданные на карточке без перезагрузки
+      const card = document.getElementById('card-' + key);
+      const meta = card.querySelector('.agent-meta');
+      // Обновить время
+      const timeSpan = meta.querySelector('[title="Изменён на диске"] + span') ||
+                       [...meta.querySelectorAll('span')].find(s => s.title === 'Изменён на диске');
+      if (timeSpan) timeSpan.innerHTML = '🕐 только что';
+
+      btn.textContent = 'Загрузить ещё';
+      input.value = '';
+      btn.style.display = 'none';
+    } else {
+      throw new Error(data.error || 'Ошибка');
+    }
+  } catch (e) {
+    status.className = 'upload-status err';
+    status.textContent = '❌ ' + e.message;
+    status.style.display = 'inline-block';
+    btn.textContent = 'Повторить';
+  }
+  btn.disabled = false;
+}
+</script>
+{% endblock %}

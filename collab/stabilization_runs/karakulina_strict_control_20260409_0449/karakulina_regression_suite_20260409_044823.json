@@ -1,0 +1,54 @@
+{
+  "project": "karakulina",
+  "stage_under_approval": "proofreader",
+  "timestamp": "20260409_044823",
+  "cases": {
+    "content_guard": {
+      "gate": "required_entities",
+      "passed": true,
+      "required_total": 17,
+      "critical_total": 7,
+      "critical_matched_total": 7,
+      "critical_missing_total": 0,
+      "critical_missing": [],
+      "optional_total": 10,
+      "optional_matched_total": 9,
+      "optional_missing_total": 1,
+      "optional_missing": [
+        {
+          "type": "person",
+          "label": "Даша",
+          "variants": [
+            "даша"
+          ]
+        }
+      ]
+    },
+    "dedup_guard": {
+      "gate": "cross_chapter_repetition",
+      "passed": true,
+      "ngram_size": 5,
+      "threshold": 0.22,
+      "violations": []
+    },
+    "layout_guard": {
+      "gate": "structural_layout_guard",
+      "passed": true,
+      "skipped": true
+    },
+    "pdf_preflight": {
+      "gate": "pdf_preflight",
+      "passed": true,
+      "skipped": true
+    }
+  },
+  "sources": {
+    "fact_map_version": 3,
+    "proofreader_version": 4
+  },
+  "requirements": {
+    "require_text": true,
+    "require_layout": false
+  },
+  "passed": true
+}

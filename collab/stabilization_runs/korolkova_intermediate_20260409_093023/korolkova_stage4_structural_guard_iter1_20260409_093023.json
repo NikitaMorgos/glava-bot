@@ -1,0 +1,10 @@
+{
+  "gate": "structural_layout_guard",
+  "passed": true,
+  "checks": {
+    "page_map_not_empty": true,
+    "page_plan_not_empty": true,
+    "page_plan_vs_page_map_close": true,
+    "technical_total_matches_page_map": true
+  }
+}

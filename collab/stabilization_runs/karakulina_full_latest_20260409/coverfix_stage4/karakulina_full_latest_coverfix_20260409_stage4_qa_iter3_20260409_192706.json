@@ -1,0 +1,265 @@
+{
+  "verdict": "fail",
+  "issues": [
+    {
+      "id": "issue_001",
+      "category": "integrity",
+      "severity": "critical",
+      "page": null,
+      "description": "ЭСКАЛАЦИЯ: Структурная проверка невозможна без доступа к PDF файлу. После 3 итераций критическая проблема не устранена - PDF файл не передан для проверки. Режим structural_qa требует анализа page_map, но основная задача Layout QA - проверка визуального качества макета - не может быть выполнена.",
+      "fix_suggestion": "ТРЕБУЕТСЯ ВМЕШАТЕЛЬСТВО ПРОДЮСЕРА: Обеспечить передачу PDF файла для полноценной проверки макета. Без визуального контроля невозможно подтвердить качество вёрстки перед отправкой клиенту."
+    },
+    {
+      "id": "issue_002",
+      "category": "callout",
+      "severity": "major",
+      "page": null,
+      "description": "Критическое несоответствие page_plan и page_map по callout-ам: в page_map присутствуют исторические заметки hist_01, hist_02, hist_03, hist_04, которые НЕ входят в expected_content.callout_ids. Согласно контракту STAGE4, каждый callout из page_plan должен быть в page_map 1:1. Исторические заметки - это отдельный тип контента, не callout-ы.",
+      "fix_suggestion": "Привести в соответствие типы элементов: либо переклассифицировать hist_01-04 как callout_08-11 и обновить expected_content.callout_ids до 11 элементов, либо четко разделить исторические заметки и callout-ы как разные типы с отдельным учетом в expected_content."
+    },
+    {
+      "id": "issue_003",
+      "category": "toc",
+      "severity": "major",
+      "page": 3,
+      "description": "Нарушение контракта STAGE4: оглавление не соответствует expected_content.chapter_titles. Ожидается 5 глав: ['Основные даты жизни', 'История жизни', 'Портрет человека', 'Интересные факты и жизненные истории', 'Путь длиною в жизнь'], но в page_map на странице 3 указан только элемент 'toc_items' без детализации соответствия.",
+      "fix_suggestion": "Обеспечить точное соответствие оглавления expected_content.chapter_titles: все 5 глав должны присутствовать с корректными названиями и номерами страниц. Раздел 'Фотографии' (стр. 28) может быть дополнительным, но не заменяет основные главы."
+    },
+    {
+      "id": "issue_004",
+      "category": "pagination",
+      "severity": "major",
+      "page": null,
+      "description": "Нарушение единой модели пагинации STAGE4: page_map показывает физические номера страниц, но не указывает видимые номера. Согласно контракту: cover (physical 1) и blank (physical 2) без номера, TOC (physical 3) должен отображать visible номер 1, далее visible_page = physical_page - 2.",
+      "fix_suggestion": "Реализовать единую модель пагинации: страницы 1-2 без видимых номеров, страница 3 (TOC) отображает номер 1, страницы 4+ отображают номера 2, 3, 4 и т.д. Оглавление должно ссылаться на visible номера."
+    },
+    {
+      "id": "issue_001",
+      "category": "integrity",
+      "severity": "minor",
+      "page": null,
+      "description": "PDF файл недоступен для визуальной проверки. Путь /opt/glava/exports/karakulina_full_latest_coverfix_20260409_stage4_pdf_iter3_20260409_192706.pdf не может быть открыт. Это критическая проблема, так как основная задача Layout QA — проверить визуальное качество PDF-макета.",
+      "fix_suggestion": "Убедиться, что PDF файл существует по указанному пути и доступен для чтения. Проверить права доступа к файлу и корректность пути. Без доступа к PDF невозможно выполнить визуальную проверку шрифтов, фотографий, композиции и других критических аспектов макета.",
+      "non_blocking": true,
+      "source": "visual_qa"
+    },
+    {
+      "id": "issue_002",
+      "category": "integrity",
+      "severity": "minor",
+      "page": null,
+      "description": "ЭСКАЛАЦИЯ: достигнуто максимальное количество итераций (3/3), но критические проблемы не устранены. Предыдущие итерации показали structural_guard_failed и недоступность PDF для визуальной проверки.",
+      "fix_suggestion": "Требуется вмешательство Продюсера. Необходимо решить проблему доступности PDF файла и устранить структурные проблемы макета перед продолжением процесса QA.",
+      "non_blocking": true,
+      "source": "visual_qa"
+    }
+  ],
+  "summary": {
+    "critical_issues": 1,
+    "major_issues": 3,
+    "minor_issues": 2,
+    "total_pages_checked": 37,
+    "overall_assessment": "Combined structural_qa + visual_qa (visual non-blocking)",
+    "fonts_embedded": true
+  },
+  "qa_modes": {
+    "structural_qa": {
+      "project_id": "karakulina_stage4",
+      "iteration": 3,
+      "verdict": "fail",
+      "issues": [
+        {
+          "id": "issue_001",
+          "category": "integrity",
+          "severity": "critical",
+          "page": null,
+          "description": "ЭСКАЛАЦИЯ: Структурная проверка невозможна без доступа к PDF файлу. После 3 итераций критическая проблема не устранена - PDF файл не передан для проверки. Режим structural_qa требует анализа page_map, но основная задача Layout QA - проверка визуального качества макета - не может быть выполнена.",
+          "fix_suggestion": "ТРЕБУЕТСЯ ВМЕШАТЕЛЬСТВО ПРОДЮСЕРА: Обеспечить передачу PDF файла для полноценной проверки макета. Без визуального контроля невозможно подтвердить качество вёрстки перед отправкой клиенту."
+        },
+        {
+          "id": "issue_002",
+          "category": "callout",
+          "severity": "major",
+          "page": null,
+          "description": "Критическое несоответствие page_plan и page_map по callout-ам: в page_map присутствуют исторические заметки hist_01, hist_02, hist_03, hist_04, которые НЕ входят в expected_content.callout_ids. Согласно контракту STAGE4, каждый callout из page_plan должен быть в page_map 1:1. Исторические заметки - это отдельный тип контента, не callout-ы.",
+          "fix_suggestion": "Привести в соответствие типы элементов: либо переклассифицировать hist_01-04 как callout_08-11 и обновить expected_content.callout_ids до 11 элементов, либо четко разделить исторические заметки и callout-ы как разные типы с отдельным учетом в expected_content."
+        },
+        {
+          "id": "issue_003",
+          "category": "toc",
+          "severity": "major",
+          "page": 3,
+          "description": "Нарушение контракта STAGE4: оглавление не соответствует expected_content.chapter_titles. Ожидается 5 глав: ['Основные даты жизни', 'История жизни', 'Портрет человека', 'Интересные факты и жизненные истории', 'Путь длиною в жизнь'], но в page_map на странице 3 указан только элемент 'toc_items' без детализации соответствия.",
+          "fix_suggestion": "Обеспечить точное соответствие оглавления expected_content.chapter_titles: все 5 глав должны присутствовать с корректными названиями и номерами страниц. Раздел 'Фотографии' (стр. 28) может быть дополнительным, но не заменяет основные главы."
+        },
+        {
+          "id": "issue_004",
+          "category": "pagination",
+          "severity": "major",
+          "page": null,
+          "description": "Нарушение единой модели пагинации STAGE4: page_map показывает физические номера страниц, но не указывает видимые номера. Согласно контракту: cover (physical 1) и blank (physical 2) без номера, TOC (physical 3) должен отображать visible номер 1, далее visible_page = physical_page - 2.",
+          "fix_suggestion": "Реализовать единую модель пагинации: страницы 1-2 без видимых номеров, страница 3 (TOC) отображает номер 1, страницы 4+ отображают номера 2, 3, 4 и т.д. Оглавление должно ссылаться на visible номера."
+        }
+      ],
+      "checklist": {
+        "pagination": {
+          "status": "fail",
+          "details": "Единая модель пагинации не реализована. Отсутствует информация о видимых номерах страниц в page_map."
+        },
+        "toc": {
+          "status": "fail",
+          "details": "Оглавление не детализировано в page_map. Невозможно проверить соответствие expected_content.chapter_titles без доступа к PDF."
+        },
+        "orphan_widow": {
+          "status": "warning",
+          "details": "Проверка висячих строк невозможна без визуального доступа к PDF файлу."
+        },
+        "photos": {
+          "status": "pass",
+          "total_expected": 22,
+          "total_found": 22,
+          "details": "Все 22 фотографии присутствуют в page_map согласно expected_content.photo_ids. Размещение соответствует page_plan."
+        },
+        "callouts": {
+          "status": "fail",
+          "total_expected": 7,
+          "total_found": 7,
+          "details": "7 callouts (callout_01-07) размещены согласно page_plan, но дополнительно присутствуют 4 исторические заметки (hist_01-04), не входящие в expected_content.callout_ids."
+        },
+        "headers_footers": {
+          "status": "warning",
+          "details": "Проверка колонтитулов невозможна без визуального доступа к PDF файлу."
+        },
+        "margins": {
+          "status": "warning",
+          "details": "Проверка полей невозможна без визуального доступа к PDF файлу."
+        },
+        "typography": {
+          "status": "warning",
+          "details": "Проверка шрифтов и читаемости невозможна без визуального доступа к PDF файлу."
+        },
+        "integrity": {
+          "status": "fail",
+          "details": "Структурная целостность нарушена: несоответствие page_plan и page_map по типам элементов, отсутствие PDF для визуальной проверки."
+        }
+      },
+      "regression_check": {
+        "performed": true,
+        "previous_issues_resolved": [
+          {
+            "issue_id": "issue_001",
+            "status": "persists"
+          },
+          {
+            "issue_id": "issue_002",
+            "status": "persists"
+          },
+          {
+            "issue_id": "issue_003",
+            "status": "persists"
+          }
+        ]
+      },
+      "summary": {
+        "critical_issues": 1,
+        "major_issues": 3,
+        "minor_issues": 0,
+        "total_pages_checked": 37,
+        "overall_assessment": "ЭСКАЛАЦИЯ: после 3 итераций критические проблемы макета не устранены. Основная проблема - отсутствие PDF файла для визуальной проверки, что делает невозможным выполнение основной задачи Layout QA. Дополнительно выявлены структурные нарушения контракта STAGE4 по callout-ам, оглавлению и пагинации. Требуется вмешательство Продюсера."
+      }
+    },
+    "visual_qa": {
+      "project_id": "karakulina_stage4",
+      "iteration": 3,
+      "verdict": "fail",
+      "issues": [
+        {
+          "id": "issue_001",
+          "category": "integrity",
+          "severity": "critical",
+          "page": null,
+          "description": "PDF файл недоступен для визуальной проверки. Путь /opt/glava/exports/karakulina_full_latest_coverfix_20260409_stage4_pdf_iter3_20260409_192706.pdf не может быть открыт. Это критическая проблема, так как основная задача Layout QA — проверить визуальное качество PDF-макета.",
+          "fix_suggestion": "Убедиться, что PDF файл существует по указанному пути и доступен для чтения. Проверить права доступа к файлу и корректность пути. Без доступа к PDF невозможно выполнить визуальную проверку шрифтов, фотографий, композиции и других критических аспектов макета."
+        },
+        {
+          "id": "issue_002",
+          "category": "integrity",
+          "severity": "critical",
+          "page": null,
+          "description": "ЭСКАЛАЦИЯ: достигнуто максимальное количество итераций (3/3), но критические проблемы не устранены. Предыдущие итерации показали structural_guard_failed и недоступность PDF для визуальной проверки.",
+          "fix_suggestion": "Требуется вмешательство Продюсера. Необходимо решить проблему доступности PDF файла и устранить структурные проблемы макета перед продолжением процесса QA."
+        }
+      ],
+      "checklist": {
+        "pagination": {
+          "status": "fail",
+          "details": "Невозможно проверить пагинацию без доступа к PDF файлу"
+        },
+        "toc": {
+          "status": "fail",
+          "details": "Невозможно проверить соответствие оглавления реальным страницам без визуального доступа к PDF"
+        },
+        "orphan_widow": {
+          "status": "fail",
+          "details": "Невозможно проверить висячие строки без визуального анализа PDF"
+        },
+        "photos": {
+          "status": "fail",
+          "total_expected": 22,
+          "total_found": 0,
+          "details": "Невозможно проверить размещение, обрезку и качество фотографий без доступа к PDF"
+        },
+        "callouts": {
+          "status": "warning",
+          "total_expected": 7,
+          "total_found": 7,
+          "details": "По page_map все 7 callouts присутствуют на указанных страницах, но визуальное оформление не проверено"
+        },
+        "headers_footers": {
+          "status": "fail",
+          "details": "Невозможно проверить колонтитулы без визуального доступа к PDF"
+        },
+        "margins": {
+          "status": "fail",
+          "details": "Невозможно проверить поля и отступы без визуального анализа PDF"
+        },
+        "typography": {
+          "status": "fail",
+          "details": "Невозможно проверить читаемость шрифтов, embedded fonts и визуальное качество текста без доступа к PDF"
+        },
+        "integrity": {
+          "status": "fail",
+          "details": "Критическая проблема: PDF недоступен для проверки. Structural_guard_failed в предыдущих итерациях указывает на серьезные структурные проблемы"
+        }
+      },
+      "regression_check": {
+        "performed": true,
+        "previous_issues_resolved": [
+          {
+            "issue_id": "issue_001",
+            "status": "persists"
+          },
+          {
+            "issue_id": "issue_002",
+            "status": "persists"
+          },
+          {
+            "issue_id": "issue_003",
+            "status": "persists"
+          }
+        ]
+      },
+      "summary": {
+        "critical_issues": 2,
+        "major_issues": 0,
+        "minor_issues": 0,
+        "total_pages_checked": 0,
+        "overall_assessment": "ЭСКАЛАЦИЯ: после 3 итераций критические проблемы макета не устранены. Требуется вмешательство Продюсера. PDF файл недоступен для визуальной проверки, что делает невозможным выполнение основной задачи Layout QA. Без доступа к PDF невозможно проверить читаемость шрифтов, качество фотографий, композицию и другие критические аспекты макета."
+      }
+    }
+  },
+  "verdict_policy": {
+    "visual_non_blocking": true,
+    "effective_blocking_source": "structural_qa"
+  }
+}

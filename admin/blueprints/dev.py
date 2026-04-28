@@ -49,6 +49,7 @@ def _db_metrics() -> dict:
 
 
 def _s3_metrics() -> dict:
+    """Оценка по первой странице listing — полный обход бакета мог занимать минуты."""
     try:
         import boto3
         s3 = boto3.client(
@@ -59,13 +60,19 @@ def _s3_metrics() -> dict:
             region_name=os.environ.get("S3_REGION", "ru-central1"),
         )
         bucket = os.environ.get("S3_BUCKET_NAME", "")
-        paginator = s3.get_paginator("list_objects_v2")
-        count, total_size = 0, 0
-        for page in paginator.paginate(Bucket=bucket):
-            for obj in page.get("Contents", []):
-                count += 1
-                total_size += obj["Size"]
-        return {"count": count, "size_mb": round(total_size / 1024 / 1024, 1)}
+        resp = s3.list_objects_v2(Bucket=bucket, MaxKeys=5000)
+        contents = resp.get("Contents") or []
+        count = len(contents)
+        total_size = sum(obj["Size"] for obj in contents)
+        truncated = resp.get("IsTruncated", False)
+        out = {
+            "count": count,
+            "size_mb": round(total_size / 1024 / 1024, 1),
+            "sampled": truncated,
+        }
+        if truncated:
+            out["note"] = "Показаны первые 5000 объектов; полный подсчёт отключён ради скорости."
+        return out
     except Exception as e:
         return {"error": str(e)}
 

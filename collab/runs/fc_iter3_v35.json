@@ -1,0 +1,70 @@
+{
+  "project_id": "karakulina_stage2_test",
+  "iteration": 3,
+  "verdict": "pass",
+  "errors": [],
+  "warnings": [
+    {
+      "id": "warn_001",
+      "type": "possible_omission",
+      "chapter_id": "ch_02",
+      "description": "В абзаце p_02_016 упоминается появление дачи в 60-х годах, но в fact_map есть gap по периоду дачи с рекомендацией уточнить детали",
+      "recommendation": "Рассмотреть возможность добавления деталей о даче из транскрипта или пометить как требующее дополнительного интервью"
+    },
+    {
+      "id": "warn_002",
+      "type": "style_concern",
+      "chapter_id": "ch_03",
+      "description": "В абзацах p_03_013 и p_03_015 есть обобщающие фразы без прямых источников ('Желания поиграть с ними у неё не было', 'за этой строгостью была глубокая забота')",
+      "recommendation": "Литредактор может рассмотреть смягчение формулировок или добавление оговорок типа 'по воспоминаниям дочери'"
+    }
+  ],
+  "completeness_check": {
+    "total_facts_in_map": 156,
+    "facts_referenced_in_text": 145,
+    "facts_verified_ok": 145,
+    "facts_with_errors": 0,
+    "facts_missing_from_text": [
+      {
+        "fact_id": "person_013",
+        "fact_description": "Врач Нинвана Полсачева, авторитет для Валентины",
+        "was_in_facts_omitted": true,
+        "omission_justified": true,
+        "recommendation": "Допустимо пропустить - упомянута как авторитет без конкретных эпизодов"
+      },
+      {
+        "fact_id": "loc_004",
+        "fact_description": "Село Глинск - место первого направления на работу",
+        "was_in_facts_omitted": true,
+        "omission_justified": true,
+        "recommendation": "Допустимо пропустить - кратко упомянуто в тексте без детализации"
+      },
+      {
+        "fact_id": "quote_008",
+        "fact_description": "Цитата дочери 'я так не хотела повторять за ней'",
+        "was_in_facts_omitted": true,
+        "omission_justified": true,
+        "recommendation": "Допустимо пропустить - помечена как usable_in_book: false"
+      }
+    ]
+  },
+  "regression_check": {
+    "performed": false,
+    "chapters_checked": [],
+    "issues_found": []
+  },
+  "summary": {
+    "critical_errors": 0,
+    "major_errors": 0,
+    "minor_errors": 0,
+    "warnings_count": 2,
+    "overall_assessment": "Текст книги полностью соответствует источникам. Все ранее выявленные ошибки исправлены. Структура ch_01 корректна с полным bio_data и timeline из 5 этапов. Фактическая точность высокая, галлюцинации отсутствуют."
+  },
+  "stats": {
+    "facts_checked": 145,
+    "facts_passed": 145,
+    "facts_failed": 0,
+    "coverage_percent": 93,
+    "needs_verification_flagged": 0
+  }
+}

@@ -1,0 +1,147 @@
+{
+  "project_id": "karakulina_stage4",
+  "call_type": "validation",
+  "portrait_verdict": "approved",
+  "retry_details": null,
+  "fallback_details": null,
+  "final_cover_composition": {
+    "background_color": "#faf6f0",
+    "accent_color": "#c4a070",
+    "text_primary_color": "#3d2e1f",
+    "text_secondary_color": "#8b7355",
+    "text_muted_color": "#b8a88a",
+    "cover_layout": {
+      "description": "Три зоны БЕЗ ПЕРЕСЕЧЕНИЙ. Текст никогда не наезжает на портрет.",
+      "zones": {
+        "top": {
+          "purpose": "Фамилия + имя",
+          "y_start_mm": 0,
+          "y_end_mm": 52.5,
+          "y_start_percent": 0,
+          "y_end_percent": 25,
+          "elements": [
+            "top_line",
+            "surname",
+            "first_name",
+            "bottom_line"
+          ]
+        },
+        "center": {
+          "purpose": "Портрет — ТОЛЬКО изображение",
+          "y_start_mm": 52.5,
+          "y_end_mm": 168,
+          "y_start_percent": 25,
+          "y_end_percent": 80,
+          "elements": [
+            "portrait_image"
+          ]
+        },
+        "bottom": {
+          "purpose": "Годы + подзаголовок",
+          "y_start_mm": 168,
+          "y_end_mm": 210,
+          "y_start_percent": 80,
+          "y_end_percent": 100,
+          "elements": [
+            "bottom_line",
+            "years_line",
+            "subtitle"
+          ]
+        }
+      },
+      "layers_order": [
+        "background",
+        "portrait_image",
+        "accent_lines",
+        "typography"
+      ]
+    },
+    "portrait_placement": {
+      "zone": "center",
+      "x_percent": 50,
+      "y_percent": 52,
+      "height_percent": 48,
+      "opacity": 0.75,
+      "note": "Портрет качественный, с хорошими деталями платка и одежды. Слегка увеличена opacity для лучшей читаемости характерных черт."
+    },
+    "typography": {
+      "surname": {
+        "text": "КАРАКУЛИНА",
+        "font": "PT Serif Bold",
+        "size_pt": 27,
+        "weight": 700,
+        "style": "normal",
+        "transform": "uppercase",
+        "letter_spacing_px": 6,
+        "color": "#3d2e1f",
+        "align": "center",
+        "zone": "top"
+      },
+      "first_name": {
+        "text": "Валентина Ивановна",
+        "font": "PT Serif Italic",
+        "size_pt": 14,
+        "weight": 400,
+        "style": "italic",
+        "color": "#8b7355",
+        "align": "center",
+        "zone": "top",
+        "margin_top_pt": 4
+      },
+      "years_line": {
+        "text": "род. 1920",
+        "font": "PT Sans",
+        "size_pt": 9,
+        "weight": 400,
+        "letter_spacing_px": 2,
+        "color": "#b8a88a",
+        "align": "center",
+        "zone": "bottom",
+        "note": "death_year = null, поэтому формат 'род. ГГГГ'"
+      },
+      "subtitle": {
+        "text": "История жизни, рассказанная родными",
+        "font": "PT Sans",
+        "size_pt": 6,
+        "weight": 400,
+        "transform": "uppercase",
+        "letter_spacing_px": 2,
+        "color": "#b8a88a",
+        "align": "center",
+        "zone": "bottom",
+        "margin_top_pt": 4
+      }
+    },
+    "decorative_elements": {
+      "line_top_A": {
+        "color": "#c4a070",
+        "opacity": 0.4,
+        "height_pt": 0.5,
+        "width_mm": 108,
+        "zone": "top",
+        "position": "НАД фамилией — верхняя граница блока имени"
+      },
+      "line_bottom_A": {
+        "color": "#c4a070",
+        "opacity": 0.4,
+        "height_pt": 0.5,
+        "width_mm": 108,
+        "zone": "top",
+        "position": "ПОД именем-отчеством — нижняя граница блока имени"
+      },
+      "line_top_C": {
+        "color": "#c4a070",
+        "opacity": 0.4,
+        "height_pt": 0.5,
+        "width_mm": 108,
+        "zone": "bottom",
+        "position": "НАД годами жизни — верхняя граница нижней зоны"
+      }
+    },
+    "quality_assessment": {
+      "portrait_quality": "Отличный результат. Портрет передаёт характерные черты: платок с узором, серьёзное выражение лица, рабочую одежду. Линии живые и экспрессивные.",
+      "style_compliance": "Соответствует требованиям тушевого скетча — чёрно-коричневые линии разной толщины, без фона и цветных элементов.",
+      "composition_balance": "Портрет хорошо сбалансирован с типографикой. Три зоны чётко разделены, текст не пересекается с изображением."
+    }
+  }
+}

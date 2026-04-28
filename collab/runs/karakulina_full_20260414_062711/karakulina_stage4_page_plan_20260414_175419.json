@@ -1,0 +1,471 @@
+{
+  "project_id": "karakulina_stage4",
+  "page_plan": [
+    {
+      "page_number": 1,
+      "page_type": "cover",
+      "content": "cover_composition"
+    },
+    {
+      "page_number": 2,
+      "page_type": "blank",
+      "content": null
+    },
+    {
+      "page_number": 3,
+      "page_type": "toc",
+      "content": "auto_generate"
+    },
+    {
+      "page_number": 4,
+      "page_type": "chapter_start",
+      "chapter_id": "ch_01",
+      "elements": [
+        {
+          "type": "chapter_header"
+        },
+        {
+          "type": "bio_data_block"
+        }
+      ]
+    },
+    {
+      "page_number": 5,
+      "page_type": "bio_timeline",
+      "chapter_id": "ch_01",
+      "elements": [
+        {
+          "type": "timeline_block"
+        }
+      ]
+    },
+    {
+      "page_number": 6,
+      "page_type": "chapter_start",
+      "chapter_id": "ch_02",
+      "elements": [
+        {
+          "type": "chapter_header"
+        },
+        {
+          "type": "text",
+          "paragraphs": [
+            "p_02_001"
+          ]
+        }
+      ]
+    },
+    {
+      "page_number": 7,
+      "page_type": "text_with_photo",
+      "chapter_id": "ch_02",
+      "elements": [
+        {
+          "type": "photo",
+          "photo_id": "photo_017",
+          "orientation": "vertical",
+          "layout": "wrap_right",
+          "width_percent": 40,
+          "text_beside_photo": [
+            "p_02_002"
+          ],
+          "text_after_photo": [
+            "p_02_003"
+          ],
+          "rationale": "Довоенное фото рядом с абзацем про голод 1933 года — хронологически подходящий период"
+        }
+      ]
+    },
+    {
+      "page_number": 8,
+      "page_type": "text_only",
+      "chapter_id": "ch_02",
+      "elements": [
+        {
+          "type": "text",
+          "paragraphs": [
+            "p_02_004"
+          ]
+        }
+      ]
+    },
+    {
+      "page_number": 9,
+      "page_type": "text_with_photo",
+      "chapter_id": "ch_02",
+      "elements": [
+        {
+          "type": "photo",
+          "photo_id": "photo_014",
+          "orientation": "horizontal",
+          "layout": "full_width",
+          "text_before_photo": [
+            "p_02_004"
+          ],
+          "text_after_photo": [
+            "p_02_005"
+          ],
+          "rationale": "Фронтовое фото с подругами 1944 года — горизонтальное, full_width между военными абзацами"
+        }
+      ]
+    },
+    {
+      "page_number": 10,
+      "page_type": "text_only",
+      "chapter_id": "ch_02",
+      "elements": [
+        {
+          "type": "text",
+          "paragraphs": [
+            "p_02_005"
+          ]
+        }
+      ]
+    },
+    {
+      "page_number": 11,
+      "page_type": "chapter_start",
+      "chapter_id": "ch_03",
+      "elements": [
+        {
+          "type": "chapter_header"
+        },
+        {
+          "type": "photo",
+          "photo_id": "photo_002",
+          "orientation": "vertical",
+          "layout": "wrap_right",
+          "width_percent": 40,
+          "text_beside_photo": [
+            "p_03_001"
+          ],
+          "text_after_photo": [
+            "p_03_002"
+          ],
+          "rationale": "Глава 03 — лучший портрет героя обязательно wrap_right с первым абзацем"
+        },
+        {
+          "type": "callout",
+          "callout_id": "callout_01",
+          "rationale": "Callout про самостоятельность рядом с портретом и первым абзацем"
+        }
+      ]
+    },
+    {
+      "page_number": 12,
+      "page_type": "text_only",
+      "chapter_id": "ch_03",
+      "elements": [
+        {
+          "type": "text",
+          "paragraphs": [
+            "p_03_002"
+          ]
+        },
+        {
+          "type": "callout",
+          "callout_id": "callout_02",
+          "rationale": "Callout про муравья в том же абзаце где упоминается трудолюбие"
+        },
+        {
+          "type": "callout",
+          "callout_id": "callout_03",
+          "rationale": "Callout про работящую натуру в абзаце про постоянную деятельность"
+        }
+      ]
+    },
+    {
+      "page_number": 13,
+      "page_type": "text_only",
+      "chapter_id": "ch_03",
+      "elements": [
+        {
+          "type": "text",
+          "paragraphs": [
+            "p_03_003",
+            "p_03_004"
+          ]
+        },
+        {
+          "type": "callout",
+          "callout_id": "callout_04",
+          "rationale": "Callout про место каждой вещи в абзаце про порядок и красоту"
+        }
+      ]
+    },
+    {
+      "page_number": 14,
+      "page_type": "chapter_start",
+      "chapter_id": "ch_04",
+      "elements": [
+        {
+          "type": "chapter_header"
+        },
+        {
+          "type": "text",
+          "paragraphs": [
+            "p_04_001"
+          ]
+        }
+      ]
+    },
+    {
+      "page_number": 15,
+      "page_type": "text_only",
+      "chapter_id": "ch_04",
+      "elements": [
+        {
+          "type": "text",
+          "paragraphs": [
+            "p_04_002"
+          ]
+        },
+        {
+          "type": "callout",
+          "callout_id": "callout_05",
+          "rationale": "Callout про стойкого оловянного солдатика в абзаце где упоминается эта характеристика"
+        }
+      ]
+    },
+    {
+      "page_number": 16,
+      "page_type": "chapter_start",
+      "chapter_id": "epilogue",
+      "elements": [
+        {
+          "type": "chapter_header"
+        },
+        {
+          "type": "text",
+          "paragraphs": [
+            "epilogue_content"
+          ]
+        }
+      ]
+    },
+    {
+      "page_number": 17,
+      "page_type": "photo_section",
+      "chapter_id": null,
+      "elements": [
+        {
+          "type": "section_header",
+          "title": "Фотографии"
+        },
+        {
+          "type": "photo",
+          "photo_id": "photo_018",
+          "orientation": "vertical",
+          "layout": "full_width",
+          "rationale": "Заголовок раздела + первое вертикальное фото госпиталя 1944 на одной странице"
+        }
+      ]
+    },
+    {
+      "page_number": 18,
+      "page_type": "photo_section",
+      "chapter_id": null,
+      "elements": [
+        {
+          "type": "photo",
+          "photo_id": "photo_021",
+          "orientation": "vertical",
+          "layout": "full_width",
+          "rationale": "Фронтовое фото — вертикальное, полная ширина страницы"
+        }
+      ]
+    },
+    {
+      "page_number": 19,
+      "page_type": "photo_section",
+      "chapter_id": null,
+      "elements": [
+        {
+          "type": "photo",
+          "photo_id": "photo_020",
+          "orientation": "vertical",
+          "layout": "full_width",
+          "rationale": "Портретное фото — вертикальное, полная ширина страницы"
+        }
+      ]
+    },
+    {
+      "page_number": 20,
+      "page_type": "photo_section",
+      "chapter_id": null,
+      "elements": [
+        {
+          "type": "photo",
+          "photo_id": "photo_019",
+          "orientation": "vertical",
+          "layout": "full_width",
+          "rationale": "Фото из Венгрии — вертикальное, полная ширина страницы"
+        }
+      ]
+    },
+    {
+      "page_number": 21,
+      "page_type": "photo_section",
+      "chapter_id": null,
+      "elements": [
+        {
+          "type": "photo_pair",
+          "layout": "pair_stack",
+          "photos": [
+            "photo_008",
+            "photo_009"
+          ],
+          "rationale": "Семейные фото 1957-1958 — горизонтальные, стопкой на одной странице"
+        }
+      ]
+    },
+    {
+      "page_number": 22,
+      "page_type": "photo_section",
+      "chapter_id": null,
+      "elements": [
+        {
+          "type": "photo",
+          "photo_id": "photo_010",
+          "orientation": "vertical",
+          "layout": "full_width",
+          "rationale": "Фото с детьми — вертикальное, полная ширина страницы"
+        }
+      ]
+    },
+    {
+      "page_number": 23,
+      "page_type": "photo_section",
+      "chapter_id": null,
+      "elements": [
+        {
+          "type": "photo",
+          "photo_id": "photo_011",
+          "orientation": "vertical",
+          "layout": "full_width",
+          "rationale": "Фото с Валерой — вертикальное, полная ширина страницы"
+        }
+      ]
+    },
+    {
+      "page_number": 24,
+      "page_type": "photo_section",
+      "chapter_id": null,
+      "elements": [
+        {
+          "type": "photo",
+          "photo_id": "photo_015",
+          "orientation": "vertical",
+          "layout": "full_width",
+          "rationale": "Прогулка в Калинине 1957 — вертикальное, полная ширина страницы"
+        }
+      ]
+    },
+    {
+      "page_number": 25,
+      "page_type": "photo_section",
+      "chapter_id": null,
+      "elements": [
+        {
+          "type": "photo",
+          "photo_id": "photo_016",
+          "orientation": "vertical",
+          "layout": "full_width",
+          "rationale": "Горсад, прогулка 1957 — вертикальное, полная ширина страницы"
+        }
+      ]
+    },
+    {
+      "page_number": 26,
+      "page_type": "photo_section",
+      "chapter_id": null,
+      "elements": [
+        {
+          "type": "photo_pair",
+          "layout": "pair_stack",
+          "photos": [
+            "photo_003",
+            "photo_022"
+          ],
+          "rationale": "Сухуми 1960 — горизонтальные фото, стопкой на одной странице"
+        }
+      ]
+    },
+    {
+      "page_number": 27,
+      "page_type": "photo_section",
+      "chapter_id": null,
+      "elements": [
+        {
+          "type": "photo_pair",
+          "layout": "pair_stack",
+          "photos": [
+            "photo_004",
+            "photo_005"
+          ],
+          "rationale": "Сочи, парк и дендрарий — горизонтальные фото, стопкой"
+        }
+      ]
+    },
+    {
+      "page_number": 28,
+      "page_type": "photo_section",
+      "chapter_id": null,
+      "elements": [
+        {
+          "type": "photo_pair",
+          "layout": "pair_stack",
+          "photos": [
+            "photo_006",
+            "photo_007"
+          ],
+          "rationale": "Сочи 1955 и 1960 — горизонтальные фото, стопкой"
+        }
+      ]
+    },
+    {
+      "page_number": 29,
+      "page_type": "photo_section",
+      "chapter_id": null,
+      "elements": [
+        {
+          "type": "photo_pair",
+          "layout": "pair_stack",
+          "photos": [
+            "photo_012",
+            "photo_013"
+          ],
+          "rationale": "Алушта 1978 и поликлиника 1967 — горизонтальные фото, стопкой"
+        }
+      ]
+    },
+    {
+      "page_number": 30,
+      "page_type": "photo_section",
+      "chapter_id": null,
+      "elements": [
+        {
+          "type": "photo",
+          "photo_id": "photo_001",
+          "orientation": "horizontal",
+          "layout": "full_width",
+          "rationale": "Поликлиника №3 — последнее горизонтальное фото, одно на странице"
+        }
+      ]
+    }
+  ],
+  "photo_distribution": {
+    "total_photos": 22,
+    "photos_in_text": 2,
+    "photos_in_section": 20,
+    "portrait_ch03": "photo_002",
+    "has_photo_section": true
+  },
+  "layout_stats": {
+    "total_pages": 30,
+    "text_only_pages": 6,
+    "text_with_photo_pages": 3,
+    "photo_section_pages": 14
+  },
+  "design_notes": "Книга имеет большое количество фотографий (22), поэтому основная часть размещена в отдельном разделе 'Фотографии' после основного текста. В тексте размещены только 2 ключевых фото: довоенное фото для периода 1920-1933 и фронтовое фото для военного периода 1941-1945. Все callout-ы явно прописаны в page_plan. В фотораздел вертикальные фото размещены по одному на страницу для максимального размера, горизонтальные — парами в стопку. Хронологический порядок соблюдён: от довоенных и военных фото к послевоенным семейным и курортным."
+}

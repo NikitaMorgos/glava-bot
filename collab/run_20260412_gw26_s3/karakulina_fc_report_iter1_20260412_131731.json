@@ -1,0 +1,106 @@
+{
+  "project_id": "karakulina_stage2_test",
+  "iteration": 1,
+  "verdict": "pass",
+  "errors": [
+    {
+      "id": "err_001",
+      "type": "distortion",
+      "severity": "minor",
+      "chapter_id": "ch_02",
+      "location": "Глава 2, абзац p_02_011: «В 1956 году в Твери родилась дочь Татьяна»",
+      "what_is_written": "В 1956 году в Твери родилась дочь Татьяна",
+      "what_should_be": "В 1956 году в Калинине родилась дочь Татьяна (согласно fact_map event_019: location: 'Тверь')",
+      "source": {
+        "type": "fact_map",
+        "reference": "event_019: location указан как 'Тверь', но в 1956 году город назывался Калинин"
+      },
+      "fix_instruction": "Заменить 'в Твери' на 'в Калинине' — в 1956 году город ещё не был переименован обратно в Тверь"
+    },
+    {
+      "id": "err_002",
+      "type": "hallucination",
+      "severity": "minor",
+      "chapter_id": "ch_02",
+      "location": "Глава 2, абзац p_02_001: «у неё были старшие сёстры и младший брат, который умер»",
+      "what_is_written": "у неё были старшие сёстры и младший брат, который умер",
+      "what_should_be": "В транскрипте упоминается: 'Был ещё младший брат, но он умер, и были старшие сёстры'. Но конкретное количество сестёр и имена не указаны",
+      "source": {
+        "type": "transcript",
+        "reference": "int_001: 'Был ещё младший брат, но он умер, и были старшие сёстры' — форма множественного числа, но без конкретики"
+      },
+      "fix_instruction": "Смягчить формулировку: 'у неё были старшие сёстры' без уточнения количества, так как точные данные отсутствуют"
+    },
+    {
+      "id": "err_003",
+      "type": "hallucination",
+      "severity": "minor",
+      "chapter_id": "ch_03",
+      "location": "Глава 3, абзац p_03_002: «превратило её в 'стойкого оловянного солдатика', как говорила дочь»",
+      "what_is_written": "превратило её в 'стойкого оловянного солдатика', как говорила дочь",
+      "what_should_be": "В транскрипте дочь говорит: 'бабушка у нас все-таки стойкий, оловянный солдатик'",
+      "source": {
+        "type": "transcript",
+        "reference": "int_001: 'бабушка у нас все-таки стойкий, оловянный солдатик' — без запятой между 'стойкий' и 'оловянный'"
+      },
+      "fix_instruction": "Исправить цитату: 'стойкий оловянный солдатик' (без запятой) согласно точной формулировке из интервью"
+    }
+  ],
+  "warnings": [
+    {
+      "id": "warn_001",
+      "type": "possible_omission",
+      "chapter_id": "ch_02",
+      "description": "В fact_map есть подробности о венгерских городах (Кечкемет, Кишкунхалаш, Байя), но в тексте они упомянуты только списком без контекста",
+      "recommendation": "Можно добавить больше деталей о жизни в каждом городе, если есть информация в транскрипте"
+    },
+    {
+      "id": "warn_002",
+      "type": "style_concern",
+      "chapter_id": "ch_03",
+      "description": "Некоторые характеристики поданы категорично без оговорок на источник мнения",
+      "recommendation": "Рассмотреть добавление оговорок типа 'по воспоминаниям дочери' для субъективных оценок характера"
+    }
+  ],
+  "completeness_check": {
+    "total_facts_in_map": 156,
+    "facts_referenced_in_text": 142,
+    "facts_verified_ok": 139,
+    "facts_with_errors": 3,
+    "facts_missing_from_text": [
+      {
+        "fact_id": "person_010",
+        "fact_description": "Племянник Амельченко",
+        "was_in_facts_omitted": true,
+        "omission_justified": true,
+        "recommendation": "Допустимо пропустить — недостаточно деталей для развития"
+      },
+      {
+        "fact_id": "person_011",
+        "fact_description": "Племянник Толя из Белгорода",
+        "was_in_facts_omitted": true,
+        "omission_justified": true,
+        "recommendation": "Допустимо пропустить — упомянут вскользь без конкретных деталей"
+      }
+    ]
+  },
+  "regression_check": {
+    "performed": false,
+    "chapters_checked": [],
+    "issues_found": []
+  },
+  "summary": {
+    "critical_errors": 0,
+    "major_errors": 0,
+    "minor_errors": 3,
+    "warnings_count": 2,
+    "overall_assessment": "Текст в целом точно отражает факты из источников. Обнаружены только минорные неточности: анахронизм с названием города, небольшие расхождения в цитировании и формулировках. Структура и содержание соответствуют карте фактов."
+  },
+  "stats": {
+    "facts_checked": 142,
+    "facts_passed": 139,
+    "facts_failed": 3,
+    "coverage_percent": 91,
+    "needs_verification_flagged": 0
+  }
+}

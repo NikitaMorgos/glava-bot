@@ -7,6 +7,7 @@ CCO-бот ГЛАВА — AI Chief Customer Officer.
 import asyncio
 import logging
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -24,7 +25,12 @@ logger = logging.getLogger("cco.bot")
 from telegram import BotCommand, Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
-from cco.llm_cco import get_cco_response, generate_digest, analyze_images_from_folder
+from cco.llm_cco import (
+    get_cco_response,
+    generate_digest,
+    analyze_images_from_folder,
+    analyze_question_bank_from_input,
+)
 from cco.report_gen import generate_html_report
 
 
@@ -60,15 +66,35 @@ async def cmd_report(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     """
     args = context.args
     topic = args[0].lower() if args else "storyworth"
+    raw_path = args[1] if len(args) > 1 else ""
+    explicit_path = _extract_folder_path(raw_path) if raw_path else None
+    screens_folder = explicit_path if explicit_path and explicit_path.name.endswith("-screens") else None
+    input_dir = explicit_path if explicit_path and explicit_path.name.endswith("-input") else None
+    if input_dir and screens_folder is None:
+        # Явно просили анализировать input-папку: не подмешиваем старые скрины по topic.
+        project_root = Path(__file__).resolve().parent.parent
+        screens_folder = project_root / "tasks" / "audience-research" / "__no-screens__"
 
     await update.message.reply_text(
-        f"Анализирую скрины по теме «{topic}»...\n"
-        f"Читаю папку tasks/audience-research/{topic}-screens/\n"
+        f"Анализирую материалы по теме «{topic}»...\n"
+        f"Скрины: {screens_folder or f'tasks/audience-research/{topic}-screens/'}\n"
+        f"Текст: {input_dir or f'tasks/audience-research/{topic}-input/'}\n"
         f"Это займёт ~30-60 секунд."
     )
 
-    analysis = await asyncio.to_thread(analyze_images_from_folder, topic)
-    if not analysis or analysis.startswith("Папка") or analysis.startswith("В папке"):
+    # Если явно передали *-input, считаем это задачей анализа банка вопросов.
+    input_only_mode = input_dir is not None and (screens_folder is not None and screens_folder.name == "__no-screens__")
+    if input_only_mode:
+        analysis = await asyncio.to_thread(analyze_question_bank_from_input, topic, input_dir)
+    else:
+        analysis = await asyncio.to_thread(
+            analyze_images_from_folder,
+            topic,
+            screens_folder,
+            None,
+            input_dir,
+        )
+    if not analysis or analysis.startswith("Не нашёл материалов"):
         await update.message.reply_text(analysis or "Не удалось проанализировать скрины.")
         return
 
@@ -76,15 +102,11 @@ async def cmd_report(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
 
     from pathlib import Path
     project_root = Path(__file__).resolve().parent.parent
-    screens_dir = project_root / "tasks" / "audience-research" / f"{topic}-screens"
+    screens_dir = screens_folder or (project_root / "tasks" / "audience-research" / f"{topic}-screens")
     screen_count = len([f for f in screens_dir.iterdir() if f.suffix.lower() in {".jpg", ".jpeg", ".png", ".webp"}]) if screens_dir.exists() else 0
 
-    report_path = await asyncio.to_thread(
-        generate_html_report,
-        topic.capitalize(),
-        analysis,
-        screen_count,
-    )
+    report_title = f"{topic.capitalize()} Question Bank" if input_only_mode else topic.capitalize()
+    report_path = await asyncio.to_thread(generate_html_report, report_title, analysis, screen_count)
 
     # Также сохраняем/обновляем md-версию
     md_path = project_root / "tasks" / "audience-research" / "docs" / f"{topic}-analysis.md"
@@ -95,7 +117,11 @@ async def cmd_report(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
         await update.message.reply_document(
             document=f,
             filename=report_path.name,
-            caption=f"Анализ {topic.capitalize()} · {screen_count} скринов",
+            caption=(
+                f"Анализ {topic.capitalize()} · question bank"
+                if input_only_mode
+                else f"Анализ {topic.capitalize()} · {screen_count} скринов"
+            ),
         )
 
 
@@ -106,6 +132,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         return
 
     chat = update.effective_chat
+    project_root = Path(__file__).resolve().parent.parent
     text = message.text
     user = message.from_user
 
@@ -141,32 +168,43 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                        "пользовательский путь", "ux", "конкурент")
     if any(kw in text.lower() for kw in report_keywords):
         topic = _extract_topic(text)
+        explicit_path = _extract_folder_path(text)
+        screens_folder = explicit_path if explicit_path and explicit_path.name.endswith("-screens") else None
+        input_dir = explicit_path if explicit_path and explicit_path.name.endswith("-input") else None
+        if input_dir and screens_folder is None:
+            # Явно просили анализировать input-папку: не подмешиваем старые скрины по topic.
+            screens_folder = project_root / "tasks" / "audience-research" / "__no-screens__"
 
         await update.message.reply_text(
-            f"Читаю скрины из tasks/audience-research/{topic}-screens/ "
-            f"и генерирую презентацию. Подожди ~60 секунд..."
+            f"Читаю материалы и генерирую презентацию.\n"
+            f"Скрины: {screens_folder or f'tasks/audience-research/{topic}-screens/'}\n"
+            f"Текст: {input_dir or f'tasks/audience-research/{topic}-input/'}\n"
+            f"Подожди ~60 секунд..."
         )
 
-        from pathlib import Path
-        project_root = Path(__file__).resolve().parent.parent
-
-        analysis = await asyncio.to_thread(analyze_images_from_folder, topic)
-        if not analysis or analysis.startswith("Папка") or analysis.startswith("В папке"):
+        input_only_mode = input_dir is not None and (screens_folder is not None and screens_folder.name == "__no-screens__")
+        if input_only_mode:
+            analysis = await asyncio.to_thread(analyze_question_bank_from_input, topic, input_dir)
+        else:
+            analysis = await asyncio.to_thread(
+                analyze_images_from_folder,
+                topic,
+                screens_folder,
+                None,
+                input_dir,
+            )
+        if not analysis or analysis.startswith("Не нашёл материалов"):
             await message.reply_text(analysis or "Не удалось проанализировать скрины.")
             return
 
-        screens_dir = project_root / "tasks" / "audience-research" / f"{topic}-screens"
+        screens_dir = screens_folder or (project_root / "tasks" / "audience-research" / f"{topic}-screens")
         screen_count = len([
             f for f in screens_dir.iterdir()
             if f.suffix.lower() in {".jpg", ".jpeg", ".png", ".webp"}
         ]) if screens_dir.exists() else 0
 
-        report_path = await asyncio.to_thread(
-            generate_html_report,
-            topic.capitalize(),
-            analysis,
-            screen_count,
-        )
+        report_title = f"{topic.capitalize()} Question Bank" if input_only_mode else topic.capitalize()
+        report_path = await asyncio.to_thread(generate_html_report, report_title, analysis, screen_count)
         md_path = project_root / "tasks" / "audience-research" / "docs" / f"{topic}-analysis.md"
         await asyncio.to_thread(md_path.write_text, analysis, "utf-8")
 
@@ -174,7 +212,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             await message.reply_document(
                 document=f,
                 filename=report_path.name,
-                caption=f"Анализ {topic.capitalize()} · {screen_count} скринов",
+                caption=(
+                    f"Анализ {topic.capitalize()} · question bank"
+                    if input_only_mode
+                    else f"Анализ {topic.capitalize()} · {screen_count} скринов"
+                ),
             )
         return
 
@@ -226,6 +268,17 @@ def _extract_topic(text: str) -> str:
         return m.group(1).strip(".,!?")
 
     return "storyworth"
+
+
+def _extract_folder_path(text: str) -> Path | None:
+    """Извлекает путь вида tasks/audience-research/* из текста сообщения."""
+    m = re.search(r"(tasks[\\/][^\s]+)", text, flags=re.IGNORECASE)
+    if not m:
+        return None
+    raw = m.group(1).strip().strip(".,!?:;")
+    rel = raw.replace("\\", "/")
+    project_root = Path(__file__).resolve().parent.parent
+    return project_root / rel
 def _split_message(text: str, max_len: int = 4000) -> list[str]:
     """Разбивает длинное сообщение на части для Telegram."""
     if len(text) <= max_len:

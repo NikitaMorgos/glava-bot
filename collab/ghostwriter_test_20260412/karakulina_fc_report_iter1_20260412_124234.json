@@ -1,0 +1,92 @@
+{
+  "project_id": "karakulina_stage2_test",
+  "iteration": 1,
+  "verdict": "pass",
+  "errors": [
+    {
+      "id": "err_001",
+      "type": "distortion",
+      "severity": "minor",
+      "chapter_id": "ch_02",
+      "location": "Глава 2, абзац p_02_011: «В 1956 году в Твери родилась дочь Татьяна»",
+      "what_is_written": "В 1956 году в Твери родилась дочь Татьяна",
+      "what_should_be": "В 1956 году в Калинине родилась дочь Татьяна (согласно fact_map event_019: location: 'Тверь', но в тексте должно быть 'Калинин', так как город был переименован позже)",
+      "source": {
+        "type": "fact_map",
+        "reference": "event_019: location указан как 'Тверь', но исторически в 1956 году город назывался Калинин"
+      },
+      "fix_instruction": "Заменить 'в Твери' на 'в Калинине' для исторической точности"
+    },
+    {
+      "id": "err_002",
+      "type": "hallucination",
+      "severity": "minor",
+      "chapter_id": "ch_03",
+      "location": "Глава 3, абзац p_03_009: «Не дай бог, чтобы расчёска лежала на столе»",
+      "what_is_written": "«Не дай бог, чтобы расчёска лежала на столе»",
+      "what_should_be": "В транскрипте есть упоминание о расчёске на столе, но без кавычек как прямая речь: 'Не дай бог, чтобы расчёска лежала на столе'",
+      "source": {
+        "type": "transcript",
+        "reference": "int_001: 'Не дай бог, чтобы расчёска лежала на столе' — сказано рассказчиком как пример, не как прямая цитата Валентины"
+      },
+      "fix_instruction": "Убрать кавычки и переформулировать как непрямую речь: 'у каждой вещи было своё место, расчёска не должна была лежать на столе'"
+    }
+  ],
+  "warnings": [
+    {
+      "id": "warn_001",
+      "type": "possible_omission",
+      "chapter_id": "ch_02",
+      "description": "В тексте упоминается 'четверо внуков' в эпилоге, но в fact_map указаны только двое: Никита и Даша",
+      "recommendation": "Уточнить количество внуков или исправить формулировку"
+    },
+    {
+      "id": "warn_002",
+      "type": "style_concern",
+      "chapter_id": "ch_03",
+      "description": "Некоторые характеристики в главе 3 представлены как обобщения без прямых источников",
+      "recommendation": "Проверить, что все характеристики имеют основание в транскрипте или fact_map"
+    }
+  ],
+  "completeness_check": {
+    "total_facts_in_map": 156,
+    "facts_referenced_in_text": 142,
+    "facts_verified_ok": 140,
+    "facts_with_errors": 2,
+    "facts_missing_from_text": [
+      {
+        "fact_id": "person_010",
+        "fact_description": "Племянник Амельченко",
+        "was_in_facts_omitted": true,
+        "omission_justified": true,
+        "recommendation": "Допустимо пропустить"
+      },
+      {
+        "fact_id": "person_011",
+        "fact_description": "Племянник Толя из Белгорода",
+        "was_in_facts_omitted": true,
+        "omission_justified": true,
+        "recommendation": "Допустимо пропустить"
+      }
+    ]
+  },
+  "regression_check": {
+    "performed": false,
+    "chapters_checked": [],
+    "issues_found": []
+  },
+  "summary": {
+    "critical_errors": 0,
+    "major_errors": 0,
+    "minor_errors": 2,
+    "warnings_count": 2,
+    "overall_assessment": "Текст в целом точно отражает факты из источников. Обнаружены только минорные ошибки: историческая неточность с названием города и неправильное оформление цитаты. Пропуски фактов обоснованы и не критичны."
+  },
+  "stats": {
+    "facts_checked": 142,
+    "facts_passed": 140,
+    "facts_failed": 2,
+    "coverage_percent": 91,
+    "needs_verification_flagged": 0
+  }
+}

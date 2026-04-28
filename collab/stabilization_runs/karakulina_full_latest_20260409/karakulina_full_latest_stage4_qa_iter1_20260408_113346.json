@@ -1,0 +1,92 @@
+{
+  "project_id": "karakulina_stage4",
+  "iteration": 1,
+  "verdict": "fail",
+  "issues": [
+    {
+      "id": "issue_001",
+      "category": "integrity",
+      "severity": "critical",
+      "page": null,
+      "description": "PDF-файл недоступен для визуальной проверки. Путь /opt/glava/exports/karakulina_full_latest_stage4_pdf_iter1_20260408_113346.pdf не может быть открыт для анализа макета.",
+      "fix_suggestion": "Убедиться, что PDF-файл корректно сгенерирован и доступен по указанному пути. Проверить права доступа к файлу и его целостность."
+    },
+    {
+      "id": "issue_002",
+      "category": "photo",
+      "severity": "major",
+      "page": 7,
+      "description": "Согласно page_map на странице 7 должны быть photo_017 и hist_01, но в page_plan указаны только photo_017 и текстовые абзацы. Историческая вставка hist_01 отсутствует в плане вёрстки.",
+      "fix_suggestion": "Добавить историческую вставку hist_01 на страницу 7 согласно page_map или скорректировать page_map, если hist_01 была перемещена на другую страницу."
+    },
+    {
+      "id": "issue_003",
+      "category": "photo",
+      "severity": "major",
+      "page": 8,
+      "description": "Согласно page_map на странице 8 должна быть историческая вставка hist_02, но в page_plan она отсутствует.",
+      "fix_suggestion": "Добавить историческую вставку hist_02 на страницу 8 или указать её корректное местоположение в макете."
+    },
+    {
+      "id": "issue_004",
+      "category": "integrity",
+      "severity": "major",
+      "page": null,
+      "description": "Несоответствие между page_map и page_plan: в expected_content указано 2 исторические вставки (historical_notes_count: 2), но в page_plan они не размещены, хотя в page_map присутствуют hist_01 и hist_02.",
+      "fix_suggestion": "Синхронизировать page_map и page_plan: либо добавить исторические вставки в page_plan, либо удалить их из page_map и скорректировать expected_content."
+    }
+  ],
+  "checklist": {
+    "pagination": {
+      "status": "warning",
+      "details": "Невозможно проверить нумерацию страниц без доступа к PDF-файлу. По page_map видно 35 страниц с последовательной нумерацией 1-35."
+    },
+    "toc": {
+      "status": "warning",
+      "details": "Невозможно проверить соответствие оглавления реальным страницам без визуального доступа к PDF. Оглавление размещено на странице 3 согласно page_map."
+    },
+    "orphan_widow": {
+      "status": "warning",
+      "details": "Невозможно проверить висячие строки без визуального анализа PDF-макета."
+    },
+    "photos": {
+      "status": "fail",
+      "total_expected": 22,
+      "total_found": 22,
+      "details": "Все 22 фотографии присутствуют в page_map, но невозможно проверить их визуальное качество, обрезку и подписи без доступа к PDF."
+    },
+    "callouts": {
+      "status": "pass",
+      "total_expected": 6,
+      "total_found": 6,
+      "details": "Все 6 выносок размещены согласно page_map: callout_01-04 в главе 3, callout_05-06 в главе 4."
+    },
+    "headers_footers": {
+      "status": "warning",
+      "details": "Невозможно проверить колонтитулы без визуального доступа к PDF-макету."
+    },
+    "margins": {
+      "status": "warning",
+      "details": "Невозможно проверить поля и отступы без визуального анализа PDF. Style guide указывает поля: top/bottom 20mm, inner 20mm, outer 15mm."
+    },
+    "typography": {
+      "status": "warning",
+      "details": "Невозможно проверить шрифты и читаемость без визуального доступа к PDF. Style guide предписывает PT Serif 10pt для основного текста."
+    },
+    "integrity": {
+      "status": "fail",
+      "details": "Обнаружены критические несоответствия между page_map и page_plan, особенно в размещении исторических вставок. PDF недоступен для проверки."
+    }
+  },
+  "regression_check": {
+    "performed": false,
+    "previous_issues_resolved": []
+  },
+  "summary": {
+    "critical_issues": 1,
+    "major_issues": 3,
+    "minor_issues": 0,
+    "total_pages_checked": 0,
+    "overall_assessment": "Макет не может быть проверен из-за недоступности PDF-файла. Обнаружены серьёзные несоответствия между планом размещения контента и картой страниц, особенно касающиеся исторических вставок. Требуется исправление структурных проблем и обеспечение доступности PDF для визуальной проверки."
+  }
+}

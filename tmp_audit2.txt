@@ -1,0 +1,13 @@
+01_cleaner_v1.md: CLEAN
+02_fact_extractor_v3.3.md: CLEAN
+03_ghostwriter_v2.6.md: CLEAN
+04_fact_checker_v2.md: CLEAN
+05_literary_editor_v3.md: CLEAN
+06_proofreader_v1.md: CLEAN
+07_photo_editor_v1.md: CLEAN
+08_layout_designer_v3.14.md: CLEAN
+09_qa_layout_v1.md: CLEAN
+11_interview_architect_v4.1.md: CLEAN
+12_historian_v3.md: CLEAN
+13_cover_designer_v2.6.md: CLEAN
+15_layout_art_director_v1.8.md: CLEAN

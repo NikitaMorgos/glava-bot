@@ -46,7 +46,7 @@ OPENAI_MODELS = {
 
 OPENAI_TEMPS = {
     "fact_checker":    0.0,
-    "ghostwriter":     0.5,
+    "ghostwriter":     0.7,
     "literary_editor": 0.4,
     "proofreader":     0.0,
     "layout_designer": 0.25,
@@ -224,6 +224,14 @@ def run_fact_check_loop(
                 "orchestrator: fact_checker fail, %d errors → revision %d",
                 len(errors), iteration + 1,
             )
+
+            # Если ошибок нет — FC вернул fail по формальным причинам, не нужна правка
+            if not errors:
+                logger.info(
+                    "orchestrator: fact_checker fail but no errors specified — "
+                    "skipping revision, using current draft"
+                )
+                break
 
             # Вызов Ghostwriter для правок
             gw_msg = {

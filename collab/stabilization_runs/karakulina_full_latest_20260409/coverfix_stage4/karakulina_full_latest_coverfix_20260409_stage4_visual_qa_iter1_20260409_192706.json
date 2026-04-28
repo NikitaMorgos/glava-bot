@@ -1,0 +1,100 @@
+{
+  "project_id": "karakulina_stage4",
+  "iteration": 1,
+  "verdict": "fail",
+  "issues": [
+    {
+      "id": "issue_001",
+      "category": "integrity",
+      "severity": "critical",
+      "page": null,
+      "description": "PDF файл недоступен для визуальной проверки. Путь /opt/glava/exports/karakulina_full_latest_coverfix_20260409_stage4_pdf_iter1_20260409_192706.pdf не может быть открыт для анализа содержимого.",
+      "fix_suggestion": "Убедиться, что PDF файл существует по указанному пути и доступен для чтения. Проверить права доступа к файлу и корректность пути."
+    },
+    {
+      "id": "issue_002",
+      "category": "callout",
+      "severity": "major",
+      "page": 6,
+      "description": "В page_plan на странице 6 не указан callout, но в page_map присутствует hist_01. Несоответствие между планом и исполнением.",
+      "fix_suggestion": "Проверить корректность размещения исторических заметок на странице 6. Если hist_01 должен быть callout, обновить page_plan или переместить элемент согласно плану."
+    },
+    {
+      "id": "issue_003",
+      "category": "callout",
+      "severity": "major",
+      "page": 7,
+      "description": "В page_plan на странице 7 не указаны callouts, но в page_map присутствует hist_02. Несоответствие между планом и исполнением.",
+      "fix_suggestion": "Проверить корректность размещения исторических заметок на странице 7. Если hist_02 должен быть callout, обновить page_plan или переместить элемент согласно плану."
+    },
+    {
+      "id": "issue_004",
+      "category": "callout",
+      "severity": "major",
+      "page": 8,
+      "description": "В page_plan на странице 8 не указаны callouts, но в page_map присутствует hist_03. Несоответствие между планом и исполнением.",
+      "fix_suggestion": "Проверить корректность размещения исторических заметок на странице 8. Если hist_03 должен быть callout, обновить page_plan или переместить элемент согласно плану."
+    },
+    {
+      "id": "issue_005",
+      "category": "callout",
+      "severity": "major",
+      "page": 12,
+      "description": "В page_plan на странице 12 не указаны callouts, но в page_map присутствует hist_04. Несоответствие между планом и исполнением.",
+      "fix_suggestion": "Проверить корректность размещения исторических заметок на странице 12. Если hist_04 должен быть callout, обновить page_plan или переместить элемент согласно плану."
+    }
+  ],
+  "checklist": {
+    "pagination": {
+      "status": "warning",
+      "details": "Невозможно проверить пагинацию без доступа к PDF файлу. По page_map структура выглядит корректной: 37 страниц, cover без номера, TOC на странице 3."
+    },
+    "toc": {
+      "status": "warning",
+      "details": "Невозможно проверить соответствие оглавления реальным страницам без визуального доступа к PDF."
+    },
+    "orphan_widow": {
+      "status": "warning",
+      "details": "Невозможно проверить висячие строки без визуального анализа PDF."
+    },
+    "photos": {
+      "status": "warning",
+      "total_expected": 22,
+      "total_found": 22,
+      "details": "По page_map все 22 фотографии присутствуют, но невозможно проверить их визуальное качество, обрезку и подписи без доступа к PDF."
+    },
+    "callouts": {
+      "status": "fail",
+      "total_expected": 7,
+      "total_found": 7,
+      "details": "Все 7 callouts присутствуют в page_map, но обнаружены несоответствия с page_plan: исторические заметки hist_01-04 размещены на страницах, где не планировались callouts."
+    },
+    "headers_footers": {
+      "status": "warning",
+      "details": "Невозможно проверить колонтитулы без визуального доступа к PDF."
+    },
+    "margins": {
+      "status": "warning",
+      "details": "Невозможно проверить поля и отступы без визуального анализа PDF."
+    },
+    "typography": {
+      "status": "warning",
+      "details": "Невозможно проверить шрифты и читаемость без визуального доступа к PDF."
+    },
+    "integrity": {
+      "status": "fail",
+      "details": "Критическая проблема: PDF файл недоступен для проверки. Также обнаружены несоответствия между page_plan и page_map в размещении элементов."
+    }
+  },
+  "regression_check": {
+    "performed": false,
+    "previous_issues_resolved": []
+  },
+  "summary": {
+    "critical_issues": 1,
+    "major_issues": 4,
+    "minor_issues": 0,
+    "total_pages_checked": 0,
+    "overall_assessment": "Проверка не может быть завершена из-за недоступности PDF файла. Обнаружены критические несоответствия между планом размещения (page_plan) и фактическим исполнением (page_map) в части исторических заметок. Требуется исправление доступа к файлу и согласование размещения элементов."
+  }
+}

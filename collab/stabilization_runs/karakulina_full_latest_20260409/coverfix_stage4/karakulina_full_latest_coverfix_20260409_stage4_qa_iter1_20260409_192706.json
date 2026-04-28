@@ -1,0 +1,314 @@
+{
+  "verdict": "fail",
+  "issues": [
+    {
+      "id": "issue_001",
+      "category": "integrity",
+      "severity": "critical",
+      "page": null,
+      "description": "Критическое несоответствие page_plan и page_map: в page_plan указано 5 глав (ch_01, ch_02, ch_03, ch_04, epilogue), но в expected_content.chapter_titles также 5 глав. Однако в page_map отсутствуют исторические заметки (hist_01, hist_02, hist_03, hist_04), которые должны быть размещены согласно expected_content.historical_notes_count = 4",
+      "fix_suggestion": "Добавить исторические заметки hist_01, hist_02, hist_03, hist_04 в page_map согласно их размещению в page_plan или объяснить их отсутствие в technical_notes"
+    },
+    {
+      "id": "issue_002",
+      "category": "pagination",
+      "severity": "critical",
+      "page": null,
+      "description": "Нарушена единая модель пагинации: согласно контракту STAGE4, TOC должен быть на physical странице 3 с visible номером 1, но в page_map не указаны visible номера страниц для проверки корректности отображения",
+      "fix_suggestion": "Добавить информацию о visible номерах страниц в page_map или technical_notes для проверки соответствия модели: cover/blank без номеров, TOC physical=3 показывает visible=1"
+    },
+    {
+      "id": "issue_003",
+      "category": "callout",
+      "severity": "major",
+      "page": 11,
+      "description": "Callout callout_07 размещён на странице 11 согласно page_map, но в page_plan он указан на той же странице. Необходимо проверить точное соответствие размещения callout-ов между планом и исполнением",
+      "fix_suggestion": "Подтвердить корректность размещения callout_07 на странице 11 или переместить согласно page_plan с обоснованием в technical_notes"
+    },
+    {
+      "id": "issue_004",
+      "category": "toc",
+      "severity": "major",
+      "page": 3,
+      "description": "В page_map указано только 'toc_items' без детализации содержания оглавления. Невозможно проверить соответствие названий глав из expected_content.chapter_titles и корректность номеров страниц",
+      "fix_suggestion": "Детализировать содержание оглавления в page_map с указанием названий глав и номеров страниц для проверки соответствия"
+    },
+    {
+      "id": "issue_005",
+      "category": "photo",
+      "severity": "major",
+      "page": null,
+      "description": "Несоответствие размещения фотографий: в page_plan некоторые фото имеют детальные инструкции по размещению (wrap_right, wrap_left, full_width), но в page_map указаны только photo_id без информации о корректности исполнения layout",
+      "fix_suggestion": "Добавить информацию о фактическом размещении фотографий в page_map или technical_notes для проверки соответствия page_plan"
+    },
+    {
+      "id": "issue_001",
+      "category": "integrity",
+      "severity": "minor",
+      "page": null,
+      "description": "PDF файл недоступен для визуальной проверки. Путь /opt/glava/exports/karakulina_full_latest_coverfix_20260409_stage4_pdf_iter1_20260409_192706.pdf не может быть открыт для анализа содержимого.",
+      "fix_suggestion": "Убедиться, что PDF файл существует по указанному пути и доступен для чтения. Проверить права доступа к файлу и корректность пути.",
+      "non_blocking": true,
+      "source": "visual_qa"
+    },
+    {
+      "id": "issue_002",
+      "category": "callout",
+      "severity": "minor",
+      "page": 6,
+      "description": "В page_plan на странице 6 не указан callout, но в page_map присутствует hist_01. Несоответствие между планом и исполнением.",
+      "fix_suggestion": "Проверить корректность размещения исторических заметок на странице 6. Если hist_01 должен быть callout, обновить page_plan или переместить элемент согласно плану.",
+      "non_blocking": true,
+      "source": "visual_qa"
+    },
+    {
+      "id": "issue_003",
+      "category": "callout",
+      "severity": "minor",
+      "page": 7,
+      "description": "В page_plan на странице 7 не указаны callouts, но в page_map присутствует hist_02. Несоответствие между планом и исполнением.",
+      "fix_suggestion": "Проверить корректность размещения исторических заметок на странице 7. Если hist_02 должен быть callout, обновить page_plan или переместить элемент согласно плану.",
+      "non_blocking": true,
+      "source": "visual_qa"
+    },
+    {
+      "id": "issue_004",
+      "category": "callout",
+      "severity": "minor",
+      "page": 8,
+      "description": "В page_plan на странице 8 не указаны callouts, но в page_map присутствует hist_03. Несоответствие между планом и исполнением.",
+      "fix_suggestion": "Проверить корректность размещения исторических заметок на странице 8. Если hist_03 должен быть callout, обновить page_plan или переместить элемент согласно плану.",
+      "non_blocking": true,
+      "source": "visual_qa"
+    },
+    {
+      "id": "issue_005",
+      "category": "callout",
+      "severity": "minor",
+      "page": 12,
+      "description": "В page_plan на странице 12 не указаны callouts, но в page_map присутствует hist_04. Несоответствие между планом и исполнением.",
+      "fix_suggestion": "Проверить корректность размещения исторических заметок на странице 12. Если hist_04 должен быть callout, обновить page_plan или переместить элемент согласно плану.",
+      "non_blocking": true,
+      "source": "visual_qa"
+    },
+    {
+      "severity": "critical",
+      "type": "structural_guard_failed",
+      "description": "structural_layout_guard не пройден"
+    }
+  ],
+  "summary": {
+    "critical_issues": 2,
+    "major_issues": 3,
+    "minor_issues": 5,
+    "total_pages_checked": 37,
+    "overall_assessment": "Combined structural_qa + visual_qa (visual non-blocking)",
+    "fonts_embedded": true
+  },
+  "qa_modes": {
+    "structural_qa": {
+      "project_id": "karakulina_stage4",
+      "iteration": 1,
+      "verdict": "fail",
+      "issues": [
+        {
+          "id": "issue_001",
+          "category": "integrity",
+          "severity": "critical",
+          "page": null,
+          "description": "Критическое несоответствие page_plan и page_map: в page_plan указано 5 глав (ch_01, ch_02, ch_03, ch_04, epilogue), но в expected_content.chapter_titles также 5 глав. Однако в page_map отсутствуют исторические заметки (hist_01, hist_02, hist_03, hist_04), которые должны быть размещены согласно expected_content.historical_notes_count = 4",
+          "fix_suggestion": "Добавить исторические заметки hist_01, hist_02, hist_03, hist_04 в page_map согласно их размещению в page_plan или объяснить их отсутствие в technical_notes"
+        },
+        {
+          "id": "issue_002",
+          "category": "pagination",
+          "severity": "critical",
+          "page": null,
+          "description": "Нарушена единая модель пагинации: согласно контракту STAGE4, TOC должен быть на physical странице 3 с visible номером 1, но в page_map не указаны visible номера страниц для проверки корректности отображения",
+          "fix_suggestion": "Добавить информацию о visible номерах страниц в page_map или technical_notes для проверки соответствия модели: cover/blank без номеров, TOC physical=3 показывает visible=1"
+        },
+        {
+          "id": "issue_003",
+          "category": "callout",
+          "severity": "major",
+          "page": 11,
+          "description": "Callout callout_07 размещён на странице 11 согласно page_map, но в page_plan он указан на той же странице. Необходимо проверить точное соответствие размещения callout-ов между планом и исполнением",
+          "fix_suggestion": "Подтвердить корректность размещения callout_07 на странице 11 или переместить согласно page_plan с обоснованием в technical_notes"
+        },
+        {
+          "id": "issue_004",
+          "category": "toc",
+          "severity": "major",
+          "page": 3,
+          "description": "В page_map указано только 'toc_items' без детализации содержания оглавления. Невозможно проверить соответствие названий глав из expected_content.chapter_titles и корректность номеров страниц",
+          "fix_suggestion": "Детализировать содержание оглавления в page_map с указанием названий глав и номеров страниц для проверки соответствия"
+        },
+        {
+          "id": "issue_005",
+          "category": "photo",
+          "severity": "major",
+          "page": null,
+          "description": "Несоответствие размещения фотографий: в page_plan некоторые фото имеют детальные инструкции по размещению (wrap_right, wrap_left, full_width), но в page_map указаны только photo_id без информации о корректности исполнения layout",
+          "fix_suggestion": "Добавить информацию о фактическом размещении фотографий в page_map или technical_notes для проверки соответствия page_plan"
+        }
+      ],
+      "checklist": {
+        "pagination": {
+          "status": "fail",
+          "details": "Отсутствует информация о visible номерах страниц для проверки единой модели пагинации STAGE4"
+        },
+        "toc": {
+          "status": "fail",
+          "details": "Содержание оглавления не детализировано, невозможно проверить соответствие названий глав и номеров страниц"
+        },
+        "orphan_widow": {
+          "status": "warning",
+          "details": "Невозможно проверить без визуального доступа к PDF в режиме structural_qa"
+        },
+        "photos": {
+          "status": "warning",
+          "total_expected": 22,
+          "total_found": 22,
+          "details": "Все 22 фото присутствуют в page_map, но отсутствует информация о корректности их размещения согласно page_plan"
+        },
+        "callouts": {
+          "status": "pass",
+          "total_expected": 7,
+          "total_found": 7,
+          "details": "Все 7 callouts присутствуют в page_map и соответствуют expected_content.callout_ids"
+        },
+        "headers_footers": {
+          "status": "warning",
+          "details": "Невозможно проверить без визуального доступа к PDF в режиме structural_qa"
+        },
+        "margins": {
+          "status": "warning",
+          "details": "Невозможно проверить без визуального доступа к PDF в режиме structural_qa"
+        },
+        "typography": {
+          "status": "warning",
+          "details": "Невозможно проверить встраивание шрифтов и отображение символов без визуального доступа к PDF"
+        },
+        "integrity": {
+          "status": "fail",
+          "details": "Критические несоответствия между page_plan и page_map, отсутствие исторических заметок"
+        }
+      },
+      "regression_check": {
+        "performed": false,
+        "previous_issues_resolved": []
+      },
+      "summary": {
+        "critical_issues": 2,
+        "major_issues": 3,
+        "minor_issues": 0,
+        "total_pages_checked": 37,
+        "overall_assessment": "Макет содержит критические структурные несоответствия между планом и исполнением. Отсутствуют исторические заметки и детализация ключевых элементов для полной проверки соответствия контракту STAGE4."
+      }
+    },
+    "visual_qa": {
+      "project_id": "karakulina_stage4",
+      "iteration": 1,
+      "verdict": "fail",
+      "issues": [
+        {
+          "id": "issue_001",
+          "category": "integrity",
+          "severity": "critical",
+          "page": null,
+          "description": "PDF файл недоступен для визуальной проверки. Путь /opt/glava/exports/karakulina_full_latest_coverfix_20260409_stage4_pdf_iter1_20260409_192706.pdf не может быть открыт для анализа содержимого.",
+          "fix_suggestion": "Убедиться, что PDF файл существует по указанному пути и доступен для чтения. Проверить права доступа к файлу и корректность пути."
+        },
+        {
+          "id": "issue_002",
+          "category": "callout",
+          "severity": "major",
+          "page": 6,
+          "description": "В page_plan на странице 6 не указан callout, но в page_map присутствует hist_01. Несоответствие между планом и исполнением.",
+          "fix_suggestion": "Проверить корректность размещения исторических заметок на странице 6. Если hist_01 должен быть callout, обновить page_plan или переместить элемент согласно плану."
+        },
+        {
+          "id": "issue_003",
+          "category": "callout",
+          "severity": "major",
+          "page": 7,
+          "description": "В page_plan на странице 7 не указаны callouts, но в page_map присутствует hist_02. Несоответствие между планом и исполнением.",
+          "fix_suggestion": "Проверить корректность размещения исторических заметок на странице 7. Если hist_02 должен быть callout, обновить page_plan или переместить элемент согласно плану."
+        },
+        {
+          "id": "issue_004",
+          "category": "callout",
+          "severity": "major",
+          "page": 8,
+          "description": "В page_plan на странице 8 не указаны callouts, но в page_map присутствует hist_03. Несоответствие между планом и исполнением.",
+          "fix_suggestion": "Проверить корректность размещения исторических заметок на странице 8. Если hist_03 должен быть callout, обновить page_plan или переместить элемент согласно плану."
+        },
+        {
+          "id": "issue_005",
+          "category": "callout",
+          "severity": "major",
+          "page": 12,
+          "description": "В page_plan на странице 12 не указаны callouts, но в page_map присутствует hist_04. Несоответствие между планом и исполнением.",
+          "fix_suggestion": "Проверить корректность размещения исторических заметок на странице 12. Если hist_04 должен быть callout, обновить page_plan или переместить элемент согласно плану."
+        }
+      ],
+      "checklist": {
+        "pagination": {
+          "status": "warning",
+          "details": "Невозможно проверить пагинацию без доступа к PDF файлу. По page_map структура выглядит корректной: 37 страниц, cover без номера, TOC на странице 3."
+        },
+        "toc": {
+          "status": "warning",
+          "details": "Невозможно проверить соответствие оглавления реальным страницам без визуального доступа к PDF."
+        },
+        "orphan_widow": {
+          "status": "warning",
+          "details": "Невозможно проверить висячие строки без визуального анализа PDF."
+        },
+        "photos": {
+          "status": "warning",
+          "total_expected": 22,
+          "total_found": 22,
+          "details": "По page_map все 22 фотографии присутствуют, но невозможно проверить их визуальное качество, обрезку и подписи без доступа к PDF."
+        },
+        "callouts": {
+          "status": "fail",
+          "total_expected": 7,
+          "total_found": 7,
+          "details": "Все 7 callouts присутствуют в page_map, но обнаружены несоответствия с page_plan: исторические заметки hist_01-04 размещены на страницах, где не планировались callouts."
+        },
+        "headers_footers": {
+          "status": "warning",
+          "details": "Невозможно проверить колонтитулы без визуального доступа к PDF."
+        },
+        "margins": {
+          "status": "warning",
+          "details": "Невозможно проверить поля и отступы без визуального анализа PDF."
+        },
+        "typography": {
+          "status": "warning",
+          "details": "Невозможно проверить шрифты и читаемость без визуального доступа к PDF."
+        },
+        "integrity": {
+          "status": "fail",
+          "details": "Критическая проблема: PDF файл недоступен для проверки. Также обнаружены несоответствия между page_plan и page_map в размещении элементов."
+        }
+      },
+      "regression_check": {
+        "performed": false,
+        "previous_issues_resolved": []
+      },
+      "summary": {
+        "critical_issues": 1,
+        "major_issues": 4,
+        "minor_issues": 0,
+        "total_pages_checked": 0,
+        "overall_assessment": "Проверка не может быть завершена из-за недоступности PDF файла. Обнаружены критические несоответствия между планом размещения (page_plan) и фактическим исполнением (page_map) в части исторических заметок. Требуется исправление доступа к файлу и согласование размещения элементов."
+      }
+    }
+  },
+  "verdict_policy": {
+    "visual_non_blocking": true,
+    "effective_blocking_source": "structural_qa"
+  }
+}

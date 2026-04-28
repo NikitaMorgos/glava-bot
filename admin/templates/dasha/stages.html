@@ -1,0 +1,334 @@
+{% extends "base.html" %}
+{% block title %}Этапы пайплайна — GLAVA Admin{% endblock %}
+{% block content %}
+
+<div class="flex items-center justify-between mb-6">
+  <div>
+    <h1 class="text-2xl font-bold text-gray-900">📋 Этапы пайплайна</h1>
+    <p class="text-sm text-gray-500 mt-1">
+      Описания каждого AI-агента: входы, выходы, правила, критерии качества.
+      Обновлять через загрузку .md-файла.
+    </p>
+  </div>
+  <a href="{{ url_for('dasha.pipeline_prompts') }}"
+     class="text-sm px-4 py-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors">
+    ← Промпты
+  </a>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!--  Карта пайплайна                                               -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="rounded-2xl mb-8 overflow-hidden border border-gray-700"
+     style="background:#12131a; box-shadow:0 4px 32px rgba(0,0,0,.25);">
+
+  <!-- Header -->
+  <div class="flex items-center justify-between px-5 py-3 border-b border-white/10">
+    <div>
+      <span class="text-white font-semibold text-sm">🗺 Карта пайплайна</span>
+      <span class="text-gray-500 text-xs ml-3">Нажми на выделенный узел — перейдёт к описанию</span>
+    </div>
+    <div class="flex gap-4 text-xs text-gray-500">
+      <span><span class="inline-block w-2 h-2 rounded-full bg-blue-500 mr-1"></span>Этап 1–2</span>
+      <span><span class="inline-block w-2 h-2 rounded-full bg-emerald-500 mr-1"></span>Этап 3</span>
+      <span><span class="inline-block w-2 h-2 rounded-full bg-orange-500 mr-1"></span>Этап 4</span>
+    </div>
+  </div>
+
+  <!-- Canvas -->
+  <div class="overflow-x-auto" style="cursor:grab;" id="map-scroll">
+    <div style="position:relative; width:2260px; height:310px;" id="pipeline-canvas">
+      <svg id="pipeline-svg"
+           style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:visible;">
+        <defs>
+          <marker id="arr" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+            <path d="M1,1 L6,3.5 L1,6 Z" fill="#374151"/>
+          </marker>
+          <marker id="arr-hi" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+            <path d="M1,1 L6,3.5 L1,6 Z" fill="#6b7280"/>
+          </marker>
+        </defs>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  /* ── constants ─────────────────────────────────────────── */
+  const NW = 150, NH = 48, CGAP = 22, RGAP = 68;
+  const STEP = NW + CGAP;
+  const SX = 18, CY = 155;   // start-x, center-y of canvas
+
+  /* ── stage colours ─────────────────────────────────────── */
+  const C = {
+    io: { bg:'#1c1f2e', bd:'#4b5563', tx:'#9ca3af' },
+    1:  { bg:'#0f2744', bd:'#2563eb', tx:'#93c5fd', grp:'rgba(37,99,235,.08)' },
+    2:  { bg:'#1e1050', bd:'#7c3aed', tx:'#c4b5fd', grp:'rgba(124,58,237,.08)' },
+    3:  { bg:'#052e16', bd:'#16a34a', tx:'#86efac', grp:'rgba(22,163,74,.08)'  },
+    4:  { bg:'#431407', bd:'#ea580c', tx:'#fdba74', grp:'rgba(234,88,12,.08)'  },
+  };
+
+  /* ── node definitions ──────────────────────────────────── */
+  // col: column index  row: 0=center, -1=above, 1=below
+  // key: maps to id="stage-<key>" on the page; null = no link
+  const NODES = [
+    { id:'in',      lbl:'🎤 Ввод',              st:'io', col:0,  row:0,  key:null },
+    { id:'tr',      lbl:'Транскрибатор',         st:1,    col:1,  row:0,  key:null },
+    { id:'fx',      lbl:'02 · Фактолог',         st:2,    col:2,  row:0,  key:'02_fact_extractor' },
+    { id:'hi',      lbl:'12 · Историк',          st:2,    col:3,  row:-1, key:'12_historian' },
+    { id:'ia',      lbl:'11 · Интервьюер',       st:2,    col:3,  row:1,  key:'11_interview_architect' },
+    { id:'int2',    lbl:'Второе\nинтервью',      st:2,    col:4,  row:1,  key:null },
+    { id:'gw',      lbl:'03 · Писатель',         st:3,    col:5,  row:0,  key:'03_ghostwriter' },
+    { id:'fc',      lbl:'04 · Фактчекер',        st:3,    col:6,  row:0,  key:'04_fact_checker' },
+    { id:'le',      lbl:'05 · Литредактор',      st:3,    col:7,  row:0,  key:'05_literary_editor' },
+    { id:'pr',      lbl:'06 · Корректор',        st:3,    col:8,  row:0,  key:'06_proofreader' },
+    { id:'pe',      lbl:'07 · Фоторедактор',     st:4,    col:9,  row:-1, key:'07_photo_editor' },
+    { id:'cd',      lbl:'13 · Дизайнер\nобложки',st:4,   col:9,  row:1,  key:'13_cover_designer' },
+    { id:'ad',      lbl:'15 · Арт-директор',     st:4,    col:10, row:1,  key:'15_art_director' },
+    { id:'ld',      lbl:'08 · Верстальщик',      st:4,    col:11, row:0,  key:'08_layout_designer' },
+    { id:'qa',      lbl:'09 · QA вёрстки',       st:4,    col:12, row:0,  key:'09_qa_layout' },
+    { id:'out',     lbl:'📖 Книга',              st:'io', col:13, row:0,  key:null },
+  ];
+
+  const EDGES = [
+    ['in','tr'],['tr','fx'],
+    ['fx','hi'],['fx','ia'],
+    ['ia','int2'],
+    ['hi','gw'],['int2','gw'],
+    ['gw','fc'],['fc','le'],['le','pr'],
+    ['pr','pe'],['pr','cd'],
+    ['pe','ld'],['cd','ad'],['ad','ld'],
+    ['ld','qa'],['qa','out'],
+  ];
+
+  /* ── stage group backgrounds ───────────────────────────── */
+  const GROUPS = [
+    { st:1,    cols:[1,1],  rows:[-0.6, 0.6] },
+    { st:2,    cols:[2,4],  rows:[-1.6, 1.6] },
+    { st:3,    cols:[5,8],  rows:[-0.6, 0.6] },
+    { st:4,    cols:[9,13], rows:[-1.6, 0.6] },
+  ];
+  const GROUP_LABELS = {1:'Этап 1', 2:'Этап 2', 3:'Этап 3', 4:'Этап 4'};
+
+  /* ── compute positions ─────────────────────────────────── */
+  const pos = {};
+  NODES.forEach(n => {
+    pos[n.id] = {
+      x: SX + n.col * STEP,
+      y: CY + n.row * (NH + RGAP) - NH / 2,
+    };
+  });
+
+  const canvas = document.getElementById('pipeline-canvas');
+  const svg    = document.getElementById('pipeline-svg');
+
+  /* ── draw stage group backgrounds ─────────────────────── */
+  GROUPS.forEach(g => {
+    const c = C[g.st];
+    const x1 = SX + g.cols[0] * STEP - 10;
+    const x2 = SX + g.cols[1] * STEP + NW + 10;
+    const y1 = CY + g.rows[0] * (NH + RGAP) - NH / 2 - 10;
+    const y2 = CY + g.rows[1] * (NH + RGAP) + NH / 2 + 10;
+    const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
+    rect.setAttribute('x', x1); rect.setAttribute('y', y1);
+    rect.setAttribute('width', x2-x1); rect.setAttribute('height', y2-y1);
+    rect.setAttribute('rx','12');
+    rect.setAttribute('fill', c.grp);
+    rect.setAttribute('stroke', c.bd);
+    rect.setAttribute('stroke-width','0.5');
+    rect.setAttribute('stroke-opacity','0.3');
+    svg.appendChild(rect);
+    // label
+    const lbl = document.createElementNS('http://www.w3.org/2000/svg','text');
+    lbl.setAttribute('x', (x1+x2)/2); lbl.setAttribute('y', y1 - 6);
+    lbl.setAttribute('text-anchor','middle');
+    lbl.setAttribute('fill', c.bd); lbl.setAttribute('font-size','10');
+    lbl.setAttribute('font-weight','600'); lbl.setAttribute('font-family','Manrope,sans-serif');
+    lbl.setAttribute('letter-spacing','0.05em');
+    lbl.textContent = GROUP_LABELS[g.st] || '';
+    svg.appendChild(lbl);
+  });
+
+  /* ── draw edges ────────────────────────────────────────── */
+  EDGES.forEach(([a, b]) => {
+    const p1 = pos[a], p2 = pos[b];
+    const x1 = p1.x + NW, y1 = p1.y + NH/2;
+    const x2 = p2.x,      y2 = p2.y + NH/2;
+    const mx = (x1 + x2) / 2;
+    const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d', `M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`);
+    path.setAttribute('stroke','#374151'); path.setAttribute('stroke-width','1.5');
+    path.setAttribute('fill','none'); path.setAttribute('marker-end','url(#arr)');
+    svg.appendChild(path);
+  });
+
+  /* ── draw nodes ────────────────────────────────────────── */
+  NODES.forEach(n => {
+    const {x, y} = pos[n.id];
+    const c = C[n.st];
+    const hasLink = !!n.key;
+
+    const wrap = document.createElement('div');
+    wrap.style.cssText = [
+      `position:absolute`, `left:${x}px`, `top:${y}px`,
+      `width:${NW}px`, `height:${NH}px`,
+      `background:${c.bg}`,
+      `border:${hasLink ? '1.5px' : '1px'} solid ${c.bd}`,
+      `border-radius:10px`,
+      `display:flex`, `align-items:center`, `justify-content:center`,
+      `font-size:11.5px`, `font-weight:${hasLink ? 600 : 400}`,
+      `color:${c.tx}`,
+      `padding:0 10px`, `text-align:center`, `line-height:1.3`,
+      `cursor:${hasLink ? 'pointer' : 'default'}`,
+      `transition:all .15s`,
+      `font-family:Manrope,sans-serif`,
+      `box-shadow:0 2px 10px rgba(0,0,0,.35)`,
+      `white-space:pre-line`,
+    ].join(';');
+
+    wrap.textContent = n.lbl;
+
+    if (hasLink) {
+      wrap.title = 'Перейти к описанию ↓';
+      wrap.addEventListener('mouseenter', () => {
+        wrap.style.borderColor = '#fff';
+        wrap.style.transform = 'translateY(-2px)';
+        wrap.style.boxShadow = `0 6px 20px rgba(0,0,0,.5), 0 0 0 3px ${c.bd}44`;
+      });
+      wrap.addEventListener('mouseleave', () => {
+        wrap.style.borderColor = c.bd;
+        wrap.style.transform = '';
+        wrap.style.boxShadow = '0 2px 10px rgba(0,0,0,.35)';
+      });
+      wrap.addEventListener('click', () => {
+        const el = document.getElementById('stage-' + n.key);
+        if (el) el.scrollIntoView({ behavior:'smooth', block:'start' });
+      });
+    }
+
+    canvas.appendChild(wrap);
+  });
+
+  /* ── drag-to-scroll ────────────────────────────────────── */
+  const scroller = document.getElementById('map-scroll');
+  let drag = false, startX, scrollL;
+  scroller.addEventListener('mousedown', e => {
+    if (e.button !== 0) return;
+    drag = true; startX = e.pageX - scroller.offsetLeft; scrollL = scroller.scrollLeft;
+    scroller.style.cursor = 'grabbing';
+  });
+  window.addEventListener('mouseup', () => { drag = false; scroller.style.cursor = 'grab'; });
+  scroller.addEventListener('mousemove', e => {
+    if (!drag) return;
+    e.preventDefault();
+    scroller.scrollLeft = scrollL - (e.pageX - scroller.offsetLeft - startX);
+  });
+})();
+</script>
+
+<!-- Навигация по этапам -->
+<div class="flex flex-wrap gap-2 mb-6">
+  {% for card in cards %}
+    <a href="#stage-{{ card.key }}"
+       class="text-xs px-3 py-1.5 rounded-full border transition-colors
+              {% if card.exists %}border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100
+              {% else %}border-gray-200 bg-gray-50 text-gray-400{% endif %}">
+      {{ card.name }}
+      {% if not card.exists %}<span class="opacity-60">·&nbsp;нет файла</span>{% endif %}
+    </a>
+  {% endfor %}
+</div>
+
+{% for card in cards %}
+<div class="bg-white rounded-xl shadow-sm mb-6" id="stage-{{ card.key }}">
+
+  <!-- Заголовок карточки -->
+  <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+    <div class="flex items-center gap-3">
+      <span class="font-semibold text-gray-800 text-base">{{ card.name }}</span>
+      {% if card.exists %}
+        <span class="text-xs px-2 py-0.5 rounded-full bg-green-50 text-green-600 font-medium">✓ заполнено</span>
+      {% else %}
+        <span class="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 font-medium">⚠ нет описания</span>
+      {% endif %}
+    </div>
+    <!-- Загрузка обновлённого .md -->
+    <div class="flex items-center gap-2" id="upload-area-{{ card.key }}">
+      <label class="text-xs text-gray-400 cursor-pointer hover:text-indigo-600 transition-colors"
+             for="file-{{ card.key }}">
+        ↑ обновить .md
+        <input type="file" id="file-{{ card.key }}" accept=".md" class="hidden"
+               onchange="uploadStage('{{ card.key }}', this)">
+      </label>
+      <span class="upload-status text-xs hidden" id="status-{{ card.key }}"></span>
+    </div>
+  </div>
+
+  <!-- Содержимое: рендеренный markdown -->
+  {% if card.exists %}
+  <div class="px-6 py-5 prose prose-sm max-w-none
+              prose-headings:font-semibold prose-headings:text-gray-800
+              prose-h1:text-lg prose-h2:text-base prose-h2:mt-5 prose-h2:mb-2
+              prose-h3:text-sm prose-h3:mt-4 prose-h3:mb-1
+              prose-p:text-gray-600 prose-p:leading-relaxed
+              prose-li:text-gray-600
+              prose-code:text-indigo-600 prose-code:bg-indigo-50 prose-code:px-1 prose-code:rounded
+              prose-table:text-sm prose-th:bg-gray-50 prose-th:font-medium prose-td:text-gray-600
+              prose-strong:text-gray-800">
+    {{ card.html | safe }}
+  </div>
+  {% else %}
+  <div class="px-6 py-8 text-center text-gray-400">
+    <div class="text-3xl mb-2">📄</div>
+    <div class="text-sm">Файл <code class="text-gray-500">docs/stages/{{ card.key }}.md</code> не найден.</div>
+    <div class="text-xs mt-1">Загрузи .md-файл по шаблону STAGE_TEMPLATE.md</div>
+  </div>
+  {% endif %}
+
+</div>
+{% endfor %}
+
+<!-- STAGE_TEMPLATE отдельно внизу -->
+<div class="mt-8 border-t border-gray-200 pt-6">
+  <details class="bg-white rounded-xl shadow-sm">
+    <summary class="px-6 py-4 cursor-pointer text-sm font-medium text-gray-600 hover:text-gray-900 select-none">
+      📐 Шаблон для новых этапов (STAGE_TEMPLATE.md)
+    </summary>
+    <div class="px-6 pb-5 text-xs text-gray-400">
+      Используй этот шаблон как основу при создании карточки нового агента.
+      Сохрани файл как <code>docs/stages/&lt;NN&gt;_&lt;agent_key&gt;.md</code> и загрузи через кнопку выше.
+    </div>
+  </details>
+</div>
+
+<script>
+async function uploadStage(key, input) {
+  const status = document.getElementById('status-' + key);
+  if (!input.files.length) return;
+
+  const fd = new FormData();
+  fd.append('file', input.files[0]);
+
+  status.className = 'upload-status text-xs text-gray-400';
+  status.textContent = 'Загружаю…';
+  status.classList.remove('hidden');
+
+  try {
+    const res  = await fetch(`/dasha/stages/${key}/upload`, { method: 'POST', body: fd });
+    const data = await res.json();
+    if (data.ok) {
+      status.className = 'upload-status text-xs text-green-600';
+      status.textContent = '✓ загружен';
+      setTimeout(() => location.reload(), 800);
+    } else {
+      throw new Error(data.error || 'Ошибка');
+    }
+  } catch (e) {
+    status.className = 'upload-status text-xs text-red-500';
+    status.textContent = '✗ ' + e.message;
+  }
+  input.value = '';
+}
+</script>
+{% endblock %}

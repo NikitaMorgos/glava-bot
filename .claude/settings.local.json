@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \":*)",
+      "Bash(pip install:*)",
+      "Bash(python -c ':*)",
+      "Bash(grep -oP '.{0,150}брат.{0,150}')",
+      "Bash(grep -oP '.{0,150}сестр.{0,150}')",
+      "Bash(grep -oP '.{0,200}документ.{0,200}')",
+      "Bash(grep -oP '.{0,200}вокзал.{0,200}')",
+      "Bash(grep -oP '.{0,200}выковыр.{0,200}')",
+      "Bash(grep -oP '.{0,200}Сахалин.{0,200}')",
+      "Bash(grep -oP '.{0,200}дорог.{0,200}')",
+      "Bash(grep -oP '.{0,200}спирт.{0,200}')",
+      "Bash(grep -oP '.{0,200}бессребрен.{0,200}')",
+      "Bash(grep -oP '.{0,200}интернат.{0,200}')",
+      "Bash(python3 -c ':*)",
+      "Bash(python scripts_tmp_preview.py)",
+      "Bash(python tmp_a5_preview.py)",
+      "Bash(python tmp_subheading_preview.py)",
+      "Bash(python tmp_font_size_preview.py)",
+      "Bash(python tmp_timeline_preview.py)",
+      "Bash(python tmp_timeline_v2.py)",
+      "Bash(python tmp_callout_ref.py)",
+      "Bash(python -c ' *)"
+    ]
+  }
+}

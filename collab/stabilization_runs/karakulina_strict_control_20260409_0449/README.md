@@ -1,0 +1,44 @@
+# Karakulina Strict Stabilization Artifacts
+
+Папка собрана для совместного разбора с Дашей и Claude.
+
+## Что внутри
+
+### Stage2
+- `karakulina_stage2_text_gates_20260408_185639.json`
+- `karakulina_stage2_run_manifest_20260408_185639.json`
+- `karakulina_book_FINAL_20260408_185639.json`
+- `karakulina_book_FINAL_20260408_185639.txt`
+- `karakulina_fc_report_iter2_20260408_185639.json`
+
+### Stage3
+- `karakulina_strict_control_20260408_185639e_proofreader_report_20260409_044411.json`
+- `karakulina_strict_control_20260408_185639e_book_FINAL_stage3_20260409_044411.json`
+- `karakulina_strict_control_20260408_185639e_FINAL_stage3_20260409_044411.txt`
+- `karakulina_strict_control_20260408_185639e_stage3_text_gates_20260409_044411.json`
+- `karakulina_strict_control_20260408_185639e_stage3_run_manifest_20260409_044411.json`
+
+### Regression / Approve
+- `karakulina_regression_suite_20260409_044823.json`
+
+### Stage4
+- `karakulina_strict_control_20260409_0449_stage4_run_manifest_20260409_044838.json`
+- `karakulina_strict_control_20260409_0449_stage4_page_plan_20260409_044838.json`
+- `karakulina_strict_control_20260409_0449_stage4_layout_iter1_20260409_044838.json`
+- `karakulina_strict_control_20260409_0449_stage4_layout_iter2_20260409_044838.json`
+- `karakulina_strict_control_20260409_0449_stage4_layout_iter3_20260409_044838.json`
+- `karakulina_strict_control_20260409_0449_stage4_pdf_iter1_20260409_044838.pdf`
+- `karakulina_strict_control_20260409_0449_stage4_pdf_iter2_20260409_044838.pdf`
+- `karakulina_strict_control_20260409_0449_stage4_pdf_iter3_20260409_044838.pdf`
+- `karakulina_strict_control_20260409_0449_stage4_pdf_preflight_iter1_20260409_044838.json`
+- `karakulina_strict_control_20260409_0449_stage4_qa_iter1_20260409_044838.json`
+- `karakulina_strict_control_20260409_0449_stage4_qa_iter2_20260409_044838.json`
+- `karakulina_strict_control_20260409_0449_stage4_qa_iter3_20260409_044838.json`
+- `karakulina_strict_control_20260409_0449_stage4_structural_qa_iter3_20260409_044838.json`
+- `karakulina_strict_control_20260409_0449_stage4_visual_qa_iter3_20260409_044838.json`
+- `karakulina_strict_control_20260409_0449_stage4_cover_designer_call1_20260409_044838.json`
+- `karakulina_strict_control_20260409_0449_stage4_cover_designer_call2_a1_20260409_044838.json`
+- `karakulina_strict_control_20260409_0449_stage4_cover_portrait_20260409_044838.webp`
+
+### Полный бандл одним файлом
+- `full_artifacts/karakulina_strict_control_20260409_0449_artifacts.tgz`

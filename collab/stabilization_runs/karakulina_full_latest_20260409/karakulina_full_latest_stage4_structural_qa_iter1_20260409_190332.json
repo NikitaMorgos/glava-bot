@@ -1,0 +1,59 @@
+{
+  "project_id": "karakulina_stage4",
+  "iteration": 1,
+  "verdict": "pass",
+  "issues": [],
+  "checklist": {
+    "pagination": {
+      "status": "pass",
+      "details": "Пагинация корректна: cover (стр. 1) и blank (стр. 2) без номеров, TOC (стр. 3) начинает видимую нумерацию с 1, далее непрерывная последовательность до стр. 38. Единая модель пагинации соблюдена."
+    },
+    "toc": {
+      "status": "pass",
+      "details": "Оглавление должно содержать 5 глав согласно expected_content.chapter_titles. Главы начинаются на страницах: ch_01 (стр. 4, видимая 2), ch_02 (стр. 6, видимая 4), ch_03 (стр. 21, видимая 19), ch_04 (стр. 26, видимая 24), epilogue (стр. 28, видимая 26). Структура соответствует плану."
+    },
+    "orphan_widow": {
+      "status": "pass",
+      "details": "В режиме structural_qa висячие строки не проверяются визуально. Структурно текстовые блоки распределены корректно по страницам согласно page_plan."
+    },
+    "photos": {
+      "status": "pass",
+      "total_expected": 22,
+      "total_found": 22,
+      "details": "Все 22 фотографии из expected_content.photo_ids размещены согласно page_plan. В тексте: 8 фото в ch_02, 1 фото в ch_03. В фотосекции (стр. 30-38): 13 фото. Размещение соответствует плану 1:1."
+    },
+    "callouts": {
+      "status": "pass",
+      "total_expected": 7,
+      "total_found": 7,
+      "details": "Все 7 callouts из expected_content.callout_ids размещены точно согласно page_plan: callout_07 на стр. 10, callout_01 и callout_02 на стр. 22, callout_03 на стр. 23, callout_04 на стр. 24, callout_05 и callout_06 на стр. 25. Соответствие 1:1."
+    },
+    "headers_footers": {
+      "status": "pass",
+      "details": "В режиме structural_qa колонтитулы не проверяются визуально. Структурно предполагается стандартное оформление согласно style_guide."
+    },
+    "margins": {
+      "status": "pass",
+      "details": "Поля определены в style_guide: top/bottom 20мм, inner 20мм, outer 15мм. Достаточны для печати формата A5. Bleed отсутствует (0мм), что корректно для данного проекта."
+    },
+    "typography": {
+      "status": "pass",
+      "details": "Шрифтовая схема определена в style_guide: PT Serif для основного текста (10pt), PT Serif Bold для заголовков, PT Sans для подписей и исторических заметок. Структурно корректно."
+    },
+    "integrity": {
+      "status": "pass",
+      "details": "Структурная целостность соблюдена: 38 страниц, правильная последовательность cover→blank→toc→chapters→photo_section. Все элементы из page_plan присутствуют в page_map на указанных страницах."
+    }
+  },
+  "regression_check": {
+    "performed": false,
+    "previous_issues_resolved": []
+  },
+  "summary": {
+    "critical_issues": 0,
+    "major_issues": 0,
+    "minor_issues": 0,
+    "total_pages_checked": 38,
+    "overall_assessment": "Структурная проверка пройдена успешно. Page_plan и page_map соответствуют 1:1, все 22 фотографии и 7 callouts размещены согласно контракту. Пагинация единообразна, структура книги корректна."
+  }
+}

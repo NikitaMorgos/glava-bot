@@ -19,7 +19,7 @@ from reportlab.lib.colors import HexColor, white, black
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_JUSTIFY
 from reportlab.platypus import (
-    SimpleDocTemplate, Paragraph, Spacer, PageBreak, HRFlowable,
+    SimpleDocTemplate, Paragraph, Spacer, PageBreak, HRFlowable, Image,
 )
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
@@ -125,6 +125,15 @@ def _build_styles(cover_has_image: bool = False) -> dict:
             spaceAfter=2 * mm,
         ),
         "_cover_gold": cover_gold_color,  # используется для HRFlowable на обложке
+        "photo_caption": ParagraphStyle(
+            "photo_caption",
+            fontName=FONT_SERIF,
+            fontSize=8,
+            textColor=MUTED,
+            alignment=TA_CENTER,
+            leading=12,
+            spaceAfter=2 * mm,
+        ),
         "chapter_heading": ParagraphStyle(
             "chapter_heading",
             fontName=FONT_BOLD,
@@ -273,12 +282,48 @@ def _make_cover_callback(cover_image_bytes: bytes | None):
     return on_first_page
 
 
+def _make_photo_flowables(
+    image_bytes: bytes,
+    caption: str,
+    styles: dict,
+    page_w: float,
+    page_h: float,
+    margins_lr: float = 33 * mm,
+) -> list:
+    """Создаёт ReportLab flowables для одной фотографии с подписью."""
+    items: list = []
+    try:
+        max_w = page_w - margins_lr
+        max_h = page_h * 0.55  # не более 55% высоты страницы
+
+        img_buf = io.BytesIO(image_bytes)
+        from reportlab.lib.utils import ImageReader
+        reader = ImageReader(img_buf)
+        iw, ih = reader.getSize()
+        scale = min(max_w / iw, max_h / ih, 1.0)
+        draw_w, draw_h = iw * scale, ih * scale
+
+        img_buf.seek(0)
+        img = Image(img_buf, width=draw_w, height=draw_h)
+        img.hAlign = "CENTER"
+        items.append(Spacer(1, 4 * mm))
+        items.append(img)
+        if caption and caption.strip():
+            items.append(Spacer(1, 2 * mm))
+            items.append(Paragraph(_clean(caption.strip()), styles["photo_caption"]))
+        items.append(Spacer(1, 4 * mm))
+    except Exception as e:
+        logger.warning("pdf_book: не удалось вставить фото: %s", e)
+    return items
+
+
 def generate_book_pdf(
     bio_text: str,
     character_name: str = "Герой книги",
     subtitle: str = "Семейная биография",
     cover_spec: dict | None = None,
     cover_image_bytes: bytes | None = None,
+    photo_items: list[dict] | None = None,
 ) -> bytes:
     """
     Генерирует PDF-книгу из bio_text.
@@ -292,6 +337,8 @@ def generate_book_pdf(
         cover_image_bytes: AI-сгенерированное изображение обложки (PNG/WebP).
                            Если задано — full-bleed обложка с тёмным оверлеем
                            и белым текстом; иначе — текстовая обложка.
+        photo_items: список словарей {caption: str, image_bytes: bytes}.
+                     Фото вставляются равномерно между главами / абзацами.
 
     Returns:
         bytes: содержимое PDF-файла
@@ -322,7 +369,6 @@ def generate_book_pdf(
     story = []
 
     # ── Обложка (title page) ───────────────────────────────────────────
-    # При наличии изображения: больше пространства сверху, текст ниже
     story.append(Spacer(1, 30 * mm if has_image else 22 * mm))
     story.append(Paragraph("Глава", styles["cover_label"]))
     story.append(Spacer(1, 6 * mm))
@@ -340,13 +386,36 @@ def generate_book_pdf(
     story.append(Paragraph("glava.family", styles["cover_label"]))
     story.append(PageBreak())
 
+    # ── Распределение фото по тексту ───────────────────────────────────
+    # photo_items = [{caption, image_bytes}, ...] — вставляем равномерно
+    # Разбиваем текст на "блоки" (главы/секции), фото вставляем между ними.
+    photos = [p for p in (photo_items or []) if p.get("image_bytes")]
+    paragraphs = [ln.rstrip() for ln in bio_text.strip().split('\n')]
+    # Находим позиции chapter_heading — точки вставки фото
+    chapter_break_positions = [
+        i for i, ln in enumerate(paragraphs) if ln and _is_chapter_heading(ln)
+    ]
+    # Выбираем точки вставки: равномерно между главами, пропуская первую
+    insert_at: dict[int, list[dict]] = {}
+    if photos and len(chapter_break_positions) > 1:
+        # После главы N (N от 1) вставляем фото
+        insert_positions = chapter_break_positions[1:]  # skip ch_01 header itself
+        for idx, photo in enumerate(photos):
+            pos_idx = idx % len(insert_positions)
+            pos = insert_positions[pos_idx]
+            insert_at.setdefault(pos, []).append(photo)
+    elif photos:
+        # Нет чётких заголовков — вставляем после каждых N строк
+        total = len(paragraphs)
+        step = max(1, total // (len(photos) + 1))
+        for idx, photo in enumerate(photos):
+            pos = step * (idx + 1)
+            insert_at.setdefault(pos, []).append(photo)
+
     # ── Контент ────────────────────────────────────────────────────────
-    lines = bio_text.strip().split('\n')
     first_para_in_chapter = True
 
-    for line in lines:
-        line = line.rstrip()
-
+    for i, line in enumerate(paragraphs):
         if not line:
             first_para_in_chapter = False
             continue
@@ -355,24 +424,41 @@ def generate_book_pdf(
             clean = _clean(line)
             story.append(Paragraph(clean, styles["section_heading"]))
             first_para_in_chapter = True
-            continue
-
-        if _is_chapter_heading(line):
+        elif _is_chapter_heading(line):
             clean = _clean(line)
             story.append(Paragraph(clean, styles["chapter_heading"]))
             story.append(HRFlowable(width="30%", thickness=0.3, color=LIGHT_LINE, hAlign="LEFT"))
             story.append(Spacer(1, 2 * mm))
             first_para_in_chapter = True
-            continue
+        else:
+            clean = _clean(line)
+            if clean:
+                style = styles["body_first"] if first_para_in_chapter else styles["body"]
+                story.append(Paragraph(clean, style))
+                first_para_in_chapter = False
 
-        # Обычный текстовый параграф
-        clean = _clean(line)
-        if not clean:
-            continue
+        # Вставляем фото после этой строки, если запланировано
+        if i in insert_at:
+            for photo in insert_at[i]:
+                story.extend(_make_photo_flowables(
+                    photo["image_bytes"],
+                    photo.get("caption", ""),
+                    styles, page_w, page_h,
+                ))
 
-        style = styles["body_first"] if first_para_in_chapter else styles["body"]
-        story.append(Paragraph(clean, style))
-        first_para_in_chapter = False
+    # ── Фото в конце, если не все вошли в текст ────────────────────────
+    remaining = [p for p in photos if not any(p in lst for lst in insert_at.values())]
+    if remaining:
+        story.append(PageBreak())
+        story.append(Spacer(1, 6 * mm))
+        story.append(Paragraph("Семейный архив", styles["chapter_heading"]))
+        story.append(HRFlowable(width="30%", thickness=0.3, color=LIGHT_LINE, hAlign="LEFT"))
+        for photo in remaining:
+            story.extend(_make_photo_flowables(
+                photo["image_bytes"],
+                photo.get("caption", ""),
+                styles, page_w, page_h,
+            ))
 
     # ── Финальная страница ─────────────────────────────────────────────
     story.append(PageBreak())

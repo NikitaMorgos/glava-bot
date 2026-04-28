@@ -1,0 +1,106 @@
+{
+  "project_id": "korolkova_stage2_test",
+  "iteration": 2,
+  "verdict": "pass",
+  "errors": [
+    {
+      "id": "err_001",
+      "type": "hallucination",
+      "severity": "minor",
+      "chapter_id": "ch_02",
+      "location": "Глава 2, раздел «Обучение и работа ветеринаром», 2-й абзац",
+      "what_is_written": "Видимо, были какие-то способности к этому делу, потому что, как она сама говорила, ей сразу доверили всех животных в хозяйстве.",
+      "what_should_be": "Убрать оценочную фразу «Видимо, были какие-то способности к этому делу». Оставить только факт из источника.",
+      "source": {
+        "type": "fact_map",
+        "reference": "quote_008: «ей сразу доверили всех этих животных» — прямая цитата из интервью"
+      },
+      "fix_instruction": "Заменить на: «Как она сама говорила, ей сразу доверили всех животных в хозяйстве.» Убрать авторскую интерпретацию о способностях."
+    },
+    {
+      "id": "err_002",
+      "type": "hallucination",
+      "severity": "minor",
+      "chapter_id": "ch_02",
+      "location": "Глава 2, раздел «Замужество и материнство», 3-й абзац",
+      "what_is_written": "После войны, как она говорила, мало было кавалеров — многие погибли, поэтому особо выбирать не приходилось.",
+      "what_should_be": "В транскрипте: «она говорила, что после войны мало детей было. Ну, в смысле, детей этих, кавалеров.» Нет утверждения «особо выбирать не приходилось».",
+      "source": {
+        "type": "transcript",
+        "reference": "int_001: «она говорила, что после войны мало детей было. Ну, в смысле, детей этих, кавалеров»"
+      },
+      "fix_instruction": "Заменить на: «После войны, как она говорила, мало было кавалеров — многие погибли.» Убрать фразу о том, что «особо выбирать не приходилось»."
+    }
+  ],
+  "warnings": [
+    {
+      "id": "warn_001",
+      "type": "style_concern",
+      "chapter_id": "ch_02",
+      "description": "Исторические вставки (выделенные курсивом) содержат обобщения, которые могут восприниматься как факты о герое",
+      "recommendation": "Литредактору проверить, что исторический контекст чётко отделён от биографических фактов"
+    }
+  ],
+  "completeness_check": {
+    "total_facts_in_map": 47,
+    "facts_referenced_in_text": 42,
+    "facts_verified_ok": 40,
+    "facts_with_errors": 2,
+    "facts_missing_from_text": [
+      {
+        "fact_id": "person_007",
+        "fact_description": "Дядя Лёша (брат мужа)",
+        "was_in_facts_omitted": true,
+        "omission_justified": true,
+        "recommendation": "Допустимо пропустить — упомянут вскользь, нет достаточного контекста"
+      },
+      {
+        "fact_id": "person_008",
+        "fact_description": "Тётя Маруся (жена дяди Лёши)",
+        "was_in_facts_omitted": true,
+        "omission_justified": true,
+        "recommendation": "Допустимо пропустить — детали не относятся к биографии героини"
+      },
+      {
+        "fact_id": "quote_005",
+        "fact_description": "«ей бы в другое время родиться»",
+        "was_in_facts_omitted": true,
+        "omission_justified": true,
+        "recommendation": "Допустимо пропустить — помечена как usable_in_book: false"
+      },
+      {
+        "fact_id": "quote_006",
+        "fact_description": "«вот здесь наш Уралмаш»",
+        "was_in_facts_omitted": true,
+        "omission_justified": true,
+        "recommendation": "Допустимо пропустить — не относится к героине"
+      },
+      {
+        "fact_id": "quote_007",
+        "fact_description": "«Вообще ничего не любила рассказывать»",
+        "was_in_facts_omitted": true,
+        "omission_justified": true,
+        "recommendation": "Допустимо пропустить — дублирует character_trait, уже отражено в тексте"
+      }
+    ]
+  },
+  "regression_check": {
+    "performed": false,
+    "chapters_checked": [],
+    "issues_found": []
+  },
+  "summary": {
+    "critical_errors": 0,
+    "major_errors": 0,
+    "minor_errors": 2,
+    "warnings_count": 1,
+    "overall_assessment": "Текст значительно улучшен после первой итерации. Устранены все критические и крупные ошибки. Остались только две минорные галлюцинации — авторские интерпретации без источника. Фактическая точность высокая, полнота достаточная."
+  },
+  "stats": {
+    "facts_checked": 42,
+    "facts_passed": 40,
+    "facts_failed": 2,
+    "coverage_percent": 89,
+    "needs_verification_flagged": 0
+  }
+}

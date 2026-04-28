@@ -2,9 +2,12 @@
 Личный кабинет Glava — веб-интерфейс для пользователей бота.
 Вход по логину (@username или telegram_id) и паролю.
 """
+import logging
 import os
 import sys
 from pathlib import Path
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -12,7 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from dotenv import load_dotenv
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
-from flask import Flask, redirect, render_template, request, session, url_for
+from flask import Flask, jsonify, redirect, render_template, request, session, url_for
 
 import db
 import storage
@@ -177,6 +180,9 @@ def questions():
 
 from cabinet.tma_api import tma_api
 app.register_blueprint(tma_api)
+
+from cabinet.upload_api import upload_api
+app.register_blueprint(upload_api)
 
 
 if __name__ == "__main__":

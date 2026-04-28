@@ -1,0 +1,125 @@
+{
+  "project_id": "karakulina_stage4",
+  "iteration": 2,
+  "verdict": "fail",
+  "issues": [
+    {
+      "id": "issue_001",
+      "category": "integrity",
+      "severity": "critical",
+      "page": null,
+      "description": "Структурная проверка невозможна: PDF файл недоступен (pdf_available: false), но режим structural_qa требует проверки базовых элементов структуры. Без доступа к PDF невозможно проверить встроенность шрифтов, отсутствие символов-заменителей (■■■), корректность пагинации и оглавления.",
+      "fix_suggestion": "Обеспечить доступ к PDF файлу для structural_qa проверки. Если PDF не генерируется корректно, исправить процесс генерации. Минимально необходимо проверить: шрифты embedded, текст читается, пагинация работает."
+    },
+    {
+      "id": "issue_002",
+      "category": "callout",
+      "severity": "major",
+      "page": null,
+      "description": "Нарушение контракта page_plan → page_map для callouts. Expected_content требует 7 callouts [callout_01 - callout_07], но в page_map размещено только 7 callouts. Однако распределение по страницам не соответствует page_plan: page_plan указывает callout_07 на стр. 10, page_map подтверждает стр. 10, но остальные callouts (01-06) в page_plan размещены на стр. 22-25, что требует точной проверки соответствия.",
+      "fix_suggestion": "Проверить точное соответствие размещения всех 7 callouts между page_plan и page_map: callout_01-02 на стр. 22, callout_03 на стр. 23, callout_04 на стр. 24, callout_05-06 на стр. 25, callout_07 на стр. 10. Любое отклонение требует обоснования в technical_notes."
+    },
+    {
+      "id": "issue_003",
+      "category": "photo",
+      "severity": "major",
+      "page": null,
+      "description": "Нарушение контракта page_plan → page_map для фотографий. Expected_content требует 22 фото, page_map показывает все 22 фото размещены, но без визуального доступа невозможно проверить соответствие layout-параметров из page_plan (wrap_right, wrap_left, full_width, pair_stack).",
+      "fix_suggestion": "Обеспечить проверку соответствия каждого фото параметрам из page_plan: photo_017 (стр. 7, wrap_right, 40%), photo_021 (стр. 9, wrap_left, 40%), photo_014 (стр. 10, full_width), и т.д. Особенно критично для wrap-layout фото."
+    },
+    {
+      "id": "issue_004",
+      "category": "pagination",
+      "severity": "major",
+      "page": null,
+      "description": "Невозможно проверить единую модель пагинации без доступа к PDF. Page_map показывает 38 страниц, но критично проверить: cover (стр. 1) и blank (стр. 2) без видимых номеров, TOC (стр. 3) с видимым номером 1, далее visible_page = physical_page - 2.",
+      "fix_suggestion": "Проверить визуально систему пагинации: страницы 1-2 без номеров, страница 3 показывает '1', страница 4 показывает '2', и т.д. до страницы 38 с номером '36'."
+    },
+    {
+      "id": "issue_005",
+      "category": "toc",
+      "severity": "major",
+      "page": 3,
+      "description": "Невозможно проверить соответствие оглавления реальным страницам без визуального доступа. TOC должен использовать visible номера: ch_01 → стр. 2, ch_02 → стр. 4, ch_03 → стр. 19, ch_04 → стр. 24, epilogue → стр. 26.",
+      "fix_suggestion": "Проверить, что оглавление корректно ссылается на visible номера страниц, а не на physical. Каждая ссылка должна вести точно на начало соответствующей главы."
+    }
+  ],
+  "checklist": {
+    "pagination": {
+      "status": "fail",
+      "details": "Невозможно проверить единую систему пагинации без доступа к PDF. Требуется проверка: cover/blank без номеров, TOC начинает с visible номера 1."
+    },
+    "toc": {
+      "status": "fail",
+      "details": "Невозможно проверить соответствие номеров страниц в оглавлении реальному размещению глав без визуального доступа к PDF."
+    },
+    "orphan_widow": {
+      "status": "warning",
+      "details": "Проверка висячих строк невозможна без визуального доступа к PDF. Требуется проверка после обеспечения доступа."
+    },
+    "photos": {
+      "status": "fail",
+      "total_expected": 22,
+      "total_found": 22,
+      "details": "Все 22 фото присутствуют в page_map, но невозможно проверить соответствие layout-параметров из page_plan без визуального доступа."
+    },
+    "callouts": {
+      "status": "fail",
+      "total_expected": 7,
+      "total_found": 7,
+      "details": "Все 7 callouts присутствуют в page_map, но требуется проверка точного соответствия размещения между page_plan и page_map."
+    },
+    "headers_footers": {
+      "status": "warning",
+      "details": "Проверка колонтитулов невозможна без визуального доступа к PDF."
+    },
+    "margins": {
+      "status": "warning",
+      "details": "Проверка полей (top: 20mm, bottom: 20mm, inner: 20mm, outer: 15mm) невозможна без визуального доступа к PDF."
+    },
+    "typography": {
+      "status": "fail",
+      "details": "Критическая проверка встроенности шрифтов (PT Serif, PT Sans) и отсутствия символов-заменителей невозможна без доступа к PDF."
+    },
+    "integrity": {
+      "status": "fail",
+      "details": "Общая целостность макета не может быть проверена без визуального доступа к PDF файлу."
+    }
+  },
+  "regression_check": {
+    "performed": true,
+    "previous_issues_resolved": [
+      {
+        "issue_id": "issue_001",
+        "status": "persists"
+      },
+      {
+        "issue_id": "issue_002",
+        "status": "persists"
+      },
+      {
+        "issue_id": "issue_003",
+        "status": "persists"
+      },
+      {
+        "issue_id": "issue_004",
+        "status": "persists"
+      },
+      {
+        "issue_id": "issue_005",
+        "status": "persists"
+      },
+      {
+        "issue_id": "issue_006",
+        "status": "persists"
+      }
+    ]
+  },
+  "summary": {
+    "critical_issues": 1,
+    "major_issues": 4,
+    "minor_issues": 0,
+    "total_pages_checked": 0,
+    "overall_assessment": "Структурная проверка заблокирована отсутствием доступа к PDF файлу. Все предыдущие проблемы остаются нерешёнными. Невозможно выполнить базовые проверки structural_qa режима: встроенность шрифтов, читаемость текста, соответствие page_plan → page_map, корректность пагинации и оглавления."
+  }
+}

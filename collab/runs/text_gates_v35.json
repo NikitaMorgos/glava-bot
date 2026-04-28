@@ -1,0 +1,31 @@
+{
+  "stage": "stage2_variant_b",
+  "passed": true,
+  "gates": [
+    {
+      "gate": "cross_chapter_repetition",
+      "passed": true,
+      "ngram_size": 5,
+      "threshold": 0.2,
+      "violations": []
+    },
+    {
+      "gate": "ch01_bio",
+      "passed": true,
+      "min_chars": 300,
+      "actual_chars": 0,
+      "has_bio_struct": true,
+      "checks": {
+        "content_len_ok": true,
+        "has_birth_year": true,
+        "has_birth_place": true
+      }
+    },
+    {
+      "gate": "non_empty_book",
+      "passed": true,
+      "issues": [],
+      "min_chapter_chars": 120
+    }
+  ]
+}

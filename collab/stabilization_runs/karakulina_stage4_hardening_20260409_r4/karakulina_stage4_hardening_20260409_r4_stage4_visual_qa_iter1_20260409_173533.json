@@ -1,0 +1,68 @@
+{
+  "project_id": "karakulina_stage4",
+  "iteration": 1,
+  "verdict": "fail",
+  "issues": [
+    {
+      "id": "issue_001",
+      "category": "integrity",
+      "severity": "critical",
+      "page": null,
+      "description": "PDF файл недоступен для визуальной проверки. Путь /opt/glava/exports/karakulina_stage4_hardening_20260409_r4_stage4_pdf_iter1_20260409_173533.pdf не может быть открыт для анализа содержимого.",
+      "fix_suggestion": "Убедиться, что PDF файл корректно сгенерирован и доступен по указанному пути. Проверить права доступа к файлу и его целостность."
+    }
+  ],
+  "checklist": {
+    "pagination": {
+      "status": "fail",
+      "details": "Невозможно проверить пагинацию без доступа к PDF файлу"
+    },
+    "toc": {
+      "status": "fail",
+      "details": "Невозможно проверить соответствие оглавления реальным страницам без визуального доступа к PDF"
+    },
+    "orphan_widow": {
+      "status": "fail",
+      "details": "Невозможно проверить висячие строки без визуального анализа страниц"
+    },
+    "photos": {
+      "status": "fail",
+      "total_expected": 22,
+      "total_found": 0,
+      "details": "Невозможно проверить размещение и качество 22 фотографий без доступа к PDF"
+    },
+    "callouts": {
+      "status": "fail",
+      "total_expected": 6,
+      "total_found": 0,
+      "details": "Невозможно проверить оформление и размещение 6 выносок без визуального доступа"
+    },
+    "headers_footers": {
+      "status": "fail",
+      "details": "Невозможно проверить колонтитулы без визуального анализа страниц"
+    },
+    "margins": {
+      "status": "fail",
+      "details": "Невозможно проверить соответствие полей (top: 20mm, bottom: 20mm, inner: 20mm, outer: 15mm) без визуального контроля"
+    },
+    "typography": {
+      "status": "fail",
+      "details": "Невозможно проверить шрифты (PT Serif 10pt, PT Serif Bold для заголовков) и читаемость без доступа к PDF"
+    },
+    "integrity": {
+      "status": "fail",
+      "details": "Критическая проблема: PDF файл недоступен для проверки целостности макета"
+    }
+  },
+  "regression_check": {
+    "performed": false,
+    "previous_issues_resolved": []
+  },
+  "summary": {
+    "critical_issues": 1,
+    "major_issues": 0,
+    "minor_issues": 0,
+    "total_pages_checked": 0,
+    "overall_assessment": "Критическая ошибка: PDF файл недоступен для визуальной проверки. Невозможно выполнить контроль качества макета без доступа к файлу. Требуется устранение проблемы с генерацией или доступом к PDF перед повторной проверкой."
+  }
+}

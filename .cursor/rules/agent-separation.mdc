@@ -1,0 +1,26 @@
+---
+description: Разделение зон ответственности между Агентом А (бэкенд) и Агентом Б (фронтенд)
+globs:
+  - "landing/**"
+  - "tma/**"
+  - "static/**"
+  - "cabinet/templates/**"
+---
+
+# Разделение работы между агентами
+
+В проекте параллельно работают два AI-агента.
+
+## Агент A — Бэкенд и пайплайн
+
+Файлы: `main.py`, `pipeline_*.py`, `orchestrator.py`, `admin/`, `db*.py`, `llm_*.py`, `*_client.py`, `pdf_book.py`, `deploy/`, `tests/`, `cco/`.
+
+## Агент Б — Фронтенд и лендинг
+
+Файлы: `landing/`, `tma/`, `cabinet/templates/`, `static/`.
+
+**Правила для Агента Б:**
+- Не трогать `main.py`, `pipeline_*.py`, `admin/blueprints/`, `deploy/`
+- Flask-маршруты в `cabinet/app.py` — только согласовывать с Агентом А
+- Лендинг: `landing/`, домен `glava.family`, Nginx: `deploy/nginx-glava.conf`
+- TMA: `tma/`, открывается внутри Telegram

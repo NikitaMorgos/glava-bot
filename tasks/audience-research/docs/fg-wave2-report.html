@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ГЛАВА — Отчёт по фокус-группам. Волна 2 + Синтез</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#f9f7f2;--paper:#f0ead9;--parchment:#dfd5c2;
+    --ink:#181208;--brown:#44311f;--muted:#72614e;
+    --gold:#a8823c;--gold-light:#c9a05e;--white:#ffffff;
+    --s4:#7c3e6b;--s6:#3e5c7c;--s7:#7c6b3e;
+    --red:#c0392b;--orange:#e67e22;--green:#27ae60;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Manrope',sans-serif;background:var(--cream);color:var(--ink);font-size:15px;line-height:1.7}
+
+  nav{position:sticky;top:0;z-index:100;background:rgba(249,247,242,.93);backdrop-filter:blur(12px);border-bottom:1px solid var(--parchment);padding:0 2.5rem;display:flex;align-items:center;justify-content:space-between;height:54px}
+  .nav-logo{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;color:var(--ink)}
+  .nav-logo span{color:var(--gold)}
+  .nav-badge{background:var(--brown);color:#fff;font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:.25rem .75rem;border-radius:20px}
+  .nav-links{display:flex;gap:1.5rem;list-style:none;font-size:.75rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase}
+  .nav-links a{color:var(--muted);text-decoration:none;transition:color .2s}
+  .nav-links a:hover{color:var(--gold)}
+
+  .hero{background:var(--brown);color:var(--cream);padding:6rem 2.5rem 5rem;text-align:center;position:relative;overflow:hidden}
+  .hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 50% at 50% -10%,rgba(168,130,60,.2) 0%,transparent 70%)}
+  .hero-wave{font-size:.7rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:.8rem}
+  .hero h1{font-family:'Playfair Display',serif;font-size:clamp(2.2rem,5vw,4rem);font-weight:700;line-height:1.1;margin-bottom:1rem;position:relative}
+  .hero h1 em{font-style:italic;color:var(--gold-light)}
+  .hero-sub{font-size:1rem;color:rgba(249,247,242,.65);max-width:580px;margin:0 auto 2.5rem}
+  .hero-stats{display:flex;justify-content:center;gap:2.5rem;flex-wrap:wrap}
+  .stat{text-align:center}
+  .stat-num{font-family:'Playfair Display',serif;font-size:2.2rem;font-weight:700;color:var(--gold-light);line-height:1}
+  .stat-label{font-size:.72rem;color:rgba(249,247,242,.4);text-transform:uppercase;letter-spacing:.1em;margin-top:.2rem}
+
+  .container{max-width:1080px;margin:0 auto;padding:4.5rem 2.5rem}
+  .section-bg{background:var(--paper);border-top:1px solid var(--parchment);border-bottom:1px solid var(--parchment)}
+  .part-header{text-align:center;padding:3rem 2.5rem}
+  .part-num{font-size:.65rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:.6rem}
+  .part-header h2{font-family:'Playfair Display',serif;font-size:clamp(1.7rem,3.5vw,2.6rem);font-weight:700}
+  .part-header p{margin-top:.6rem;color:var(--muted);font-size:.95rem;max-width:560px;margin-left:auto;margin-right:auto}
+
+  h2.sec{font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:700;color:var(--ink);margin-bottom:1.75rem}
+  h3.sub{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;color:var(--brown);margin-bottom:.8rem;margin-top:2rem}
+  h3.sub:first-child{margin-top:0}
+
+  .exec-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.25rem;margin-bottom:3rem}
+  .exec-card{background:var(--white);border:1px solid var(--parchment);border-radius:10px;padding:1.5rem;position:relative;overflow:hidden}
+  .exec-card::before{content:attr(data-num);position:absolute;top:-10px;right:12px;font-family:'Playfair Display',serif;font-size:5rem;font-weight:700;color:rgba(223,213,194,.4);line-height:1;pointer-events:none}
+  .exec-card h4{font-weight:700;font-size:.95rem;color:var(--ink);margin-bottom:.4rem;position:relative}
+  .exec-card p{font-size:.85rem;color:var(--muted);line-height:1.65;position:relative}
+  .impact{display:inline-block;margin-top:.6rem;font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:.2rem .6rem;border-radius:4px}
+  .impact-high{background:#fde8e8;color:var(--red)}
+  .impact-med{background:#fef3e5;color:var(--orange)}
+  .impact-new{background:#e8f5ef;color:var(--green)}
+  .impact-b2b{background:#e8eef5;color:var(--s6)}
+
+  .fg-section{border-radius:14px;overflow:hidden;margin-bottom:3rem;border:1px solid var(--parchment)}
+  .fg-header{padding:1.75rem 2rem;display:flex;align-items:flex-start;gap:1.25rem}
+  .fg-badge{font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#fff;padding:.3rem .9rem;border-radius:6px;white-space:nowrap;margin-top:.15rem}
+  .fg-header-info h3{font-family:'Playfair Display',serif;font-size:1.35rem;font-weight:700;color:var(--ink)}
+  .fg-header-info p{font-size:.85rem;color:var(--muted);margin-top:.2rem}
+  .fg-participants{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.75rem}
+  .participant{background:rgba(255,255,255,.6);border:1px solid var(--parchment);border-radius:20px;font-size:.75rem;padding:.2rem .7rem;color:var(--brown)}
+  .fg-body{padding:2rem;background:var(--white)}
+  .fg-cols{display:grid;grid-template-columns:1fr 1fr;gap:2rem}
+  @media(max-width:700px){.fg-cols{grid-template-columns:1fr}}
+
+  .quotes{display:flex;flex-direction:column;gap:.75rem}
+  .quote{background:var(--cream);border-left:3px solid var(--gold);border-radius:0 8px 8px 0;padding:.85rem 1rem}
+  .quote-text{font-size:.875rem;font-style:italic;color:var(--brown);line-height:1.6}
+  .quote-author{font-size:.72rem;font-weight:700;color:var(--muted);margin-top:.35rem;text-transform:uppercase;letter-spacing:.06em}
+
+  .insight-list{display:flex;flex-direction:column;gap:.6rem}
+  .insight-item{display:flex;gap:.75rem;align-items:flex-start}
+  .insight-num{width:22px;height:22px;border-radius:50%;background:var(--gold);color:#fff;font-size:.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:.15rem}
+  .insight-text{font-size:.875rem;color:var(--brown);line-height:1.6}
+  .insight-text strong{color:var(--ink)}
+
+  .jtbd-box{background:var(--ink);color:var(--cream);border-radius:10px;padding:1.5rem 1.75rem;margin-top:1.75rem}
+  .jtbd-label{font-size:.65rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--gold);margin-bottom:.5rem}
+  .jtbd-text{font-family:'Playfair Display',serif;font-size:1.05rem;font-style:italic;line-height:1.65;color:var(--cream)}
+
+  .barrier-list{display:flex;flex-direction:column;gap:.5rem}
+  .barrier-item{display:flex;gap:.6rem;align-items:flex-start;font-size:.85rem;color:var(--brown)}
+  .barrier-icon{color:var(--red);font-weight:700;font-size:.8rem;flex-shrink:0;margin-top:.15rem}
+
+  .msg-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem}
+  @media(max-width:600px){.msg-grid{grid-template-columns:1fr}}
+  .msg-card{border-radius:8px;padding:1rem 1.2rem}
+  .msg-card.do{background:#e8f5ef;border:1px solid #b5dcc6}
+  .msg-card.dont{background:#fde8e8;border:1px solid #f0b8b8}
+  .msg-label{font-size:.62rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin-bottom:.4rem}
+  .msg-card.do .msg-label{color:var(--green)}
+  .msg-card.dont .msg-label{color:var(--red)}
+  .msg-items{list-style:none;display:flex;flex-direction:column;gap:.3rem}
+  .msg-items li{font-size:.83rem;line-height:1.5}
+  .msg-card.do .msg-items li::before{content:'✓ ';color:var(--green);font-weight:700}
+  .msg-card.dont .msg-items li::before{content:'✗ ';color:var(--red);font-weight:700}
+
+  hr.divider{border:none;border-top:1px solid var(--parchment);margin:2.5rem 0}
+
+  /* SYNTHESIS */
+  .matrix{width:100%;border-collapse:collapse;font-size:.85rem;margin-bottom:2.5rem}
+  .matrix th{background:var(--ink);color:var(--cream);padding:.8rem 1rem;text-align:left;font-size:.7rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase}
+  .matrix td{padding:.9rem 1rem;border-bottom:1px solid var(--parchment);vertical-align:top}
+  .matrix tr:hover td{background:var(--paper)}
+  .seg-chip{display:inline-block;font-size:.68rem;font-weight:700;padding:.15rem .55rem;border-radius:4px;color:#fff;margin-right:.25rem}
+  .dot-yes{color:var(--green);font-size:1rem}
+  .dot-no{color:var(--parchment);font-size:1rem}
+  .dot-part{color:var(--orange);font-size:1rem}
+
+  /* PLAYBOOK */
+  .playbook-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.5rem;margin-bottom:3rem}
+  @media(max-width:750px){.playbook-grid{grid-template-columns:1fr}}
+  .playbook-card{background:var(--white);border:1px solid var(--parchment);border-radius:12px;overflow:hidden}
+  .playbook-card-header{padding:1.2rem 1.5rem;border-bottom:1px solid var(--parchment)}
+  .playbook-seg{font-size:.65rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#fff;padding:.2rem .6rem;border-radius:4px;display:inline-block;margin-bottom:.5rem}
+  .playbook-card-header h4{font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:var(--ink)}
+  .playbook-card-body{padding:1.2rem 1.5rem}
+  .playbook-item{font-size:.83rem;color:var(--brown);padding-left:1rem;position:relative;margin-bottom:.4rem;line-height:1.55}
+  .playbook-item::before{content:'→';position:absolute;left:0;color:var(--gold);font-size:.8rem}
+
+  /* ROADMAP */
+  .roadmap{display:flex;flex-direction:column;gap:1rem}
+  .roadmap-item{display:flex;gap:1.5rem;align-items:flex-start;padding:1.25rem 1.5rem;background:var(--white);border:1px solid var(--parchment);border-radius:10px}
+  .roadmap-priority{font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:.25rem .7rem;border-radius:4px;white-space:nowrap;min-width:80px;text-align:center;margin-top:.1rem}
+  .p-now{background:#fde8e8;color:var(--red)}
+  .p-next{background:#fef3e5;color:var(--orange)}
+  .p-later{background:#e8f5ef;color:var(--green)}
+  .roadmap-content h4{font-weight:700;font-size:.9rem;color:var(--ink);margin-bottom:.3rem}
+  .roadmap-content p{font-size:.82rem;color:var(--muted);line-height:1.55}
+  .roadmap-segs{display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.5rem}
+
+  /* FINAL CTA */
+  .final-cta{background:var(--ink);border-radius:16px;padding:3rem;text-align:center;margin-top:3rem}
+  .final-cta h2{font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:700;color:var(--cream);margin-bottom:1rem}
+  .final-cta p{color:rgba(249,247,242,.6);font-size:.95rem;max-width:500px;margin:0 auto 1.5rem}
+  .cta-items{display:flex;justify-content:center;gap:2rem;flex-wrap:wrap}
+  .cta-item{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:1rem 1.5rem;min-width:180px}
+  .cta-item .cta-title{font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:.3rem}
+  .cta-item .cta-desc{font-size:.82rem;color:rgba(249,247,242,.55)}
+
+  footer{background:var(--ink);color:rgba(249,247,242,.4);text-align:center;padding:2rem;font-size:.78rem;border-top:1px solid rgba(255,255,255,.08)}
+  footer strong{color:var(--gold)}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">ГЛАВА<span>.</span></div>
+  <ul class="nav-links">
+    <li><a href="#summary">Выводы</a></li>
+    <li><a href="#s4">S4</a></li>
+    <li><a href="#s6">S6</a></li>
+    <li><a href="#s7">S7</a></li>
+    <li><a href="#synthesis">Синтез</a></li>
+    <li><a href="#playbook">Playbook</a></li>
+    <li><a href="#roadmap">Дорожная карта</a></li>
+  </ul>
+  <div class="nav-badge">Волна 2 + Синтез</div>
+</nav>
+
+<div class="hero">
+  <div class="hero-wave">Отчёт по фокус-группам · Волна 2 · Апрель 2026</div>
+  <h1>Три сложных сегмента —<br><em>три разных продукта</em></h1>
+  <p class="hero-sub">S4, S6, S7 требуют разных точек входа, разных форматов и разного языка. Плюс — итоговый синтез обеих волн и Audience Playbook.</p>
+  <div class="hero-stats">
+    <div class="stat"><div class="stat-num">3</div><div class="stat-label">Сегмента</div></div>
+    <div class="stat"><div class="stat-num">12</div><div class="stat-label">Участников</div></div>
+    <div class="stat"><div class="stat-num">7</div><div class="stat-label">Всего сегментов</div></div>
+    <div class="stat"><div class="stat-num">28</div><div class="stat-label">Гипотез суммарно</div></div>
+  </div>
+</div>
+
+<!-- EXEC SUMMARY V2 -->
+<div class="section-bg">
+  <div class="part-header" id="summary">
+    <div class="part-num">Executive Summary · Волна 2</div>
+    <h2>Три сегмента — три незакрытые потребности</h2>
+    <p>Каждый из трёх сегментов упирается в конкретный отсутствующий формат или функцию</p>
+  </div>
+</div>
+
+<div class="container">
+  <div class="exec-grid">
+    <div class="exec-card" data-num="1">
+      <h4>S4 требует прозрачности процесса</h4>
+      <p>Хранитель памяти не против AI — он против «чёрного ящика». Ему нужно знать: кто редактирует, как устроена структура книги, можно ли загрузить свои материалы. Прозрачность = доверие.</p>
+      <span class="impact impact-med">S4 · контроль качества</span>
+    </div>
+    <div class="exec-card" data-num="2">
+      <h4>S6 — отдельный продукт, не расширение</h4>
+      <p>Корпоративный сегмент не может работать с существующим продуктом: нет счёта на юрлицо, нет «белого перчаточного сервиса», нет физической книги. Это не настройка — это другой продукт.</p>
+      <span class="impact impact-b2b">S6 · B2B продукт</span>
+    </div>
+    <div class="exec-card" data-num="3">
+      <h4>S7 покупает не он, а его ребёнок</h4>
+      <p>Пожилой человек не является покупателем. Решение принимает ребёнок или внук, а задача — убедить пожилого что это «про него» и «для него». Фрейм «расскажи детям» работает лучше любого другого.</p>
+      <span class="impact impact-new">S7 · фрейм</span>
+    </div>
+    <div class="exec-card" data-num="4">
+      <h4>«Говорите как есть» — ключевая индульгенция</h4>
+      <p>S7: «Я боюсь сказать неправильно». S4: «Я боюсь что это будет поверхностно». Оба сегмента нуждаются в явном разрешении: «мы сохраняем характер речи, а не исправляем её».</p>
+      <span class="impact impact-high">S7 S4 · тон</span>
+    </div>
+    <div class="exec-card" data-num="5">
+      <h4>Физическая книга — сигнал серьёзности</h4>
+      <p>S6 и S7 оба упомянули что PDF «не выглядит как подарок» и «не ощущается как что-то настоящее». Услуга печати разблокирует оба сегмента и повышает воспринимаемую ценность.</p>
+      <span class="impact impact-high">S6 S7 · печать</span>
+    </div>
+    <div class="exec-card" data-num="6">
+      <h4>Кейсы важнее описания</h4>
+      <p>S6: «Покажите как другие компании это делали». S4: «Покажите реальный пример с деталями». Обоим недостаточно описания продукта — нужны доказательства в формате «вот что получилось у таких же как вы».</p>
+      <span class="impact impact-med">S4 S6 · социальное доказательство</span>
+    </div>
+  </div>
+
+  <!-- S4 -->
+  <div class="fg-section" id="s4">
+    <div class="fg-header" style="background:#faf2f7;border-bottom:1px solid var(--parchment)">
+      <div>
+        <span class="fg-badge" style="background:var(--s4)">S4</span>
+      </div>
+      <div class="fg-header-info">
+        <h3>Семейный хранитель памяти</h3>
+        <p>«Меня пугает что AI напишет "Иван Петрович родился в 1930 году в деревне". Я хочу живую историю.»</p>
+        <div class="fg-participants">
+          <span class="participant">Борис, 55 · историк-любитель · генеалогия 12 лет</span>
+          <span class="participant">Нина, 48 · оцифровала 600 семейных фото</span>
+          <span class="participant">Григорий, 61 · написал 40 стр. воспоминаний</span>
+          <span class="participant">Марья, 50 · архив трёх поколений</span>
+        </div>
+      </div>
+    </div>
+    <div class="fg-body">
+      <div class="fg-cols">
+        <div>
+          <h3 class="sub">Ключевые цитаты</h3>
+          <div class="quotes">
+            <div class="quote">
+              <div class="quote-text">«Меня пугает что AI напишет "Иван Петрович родился в 1930 году". Я хочу живую историю с деталями, с характером — а не паспортные данные.»</div>
+              <div class="quote-author">Борис, 55</div>
+            </div>
+            <div class="quote">
+              <div class="quote-text">«Я собрала 600 фотографий. Неужели нужно всё заново объяснять боту? Хочу загрузить то, что уже есть — тексты, фото, аудио.»</div>
+              <div class="quote-author">Нина, 48</div>
+            </div>
+            <div class="quote">
+              <div class="quote-text">«Я уже написал 40 страниц про отца. Можете взять мой текст и литературно обработать? Или придётся всё переписывать с нуля?»</div>
+              <div class="quote-author">Григорий, 61</div>
+            </div>
+            <div class="quote">
+              <div class="quote-text">«Три правки — это мало. Я буду требовать точности. Каждая деталь важна. Мне нужно минимум пять итераций, иначе я не доверюсь.»</div>
+              <div class="quote-author">Борис, 55</div>
+            </div>
+          </div>
+
+          <div class="jtbd-box">
+            <div class="jtbd-label">JTBD — уточнённый</div>
+            <div class="jtbd-text">«Когда у меня скопилось много материала о семье — хочу превратить это в живую книгу с характером, которую не стыдно передать детям как семейную реликвию.»</div>
+          </div>
+        </div>
+        <div>
+          <h3 class="sub">Инсайты</h3>
+          <div class="insight-list">
+            <div class="insight-item">
+              <div class="insight-num">1</div>
+              <div class="insight-text"><strong>Проблема не в AI, а в «чёрном ящике».</strong> Им не против алгоритмов — они хотят прозрачности: кто редактирует, как устроена структура, можно ли вмешаться в процесс.</div>
+            </div>
+            <div class="insight-item">
+              <div class="insight-num">2</div>
+              <div class="insight-text"><strong>«Загрузи своё» — ключевое требование.</strong> Уже собранные материалы: тексты, аудио, фото, сканы документов. Нужна возможность загрузить готовый материал без начала «с нуля».</div>
+            </div>
+            <div class="insight-item">
+              <div class="insight-num">3</div>
+              <div class="insight-text"><strong>Три правки — недостаточно для перфекционистов.</strong> Этот сегмент будет итерировать много. Нужен расширенный тариф или «безлимитные правки» за доплату.</div>
+            </div>
+            <div class="insight-item">
+              <div class="insight-num">4</div>
+              <div class="insight-text"><strong>Структура книги заранее.</strong> Хотят видеть оглавление или структуру до начала работы — как у профессионального редактора.</div>
+            </div>
+            <div class="insight-item">
+              <div class="insight-num">5</div>
+              <div class="insight-text"><strong>Репутация важнее скорости.</strong> Этот сегмент не торопится — покупает медленно, но на долгий срок. Нужны глубокие примеры с деталями.</div>
+            </div>
+          </div>
+
+          <h3 class="sub" style="margin-top:1.75rem">Барьеры</h3>
+          <div class="barrier-list">
+            <div class="barrier-item"><span class="barrier-icon">✕</span> Скептицизм к качеству AI-текста: «будет поверхностно»</div>
+            <div class="barrier-item"><span class="barrier-icon">✕</span> Нет возможности загрузить уже собранные материалы удобно</div>
+            <div class="barrier-item"><span class="barrier-icon">✕</span> Три правки — мало для перфекциониста</div>
+            <div class="barrier-item"><span class="barrier-icon">✕</span> Непрозрачность: кто редактирует — человек или только алгоритм</div>
+            <div class="barrier-item"><span class="barrier-icon">✕</span> Нет предварительной структуры / оглавления</div>
+          </div>
+        </div>
+      </div>
+
+      <hr class="divider">
+      <h3 class="sub" style="margin-top:0">Messaging — что работает</h3>
+      <div class="msg-grid">
+        <div class="msg-card do">
+          <div class="msg-label">Говорить</div>
+          <ul class="msg-items">
+            <li>«Редактор работает с каждой деталью»</li>
+            <li>«Загрузите то что уже собрали — текст, аудио, фото»</li>
+            <li>«Мы предложим структуру — вы её утвердите»</li>
+            <li>Показывать пример с богатыми деталями (не краткий)</li>
+            <li>«Неограниченные правки в расширенном тарифе»</li>
+          </ul>
+        </div>
+        <div class="msg-card dont">
+          <div class="msg-label">Избегать</div>
+          <ul class="msg-items">
+            <li>«AI за 5 минут» — скорость как ценность</li>
+            <li>«Автоматически», «алгоритм»</li>
+            <li>Упрощённые примеры — покажите самые детальные</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- S6 -->
+  <div class="fg-section" id="s6">
+    <div class="fg-header" style="background:#f2f5f8;border-bottom:1px solid var(--parchment)">
+      <div>
+        <span class="fg-badge" style="background:var(--s6)">S6</span>
+      </div>
+      <div class="fg-header-info">
+        <h3>HR / Корпоративный дарящий</h3>
+        <p>«Мне нужен счёт на юрлицо, профессиональное интервью и напечатанная книга. Это подарок, а не файл.»</p>
+        <div class="fg-participants">
+          <span class="participant">Юля, 42 · HR-директор · награждение при выходе на пенсию</span>
+          <span class="participant">Олег, 48 · гендиректор · юбилей основателя</span>
+          <span class="participant">Татьяна, 45 · event-менеджер</span>
+          <span class="participant">Максим, 38 · руководитель · подарок для 5 ветеранов</span>
+        </div>
+      </div>
+    </div>
+    <div class="fg-body">
+      <div class="fg-cols">
+        <div>
+          <h3 class="sub">Ключевые цитаты</h3>
+          <div class="quotes">
+            <div class="quote">
+              <div class="quote-text">«Мне нужен счёт на юрлицо и закрывающие документы. Без этого я просто не смогу оплатить, как бы мне ни понравился продукт.»</div>
+              <div class="quote-author">Юля, 42</div>
+            </div>
+            <div class="quote">
+              <div class="quote-text">«Я хочу чтобы интервью провёл профессионал, а не я сам в Telegram. У нас директор — человек серьёзный, он не будет разговаривать с ботом.»</div>
+              <div class="quote-author">Олег, 48</div>
+            </div>
+            <div class="quote">
+              <div class="quote-text">«PDF — это хорошо. Но я хочу напечатанную книгу в твёрдой обложке. Это подарок. Подарки не дарят в виде файлов на флешке.»</div>
+              <div class="quote-author">Татьяна, 45</div>
+            </div>
+            <div class="quote">
+              <div class="quote-text">«Нам нужны пять книг одновременно. Есть ли скидка за объём? И покажите кейс — как другие компании это делали?»</div>
+              <div class="quote-author">Максим, 38</div>
+            </div>
+          </div>
+
+          <div class="jtbd-box">
+            <div class="jtbd-label">JTBD — уточнённый</div>
+            <div class="jtbd-text">«Когда нужно достойно проводить ветерана — хочу подарить что-то уникальное и значимое, что останется у него дома навсегда, с минимальным участием с нашей стороны.»</div>
+          </div>
+        </div>
+        <div>
+          <h3 class="sub">Инсайты</h3>
+          <div class="insight-list">
+            <div class="insight-item">
+              <div class="insight-num">1</div>
+              <div class="insight-text"><strong>Юридическое оформление — hard blocker.</strong> Счёт на юрлицо, НДС, закрывающие документы. Без этого корпоративный клиент технически не может купить.</div>
+            </div>
+            <div class="insight-item">
+              <div class="insight-num">2</div>
+              <div class="insight-text"><strong>«Белый перчаточный сервис».</strong> Идеальный сценарий: «вы говорите нам кто и когда — мы приезжаем, проводим интервью, делаем книгу, привозим распечатанную». Минимальное участие заказчика.</div>
+            </div>
+            <div class="insight-item">
+              <div class="insight-num">3</div>
+              <div class="insight-text"><strong>Физическая книга — обязательное условие.</strong> PDF не работает как корпоративный подарок. Нужна печать с доставкой, в красивой обложке.</div>
+            </div>
+            <div class="insight-item">
+              <div class="insight-num">4</div>
+              <div class="insight-text"><strong>Кейсы — B2B-обязательство.</strong> Без примера «как другие компании это делали» — нет доверия. Даже анонимный кейс работает.</div>
+            </div>
+            <div class="insight-item">
+              <div class="insight-num">5</div>
+              <div class="insight-text"><strong>Объёмные заказы.</strong> Несколько ветеранов одновременно — реальный сценарий для крупных компаний. Нужна групповая цена.</div>
+            </div>
+          </div>
+
+          <h3 class="sub" style="margin-top:1.75rem">Барьеры</h3>
+          <div class="barrier-list">
+            <div class="barrier-item"><span class="barrier-icon">✕</span> Нет юридического оформления (счёт, НДС, акт)</div>
+            <div class="barrier-item"><span class="barrier-icon">✕</span> Нет «перчаточного» формата — «директор не будет в боте»</div>
+            <div class="barrier-item"><span class="barrier-icon">✕</span> Нет физической книги — только PDF</div>
+            <div class="barrier-item"><span class="barrier-icon">✕</span> Нет кейсов для B2B-аргументации</div>
+            <div class="barrier-item"><span class="barrier-icon">✕</span> Нет групповых тарифов</div>
+          </div>
+        </div>
+      </div>
+
+      <hr class="divider">
+      <h3 class="sub" style="margin-top:0">Messaging — что работает</h3>
+      <div class="msg-grid">
+        <div class="msg-card do">
+          <div class="msg-label">Говорить</div>
+          <ul class="msg-items">
+            <li>«Корпоративный формат: счёт, акт, НДС»</li>
+            <li>«Мы проводим интервью — вы только называете имя и дату»</li>
+            <li>«Напечатанная книга с доставкой»</li>
+            <li>«Кейс: как X проводили ветерана на пенсию» (анонимно)</li>
+            <li>Групповой тариф для 3+ книг</li>
+          </ul>
+        </div>
+        <div class="msg-card dont">
+          <div class="msg-label">Избегать</div>
+          <ul class="msg-items">
+            <li>«Скачайте бот и начните» — неуместно для B2B</li>
+            <li>DIY-тон: «сделайте сами»</li>
+            <li>Telegram как основной канал для корпоративной коммуникации</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- S7 -->
+  <div class="fg-section" id="s7">
+    <div class="fg-header" style="background:#f9f6f0;border-bottom:1px solid var(--parchment)">
+      <div>
+        <span class="fg-badge" style="background:var(--s7)">S7</span>
+      </div>
+      <div class="fg-header-info">
+        <h3>Пожилой человек для себя</h3>
+        <p>«Ну что я такого расскажу? Обычная советская жизнь. Таких как я — миллионы.»</p>
+        <div class="fg-participants">
+          <span class="participant">Валентина, 72 · детей убедили попробовать</span>
+          <span class="participant">Николай, 68 · бывший инженер завода</span>
+          <span class="participant">Галина, 75 · «прожила такую жизнь»</span>
+          <span class="participant">Пётр, 70 · скептик</span>
+        </div>
+      </div>
+    </div>
+    <div class="fg-body">
+      <div class="fg-cols">
+        <div>
+          <h3 class="sub">Ключевые цитаты</h3>
+          <div class="quotes">
+            <div class="quote">
+              <div class="quote-text">«Ну что я такого расскажу? Обычная советская жизнь. Таких как я — миллионы. Кому это интересно?»</div>
+              <div class="quote-author">Пётр, 70</div>
+            </div>
+            <div class="quote">
+              <div class="quote-text">«Я прошла через эвакуацию в детстве, потом целину, потом перестройку. Это же история страны, а не только моя.»</div>
+              <div class="quote-author">Галина, 75</div>
+            </div>
+            <div class="quote">
+              <div class="quote-text">«Я немного нервничал что скажу что-то не так. Не так расставлю слова. Что меня будут исправлять или смеяться над речью.»</div>
+              <div class="quote-author">Николай, 68</div>
+            </div>
+            <div class="quote">
+              <div class="quote-text">«Мне помогал внук. Он настроил всё в боте и сидел рядом. Без него я бы не разобралась. Но говорила я сама — и мне понравилось.»</div>
+              <div class="quote-author">Валентина, 72</div>
+            </div>
+          </div>
+
+          <div class="jtbd-box">
+            <div class="jtbd-label">JTBD — уточнённый</div>
+            <div class="jtbd-text">«Когда внуки попросят — хочу рассказать свою жизнь так, чтобы им было интересно читать. Не для себя — для них.»</div>
+          </div>
+        </div>
+        <div>
+          <h3 class="sub">Инсайты</h3>
+          <div class="insight-list">
+            <div class="insight-item">
+              <div class="insight-num">1</div>
+              <div class="insight-text"><strong>«Разрешение говорить о себе» — психологический барьер №1.</strong> «Кому это нужно» = стеснение, не безразличие. Работает фрейм «для детей и внуков», а не «твоя история важна».</div>
+            </div>
+            <div class="insight-item">
+              <div class="insight-num">2</div>
+              <div class="insight-text"><strong>Близкий-помощник — необходимость.</strong> Одни не справятся с Telegram и ботом. Нужна инструкция для ребёнка/внука: «как подготовить бабушку к записи».</div>
+            </div>
+            <div class="insight-item">
+              <div class="insight-num">3</div>
+              <div class="insight-text"><strong>«Говорите как есть» — ключевая индульгенция.</strong> Страх «сказать неправильно» парализует. Нужно явно снять: «мы сохраняем ваш голос и характер, а не исправляем его».</div>
+            </div>
+            <div class="insight-item">
+              <div class="insight-num">4</div>
+              <div class="insight-text"><strong>Структура вопросов снимает барьер.</strong> «Если спрашивают — я отвечаю» — работает значительно лучше «просто расскажите». Нужны конкретные вопросы.</div>
+            </div>
+            <div class="insight-item">
+              <div class="insight-num">5</div>
+              <div class="insight-text"><strong>Мотивация через потомков.</strong> «Для детей» > «сохрани свою историю» > «оставь след». Первый фрейм работает безоговорочно.</div>
+            </div>
+          </div>
+
+          <h3 class="sub" style="margin-top:1.75rem">Барьеры</h3>
+          <div class="barrier-list">
+            <div class="barrier-item"><span class="barrier-icon">✕</span> «Кому это нужно» — стеснение своей истории</div>
+            <div class="barrier-item"><span class="barrier-icon">✕</span> Технические сложности — нужна помощь близкого</div>
+            <div class="barrier-item"><span class="barrier-icon">✕</span> «Скажу не так» — страх ошибки в речи</div>
+            <div class="barrier-item"><span class="barrier-icon">✕</span> Цена 6 900 ₽ ощутима на пенсии</div>
+          </div>
+        </div>
+      </div>
+
+      <hr class="divider">
+      <h3 class="sub" style="margin-top:0">Messaging — что работает</h3>
+      <div class="msg-grid">
+        <div class="msg-card do">
+          <div class="msg-label">Говорить</div>
+          <ul class="msg-items">
+            <li>«Расскажите детям и внукам — они будут перечитывать»</li>
+            <li>«Мы задаём вопросы — вам нужно только отвечать»</li>
+            <li>«Говорите как есть — мы сохраняем ваш голос, не исправляем его»</li>
+            <li>«Ваша жизнь — это история страны»</li>
+          </ul>
+        </div>
+        <div class="msg-card dont">
+          <div class="msg-label">Избегать</div>
+          <ul class="msg-items">
+            <li>«Ваша история важна» — вызывает стеснение</li>
+            <li>«Оставьте след» — слишком патетично</li>
+            <li>Технические инструкции для пожилого в первом сообщении</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider" style="margin:3rem 0">
+
+  <!-- SYNTHESIS -->
+  <h2 class="sec" id="synthesis">Синтез обеих волн — полная картина аудитории</h2>
+
+  <p style="font-size:.9rem;color:var(--muted);margin-bottom:2rem;max-width:700px">
+    Что объединяет и что различает все 7 сегментов. Матрица ключевых параметров по результатам симулированных фокус-групп.
+  </p>
+
+  <table class="matrix">
+    <thead>
+      <tr>
+        <th>Сегмент</th>
+        <th>Urgency</th>
+        <th>Гл. барьер</th>
+        <th>Гл. триггер</th>
+        <th>PDF достаточно</th>
+        <th>Нужен посредник</th>
+        <th>Цена — проблема</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="seg-chip" style="background:#7c5c3e">S1</span> Дочь/сын</td>
+        <td>Средний</td>
+        <td>Эмоция + «не знаю вопросов»</td>
+        <td>Болезнь, юбилей</td>
+        <td class="dot-yes">●</td>
+        <td class="dot-no">●</td>
+        <td class="dot-no">●</td>
+      </tr>
+      <tr>
+        <td><span class="seg-chip" style="background:#3e6b7c">S2</span> Внук</td>
+        <td style="color:var(--red);font-weight:700">Очень высокий</td>
+        <td>Пожилой не умеет в Telegram</td>
+        <td>Смерть близкого</td>
+        <td class="dot-yes">●</td>
+        <td class="dot-yes" style="color:var(--red)">●</td>
+        <td class="dot-part">●</td>
+      </tr>
+      <tr>
+        <td><span class="seg-chip" style="background:#6b7c3e">S3</span> Юбилей</td>
+        <td style="color:var(--orange);font-weight:700">Высокий (дедлайн)</td>
+        <td>Нет формата вручения</td>
+        <td>Дата юбилея</td>
+        <td class="dot-no" style="color:var(--red)">●</td>
+        <td class="dot-no">●</td>
+        <td class="dot-no">●</td>
+      </tr>
+      <tr>
+        <td><span class="seg-chip" style="background:#7c3e6b">S4</span> Хранитель</td>
+        <td>Низкий</td>
+        <td>Скептицизм к качеству</td>
+        <td>Накопился архив</td>
+        <td class="dot-yes">●</td>
+        <td class="dot-no">●</td>
+        <td class="dot-no">●</td>
+      </tr>
+      <tr>
+        <td><span class="seg-chip" style="background:#5c3e7c">S5</span> Утрата</td>
+        <td style="color:var(--red);font-weight:700">Очень высокий</td>
+        <td>«Мало материала»</td>
+        <td>Смерть / болезнь</td>
+        <td class="dot-yes">●</td>
+        <td class="dot-yes" style="color:var(--red)">●</td>
+        <td class="dot-no">●</td>
+      </tr>
+      <tr>
+        <td><span class="seg-chip" style="background:#3e5c7c">S6</span> HR/Корп.</td>
+        <td>Средний</td>
+        <td>Нет B2B оформления + нет печати</td>
+        <td>Событие в компании</td>
+        <td class="dot-no" style="color:var(--red)">●</td>
+        <td class="dot-no">●</td>
+        <td class="dot-no">●</td>
+      </tr>
+      <tr>
+        <td><span class="seg-chip" style="background:#7c6b3e">S7</span> Пожилой</td>
+        <td>Средний</td>
+        <td>«Кому это нужно» + техника</td>
+        <td>Внук/ребёнок убедил</td>
+        <td class="dot-part">●</td>
+        <td class="dot-yes" style="color:var(--red)">●</td>
+        <td class="dot-yes" style="color:var(--red)">●</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div style="font-size:.75rem;color:var(--muted);margin-bottom:3rem;display:flex;gap:1.5rem;flex-wrap:wrap">
+    <span><span style="color:var(--green)">●</span> Да / не проблема</span>
+    <span><span style="color:var(--orange)">●</span> Частично / ситуативно</span>
+    <span><span style="color:var(--red)">●</span> Нет / серьёзная проблема</span>
+  </div>
+
+  <hr class="divider">
+
+  <!-- AUDIENCE PLAYBOOK -->
+  <h2 class="sec" id="playbook">Audience Playbook — ключевой messaging по сегментам</h2>
+  <p style="font-size:.9rem;color:var(--muted);margin-bottom:2rem">Как говорить с каждым сегментом — одной фразой и фреймом</p>
+
+  <div class="playbook-grid">
+    <div class="playbook-card">
+      <div class="playbook-card-header">
+        <span class="playbook-seg" style="background:#7c5c3e">S1</span>
+        <h4>Дочь/сын откладывающие</h4>
+      </div>
+      <div class="playbook-card-body">
+        <div style="font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:.6rem">Главное сообщение</div>
+        <div style="font-size:.9rem;font-style:italic;color:var(--brown);margin-bottom:1rem;padding:.75rem 1rem;background:var(--cream);border-radius:6px">«Мы задаём вопросы — вам нужно только разговаривать»</div>
+        <div class="playbook-item">Ставить вопросы-подсказки в центр коммуникации</div>
+        <div class="playbook-item">Убрать «AI», заменить на «литературная обработка»</div>
+        <div class="playbook-item">Показывать пример до описания процесса</div>
+        <div class="playbook-item">Говорить что работает из любого города</div>
+      </div>
+    </div>
+    <div class="playbook-card">
+      <div class="playbook-card-header">
+        <span class="playbook-seg" style="background:#3e6b7c">S2</span>
+        <h4>Внук / внучка в тревоге</h4>
+      </div>
+      <div class="playbook-card-body">
+        <div style="font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:.6rem">Главное сообщение</div>
+        <div style="font-size:.9rem;font-style:italic;color:var(--brown);margin-bottom:1rem;padding:.75rem 1rem;background:var(--cream);border-radius:6px">«Повод для того разговора, который давно откладываешь»</div>
+        <div class="playbook-item">Поддержать сценарий «внук организует — бабушка говорит»</div>
+        <div class="playbook-item">Urgency без давления: «ещё есть время — но не бесконечно»</div>
+        <div class="playbook-item">CTA без лишних шагов — urgency должен конвертировать быстро</div>
+        <div class="playbook-item">Рационализация цены: «подарок от всей семьи»</div>
+      </div>
+    </div>
+    <div class="playbook-card">
+      <div class="playbook-card-header">
+        <span class="playbook-seg" style="background:#6b7c3e">S3</span>
+        <h4>Организатор юбилея</h4>
+      </div>
+      <div class="playbook-card-body">
+        <div style="font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:.6rem">Главное сообщение</div>
+        <div style="font-size:.9rem;font-style:italic;color:var(--brown);margin-bottom:1rem;padding:.75rem 1rem;background:var(--cream);border-radius:6px">«Подарок, которого нет в магазине — красиво вручите сертификат»</div>
+        <div class="playbook-item">Запустить подарочный сертификат как продукт</div>
+        <div class="playbook-item">«Мама — звезда этой истории», а не объект документирования</div>
+        <div class="playbook-item">Гарантия срока: «успеем к вашей дате»</div>
+        <div class="playbook-item">Механизм коллективной оплаты</div>
+      </div>
+    </div>
+    <div class="playbook-card">
+      <div class="playbook-card-header">
+        <span class="playbook-seg" style="background:#7c3e6b">S4</span>
+        <h4>Хранитель памяти</h4>
+      </div>
+      <div class="playbook-card-body">
+        <div style="font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:.6rem">Главное сообщение</div>
+        <div style="font-size:.9rem;font-style:italic;color:var(--brown);margin-bottom:1rem;padding:.75rem 1rem;background:var(--cream);border-radius:6px">«Загрузите то что собрали — редактор превратит в книгу»</div>
+        <div class="playbook-item">Прозрачность: кто редактирует, как устроена структура</div>
+        <div class="playbook-item">Возможность загрузить готовые материалы</div>
+        <div class="playbook-item">Расширенный тариф с большим количеством правок</div>
+        <div class="playbook-item">Глубокие, детальные примеры — не краткие</div>
+      </div>
+    </div>
+    <div class="playbook-card">
+      <div class="playbook-card-header">
+        <span class="playbook-seg" style="background:#5c3e7c">S5</span>
+        <h4>Переживающий утрату</h4>
+      </div>
+      <div class="playbook-card-body">
+        <div style="font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:.6rem">Главное сообщение</div>
+        <div style="font-size:.9rem;font-style:italic;color:var(--brown);margin-bottom:1rem;padding:.75rem 1rem;background:var(--cream);border-radius:6px">«Даже 30 минут записи — это целая жизнь»</div>
+        <div class="playbook-item">Снять страх «мало материала» — явная коммуникация</div>
+        <div class="playbook-item">Принимать текст, письма, фото — не только аудио</div>
+        <div class="playbook-item">Мягкий тон, много поддержки, без спешки</div>
+        <div class="playbook-item">Явная гарантия конфиденциальности</div>
+      </div>
+    </div>
+    <div class="playbook-card">
+      <div class="playbook-card-header">
+        <span class="playbook-seg" style="background:#3e5c7c">S6</span>
+        <h4>HR / Корпоративный</h4>
+      </div>
+      <div class="playbook-card-body">
+        <div style="font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:.6rem">Главное сообщение</div>
+        <div style="font-size:.9rem;font-style:italic;color:var(--brown);margin-bottom:1rem;padding:.75rem 1rem;background:var(--cream);border-radius:6px">«Называете имя и дату — мы делаем всё остальное»</div>
+        <div class="playbook-item">Отдельная B2B-страница с КП и юридическим оформлением</div>
+        <div class="playbook-item">«Белый перчаточный» формат с профессиональным интервьюером</div>
+        <div class="playbook-item">Физическая книга с доставкой как стандарт для корпоратов</div>
+        <div class="playbook-item">Анонимные кейсы и групповые тарифы</div>
+      </div>
+    </div>
+    <div class="playbook-card" style="grid-column:1/-1;max-width:360px">
+      <div class="playbook-card-header">
+        <span class="playbook-seg" style="background:#7c6b3e">S7</span>
+        <h4>Пожилой человек</h4>
+      </div>
+      <div class="playbook-card-body">
+        <div style="font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:.6rem">Главное сообщение</div>
+        <div style="font-size:.9rem;font-style:italic;color:var(--brown);margin-bottom:1rem;padding:.75rem 1rem;background:var(--cream);border-radius:6px">«Расскажите детям свою жизнь — они будут хранить это всегда»</div>
+        <div class="playbook-item">Фрейм «для детей», не «для истории»</div>
+        <div class="playbook-item">«Говорите как есть — ваш голос и характер важны»</div>
+        <div class="playbook-item">Инструкция для помощника-близкого</div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- ROADMAP -->
+  <h2 class="sec" id="roadmap">Дорожная карта по итогам обеих волн</h2>
+  <p style="font-size:.9rem;color:var(--muted);margin-bottom:2rem;max-width:700px">Приоритизированный список изменений в продукте и коммуникации — по совокупности инсайтов из 7 фокус-групп.</p>
+
+  <div class="roadmap">
+    <div class="roadmap-item">
+      <span class="roadmap-priority p-now">Сейчас</span>
+      <div class="roadmap-content">
+        <h4>1. Убрать «AI» из всей коммуникации</h4>
+        <p>«Литературная обработка», «редактор», «живой текст». Одно изменение — максимальный охват. Влияет на лендинг, бот, рекламу.</p>
+        <div class="roadmap-segs">
+          <span class="seg-chip" style="background:#7c5c3e">S1</span>
+          <span class="seg-chip" style="background:#6b7c3e">S3</span>
+          <span class="seg-chip" style="background:#7c3e6b">S4</span>
+        </div>
+      </div>
+    </div>
+    <div class="roadmap-item">
+      <span class="roadmap-priority p-now">Сейчас</span>
+      <div class="roadmap-content">
+        <h4>2. PDF-пример биографии — в первый экран лендинга</h4>
+        <p>Кнопка «Скачать пример» должна быть до цены и до описания процесса. Самый конверсионный шаг из всех возможных.</p>
+        <div class="roadmap-segs">
+          <span class="seg-chip" style="background:#7c5c3e">S1</span>
+          <span class="seg-chip" style="background:#3e6b7c">S2</span>
+          <span class="seg-chip" style="background:#6b7c3e">S3</span>
+          <span class="seg-chip" style="background:#5c3e7c">S5</span>
+        </div>
+      </div>
+    </div>
+    <div class="roadmap-item">
+      <span class="roadmap-priority p-now">Сейчас</span>
+      <div class="roadmap-content">
+        <h4>3. Подарочный сертификат как отдельный формат</h4>
+        <p>Красивая PDF-карточка для вручения на юбилей. Покупатель дарит сертификат — запись делается потом. Разблокирует S3 полностью.</p>
+        <div class="roadmap-segs">
+          <span class="seg-chip" style="background:#6b7c3e">S3</span>
+        </div>
+      </div>
+    </div>
+    <div class="roadmap-item">
+      <span class="roadmap-priority p-now">Сейчас</span>
+      <div class="roadmap-content">
+        <h4>4. «Вопросы-подсказки» — в первый экран и в hero-текст</h4>
+        <p>«Мы задаём вопросы — вам нужно только разговаривать» должно быть в герое, а не спрятано в описании процесса.</p>
+        <div class="roadmap-segs">
+          <span class="seg-chip" style="background:#7c5c3e">S1</span>
+          <span class="seg-chip" style="background:#3e6b7c">S2</span>
+          <span class="seg-chip" style="background:#7c6b3e">S7</span>
+        </div>
+      </div>
+    </div>
+    <div class="roadmap-item">
+      <span class="roadmap-priority p-next">Следующий</span>
+      <div class="roadmap-content">
+        <h4>5. «Даже 30 минут достаточно» — в бот и FAQ</h4>
+        <p>Явная коммуникация о минимальном пороге материала. Разблокирует S5 и часть S2.</p>
+        <div class="roadmap-segs">
+          <span class="seg-chip" style="background:#5c3e7c">S5</span>
+          <span class="seg-chip" style="background:#3e6b7c">S2</span>
+        </div>
+      </div>
+    </div>
+    <div class="roadmap-item">
+      <span class="roadmap-priority p-next">Следующий</span>
+      <div class="roadmap-content">
+        <h4>6. Инструкция «как убедить пожилого участника»</h4>
+        <p>Готовый текст как объяснить маме/бабушке что будет происходить. Снимает ожидаемое сопротивление.</p>
+        <div class="roadmap-segs">
+          <span class="seg-chip" style="background:#6b7c3e">S3</span>
+          <span class="seg-chip" style="background:#3e6b7c">S2</span>
+          <span class="seg-chip" style="background:#7c6b3e">S7</span>
+        </div>
+      </div>
+    </div>
+    <div class="roadmap-item">
+      <span class="roadmap-priority p-next">Следующий</span>
+      <div class="roadmap-content">
+        <h4>7. Приём материалов без аудио: текст, письма, фото</h4>
+        <p>Новый юз-кейс «биография по архивным материалам» — открывает часть S5 и весь S4.</p>
+        <div class="roadmap-segs">
+          <span class="seg-chip" style="background:#5c3e7c">S5</span>
+          <span class="seg-chip" style="background:#7c3e6b">S4</span>
+        </div>
+      </div>
+    </div>
+    <div class="roadmap-item">
+      <span class="roadmap-priority p-next">Следующий</span>
+      <div class="roadmap-content">
+        <h4>8. Расширенный тариф с неограниченными правками</h4>
+        <p>Для перфекционистов (S4). Три правки — не хватает. Платный апгрейд или отдельный тариф «Архивный».</p>
+        <div class="roadmap-segs">
+          <span class="seg-chip" style="background:#7c3e6b">S4</span>
+        </div>
+      </div>
+    </div>
+    <div class="roadmap-item">
+      <span class="roadmap-priority p-later">Позже</span>
+      <div class="roadmap-content">
+        <h4>9. Корпоративный формат: юрлицо + печать + перчаточный сервис</h4>
+        <p>Отдельная B2B-страница. Счёт на юрлицо. Профессиональный интервьюер. Физическая книга с доставкой. Групповой тариф.</p>
+        <div class="roadmap-segs">
+          <span class="seg-chip" style="background:#3e5c7c">S6</span>
+        </div>
+      </div>
+    </div>
+    <div class="roadmap-item">
+      <span class="roadmap-priority p-later">Позже</span>
+      <div class="roadmap-content">
+        <h4>10. Услуга печати для частных клиентов</h4>
+        <p>PDF не воспринимается как «настоящий подарок» у S3, S6, S7. Интеграция с типографией + услуга печати и доставки как опция.</p>
+        <div class="roadmap-segs">
+          <span class="seg-chip" style="background:#6b7c3e">S3</span>
+          <span class="seg-chip" style="background:#3e5c7c">S6</span>
+          <span class="seg-chip" style="background:#7c6b3e">S7</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FINAL CTA -->
+  <div class="final-cta">
+    <h2>Что дальше</h2>
+    <p>Семь фокус-групп завершены. Playbook собран. Дорожная карта — перед вами.</p>
+    <div class="cta-items">
+      <div class="cta-item">
+        <div class="cta-title">Сейчас</div>
+        <div class="cta-desc">4 изменения которые нужно сделать на этой неделе: AI→редактура, пример, сертификат, вопросы в герой</div>
+      </div>
+      <div class="cta-item">
+        <div class="cta-title">Следующий спринт</div>
+        <div class="cta-desc">30 мин = достаточно, инструкция для пожилого, приём без аудио, расширенный тариф</div>
+      </div>
+      <div class="cta-item">
+        <div class="cta-title">Квартал</div>
+        <div class="cta-desc">B2B-продукт, услуга печати, корпоративный тариф</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <strong>ГЛАВА</strong> · Отчёт по фокус-группам · Волна 2 + Синтез · Апрель 2026<br>
+  <span style="font-size:.72rem;margin-top:.3rem;display:block">7 сегментов · 28 участников · 10 продуктовых гипотез в приоритете · glava.family</span>
+</footer>
+
+<script>
+document.querySelectorAll('a[href^="#"]').forEach(a=>{
+  a.addEventListener('click',e=>{e.preventDefault();const t=document.querySelector(a.getAttribute('href'));if(t)t.scrollIntoView({behavior:'smooth',block:'start'})})
+})
+</script>
+</body>
+</html>

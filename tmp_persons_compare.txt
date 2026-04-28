@@ -1,0 +1,92 @@
+Compared runs:
+  fact_map_v34.json (15 persons)
+  karakulina_fact_map_full_20260413_042556.json (20 persons)
+  fact_map_v29.json (17 persons)
+  fact_map_v30.json (17 persons)
+
+=== STABILITY ANALYSIS ===
+
+STABLE (in all 4 runs):
+  Даша (внучка)
+  Каракулин Валерий (сын)
+  Каракулин Дмитрий (муж)
+  Никита (внук)
+  Рудай Иван Андреевич (отец)
+  Рудая Пелагея Алексеевна (мать)
+  младший брат (брат)
+  тётя Маша (соседка или родственница)
+  тётя Шура (золовка)
+
+UNSTABLE (missing in some runs):
+
+  Полина (старшая сестра)
+    Present in: ['fact_map_v29.json', 'fact_map_v30.json', 'fact_map_v34.json']
+    Absent in:  ['karakulina_fact_map_full_20260413_042556.json']
+
+  Маргось Владимир (зять)
+    Present in: ['fact_map_v29.json', 'fact_map_v30.json', 'fact_map_v34.json']
+    Absent in:  ['karakulina_fact_map_full_20260413_042556.json']
+
+  Кужба Олег (зять)
+    Present in: ['fact_map_v29.json', 'fact_map_v30.json', 'fact_map_v34.json']
+    Absent in:  ['karakulina_fact_map_full_20260413_042556.json']
+
+  Толя (племянник)
+    Present in: ['fact_map_v29.json', 'fact_map_v30.json', 'karakulina_fact_map_full_20260413_042556.json']
+    Absent in:  ['fact_map_v34.json']
+
+  Витя (племянник)
+    Present in: ['fact_map_v29.json', 'fact_map_v30.json', 'karakulina_fact_map_full_20260413_042556.json']
+    Absent in:  ['fact_map_v34.json']
+
+  тётя Маня (старшая сестра)
+    Present in: ['fact_map_v34.json', 'karakulina_fact_map_full_20260413_042556.json']
+    Absent in:  ['fact_map_v29.json', 'fact_map_v30.json']
+
+  Каракулина Татьяна (дочь)
+    Present in: ['fact_map_v34.json', 'karakulina_fact_map_full_20260413_042556.json']
+    Absent in:  ['fact_map_v29.json', 'fact_map_v30.json']
+
+  Коля (племянник)
+    Present in: ['fact_map_v30.json', 'karakulina_fact_map_full_20260413_042556.json']
+    Absent in:  ['fact_map_v29.json', 'fact_map_v34.json']
+
+  старшие сёстры (сёстры)
+    Present in: ['fact_map_v29.json', 'fact_map_v30.json']
+    Absent in:  ['fact_map_v34.json', 'karakulina_fact_map_full_20260413_042556.json']
+
+  Амельченко (племянник)
+    Present in: ['fact_map_v29.json', 'fact_map_v30.json']
+    Absent in:  ['fact_map_v34.json', 'karakulina_fact_map_full_20260413_042556.json']
+
+  Нинвана (врач)
+    Present in: ['fact_map_v34.json']
+    Absent in:  ['fact_map_v29.json', 'fact_map_v30.json', 'karakulina_fact_map_full_20260413_042556.json']
+
+  Полина Амельченко (старшая сестра)
+    Present in: ['karakulina_fact_map_full_20260413_042556.json']
+    Absent in:  ['fact_map_v29.json', 'fact_map_v30.json', 'fact_map_v34.json']
+
+  Владимир Маргось (зять)
+    Present in: ['karakulina_fact_map_full_20260413_042556.json']
+    Absent in:  ['fact_map_v29.json', 'fact_map_v30.json', 'fact_map_v34.json']
+
+  Олег Кужба (зять)
+    Present in: ['karakulina_fact_map_full_20260413_042556.json']
+    Absent in:  ['fact_map_v29.json', 'fact_map_v30.json', 'fact_map_v34.json']
+
+  Римма (племянница)
+    Present in: ['karakulina_fact_map_full_20260413_042556.json']
+    Absent in:  ['fact_map_v29.json', 'fact_map_v30.json', 'fact_map_v34.json']
+
+  Зина (племянница)
+    Present in: ['karakulina_fact_map_full_20260413_042556.json']
+    Absent in:  ['fact_map_v29.json', 'fact_map_v30.json', 'fact_map_v34.json']
+
+  Нинвана Полсачева (врач)
+    Present in: ['karakulina_fact_map_full_20260413_042556.json']
+    Absent in:  ['fact_map_v29.json', 'fact_map_v30.json', 'fact_map_v34.json']
+
+  Коля лётчик (племянник)
+    Present in: ['fact_map_v29.json']
+    Absent in:  ['fact_map_v30.json', 'fact_map_v34.json', 'karakulina_fact_map_full_20260413_042556.json']

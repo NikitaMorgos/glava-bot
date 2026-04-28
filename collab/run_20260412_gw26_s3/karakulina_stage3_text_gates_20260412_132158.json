@@ -1,0 +1,39 @@
+{
+  "stage": "stage3",
+  "passed": false,
+  "gates": [
+    {
+      "gate": "non_empty_book",
+      "passed": false,
+      "issues": [
+        {
+          "issue": "chapter_too_short_or_empty",
+          "chapter_id": "ch_01",
+          "chars": 59,
+          "min_required_chars": 80
+        }
+      ],
+      "min_chapter_chars": 120
+    },
+    {
+      "gate": "required_entities",
+      "passed": true,
+      "required_total": 0,
+      "critical_total": 0,
+      "critical_matched_total": 0,
+      "critical_missing_total": 0,
+      "critical_missing": [],
+      "optional_total": 0,
+      "optional_matched_total": 0,
+      "optional_missing_total": 0,
+      "optional_missing": []
+    },
+    {
+      "gate": "cross_chapter_repetition",
+      "passed": true,
+      "ngram_size": 5,
+      "threshold": 0.22,
+      "violations": []
+    }
+  ]
+}

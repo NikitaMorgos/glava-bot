@@ -1,0 +1,84 @@
+{
+  "project_id": "korolkova_stage4",
+  "iteration": 1,
+  "verdict": "fail",
+  "issues": [
+    {
+      "id": "issue_001",
+      "category": "integrity",
+      "severity": "critical",
+      "page": null,
+      "description": "PDF-файл недоступен для визуальной проверки. Путь C:\\Users\\user\\Dropbox\\Public\\Cursor\\GLAVA\\exports\\korolkova_stage4_pdf_iter1_20260409_093023.pdf не может быть открыт для анализа содержимого.",
+      "fix_suggestion": "Убедиться, что PDF-файл существует по указанному пути и доступен для чтения. Проверить права доступа к файлу и корректность пути."
+    },
+    {
+      "id": "issue_002",
+      "category": "callout",
+      "severity": "major",
+      "page": null,
+      "description": "Отсутствует callout_05 в page_map, хотя он указан в expected_content.callout_ids. Согласно page_map размещены только callout_01, callout_02, callout_03, callout_04, callout_06, callout_07, callout_08.",
+      "fix_suggestion": "Разместить callout_05 в одной из глав или удалить его из expected_content, если он не нужен в макете."
+    },
+    {
+      "id": "issue_003",
+      "category": "integrity",
+      "severity": "major",
+      "page": 13,
+      "description": "Страница 13 помечена как blank в page_map, но согласно page_plan должна содержать текст главы ch_02 (параграфы p_021, p_022, p_023). Несоответствие между планом и реализацией.",
+      "fix_suggestion": "Проверить содержимое страницы 13: если она действительно пустая - перенести текст с предыдущих страниц, если содержит текст - исправить page_map."
+    }
+  ],
+  "checklist": {
+    "pagination": {
+      "status": "warning",
+      "details": "Невозможно проверить нумерацию без доступа к PDF-файлу. По page_map структура выглядит логичной: 22 страницы с обложкой на стр.1, оглавлением на стр.3."
+    },
+    "toc": {
+      "status": "warning",
+      "details": "Невозможно сверить номера страниц в оглавлении с реальным размещением глав без визуального доступа к PDF."
+    },
+    "orphan_widow": {
+      "status": "warning",
+      "details": "Проверка висячих строк требует визуального анализа PDF-файла."
+    },
+    "photos": {
+      "status": "pass",
+      "total_expected": 3,
+      "total_found": 3,
+      "details": "Все 3 фото (photo_001, photo_002, photo_003) присутствуют в page_map на запланированных страницах."
+    },
+    "callouts": {
+      "status": "fail",
+      "total_expected": 8,
+      "total_found": 7,
+      "details": "Отсутствует callout_05. В page_map найдены только 7 из 8 ожидаемых выносок."
+    },
+    "headers_footers": {
+      "status": "warning",
+      "details": "Невозможно проверить колонтитулы без визуального доступа к PDF-файлу."
+    },
+    "margins": {
+      "status": "warning",
+      "details": "Проверка полей требует визуального анализа PDF-файла."
+    },
+    "typography": {
+      "status": "warning",
+      "details": "Невозможно проверить шрифты и читаемость без доступа к PDF-файлу."
+    },
+    "integrity": {
+      "status": "fail",
+      "details": "Критическая проблема: PDF недоступен для проверки. Также обнаружено несоответствие между page_plan и page_map на странице 13."
+    }
+  },
+  "regression_check": {
+    "performed": false,
+    "previous_issues_resolved": []
+  },
+  "summary": {
+    "critical_issues": 1,
+    "major_issues": 2,
+    "minor_issues": 0,
+    "total_pages_checked": 0,
+    "overall_assessment": "Проверка не может быть завершена из-за недоступности PDF-файла для визуального анализа. Обнаружены структурные проблемы: отсутствует callout_05 и несоответствие плана реализации на странице 13. Требуется исправление доступа к файлу и устранение выявленных несоответствий перед повторной проверкой."
+  }
+}

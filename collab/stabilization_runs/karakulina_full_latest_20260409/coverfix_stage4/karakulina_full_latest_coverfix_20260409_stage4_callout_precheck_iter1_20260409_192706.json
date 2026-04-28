@@ -1,0 +1,40 @@
+{
+  "gate": "callout_id_precheck",
+  "passed": true,
+  "checks": {
+    "expected_ids_resolved": true,
+    "page_plan_has_all_expected_callouts": true,
+    "page_map_has_all_expected_callouts": true,
+    "page_map_has_no_unexpected_callouts": true
+  },
+  "expected_callout_ids": [
+    "callout_01",
+    "callout_02",
+    "callout_03",
+    "callout_04",
+    "callout_05",
+    "callout_06",
+    "callout_07"
+  ],
+  "page_plan_callout_ids": [
+    "callout_01",
+    "callout_02",
+    "callout_03",
+    "callout_04",
+    "callout_05",
+    "callout_06",
+    "callout_07"
+  ],
+  "page_map_callout_ids": [
+    "callout_01",
+    "callout_02",
+    "callout_03",
+    "callout_04",
+    "callout_05",
+    "callout_06",
+    "callout_07"
+  ],
+  "missing_in_page_plan": [],
+  "missing_in_page_map": [],
+  "extra_in_page_map": []
+}

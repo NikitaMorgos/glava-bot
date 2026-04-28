@@ -1,0 +1,164 @@
+{
+  "project_id": "karakulina_stage4",
+  "stage": "stage4",
+  "timestamp": "20260409_081836",
+  "generated_at": "2026-04-09T08:31:05.617160Z",
+  "git_sha": "65b7b83",
+  "config_file": "/opt/glava/prompts/pipeline_config.json",
+  "config_sha256": "1820ac44c64511311d0c6ac225717c275f179d80629ac8d363194124578525d1",
+  "active_prompts": {
+    "cleaner": {
+      "prompt_file": "01_cleaner_v1.md",
+      "prompt_exists": true,
+      "prompt_sha256": "e5a7f11402313b21bcb4b44668a06704cc5c36f57c89965e4bebbae2f6f9e413",
+      "model": "claude-haiku-4-5-20251001",
+      "max_tokens": 16000,
+      "temperature": 0.1
+    },
+    "fact_extractor": {
+      "prompt_file": "02_fact_extractor_v3.3.md",
+      "prompt_exists": true,
+      "prompt_sha256": "29ee7dafcaf149ed8ae1882b18fae6020a7b87147da59e10af2744697e903fd9",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 32000,
+      "temperature": 0.15
+    },
+    "historian": {
+      "prompt_file": "12_historian_v3.md",
+      "prompt_exists": true,
+      "prompt_sha256": "4ed9a5dc633dddbd93b8292115f08cc3ba4d598a225e503469bd4ac85845525b",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 16000,
+      "temperature": 0.3
+    },
+    "ghostwriter": {
+      "prompt_file": "03_ghostwriter_v2.6.md",
+      "prompt_exists": true,
+      "prompt_sha256": "8a9928db9c00dfc0123c9f0032975e0b4d70fd85eb1f01a745173141f94bae07",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 32000,
+      "temperature": 0.6
+    },
+    "fact_checker": {
+      "prompt_file": "04_fact_checker_v2.md",
+      "prompt_exists": true,
+      "prompt_sha256": "3246dfcdac32f830dc67970bb25525b9e28c7c2865ef0b6a52f44d78e7405245",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 8000,
+      "temperature": 0.1
+    },
+    "literary_editor": {
+      "prompt_file": "05_literary_editor_v3.md",
+      "prompt_exists": true,
+      "prompt_sha256": "aad8514e1550fb23fe99a695e0846bd7b324afc90996c9ebec01374a148ae367",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 32000,
+      "temperature": 0.5
+    },
+    "proofreader": {
+      "prompt_file": "06_proofreader_v1.md",
+      "prompt_exists": true,
+      "prompt_sha256": "5c600132d206cdc62876661662b917b17922e3779047de366485a78703758d79",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 32000,
+      "temperature": 0.0
+    },
+    "photo_editor": {
+      "prompt_file": "07_photo_editor_v1.md",
+      "prompt_exists": true,
+      "prompt_sha256": "d17a7acbad32f6c5be19fc90a20929be0044e6e8453d92d91c1e6d1a1cbaceca",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 6000,
+      "temperature": 0.25
+    },
+    "layout_designer": {
+      "prompt_file": "08_layout_designer_v3.16.md",
+      "prompt_exists": true,
+      "prompt_sha256": "bf372831a76d305b8c5e3ac54e6cc869802376f5d22472fe49425ae093730f76",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 64000,
+      "temperature": 0.25
+    },
+    "qa_layout": {
+      "prompt_file": "09_qa_layout_v1.md",
+      "prompt_exists": true,
+      "prompt_sha256": "04a0b4137d947ef287a3e78de08f8dd0e024c3da836a3bafb8ab9bb08e1a4c92",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 6000,
+      "temperature": 0.05
+    },
+    "cover_designer": {
+      "prompt_file": "13_cover_designer_v2.7.md",
+      "prompt_exists": true,
+      "prompt_sha256": "51895bf76d183d02a4be120e8f5323adb585fc196de0ef0faaf263782604ddcb",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 12000,
+      "temperature": 0.65
+    },
+    "layout_art_director": {
+      "prompt_file": "15_layout_art_director_v1.8.md",
+      "prompt_exists": true,
+      "prompt_sha256": "e4f739e949e9672b5dbe003dfbcfcf1270726a1f4f051d7394ab78a80cafd7fa",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 16000,
+      "temperature": 0.45
+    },
+    "interview_architect": {
+      "prompt_file": "11_interview_architect_v4.1.md",
+      "prompt_exists": true,
+      "prompt_sha256": "a2e890e611ecce767afee2f8f8f215b8b7fc1a7e950a7f8ec057dda4938c1b97",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 5000,
+      "temperature": 0.5
+    }
+  },
+  "inputs": {
+    "proofreader_input_path": "/opt/glava/exports/karakulina_strict_control_20260408_185639e_proofreader_report_20260409_044411.json",
+    "fact_map_input_path": "/opt/glava/exports/test_fact_map_karakulina_v5.json",
+    "input_mode": "legacy",
+    "photos_dir": "/opt/glava/exports/karakulina_photos",
+    "skip_qa": false,
+    "skip_layout": false
+  },
+  "outputs": {
+    "page_plan_path": "/opt/glava/exports/karakulina_stage4_hardening_20260409_r3_stage4_page_plan_20260409_081836.json",
+    "layout_result_path": "/opt/glava/exports/karakulina_stage4_hardening_20260409_r3_stage4_layout_iter3_20260409_081836.json",
+    "structural_qa_path": "/opt/glava/exports/karakulina_stage4_hardening_20260409_r3_stage4_structural_qa_iter3_20260409_081836.json",
+    "visual_qa_path": "/opt/glava/exports/karakulina_stage4_hardening_20260409_r3_stage4_visual_qa_iter3_20260409_081836.json",
+    "pdf_preflight_path": "/opt/glava/exports/karakulina_stage4_hardening_20260409_r3_stage4_pdf_preflight_iter3_20260409_081836.json",
+    "qa_report_path": "/opt/glava/exports/karakulina_stage4_hardening_20260409_r3_stage4_qa_iter3_20260409_081836.json",
+    "cover_portrait_path": "/opt/glava/exports/karakulina_strict_control_20260409_0449_stage4_cover_portrait_20260409_044838.webp",
+    "final_verdict": "fail",
+    "generated_artifacts": [
+      "karakulina_stage4_hardening_20260409_r3_iter1_layout_pages_20260409_081836.json",
+      "karakulina_stage4_hardening_20260409_r3_iter2_layout_pages_20260409_081836.json",
+      "karakulina_stage4_hardening_20260409_r3_iter3_layout_pages_20260409_081836.json",
+      "karakulina_stage4_hardening_20260409_r3_stage4_ai_questions_20260409_081836.json",
+      "karakulina_stage4_hardening_20260409_r3_stage4_interview_questions_20260409_081836.json",
+      "karakulina_stage4_hardening_20260409_r3_stage4_layout_iter1_20260409_081836.json",
+      "karakulina_stage4_hardening_20260409_r3_stage4_layout_iter2_20260409_081836.json",
+      "karakulina_stage4_hardening_20260409_r3_stage4_layout_iter3_20260409_081836.json",
+      "karakulina_stage4_hardening_20260409_r3_stage4_page_plan_20260409_081836.json",
+      "karakulina_stage4_hardening_20260409_r3_stage4_pdf_iter1_20260409_081836.pdf",
+      "karakulina_stage4_hardening_20260409_r3_stage4_pdf_iter2_20260409_081836.pdf",
+      "karakulina_stage4_hardening_20260409_r3_stage4_pdf_iter3_20260409_081836.pdf",
+      "karakulina_stage4_hardening_20260409_r3_stage4_pdf_preflight_iter1_20260409_081836.json",
+      "karakulina_stage4_hardening_20260409_r3_stage4_pdf_preflight_iter2_20260409_081836.json",
+      "karakulina_stage4_hardening_20260409_r3_stage4_pdf_preflight_iter3_20260409_081836.json",
+      "karakulina_stage4_hardening_20260409_r3_stage4_qa_iter1_20260409_081836.json",
+      "karakulina_stage4_hardening_20260409_r3_stage4_qa_iter2_20260409_081836.json",
+      "karakulina_stage4_hardening_20260409_r3_stage4_qa_iter3_20260409_081836.json",
+      "karakulina_stage4_hardening_20260409_r3_stage4_structural_guard_iter1_20260409_081836.json",
+      "karakulina_stage4_hardening_20260409_r3_stage4_structural_guard_iter2_20260409_081836.json",
+      "karakulina_stage4_hardening_20260409_r3_stage4_structural_guard_iter3_20260409_081836.json",
+      "karakulina_stage4_hardening_20260409_r3_stage4_structural_qa_iter1_20260409_081836.json",
+      "karakulina_stage4_hardening_20260409_r3_stage4_structural_qa_iter2_20260409_081836.json",
+      "karakulina_stage4_hardening_20260409_r3_stage4_structural_qa_iter3_20260409_081836.json",
+      "karakulina_stage4_hardening_20260409_r3_stage4_visual_qa_iter1_20260409_081836.json",
+      "karakulina_stage4_hardening_20260409_r3_stage4_visual_qa_iter2_20260409_081836.json",
+      "karakulina_stage4_hardening_20260409_r3_stage4_visual_qa_iter3_20260409_081836.json"
+    ]
+  },
+  "checkpoints": {},
+  "notes": {}
+}

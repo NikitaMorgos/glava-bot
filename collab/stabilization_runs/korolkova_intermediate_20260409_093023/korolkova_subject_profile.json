@@ -1,0 +1,20 @@
+{
+  "project_id": "korolkova_stage4",
+  "subject_name": "Королькова Елена Андреевна",
+  "subject": {
+    "name": "Королькова Елена Андреевна",
+    "surname": "Королькова",
+    "first_name": "Елена",
+    "patronymic": "Андреевна",
+    "birth_year": 1932,
+    "death_year": null,
+    "subtitle": "История жизни, рассказанная дочерью и внуками"
+  },
+  "interview_architect": {
+    "birth_place": "деревня Русино, Калининская область",
+    "transcript_speakers": [
+      "дочь и внуки, 2 интервью"
+    ],
+    "transcript_topics": "детство, война, учеба, замужество, работа, характер, семья, поздние годы"
+  }
+}

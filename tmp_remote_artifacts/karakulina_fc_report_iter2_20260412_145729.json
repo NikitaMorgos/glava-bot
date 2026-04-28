@@ -1,0 +1,64 @@
+{
+  "project_id": "karakulina_stage2_test",
+  "iteration": 2,
+  "verdict": "pass",
+  "errors": [
+    {
+      "id": "err_001",
+      "type": "distortion",
+      "severity": "minor",
+      "chapter_id": "ch_02",
+      "location": "Глава 2, абзац p_02_010",
+      "what_is_written": "В 1956 году в Калинине родилась дочь Татьяна",
+      "what_should_be": "В 1956 году в Твери родилась дочь Татьяна",
+      "source": {
+        "type": "transcript",
+        "reference": "int_001: «В 1956 году в Твери родилась Татьяна Каракулина, её дочь»"
+      },
+      "fix_instruction": "Заменить «в Калинине» на «в Твери» в описании рождения дочери Татьяны"
+    }
+  ],
+  "warnings": [
+    {
+      "id": "warn_001",
+      "type": "ambiguous_source",
+      "chapter_id": "ch_02",
+      "description": "В fact_map указано «Тверь» как место рождения Татьяны, в тексте написано «Калинин». Это один город в разные периоды, но нужна единообразность",
+      "recommendation": "Использовать название города, актуальное для 1956 года — «Калинин»"
+    }
+  ],
+  "completeness_check": {
+    "total_facts_in_map": 156,
+    "facts_referenced_in_text": 147,
+    "facts_verified_ok": 146,
+    "facts_with_errors": 1,
+    "facts_missing_from_text": [
+      {
+        "fact_id": "person_014",
+        "fact_description": "тётя Маша — любила ходить по грибы и ягоды",
+        "was_in_facts_omitted": true,
+        "omission_justified": true,
+        "recommendation": "Допустимо пропустить — связь с героиней неясна"
+      }
+    ]
+  },
+  "regression_check": {
+    "performed": false,
+    "chapters_checked": [],
+    "issues_found": []
+  },
+  "summary": {
+    "critical_errors": 0,
+    "major_errors": 0,
+    "minor_errors": 1,
+    "warnings_count": 1,
+    "overall_assessment": "Текст книги в целом точно соответствует источникам. Обнаружена одна незначительная географическая неточность. Все основные факты, события, персоны и цитаты корректно отражены."
+  },
+  "stats": {
+    "facts_checked": 147,
+    "facts_passed": 146,
+    "facts_failed": 1,
+    "coverage_percent": 94.2,
+    "needs_verification_flagged": 0
+  }
+}

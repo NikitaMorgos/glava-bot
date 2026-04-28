@@ -1,0 +1,3620 @@
+{
+  "updatedAt": "2026-03-20T06:38:32.004Z",
+  "createdAt": "2026-03-18T16:31:27.422Z",
+  "id": "Cr3pGd3OWqx5SnER",
+  "name": "GLAVA · Phase A — Book Pipeline v9 (State Machine)",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "glava/phase-a",
+        "options": {}
+      },
+      "id": "c86c9e1f-dbee-4033-9eb1-11705ce5b21e",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        78448,
+        13472
+      ],
+      "webhookId": "glava-phase-a"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $('Webhook').first().json.body;const triage_result = $('Extract Triage').first().json.triage_result || {};return [{ json: { wrapped_input: JSON.stringify({  phase: 'A',  project_id: String(body.draft_id || body.telegram_id),  pipeline_variant: triage_result.pipeline_variant || 'standard',  subject: {    name: body.character_name || 'Герой книги',    known_birth_year: body.known_birth_year || triage_result.birth_year_estimate || null,    known_details: body.known_details || null  },  interview: {    id: 'int_001',    speaker: { name: 'Рассказчик', relation_to_subject: 'родственник' },    transcript: body.transcript  },  existing_facts: null}) }}];"
+      },
+      "id": "e3089af8-9271-49ee-969a-eb67a509d640",
+      "name": "Wrap for Fact Extractor",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        78688,
+        13472
+      ]
+    },
+    {
+      "parameters": {
+        "url": "http://127.0.0.1:5001/api/prompts/fact_extractor",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "3e38a26a-d5d9-416c-b8b7-40b56edbb180",
+      "name": "Get Prompt: Fact Extractor",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        78944,
+        13472
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.OPENAI_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [ { role: 'system', content: $('Get Prompt: Fact Extractor').item.json.text || 'Ты Фактолог. Извлеки все факты из транскрипта. Верни только валидный JSON с полями: project_id, subject, persons, timeline, relationships, locations, character_traits, quotes, conflicts, gaps, processing_notes.' }, { role: 'user', content: $('Wrap for Fact Extractor').item.json.wrapped_input } ], temperature: 0.1, max_tokens: 8000 }) }}",
+        "options": {
+          "timeout": 180000
+        }
+      },
+      "id": "665125d8-d99e-410c-b859-18c4ee5e879e",
+      "name": "Fact Extractor",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        79184,
+        13472
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.choices[0].message.content; let fact_map = {}; const t = raw.trim(); const s = t.indexOf('{'); const e = t.lastIndexOf('}'); if (s !== -1 && e > s) { try { fact_map = JSON.parse(t.slice(s, e + 1)); } catch(err) {} } if (!fact_map.subject) { try { fact_map = JSON.parse(t); } catch(err) {} } return [{ json: { fact_map } }];"
+      },
+      "id": "5bb5e172-aece-46e3-8a30-57f8ea186bfe",
+      "name": "Extract Fact Map",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        79440,
+        13472
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $('Webhook').first().json.body; const fact_map = $('Extract Fact Map').first().json.fact_map; return [{ json: { wrapped_input: JSON.stringify({ phase: 'A', project_id: String(body.draft_id || body.telegram_id), fact_map: { persons: fact_map.persons || [], timeline: fact_map.timeline || [], locations: fact_map.locations || [], subject: fact_map.subject || {} }, photos_available: body.photo_count || 0, note: 'Создай подписи к фотографиям и план их размещения в книге на основе карты фактов' }) }}];"
+      },
+      "id": "f9c15c26-7a3b-4008-98a8-8fd519b27bd1",
+      "name": "Wrap for Photo Editor",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        79696,
+        14064
+      ]
+    },
+    {
+      "parameters": {
+        "url": "http://127.0.0.1:5001/api/prompts/photo_editor",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "a6a3c6d8-6201-48cf-b483-75715b6c56c3",
+      "name": "Get Prompt: Photo Editor",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        79936,
+        14064
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.OPENAI_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [ { role: 'system', content: $('Get Prompt: Photo Editor').item.json.text || 'Ты Фоторедактор. На основе карты фактов создай план размещения фотографий в книге. Для каждой фотографии определи подпись (кто изображён, когда и где снято), привязку к главе и порядок. Если фотографий нет — верни пустой массив. Верни только валидный JSON с полями: project_id, photos (id, caption, chapter_id, position, confidence_note), placement_notes.' }, { role: 'user', content: $('Wrap for Photo Editor').item.json.wrapped_input } ], temperature: 0.2, max_tokens: 2000 }) }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "b34e2833-2573-4bd9-a54a-d6361f9d1c3d",
+      "name": "Photo Editor",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        80192,
+        14064
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.choices[0].message.content; let photo_layout = []; const t = raw.trim(); const s = t.indexOf('{'); const e = t.lastIndexOf('}'); if (s !== -1 && e > s) { try { const p = JSON.parse(t.slice(s, e + 1)); photo_layout = p.processed_photos || p.photos || []; } catch(err) {} } return [{ json: { photo_layout } }];"
+      },
+      "id": "1afc9992-d8d2-42fb-a62a-b27bc7443f61",
+      "name": "Extract from Photo Editor",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        80448,
+        14064
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $('Webhook').first().json.body;const fact_map = $('Extract Fact Map').first().json.fact_map;const historical_context = $('Extract Historian').first().json.historical_context || {};const triage_result = $('Extract Triage').first().json.triage_result || {};return [{ json: { wrapped_input: JSON.stringify({  phase: 'A',  project_id: String(body.draft_id || body.telegram_id),  pipeline_variant: triage_result.pipeline_variant || 'standard',  subject: {    name: body.character_name || (fact_map.subject && fact_map.subject.name) || 'Герой книги'  },  fact_map: fact_map,  historical_context: historical_context,  transcripts: [{ interview_id: 'int_001', speaker_name: 'Рассказчик',    relation_to_subject: 'родственник', text: body.transcript }]}) }}];"
+      },
+      "id": "7b43f3b7-bd8f-43fd-8505-b2622e726298",
+      "name": "Wrap for Ghostwriter",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        79696,
+        13472
+      ]
+    },
+    {
+      "parameters": {
+        "url": "http://127.0.0.1:5001/api/prompts/ghostwriter",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "708b24d8-7414-496d-bf9c-ef287e11949c",
+      "name": "Get Prompt: Ghostwriter",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        79936,
+        13472
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.OPENAI_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ model: 'gpt-4o', messages: [ { role: 'system', content: $('Get Prompt: Ghostwriter').item.json.text || 'Ты Писатель-биограф. На основе карты фактов напиши 4 главы книги. Верни только валидный JSON с полями: project_id, version, phase, chapters (id, title, order, content, facts_used, is_modified), table_of_contents, callouts, historical_notes, writing_notes.' }, { role: 'user', content: $('Wrap for Ghostwriter').item.json.wrapped_input } ], temperature: 0.5, max_tokens: 12000 }) }}",
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "id": "18f8d5bd-30d4-45f6-bafd-90a85c2b1d25",
+      "name": "Ghostwriter",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        80192,
+        13472
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.choices[0].message.content; let book_draft = { chapters: [], callouts: [], historical_notes: [] }; const t = raw.trim(); const s = t.indexOf('{'); const e = t.lastIndexOf('}'); if (s !== -1 && e > s) { try { const p = JSON.parse(t.slice(s, e + 1)); if (p.chapters) book_draft = p; } catch(err) {} } return [{ json: { book_draft } }];"
+      },
+      "id": "1344854a-4804-4175-b3e0-482669b55eae",
+      "name": "Extract Book Draft",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        80448,
+        13472
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $('Webhook').first().json.body;const le = $('Call Orch: Literary Edit').first().json;const chapters = le.chapters || [];const hc = $('Extract Historian').first().json.historical_context || {};const historical_backdrop = hc.historical_backdrop || hc.period_overview || '';return [{ json: { wrapped_input: JSON.stringify({  phase: 'A',  project_id: String(body.draft_id || body.telegram_id),  historical_backdrop: historical_backdrop,  book_text: { chapters: chapters, callouts: [], historical_notes: [] }}) }}];"
+      },
+      "id": "6c3f36f4-d122-4801-999a-70bbc0804f7a",
+      "name": "Wrap for Proofreader",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        82688,
+        13472
+      ]
+    },
+    {
+      "parameters": {
+        "url": "http://127.0.0.1:5001/api/prompts/proofreader",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "6c4a61e7-0396-4e1e-a803-8993d07b1313",
+      "name": "Get Prompt: Proofreader",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        82944,
+        13472
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.OPENAI_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [ { role: 'system', content: $('Get Prompt: Proofreader').item.json.text || 'Ты Корректор. Исправь орфографию, пунктуацию, типографику. Единообразие имён, дат, кавычек, тире по всей книге. Нулевая терпимость к опечаткам. Верни только валидный JSON с полями: project_id, chapters (id, title, content, is_modified), corrections, style_passport, summary.' }, { role: 'user', content: $('Wrap for Proofreader').item.json.wrapped_input } ], temperature: 0.0, max_tokens: 12000 }) }}",
+        "options": {
+          "timeout": 180000
+        }
+      },
+      "id": "9ed4b8e2-63b3-4c28-8933-9ba3ab4e8a1f",
+      "name": "Proofreader",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        83184,
+        13472
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.choices[0].message.content; let bio_text = raw; const t = raw.trim(); const s = t.indexOf('{'); const e = t.lastIndexOf('}'); if (s !== -1 && e > s) { try { const p = JSON.parse(t.slice(s, e + 1)); if (p.chapters && p.chapters.length > 0) { bio_text = p.chapters.map(ch => ch.content || '').filter(Boolean).join('\\n\\n'); } } catch(err) {} } return [{ json: { bio_text } }];"
+      },
+      "id": "ecafcff9-2b0a-452e-8619-eb000a5fbef6",
+      "name": "Extract from Proofreader",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        83440,
+        13472
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $('Webhook').first().json.body;const fact_map = $('Extract Fact Map').first().json.fact_map;const book_draft = $('Extract Book Draft').first().json.book_draft;const triage_result = $('Extract Triage').first().json.triage_result || {};const historical_context = $('Extract Historian').first().json.historical_context || {};const subject = fact_map.subject || {};const chapters_summary = (book_draft.chapters || []).map(ch => ({  id: ch.id, title: ch.title || '',  brief_content: (ch.content || '').slice(0, 300) + '...'}));const historical_events = (historical_context.key_historical_events || []).slice(0, 5);return [{ json: { wrapped_input: JSON.stringify({  project_id: String(body.draft_id || body.telegram_id),  subject: {    name: body.character_name || subject.name || 'Герой книги',    birth_year: subject.birth_year || triage_result.birth_year_estimate || null,    death_year: subject.death_year || triage_result.death_year_estimate || null,    birth_place: subject.birth_place || triage_result.primary_location || null  },  period: triage_result.subject_period || null,  key_themes: triage_result.key_themes || [],  gaps: fact_map.gaps || [],  timeline: (fact_map.timeline || []).map(ev => ({    id: ev.id, date: ev.date, title: ev.title, life_period: ev.life_period,    confidence: ev.confidence  })),  persons: (fact_map.persons || []).map(p => ({    id: p.id, name: p.name, relation_to_subject: p.relation_to_subject  })),  locations: (fact_map.locations || []).map(l => ({ id: l.id, name: l.name })),  conflicts: fact_map.conflicts || [],  historical_gaps: historical_events.map(ev => ev.event || ''),  book_chapters_summary: chapters_summary,  complexity: triage_result.complexity || 'medium'}) }}];"
+      },
+      "id": "5376da9b-c928-46b3-b9cc-e878318b30b1",
+      "name": "Wrap for Interview Architect",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        80448,
+        13776
+      ]
+    },
+    {
+      "parameters": {
+        "url": "http://127.0.0.1:5001/api/prompts/interview_architect",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "e4d8fb0c-3a32-4735-b136-4ca4f18a32b1",
+      "name": "Get Prompt: Interview Architect",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        80944,
+        13776
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.OPENAI_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [ { role: 'system', content: $('Get Prompt: Interview Architect').item.json.text || 'Ты Интервьюер. Составь 12-18 уточняющих вопросов для клиента на основе пробелов в биографии. Вопросы тёплые, конкретные — не технические. Группируй по темам. Рекомендуй кому задавать. Верни только валидный JSON с полями: project_id, questions (id, text, category, priority, related_gap, suggested_respondent, what_it_unlocks), question_groups (theme, question_ids, intro_for_client), summary.' }, { role: 'user', content: $('Wrap for Interview Architect').item.json.wrapped_input } ], temperature: 0.5, max_tokens: 4000 }) }}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "081dea96-e335-47fd-8379-09166c920eaa",
+      "name": "Interview Architect",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        81440,
+        13776
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.choices[0].message.content; let questions_text = raw; const t = raw.trim(); const s = t.indexOf('{'); const e = t.lastIndexOf('}'); if (s !== -1 && e > s) { try { const p = JSON.parse(t.slice(s, e + 1)); const lines = []; if (p.question_groups && p.question_groups.length > 0) { p.question_groups.forEach(group => { lines.push(''); lines.push(group.theme); if (group.intro_for_client) lines.push(group.intro_for_client); (group.question_ids || []).forEach((qid, i) => { const q = (p.questions || []).find(q2 => q2.id === qid); if (q) lines.push((i + 1) + '. ' + q.text); }); }); if (lines.length > 0) questions_text = lines.join('\\n'); } else if (p.questions && p.questions.length > 0) { questions_text = p.questions.map((q, i) => (i + 1) + '. ' + q.text).join('\\n'); } } catch(err) {} } return [{ json: { questions_text } }];"
+      },
+      "id": "5e537fc9-f8f5-4be3-8de0-f38a0a4b8f7b",
+      "name": "Extract from Interview Architect",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        81936,
+        13776
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "fc362ad8-a82f-4ef2-83f7-d90034396f29",
+      "name": "Merge: Text + Photos",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2,
+      "position": [
+        83696,
+        13776
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $('Webhook').first().json.body;const bio_text = $('Extract from Proofreader').first().json.bio_text || '';const photo_layout = $('Extract from Photo Editor').first().json.photo_layout || [];const cover_spec = $('Extract Cover Designer').first().json.cover_spec || {};return [{ json: { wrapped_input: JSON.stringify({  phase: 'A',  project_id: String(body.draft_id || body.telegram_id),  bio_text_excerpt: bio_text.slice(0, 2000),  chapters_count: 4,  photo_placements: photo_layout,  cover_spec: cover_spec,  format: 'A5_print_ready',  style: cover_spec.visual_style || 'warm_book',  note: 'Создай спецификацию вёрстки PDF на основе обложки и содержания'}) }}];"
+      },
+      "id": "82f97dfa-4bdd-43ba-a65a-312434ee8bf1",
+      "name": "Wrap for Layout Designer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        83936,
+        13472
+      ]
+    },
+    {
+      "parameters": {
+        "url": "http://127.0.0.1:5001/api/prompts/layout_designer",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "6500cfcf-02c8-47ba-ac28-0e56e8b81f76",
+      "name": "Get Prompt: Layout Designer",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        84192,
+        13472
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.OPENAI_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [ { role: 'system', content: $('Get Prompt: Layout Designer').item.json.text || 'Ты Верстальщик-дизайнер. Создай спецификацию вёрстки семейной книги в формате PDF A5. Оформление: тёплое, книжное, аккуратное. Учти расположение фотографий. Верни только валидный JSON с полями: project_id, layout_spec (cover, chapters_layout, photo_placements, fonts, margins, callout_positions, page_size), estimated_pages, style_notes.' }, { role: 'user', content: $('Wrap for Layout Designer').item.json.wrapped_input } ], temperature: 0.3, max_tokens: 3000 }) }}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "10f8311f-5eb6-4a19-937f-d38c09d2d3c5",
+      "name": "Layout Designer",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        84448,
+        13472
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.choices[0].message.content; let layout_spec = {}; let estimated_pages = null; const t = raw.trim(); const s = t.indexOf('{'); const e = t.lastIndexOf('}'); if (s !== -1 && e > s) { try { const p = JSON.parse(t.slice(s, e + 1)); layout_spec = p.layout_spec || p; estimated_pages = p.estimated_pages || null; } catch(err) {} } const bio_text = $('Extract from Proofreader').first().json.bio_text || ''; return [{ json: { layout_spec, estimated_pages, bio_text } }];"
+      },
+      "id": "72b85370-a1c4-4b8f-9595-faeea865420d",
+      "name": "Extract from Layout Designer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        84688,
+        13472
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "19221d69-eed7-40b7-ae1a-bc1023e05539",
+      "name": "Merge: Layout + Questions",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2,
+      "position": [
+        85936,
+        13616
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $('Webhook').first().json.body;const bio_text = $('Extract from Proofreader').first().json.bio_text || '';const questions_text = $('Extract from Interview Architect').first().json.questions_text || '';const lqa = $('Call Orch: Layout QA').first().json;const cover_spec = $('Extract Cover Designer').first().json.cover_spec || {};const character_name = body.character_name || 'Герой книги';return [{ json: { bio_text, questions_text, wrapped_input: JSON.stringify({    phase: 'A',    project_id: String(body.draft_id || body.telegram_id),    character_name: character_name,    book_title: cover_spec.title || character_name,    book_subtitle: cover_spec.subtitle || 'Семейная биография',    book_tagline: cover_spec.tagline || '',    book_status: 'ready',    chapters_count: 4,    book_excerpt: bio_text.slice(0, 400),    delivery_type: 'phase_a_v1',    layout_qa_verdict: lqa.verdict || 'pass',    estimated_pages: (lqa.layout_spec && lqa.layout_spec.estimated_pages) || null  }),  bio_text: bio_text,  questions_text: questions_text,  character_name: character_name,  cover_spec: cover_spec} }];"
+      },
+      "id": "2a10fa39-39af-4590-9f9b-3fd5501eac58",
+      "name": "Wrap for Producer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        86192,
+        13616
+      ]
+    },
+    {
+      "parameters": {
+        "url": "http://127.0.0.1:5001/api/prompts/producer",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "1d7ee99b-ca5d-47a4-bc2f-2a82c04d800f",
+      "name": "Get Prompt: Producer",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        86448,
+        13616
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.OPENAI_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [ { role: 'system', content: $('Get Prompt: Producer').item.json.text || 'Ты Продюсер. Книга клиента готова. Напиши тёплое, персонализированное вступительное сообщение для Telegram о том, что первая версия книги (v1) готова. Обратись к герою книги по имени. Упомяни, что книга состоит из 4 глав. Напомни, что прилагается список уточняющих вопросов — отвечать необязательно. Верни только текст сообщения (без JSON, без разметки).' }, { role: 'user', content: $('Wrap for Producer').item.json.wrapped_input } ], temperature: 0.7, max_tokens: 500 }) }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "b615d9fa-e188-46e6-8ed9-2e8f2eeca9f2",
+      "name": "Producer",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        86688,
+        13616
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.choices[0].message.content; let intro_message = raw; const t = raw.trim(); const s = t.indexOf('{'); const e = t.lastIndexOf('}'); if (s !== -1 && e > s) { try { const p = JSON.parse(t.slice(s, e + 1)); intro_message = p.client_note || p.telegram_message || p.intro || p.message || (p.delivery_package && p.delivery_package.client_note); } catch(err) {} } if (!intro_message || (intro_message.startsWith('{') && intro_message.includes('\"'))) { intro_message = 'Книга готова! Ниже текст биографии и уточняющие вопросы — отвечать необязательно.'; } return [{ json: { intro_message } }];"
+      },
+      "id": "b5aa5b65-1666-4a65-b736-fa38be71e60f",
+      "name": "Extract from Producer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        86944,
+        13616
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://api.telegram.org/bot' + $('Webhook').item.json.body.bot_token + '/sendMessage' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ chat_id: $('Webhook').item.json.body.telegram_id, text: $('Extract from Producer').item.json.intro_message }) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "f59d3c6d-262a-4541-91a1-317ffe61f6a1",
+      "name": "Send Intro to Telegram",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        87184,
+        13472
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:5001/api/send-book-pdf",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ telegram_id: $('Webhook').item.json.body.telegram_id, bio_text: $('Wrap for Producer').item.json.bio_text || $('Extract from Proofreader').first().json.bio_text || '', character_name: $('Webhook').item.json.body.character_name || 'Герой книги', draft_id: $('Webhook').item.json.body.draft_id || 0, cover_spec: $('Extract Cover Designer').first().json.cover_spec || {}, photo_layout: $('Extract from Photo Editor').first().json.photo_layout || [] }) }}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "d508af64-92a7-44b1-8226-54d5f93eccb6",
+      "name": "Send Bio PDF to Telegram",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        87184,
+        13616
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://api.telegram.org/bot' + $('Webhook').item.json.body.bot_token + '/sendMessage' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ chat_id: $('Webhook').item.json.body.telegram_id, text: '\\u2753 \\u0423\\u0442\\u043e\\u0447\\u043d\\u044f\\u044e\\u0449\\u0438\\u0435 \\u0432\\u043e\\u043f\\u0440\\u043e\\u0441\\u044b \\u2014 \\u043e\\u0442\\u0432\\u0435\\u0447\\u0430\\u0442\\u044c \\u043d\\u0435\\u043e\\u0431\\u044f\\u0437\\u0430\\u0442\\u0435\\u043b\\u044c\\u043d\\u043e:\\n\\n' + $('Wrap for Producer').item.json.questions_text }) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "8445cafa-d24f-452b-a714-8790a6c09198",
+      "name": "Send Questions to Telegram",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        87184,
+        13776
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:5001/api/jobs/update",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ telegram_id: $('Webhook').item.json.body.telegram_id, phase: 'A', step: 'done', status: 'done' }) }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "1728bc60-4e96-4826-aa5a-e8e7e523d37e",
+      "name": "Update Job Status",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        87440,
+        13616
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $('Webhook').first().json.body;const fact_map = $('Extract Fact Map').first().json.fact_map;const book_draft = $('Extract Book Draft').first().json.book_draft;const historical_context = $('Extract Historian').first().json.historical_context || {};return [{ json: { payload: JSON.stringify({  book_draft: book_draft,  fact_map: fact_map,  historical_context: historical_context,  transcripts: [{ interview_id: 'int_001', speaker_name: 'Rasskazchik',    relation_to_subject: 'rodstvennik', text: body.transcript }],  project_id: String(body.draft_id || body.telegram_id),  max_iterations: 3}) }}];"
+      },
+      "id": "7e8c6418-1300-4391-9ed4-07a64f7aa2e0",
+      "name": "Wrap Orch: Fact Check",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        80688,
+        13472
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:5001/api/orchestrate/fact-check",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $('Wrap Orch: Fact Check').item.json.payload }}",
+        "options": {
+          "timeout": 900000
+        }
+      },
+      "id": "bc409a11-87e7-49a8-9ece-e50671b0524c",
+      "name": "Call Orch: Fact Check",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        80944,
+        13472
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $('Webhook').first().json.body;const fc = $('Call Orch: Fact Check').first().json;const historical_context = $('Extract Historian').first().json.historical_context || {};return [{ json: { payload: JSON.stringify({  book_draft: fc.book_draft || {},  fact_checker_warnings: fc.warnings || [],  historical_context: historical_context,  project_id: String(body.draft_id || body.telegram_id),  max_iterations: 2}) }}];"
+      },
+      "id": "c699e564-b646-433c-a676-e6fb26d8284f",
+      "name": "Wrap Orch: Literary Edit",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        81184,
+        13472
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:5001/api/orchestrate/literary-edit",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $('Wrap Orch: Literary Edit').item.json.payload }}",
+        "options": {
+          "timeout": 900000
+        }
+      },
+      "id": "c61bc7aa-a06d-4773-a232-c98c077bc6b5",
+      "name": "Call Orch: Literary Edit",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        81440,
+        13472
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $('Webhook').first().json.body;const ld = $('Extract from Layout Designer').first().json;const photo_layout = $('Extract from Photo Editor').first().json.photo_layout || [];const bio_text = $('Extract from Proofreader').first().json.bio_text || '';return [{ json: { payload: JSON.stringify({  layout_spec: ld.layout_spec || {},  bio_text: bio_text,  photo_layout: photo_layout,  project_id: String(body.draft_id || body.telegram_id),  max_iterations: 3}) }}];"
+      },
+      "id": "e121038d-8e69-4fc3-a331-b63ab26d07b1",
+      "name": "Wrap Orch: Layout QA",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        84944,
+        13472
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:5001/api/orchestrate/layout-qa",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $('Wrap Orch: Layout QA').item.json.payload }}",
+        "options": {
+          "timeout": 900000
+        }
+      },
+      "id": "d0bdf928-79f7-4225-93af-16107165c936",
+      "name": "Call Orch: Layout QA",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        85184,
+        13472
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $('Webhook').first().json.body;return [{ json: { wrapped_input: JSON.stringify({  phase: 'A',  character_name: body.character_name || 'Неизвестно',  transcript_length: (body.transcript || '').length,  transcript_excerpt: (body.transcript || '').slice(0, 3000),  photo_count: body.photo_count || 0,  known_birth_year: body.known_birth_year || null,  known_details: body.known_details || null}) }}];"
+      },
+      "id": "0b752c32-56ec-499f-90b4-3db10c2b0178",
+      "name": "Wrap Triage",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        77440,
+        13472
+      ]
+    },
+    {
+      "parameters": {
+        "url": "http://127.0.0.1:5001/api/prompts/triage_agent",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "0e583123-fce1-4d99-a1e3-becf99fb42ec",
+      "name": "Get Prompt: Triage",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        77696,
+        13472
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.OPENAI_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [ { role: 'system', content: $('Get Prompt: Triage').item.json.text || 'Ты Триаж-агент. Проанализируй транскрипт и определи: 1) pipeline_variant (standard/extended/minimal), 2) subject_period (например \"1940-1980 СССР\"), 3) birth_year_estimate (число или null), 4) complexity (low/medium/high), 5) primary_location (страна/город или null). Верни только валидный JSON с этими полями и кратким reasoning.' }, { role: 'user', content: $('Wrap Triage').item.json.wrapped_input } ], temperature: 0.1, max_tokens: 1000 }) }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "7e3b59e1-9747-40fc-8fe0-dd487936597b",
+      "name": "Triage Agent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        77936,
+        13472
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.choices[0].message.content;let triage_result = { pipeline_variant: 'standard', subject_period: null,  birth_year_estimate: null, complexity: 'medium', primary_location: null };const t = raw.trim(); const s = t.indexOf('{'); const e = t.lastIndexOf('}');if (s !== -1 && e > s) { try { const p = JSON.parse(t.slice(s, e + 1));  if (p.pipeline_variant || p.complexity) triage_result = p; } catch(err) {} }return [{ json: { triage_result } }];"
+      },
+      "id": "2994e56a-ce1c-4eeb-8144-8a3da707b5a3",
+      "name": "Extract Triage",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        78192,
+        13472
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $('Webhook').first().json.body;const fact_map = $('Extract Fact Map').first().json.fact_map;const triage_result = $('Extract Triage').first().json.triage_result || {};const subject = fact_map.subject || {};const timeline = (fact_map.timeline || []).slice(0, 20);const locations = (fact_map.locations || []).map(l => l.name);return [{ json: { wrapped_input: JSON.stringify({  phase: 'A',  project_id: String(body.draft_id || body.telegram_id),  subject: {    name: body.character_name || subject.name || 'Неизвестно',    birth_year: subject.birth_year || triage_result.birth_year_estimate || null,    birth_place: subject.birth_place || triage_result.primary_location || null,    known_period: triage_result.subject_period || null  },  key_life_events: timeline.map(ev => ({ date: ev.date, event: ev.title || ev.event || '' })),  locations: locations,  complexity: triage_result.complexity || 'medium'}) }}];"
+      },
+      "id": "80fe5681-35f5-4a2a-ac0b-93e14f6497ee",
+      "name": "Wrap Historian",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        79696,
+        13776
+      ]
+    },
+    {
+      "parameters": {
+        "url": "http://127.0.0.1:5001/api/prompts/historian",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "ec47c622-c9fd-4d12-be03-7b2119daa11a",
+      "name": "Get Prompt: Historian",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        79936,
+        13776
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const r = $input.first().json;const historical_context = r.historical_context || {};return [{ json: { historical_context } }];"
+      },
+      "id": "b7d93aba-4e50-4fc2-b61a-3d7c1647363e",
+      "name": "Extract Historian",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        80448,
+        13776
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $('Webhook').first().json.body;const fact_map = $('Extract Fact Map').first().json.fact_map;const historical_context = $('Extract Historian').first().json.historical_context || {};const triage_result = $('Extract Triage').first().json.triage_result || {};const subject = fact_map.subject || {};return [{ json: { wrapped_input: JSON.stringify({  phase: 'A',  project_id: String(body.draft_id || body.telegram_id),  subject: {    name: body.character_name || subject.name || 'Герой книги',    birth_year: subject.birth_year || triage_result.birth_year_estimate || null,    birth_place: subject.birth_place || triage_result.primary_location || null  },  period: triage_result.subject_period || null,  key_themes: triage_result.key_themes || [],  historical_backdrop: historical_context.historical_backdrop || '',  period_overview: historical_context.period_overview || '',  tone: triage_result.language_style || 'warm'}) }}];"
+      },
+      "id": "5a3f709d-4261-4a6a-a896-de07977ead6d",
+      "name": "Wrap Cover Designer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        81440,
+        13776
+      ]
+    },
+    {
+      "parameters": {
+        "url": "http://127.0.0.1:5001/api/prompts/cover_designer",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "a404040e-6e4e-41a7-85dc-44ec4cf51a52",
+      "name": "Get Prompt: Cover Designer",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        81696,
+        13776
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.OPENAI_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [ { role: 'system', content: $('Get Prompt: Cover Designer').item.json.text || 'Ты Дизайнер обложки семейной книги. Создай концепцию обложки. Верни только валидный JSON с полями: title (заголовок книги — имя героя или поэтичное название), subtitle (подзаголовок, например: Семейная биография), tagline (короткая фраза 5-10 слов — суть жизни героя), image_description (описание образа для обложки в 2-3 предложения), visual_style (warm/classic/modern/vintage), color_palette (описание цветовой гаммы).' }, { role: 'user', content: $('Wrap Cover Designer').item.json.wrapped_input } ], temperature: 0.6, max_tokens: 800 }) }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "026dd448-d4ca-4e86-844a-673396d0544f",
+      "name": "Cover Designer",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        81936,
+        13776
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.choices[0].message.content;let cover_spec = { title: '', subtitle: 'Семейная биография', tagline: '',  image_description: '', visual_style: 'warm', color_palette: 'cream_gold' };const t = raw.trim(); const s = t.indexOf('{'); const e = t.lastIndexOf('}');if (s !== -1 && e > s) { try { const p = JSON.parse(t.slice(s, e + 1));  if (p.title || p.subtitle) cover_spec = { ...cover_spec, ...p }; } catch(err) {} }return [{ json: { cover_spec } }];"
+      },
+      "id": "298ec153-74f0-40f2-9d21-432fedc2b41e",
+      "name": "Extract Cover Designer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        82192,
+        13776
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:5001/api/state/transition",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({  telegram_id: $('Webhook').first().json.body.telegram_id,  state: 'assembling_phase_a',  draft_id: $('Webhook').first().json.body.draft_id || 0,  character_name: $('Webhook').first().json.body.character_name || '',  phase: 'A'}) }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "c658c84c-63c5-4d1c-a3e1-fd1bed409e62",
+      "name": "State: assembling_phase_a",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        78384,
+        13472
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:5001/api/state/transition",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({  telegram_id: $('Webhook').first().json.body.telegram_id,  state: 'delivered_v1',  draft_id: $('Webhook').first().json.body.draft_id || 0,  character_name: $('Webhook').first().json.body.character_name || '',  phase: 'A',  notes: 'PDF delivered'}) }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "6c62eaff-c55e-4b3d-93d7-cbc09988dea4",
+      "name": "State: delivered_v1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        87696,
+        13616
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://api.telegram.org/bot' + $('Webhook').first().json.body.bot_token + '/sendMessage' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({  chat_id: $('Webhook').first().json.body.telegram_id,  text: '📖 Начинаем работу над вашей книгой. Это займёт несколько минут — мы пришлём результат сюда.'}) }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "007d220c-7e17-4caa-b41a-0cd005a7f1c2",
+      "name": "Notify: Pipeline Started",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        78384,
+        13312
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $('Webhook').first().json.body;const fact_map = $('Extract Fact Map').first().json.fact_map;const triage = $('Extract Triage').first().json.triage_result || {};return [{ json: { wrapped_input: JSON.stringify({  phase: 'A',  project_id: String(body.draft_id || body.telegram_id),  character_name: body.character_name || 'Герой книги',  pipeline_variant: triage.pipeline_variant || 'standard',  subject_period: triage.subject_period || 'советский',  timeline: (fact_map && fact_map.timeline) || [],  subject: (fact_map && fact_map.subject) || {},  task: 'Добавь исторический контекст: что происходило в стране и мире в ключевые периоды жизни героя. Помоги читателю понять эпоху.'}) } }];"
+      },
+      "id": "17a71843-5d88-4634-bf26-4e534188356f",
+      "name": "Wrap for Historian",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        79696,
+        13776
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:5001/api/agents/historian",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ fact_map: $('Extract Fact Map').first().json.fact_map || {}, triage_result: $('Extract Triage').first().json.triage_result || {}, character_name: $('Webhook').first().json.body.character_name || 'Герой книги', project_id: String($('Webhook').first().json.body.draft_id || $('Webhook').first().json.body.telegram_id) }) }}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "e028f870-196c-429f-9e30-f225cd25d562",
+      "name": "Historian",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        80192,
+        13776
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Wrap Triage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wrap for Fact Extractor": {
+      "main": [
+        [
+          {
+            "node": "Get Prompt: Fact Extractor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Prompt: Fact Extractor": {
+      "main": [
+        [
+          {
+            "node": "Fact Extractor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fact Extractor": {
+      "main": [
+        [
+          {
+            "node": "Extract Fact Map",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Fact Map": {
+      "main": [
+        [
+          {
+            "node": "Wrap Historian",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Wrap for Photo Editor",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Wrap for Historian",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wrap for Photo Editor": {
+      "main": [
+        [
+          {
+            "node": "Get Prompt: Photo Editor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Prompt: Photo Editor": {
+      "main": [
+        [
+          {
+            "node": "Photo Editor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Photo Editor": {
+      "main": [
+        [
+          {
+            "node": "Extract from Photo Editor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from Photo Editor": {
+      "main": [
+        [
+          {
+            "node": "Merge: Text + Photos",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Wrap for Ghostwriter": {
+      "main": [
+        [
+          {
+            "node": "Get Prompt: Ghostwriter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Prompt: Ghostwriter": {
+      "main": [
+        [
+          {
+            "node": "Ghostwriter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ghostwriter": {
+      "main": [
+        [
+          {
+            "node": "Extract Book Draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Book Draft": {
+      "main": [
+        [
+          {
+            "node": "Wrap Orch: Fact Check",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Wrap for Interview Architect",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wrap for Proofreader": {
+      "main": [
+        [
+          {
+            "node": "Get Prompt: Proofreader",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Prompt: Proofreader": {
+      "main": [
+        [
+          {
+            "node": "Proofreader",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Proofreader": {
+      "main": [
+        [
+          {
+            "node": "Extract from Proofreader",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from Proofreader": {
+      "main": [
+        [
+          {
+            "node": "Merge: Text + Photos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wrap for Interview Architect": {
+      "main": [
+        [
+          {
+            "node": "Get Prompt: Interview Architect",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Prompt: Interview Architect": {
+      "main": [
+        [
+          {
+            "node": "Interview Architect",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Interview Architect": {
+      "main": [
+        [
+          {
+            "node": "Extract from Interview Architect",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from Interview Architect": {
+      "main": [
+        [
+          {
+            "node": "Merge: Layout + Questions",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge: Text + Photos": {
+      "main": [
+        [
+          {
+            "node": "Wrap for Layout Designer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wrap for Layout Designer": {
+      "main": [
+        [
+          {
+            "node": "Get Prompt: Layout Designer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Prompt: Layout Designer": {
+      "main": [
+        [
+          {
+            "node": "Layout Designer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Layout Designer": {
+      "main": [
+        [
+          {
+            "node": "Extract from Layout Designer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from Layout Designer": {
+      "main": [
+        [
+          {
+            "node": "Wrap Orch: Layout QA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge: Layout + Questions": {
+      "main": [
+        [
+          {
+            "node": "Wrap for Producer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wrap for Producer": {
+      "main": [
+        [
+          {
+            "node": "Get Prompt: Producer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Prompt: Producer": {
+      "main": [
+        [
+          {
+            "node": "Producer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Producer": {
+      "main": [
+        [
+          {
+            "node": "Extract from Producer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from Producer": {
+      "main": [
+        [
+          {
+            "node": "Send Intro to Telegram",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Bio PDF to Telegram",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Questions to Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Intro to Telegram": {
+      "main": [
+        [
+          {
+            "node": "Update Job Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Questions to Telegram": {
+      "main": [
+        [
+          {
+            "node": "Update Job Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wrap Orch: Fact Check": {
+      "main": [
+        [
+          {
+            "node": "Call Orch: Fact Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Orch: Fact Check": {
+      "main": [
+        [
+          {
+            "node": "Wrap Orch: Literary Edit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wrap Orch: Literary Edit": {
+      "main": [
+        [
+          {
+            "node": "Call Orch: Literary Edit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Orch: Literary Edit": {
+      "main": [
+        [
+          {
+            "node": "Wrap for Proofreader",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Wrap Cover Designer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wrap Orch: Layout QA": {
+      "main": [
+        [
+          {
+            "node": "Call Orch: Layout QA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Orch: Layout QA": {
+      "main": [
+        [
+          {
+            "node": "Merge: Layout + Questions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wrap Triage": {
+      "main": [
+        [
+          {
+            "node": "Get Prompt: Triage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Prompt: Triage": {
+      "main": [
+        [
+          {
+            "node": "Triage Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Triage Agent": {
+      "main": [
+        [
+          {
+            "node": "Extract Triage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Triage": {
+      "main": [
+        [
+          {
+            "node": "State: assembling_phase_a",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Notify: Pipeline Started",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wrap Historian": {
+      "main": [
+        [
+          {
+            "node": "Get Prompt: Historian",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Prompt: Historian": {
+      "main": [
+        [
+          {
+            "node": "Historian",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Historian": {
+      "main": [
+        [
+          {
+            "node": "Wrap for Ghostwriter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wrap Cover Designer": {
+      "main": [
+        [
+          {
+            "node": "Get Prompt: Cover Designer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Prompt: Cover Designer": {
+      "main": [
+        [
+          {
+            "node": "Cover Designer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cover Designer": {
+      "main": [
+        [
+          {
+            "node": "Extract Cover Designer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "State: assembling_phase_a": {
+      "main": [
+        [
+          {
+            "node": "Wrap for Fact Extractor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Job Status": {
+      "main": [
+        [
+          {
+            "node": "State: delivered_v1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Bio PDF to Telegram": {
+      "main": [
+        [
+          {
+            "node": "Update Job Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wrap for Historian": {
+      "main": [
+        [
+          {
+            "node": "Get Prompt: Historian",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Historian": {
+      "main": [
+        [
+          {
+            "node": "Extract Historian",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "fd80f40a-d6d9-4a71-b73c-9027b1ad7590",
+  "activeVersionId": "fd80f40a-d6d9-4a71-b73c-9027b1ad7590",
+  "versionCounter": 57,
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-03-18T16:31:27.427Z",
+      "createdAt": "2026-03-18T16:31:27.427Z",
+      "role": "workflow:owner",
+      "workflowId": "Cr3pGd3OWqx5SnER",
+      "projectId": "u0KcbKyWUWmQNYcO",
+      "project": {
+        "updatedAt": "2026-03-15T11:53:37.471Z",
+        "createdAt": "2026-03-15T10:34:54.332Z",
+        "id": "u0KcbKyWUWmQNYcO",
+        "name": "Nikita Morgos <info@glava.family>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "9687943e-c471-48f5-a1d4-0cb625fc818d"
+      }
+    }
+  ],
+  "tags": [],
+  "activeVersion": {
+    "updatedAt": "2026-03-20T06:38:32.011Z",
+    "createdAt": "2026-03-20T06:38:32.011Z",
+    "versionId": "fd80f40a-d6d9-4a71-b73c-9027b1ad7590",
+    "workflowId": "Cr3pGd3OWqx5SnER",
+    "nodes": [
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "glava/phase-a",
+          "options": {}
+        },
+        "id": "c86c9e1f-dbee-4033-9eb1-11705ce5b21e",
+        "name": "Webhook",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 1,
+        "position": [
+          78448,
+          13472
+        ],
+        "webhookId": "glava-phase-a"
+      },
+      {
+        "parameters": {
+          "jsCode": "const body = $('Webhook').first().json.body;const triage_result = $('Extract Triage').first().json.triage_result || {};return [{ json: { wrapped_input: JSON.stringify({  phase: 'A',  project_id: String(body.draft_id || body.telegram_id),  pipeline_variant: triage_result.pipeline_variant || 'standard',  subject: {    name: body.character_name || 'Герой книги',    known_birth_year: body.known_birth_year || triage_result.birth_year_estimate || null,    known_details: body.known_details || null  },  interview: {    id: 'int_001',    speaker: { name: 'Рассказчик', relation_to_subject: 'родственник' },    transcript: body.transcript  },  existing_facts: null}) }}];"
+        },
+        "id": "e3089af8-9271-49ee-969a-eb67a509d640",
+        "name": "Wrap for Fact Extractor",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          78688,
+          13472
+        ]
+      },
+      {
+        "parameters": {
+          "url": "http://127.0.0.1:5001/api/prompts/fact_extractor",
+          "options": {
+            "timeout": 10000
+          }
+        },
+        "id": "3e38a26a-d5d9-416c-b8b7-40b56edbb180",
+        "name": "Get Prompt: Fact Extractor",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4,
+        "position": [
+          78944,
+          13472
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.openai.com/v1/chat/completions",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "={{ 'Bearer ' + $env.OPENAI_API_KEY }}"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "contentType": "raw",
+          "rawContentType": "application/json",
+          "body": "={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [ { role: 'system', content: $('Get Prompt: Fact Extractor').item.json.text || 'Ты Фактолог. Извлеки все факты из транскрипта. Верни только валидный JSON с полями: project_id, subject, persons, timeline, relationships, locations, character_traits, quotes, conflicts, gaps, processing_notes.' }, { role: 'user', content: $('Wrap for Fact Extractor').item.json.wrapped_input } ], temperature: 0.1, max_tokens: 8000 }) }}",
+          "options": {
+            "timeout": 180000
+          }
+        },
+        "id": "665125d8-d99e-410c-b859-18c4ee5e879e",
+        "name": "Fact Extractor",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4,
+        "position": [
+          79184,
+          13472
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const raw = $input.first().json.choices[0].message.content; let fact_map = {}; const t = raw.trim(); const s = t.indexOf('{'); const e = t.lastIndexOf('}'); if (s !== -1 && e > s) { try { fact_map = JSON.parse(t.slice(s, e + 1)); } catch(err) {} } if (!fact_map.subject) { try { fact_map = JSON.parse(t); } catch(err) {} } return [{ json: { fact_map } }];"
+        },
+        "id": "5bb5e172-aece-46e3-8a30-57f8ea186bfe",
+        "name": "Extract Fact Map",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          79440,
+          13472
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const body = $('Webhook').first().json.body; const fact_map = $('Extract Fact Map').first().json.fact_map; return [{ json: { wrapped_input: JSON.stringify({ phase: 'A', project_id: String(body.draft_id || body.telegram_id), fact_map: { persons: fact_map.persons || [], timeline: fact_map.timeline || [], locations: fact_map.locations || [], subject: fact_map.subject || {} }, photos_available: body.photo_count || 0, note: 'Создай подписи к фотографиям и план их размещения в книге на основе карты фактов' }) }}];"
+        },
+        "id": "f9c15c26-7a3b-4008-98a8-8fd519b27bd1",
+        "name": "Wrap for Photo Editor",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          79696,
+          14064
+        ]
+      },
+      {
+        "parameters": {
+          "url": "http://127.0.0.1:5001/api/prompts/photo_editor",
+          "options": {
+            "timeout": 10000
+          }
+        },
+        "id": "a6a3c6d8-6201-48cf-b483-75715b6c56c3",
+        "name": "Get Prompt: Photo Editor",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4,
+        "position": [
+          79936,
+          14064
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.openai.com/v1/chat/completions",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "={{ 'Bearer ' + $env.OPENAI_API_KEY }}"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "contentType": "raw",
+          "rawContentType": "application/json",
+          "body": "={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [ { role: 'system', content: $('Get Prompt: Photo Editor').item.json.text || 'Ты Фоторедактор. На основе карты фактов создай план размещения фотографий в книге. Для каждой фотографии определи подпись (кто изображён, когда и где снято), привязку к главе и порядок. Если фотографий нет — верни пустой массив. Верни только валидный JSON с полями: project_id, photos (id, caption, chapter_id, position, confidence_note), placement_notes.' }, { role: 'user', content: $('Wrap for Photo Editor').item.json.wrapped_input } ], temperature: 0.2, max_tokens: 2000 }) }}",
+          "options": {
+            "timeout": 60000
+          }
+        },
+        "id": "b34e2833-2573-4bd9-a54a-d6361f9d1c3d",
+        "name": "Photo Editor",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4,
+        "position": [
+          80192,
+          14064
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const raw = $input.first().json.choices[0].message.content; let photo_layout = []; const t = raw.trim(); const s = t.indexOf('{'); const e = t.lastIndexOf('}'); if (s !== -1 && e > s) { try { const p = JSON.parse(t.slice(s, e + 1)); photo_layout = p.processed_photos || p.photos || []; } catch(err) {} } return [{ json: { photo_layout } }];"
+        },
+        "id": "1afc9992-d8d2-42fb-a62a-b27bc7443f61",
+        "name": "Extract from Photo Editor",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          80448,
+          14064
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const body = $('Webhook').first().json.body;const fact_map = $('Extract Fact Map').first().json.fact_map;const historical_context = $('Extract Historian').first().json.historical_context || {};const triage_result = $('Extract Triage').first().json.triage_result || {};return [{ json: { wrapped_input: JSON.stringify({  phase: 'A',  project_id: String(body.draft_id || body.telegram_id),  pipeline_variant: triage_result.pipeline_variant || 'standard',  subject: {    name: body.character_name || (fact_map.subject && fact_map.subject.name) || 'Герой книги'  },  fact_map: fact_map,  historical_context: historical_context,  transcripts: [{ interview_id: 'int_001', speaker_name: 'Рассказчик',    relation_to_subject: 'родственник', text: body.transcript }]}) }}];"
+        },
+        "id": "7b43f3b7-bd8f-43fd-8505-b2622e726298",
+        "name": "Wrap for Ghostwriter",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          79696,
+          13472
+        ]
+      },
+      {
+        "parameters": {
+          "url": "http://127.0.0.1:5001/api/prompts/ghostwriter",
+          "options": {
+            "timeout": 10000
+          }
+        },
+        "id": "708b24d8-7414-496d-bf9c-ef287e11949c",
+        "name": "Get Prompt: Ghostwriter",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4,
+        "position": [
+          79936,
+          13472
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.openai.com/v1/chat/completions",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "={{ 'Bearer ' + $env.OPENAI_API_KEY }}"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "contentType": "raw",
+          "rawContentType": "application/json",
+          "body": "={{ JSON.stringify({ model: 'gpt-4o', messages: [ { role: 'system', content: $('Get Prompt: Ghostwriter').item.json.text || 'Ты Писатель-биограф. На основе карты фактов напиши 4 главы книги. Верни только валидный JSON с полями: project_id, version, phase, chapters (id, title, order, content, facts_used, is_modified), table_of_contents, callouts, historical_notes, writing_notes.' }, { role: 'user', content: $('Wrap for Ghostwriter').item.json.wrapped_input } ], temperature: 0.5, max_tokens: 12000 }) }}",
+          "options": {
+            "timeout": 300000
+          }
+        },
+        "id": "18f8d5bd-30d4-45f6-bafd-90a85c2b1d25",
+        "name": "Ghostwriter",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4,
+        "position": [
+          80192,
+          13472
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const raw = $input.first().json.choices[0].message.content; let book_draft = { chapters: [], callouts: [], historical_notes: [] }; const t = raw.trim(); const s = t.indexOf('{'); const e = t.lastIndexOf('}'); if (s !== -1 && e > s) { try { const p = JSON.parse(t.slice(s, e + 1)); if (p.chapters) book_draft = p; } catch(err) {} } return [{ json: { book_draft } }];"
+        },
+        "id": "1344854a-4804-4175-b3e0-482669b55eae",
+        "name": "Extract Book Draft",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          80448,
+          13472
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const body = $('Webhook').first().json.body;const le = $('Call Orch: Literary Edit').first().json;const chapters = le.chapters || [];const hc = $('Extract Historian').first().json.historical_context || {};const historical_backdrop = hc.historical_backdrop || hc.period_overview || '';return [{ json: { wrapped_input: JSON.stringify({  phase: 'A',  project_id: String(body.draft_id || body.telegram_id),  historical_backdrop: historical_backdrop,  book_text: { chapters: chapters, callouts: [], historical_notes: [] }}) }}];"
+        },
+        "id": "6c3f36f4-d122-4801-999a-70bbc0804f7a",
+        "name": "Wrap for Proofreader",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          82688,
+          13472
+        ]
+      },
+      {
+        "parameters": {
+          "url": "http://127.0.0.1:5001/api/prompts/proofreader",
+          "options": {
+            "timeout": 10000
+          }
+        },
+        "id": "6c4a61e7-0396-4e1e-a803-8993d07b1313",
+        "name": "Get Prompt: Proofreader",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4,
+        "position": [
+          82944,
+          13472
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.openai.com/v1/chat/completions",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "={{ 'Bearer ' + $env.OPENAI_API_KEY }}"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "contentType": "raw",
+          "rawContentType": "application/json",
+          "body": "={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [ { role: 'system', content: $('Get Prompt: Proofreader').item.json.text || 'Ты Корректор. Исправь орфографию, пунктуацию, типографику. Единообразие имён, дат, кавычек, тире по всей книге. Нулевая терпимость к опечаткам. Верни только валидный JSON с полями: project_id, chapters (id, title, content, is_modified), corrections, style_passport, summary.' }, { role: 'user', content: $('Wrap for Proofreader').item.json.wrapped_input } ], temperature: 0.0, max_tokens: 12000 }) }}",
+          "options": {
+            "timeout": 180000
+          }
+        },
+        "id": "9ed4b8e2-63b3-4c28-8933-9ba3ab4e8a1f",
+        "name": "Proofreader",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4,
+        "position": [
+          83184,
+          13472
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const raw = $input.first().json.choices[0].message.content; let bio_text = raw; const t = raw.trim(); const s = t.indexOf('{'); const e = t.lastIndexOf('}'); if (s !== -1 && e > s) { try { const p = JSON.parse(t.slice(s, e + 1)); if (p.chapters && p.chapters.length > 0) { bio_text = p.chapters.map(ch => ch.content || '').filter(Boolean).join('\\n\\n'); } } catch(err) {} } return [{ json: { bio_text } }];"
+        },
+        "id": "ecafcff9-2b0a-452e-8619-eb000a5fbef6",
+        "name": "Extract from Proofreader",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          83440,
+          13472
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const body = $('Webhook').first().json.body;const fact_map = $('Extract Fact Map').first().json.fact_map;const book_draft = $('Extract Book Draft').first().json.book_draft;const triage_result = $('Extract Triage').first().json.triage_result || {};const historical_context = $('Extract Historian').first().json.historical_context || {};const subject = fact_map.subject || {};const chapters_summary = (book_draft.chapters || []).map(ch => ({  id: ch.id, title: ch.title || '',  brief_content: (ch.content || '').slice(0, 300) + '...'}));const historical_events = (historical_context.key_historical_events || []).slice(0, 5);return [{ json: { wrapped_input: JSON.stringify({  project_id: String(body.draft_id || body.telegram_id),  subject: {    name: body.character_name || subject.name || 'Герой книги',    birth_year: subject.birth_year || triage_result.birth_year_estimate || null,    death_year: subject.death_year || triage_result.death_year_estimate || null,    birth_place: subject.birth_place || triage_result.primary_location || null  },  period: triage_result.subject_period || null,  key_themes: triage_result.key_themes || [],  gaps: fact_map.gaps || [],  timeline: (fact_map.timeline || []).map(ev => ({    id: ev.id, date: ev.date, title: ev.title, life_period: ev.life_period,    confidence: ev.confidence  })),  persons: (fact_map.persons || []).map(p => ({    id: p.id, name: p.name, relation_to_subject: p.relation_to_subject  })),  locations: (fact_map.locations || []).map(l => ({ id: l.id, name: l.name })),  conflicts: fact_map.conflicts || [],  historical_gaps: historical_events.map(ev => ev.event || ''),  book_chapters_summary: chapters_summary,  complexity: triage_result.complexity || 'medium'}) }}];"
+        },
+        "id": "5376da9b-c928-46b3-b9cc-e878318b30b1",
+        "name": "Wrap for Interview Architect",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          80448,
+          13776
+        ]
+      },
+      {
+        "parameters": {
+          "url": "http://127.0.0.1:5001/api/prompts/interview_architect",
+          "options": {
+            "timeout": 10000
+          }
+        },
+        "id": "e4d8fb0c-3a32-4735-b136-4ca4f18a32b1",
+        "name": "Get Prompt: Interview Architect",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4,
+        "position": [
+          80944,
+          13776
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.openai.com/v1/chat/completions",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "={{ 'Bearer ' + $env.OPENAI_API_KEY }}"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "contentType": "raw",
+          "rawContentType": "application/json",
+          "body": "={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [ { role: 'system', content: $('Get Prompt: Interview Architect').item.json.text || 'Ты Интервьюер. Составь 12-18 уточняющих вопросов для клиента на основе пробелов в биографии. Вопросы тёплые, конкретные — не технические. Группируй по темам. Рекомендуй кому задавать. Верни только валидный JSON с полями: project_id, questions (id, text, category, priority, related_gap, suggested_respondent, what_it_unlocks), question_groups (theme, question_ids, intro_for_client), summary.' }, { role: 'user', content: $('Wrap for Interview Architect').item.json.wrapped_input } ], temperature: 0.5, max_tokens: 4000 }) }}",
+          "options": {
+            "timeout": 120000
+          }
+        },
+        "id": "081dea96-e335-47fd-8379-09166c920eaa",
+        "name": "Interview Architect",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4,
+        "position": [
+          81440,
+          13776
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const raw = $input.first().json.choices[0].message.content; let questions_text = raw; const t = raw.trim(); const s = t.indexOf('{'); const e = t.lastIndexOf('}'); if (s !== -1 && e > s) { try { const p = JSON.parse(t.slice(s, e + 1)); const lines = []; if (p.question_groups && p.question_groups.length > 0) { p.question_groups.forEach(group => { lines.push(''); lines.push(group.theme); if (group.intro_for_client) lines.push(group.intro_for_client); (group.question_ids || []).forEach((qid, i) => { const q = (p.questions || []).find(q2 => q2.id === qid); if (q) lines.push((i + 1) + '. ' + q.text); }); }); if (lines.length > 0) questions_text = lines.join('\\n'); } else if (p.questions && p.questions.length > 0) { questions_text = p.questions.map((q, i) => (i + 1) + '. ' + q.text).join('\\n'); } } catch(err) {} } return [{ json: { questions_text } }];"
+        },
+        "id": "5e537fc9-f8f5-4be3-8de0-f38a0a4b8f7b",
+        "name": "Extract from Interview Architect",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          81936,
+          13776
+        ]
+      },
+      {
+        "parameters": {},
+        "id": "fc362ad8-a82f-4ef2-83f7-d90034396f29",
+        "name": "Merge: Text + Photos",
+        "type": "n8n-nodes-base.merge",
+        "typeVersion": 2,
+        "position": [
+          83696,
+          13776
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const body = $('Webhook').first().json.body;const bio_text = $('Extract from Proofreader').first().json.bio_text || '';const photo_layout = $('Extract from Photo Editor').first().json.photo_layout || [];const cover_spec = $('Extract Cover Designer').first().json.cover_spec || {};return [{ json: { wrapped_input: JSON.stringify({  phase: 'A',  project_id: String(body.draft_id || body.telegram_id),  bio_text_excerpt: bio_text.slice(0, 2000),  chapters_count: 4,  photo_placements: photo_layout,  cover_spec: cover_spec,  format: 'A5_print_ready',  style: cover_spec.visual_style || 'warm_book',  note: 'Создай спецификацию вёрстки PDF на основе обложки и содержания'}) }}];"
+        },
+        "id": "82f97dfa-4bdd-43ba-a65a-312434ee8bf1",
+        "name": "Wrap for Layout Designer",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          83936,
+          13472
+        ]
+      },
+      {
+        "parameters": {
+          "url": "http://127.0.0.1:5001/api/prompts/layout_designer",
+          "options": {
+            "timeout": 10000
+          }
+        },
+        "id": "6500cfcf-02c8-47ba-ac28-0e56e8b81f76",
+        "name": "Get Prompt: Layout Designer",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4,
+        "position": [
+          84192,
+          13472
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.openai.com/v1/chat/completions",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "={{ 'Bearer ' + $env.OPENAI_API_KEY }}"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "contentType": "raw",
+          "rawContentType": "application/json",
+          "body": "={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [ { role: 'system', content: $('Get Prompt: Layout Designer').item.json.text || 'Ты Верстальщик-дизайнер. Создай спецификацию вёрстки семейной книги в формате PDF A5. Оформление: тёплое, книжное, аккуратное. Учти расположение фотографий. Верни только валидный JSON с полями: project_id, layout_spec (cover, chapters_layout, photo_placements, fonts, margins, callout_positions, page_size), estimated_pages, style_notes.' }, { role: 'user', content: $('Wrap for Layout Designer').item.json.wrapped_input } ], temperature: 0.3, max_tokens: 3000 }) }}",
+          "options": {
+            "timeout": 120000
+          }
+        },
+        "id": "10f8311f-5eb6-4a19-937f-d38c09d2d3c5",
+        "name": "Layout Designer",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4,
+        "position": [
+          84448,
+          13472
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const raw = $input.first().json.choices[0].message.content; let layout_spec = {}; let estimated_pages = null; const t = raw.trim(); const s = t.indexOf('{'); const e = t.lastIndexOf('}'); if (s !== -1 && e > s) { try { const p = JSON.parse(t.slice(s, e + 1)); layout_spec = p.layout_spec || p; estimated_pages = p.estimated_pages || null; } catch(err) {} } const bio_text = $('Extract from Proofreader').first().json.bio_text || ''; return [{ json: { layout_spec, estimated_pages, bio_text } }];"
+        },
+        "id": "72b85370-a1c4-4b8f-9595-faeea865420d",
+        "name": "Extract from Layout Designer",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          84688,
+          13472
+        ]
+      },
+      {
+        "parameters": {},
+        "id": "19221d69-eed7-40b7-ae1a-bc1023e05539",
+        "name": "Merge: Layout + Questions",
+        "type": "n8n-nodes-base.merge",
+        "typeVersion": 2,
+        "position": [
+          85936,
+          13616
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const body = $('Webhook').first().json.body;const bio_text = $('Extract from Proofreader').first().json.bio_text || '';const questions_text = $('Extract from Interview Architect').first().json.questions_text || '';const lqa = $('Call Orch: Layout QA').first().json;const cover_spec = $('Extract Cover Designer').first().json.cover_spec || {};const character_name = body.character_name || 'Герой книги';return [{ json: { bio_text, questions_text, wrapped_input: JSON.stringify({    phase: 'A',    project_id: String(body.draft_id || body.telegram_id),    character_name: character_name,    book_title: cover_spec.title || character_name,    book_subtitle: cover_spec.subtitle || 'Семейная биография',    book_tagline: cover_spec.tagline || '',    book_status: 'ready',    chapters_count: 4,    book_excerpt: bio_text.slice(0, 400),    delivery_type: 'phase_a_v1',    layout_qa_verdict: lqa.verdict || 'pass',    estimated_pages: (lqa.layout_spec && lqa.layout_spec.estimated_pages) || null  }),  bio_text: bio_text,  questions_text: questions_text,  character_name: character_name,  cover_spec: cover_spec} }];"
+        },
+        "id": "2a10fa39-39af-4590-9f9b-3fd5501eac58",
+        "name": "Wrap for Producer",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          86192,
+          13616
+        ]
+      },
+      {
+        "parameters": {
+          "url": "http://127.0.0.1:5001/api/prompts/producer",
+          "options": {
+            "timeout": 10000
+          }
+        },
+        "id": "1d7ee99b-ca5d-47a4-bc2f-2a82c04d800f",
+        "name": "Get Prompt: Producer",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4,
+        "position": [
+          86448,
+          13616
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.openai.com/v1/chat/completions",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "={{ 'Bearer ' + $env.OPENAI_API_KEY }}"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "contentType": "raw",
+          "rawContentType": "application/json",
+          "body": "={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [ { role: 'system', content: $('Get Prompt: Producer').item.json.text || 'Ты Продюсер. Книга клиента готова. Напиши тёплое, персонализированное вступительное сообщение для Telegram о том, что первая версия книги (v1) готова. Обратись к герою книги по имени. Упомяни, что книга состоит из 4 глав. Напомни, что прилагается список уточняющих вопросов — отвечать необязательно. Верни только текст сообщения (без JSON, без разметки).' }, { role: 'user', content: $('Wrap for Producer').item.json.wrapped_input } ], temperature: 0.7, max_tokens: 500 }) }}",
+          "options": {
+            "timeout": 60000
+          }
+        },
+        "id": "b615d9fa-e188-46e6-8ed9-2e8f2eeca9f2",
+        "name": "Producer",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4,
+        "position": [
+          86688,
+          13616
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const raw = $input.first().json.choices[0].message.content; let intro_message = raw; const t = raw.trim(); const s = t.indexOf('{'); const e = t.lastIndexOf('}'); if (s !== -1 && e > s) { try { const p = JSON.parse(t.slice(s, e + 1)); intro_message = p.client_note || p.telegram_message || p.intro || p.message || (p.delivery_package && p.delivery_package.client_note); } catch(err) {} } if (!intro_message || (intro_message.startsWith('{') && intro_message.includes('\"'))) { intro_message = 'Книга готова! Ниже текст биографии и уточняющие вопросы — отвечать необязательно.'; } return [{ json: { intro_message } }];"
+        },
+        "id": "b5aa5b65-1666-4a65-b736-fa38be71e60f",
+        "name": "Extract from Producer",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          86944,
+          13616
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "={{ 'https://api.telegram.org/bot' + $('Webhook').item.json.body.bot_token + '/sendMessage' }}",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "contentType": "raw",
+          "rawContentType": "application/json",
+          "body": "={{ JSON.stringify({ chat_id: $('Webhook').item.json.body.telegram_id, text: $('Extract from Producer').item.json.intro_message }) }}",
+          "options": {
+            "timeout": 30000
+          }
+        },
+        "id": "f59d3c6d-262a-4541-91a1-317ffe61f6a1",
+        "name": "Send Intro to Telegram",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4,
+        "position": [
+          87184,
+          13472
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "http://127.0.0.1:5001/api/send-book-pdf",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "contentType": "raw",
+          "rawContentType": "application/json",
+          "body": "={{ JSON.stringify({ telegram_id: $('Webhook').item.json.body.telegram_id, bio_text: $('Wrap for Producer').item.json.bio_text || $('Extract from Proofreader').first().json.bio_text || '', character_name: $('Webhook').item.json.body.character_name || 'Герой книги', draft_id: $('Webhook').item.json.body.draft_id || 0, cover_spec: $('Extract Cover Designer').first().json.cover_spec || {}, photo_layout: $('Extract from Photo Editor').first().json.photo_layout || [] }) }}",
+          "options": {
+            "timeout": 120000
+          }
+        },
+        "id": "d508af64-92a7-44b1-8226-54d5f93eccb6",
+        "name": "Send Bio PDF to Telegram",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4,
+        "position": [
+          87184,
+          13616
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "={{ 'https://api.telegram.org/bot' + $('Webhook').item.json.body.bot_token + '/sendMessage' }}",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "contentType": "raw",
+          "rawContentType": "application/json",
+          "body": "={{ JSON.stringify({ chat_id: $('Webhook').item.json.body.telegram_id, text: '\\u2753 \\u0423\\u0442\\u043e\\u0447\\u043d\\u044f\\u044e\\u0449\\u0438\\u0435 \\u0432\\u043e\\u043f\\u0440\\u043e\\u0441\\u044b \\u2014 \\u043e\\u0442\\u0432\\u0435\\u0447\\u0430\\u0442\\u044c \\u043d\\u0435\\u043e\\u0431\\u044f\\u0437\\u0430\\u0442\\u0435\\u043b\\u044c\\u043d\\u043e:\\n\\n' + $('Wrap for Producer').item.json.questions_text }) }}",
+          "options": {
+            "timeout": 30000
+          }
+        },
+        "id": "8445cafa-d24f-452b-a714-8790a6c09198",
+        "name": "Send Questions to Telegram",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4,
+        "position": [
+          87184,
+          13776
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "http://127.0.0.1:5001/api/jobs/update",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "contentType": "raw",
+          "rawContentType": "application/json",
+          "body": "={{ JSON.stringify({ telegram_id: $('Webhook').item.json.body.telegram_id, phase: 'A', step: 'done', status: 'done' }) }}",
+          "options": {
+            "timeout": 10000
+          }
+        },
+        "id": "1728bc60-4e96-4826-aa5a-e8e7e523d37e",
+        "name": "Update Job Status",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4,
+        "position": [
+          87440,
+          13616
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const body = $('Webhook').first().json.body;const fact_map = $('Extract Fact Map').first().json.fact_map;const book_draft = $('Extract Book Draft').first().json.book_draft;const historical_context = $('Extract Historian').first().json.historical_context || {};return [{ json: { payload: JSON.stringify({  book_draft: book_draft,  fact_map: fact_map,  historical_context: historical_context,  transcripts: [{ interview_id: 'int_001', speaker_name: 'Rasskazchik',    relation_to_subject: 'rodstvennik', text: body.transcript }],  project_id: String(body.draft_id || body.telegram_id),  max_iterations: 3}) }}];"
+        },
+        "id": "7e8c6418-1300-4391-9ed4-07a64f7aa2e0",
+        "name": "Wrap Orch: Fact Check",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          80688,
+          13472
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "http://127.0.0.1:5001/api/orchestrate/fact-check",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "contentType": "raw",
+          "rawContentType": "application/json",
+          "body": "={{ $('Wrap Orch: Fact Check').item.json.payload }}",
+          "options": {
+            "timeout": 900000
+          }
+        },
+        "id": "bc409a11-87e7-49a8-9ece-e50671b0524c",
+        "name": "Call Orch: Fact Check",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4,
+        "position": [
+          80944,
+          13472
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const body = $('Webhook').first().json.body;const fc = $('Call Orch: Fact Check').first().json;const historical_context = $('Extract Historian').first().json.historical_context || {};return [{ json: { payload: JSON.stringify({  book_draft: fc.book_draft || {},  fact_checker_warnings: fc.warnings || [],  historical_context: historical_context,  project_id: String(body.draft_id || body.telegram_id),  max_iterations: 2}) }}];"
+        },
+        "id": "c699e564-b646-433c-a676-e6fb26d8284f",
+        "name": "Wrap Orch: Literary Edit",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          81184,
+          13472
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "http://127.0.0.1:5001/api/orchestrate/literary-edit",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "contentType": "raw",
+          "rawContentType": "application/json",
+          "body": "={{ $('Wrap Orch: Literary Edit').item.json.payload }}",
+          "options": {
+            "timeout": 900000
+          }
+        },
+        "id": "c61bc7aa-a06d-4773-a232-c98c077bc6b5",
+        "name": "Call Orch: Literary Edit",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4,
+        "position": [
+          81440,
+          13472
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const body = $('Webhook').first().json.body;const ld = $('Extract from Layout Designer').first().json;const photo_layout = $('Extract from Photo Editor').first().json.photo_layout || [];const bio_text = $('Extract from Proofreader').first().json.bio_text || '';return [{ json: { payload: JSON.stringify({  layout_spec: ld.layout_spec || {},  bio_text: bio_text,  photo_layout: photo_layout,  project_id: String(body.draft_id || body.telegram_id),  max_iterations: 3}) }}];"
+        },
+        "id": "e121038d-8e69-4fc3-a331-b63ab26d07b1",
+        "name": "Wrap Orch: Layout QA",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          84944,
+          13472
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "http://127.0.0.1:5001/api/orchestrate/layout-qa",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "contentType": "raw",
+          "rawContentType": "application/json",
+          "body": "={{ $('Wrap Orch: Layout QA').item.json.payload }}",
+          "options": {
+            "timeout": 900000
+          }
+        },
+        "id": "d0bdf928-79f7-4225-93af-16107165c936",
+        "name": "Call Orch: Layout QA",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4,
+        "position": [
+          85184,
+          13472
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const body = $('Webhook').first().json.body;return [{ json: { wrapped_input: JSON.stringify({  phase: 'A',  character_name: body.character_name || 'Неизвестно',  transcript_length: (body.transcript || '').length,  transcript_excerpt: (body.transcript || '').slice(0, 3000),  photo_count: body.photo_count || 0,  known_birth_year: body.known_birth_year || null,  known_details: body.known_details || null}) }}];"
+        },
+        "id": "0b752c32-56ec-499f-90b4-3db10c2b0178",
+        "name": "Wrap Triage",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          77440,
+          13472
+        ]
+      },
+      {
+        "parameters": {
+          "url": "http://127.0.0.1:5001/api/prompts/triage_agent",
+          "options": {
+            "timeout": 10000
+          }
+        },
+        "id": "0e583123-fce1-4d99-a1e3-becf99fb42ec",
+        "name": "Get Prompt: Triage",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4,
+        "position": [
+          77696,
+          13472
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.openai.com/v1/chat/completions",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "={{ 'Bearer ' + $env.OPENAI_API_KEY }}"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "contentType": "raw",
+          "rawContentType": "application/json",
+          "body": "={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [ { role: 'system', content: $('Get Prompt: Triage').item.json.text || 'Ты Триаж-агент. Проанализируй транскрипт и определи: 1) pipeline_variant (standard/extended/minimal), 2) subject_period (например \"1940-1980 СССР\"), 3) birth_year_estimate (число или null), 4) complexity (low/medium/high), 5) primary_location (страна/город или null). Верни только валидный JSON с этими полями и кратким reasoning.' }, { role: 'user', content: $('Wrap Triage').item.json.wrapped_input } ], temperature: 0.1, max_tokens: 1000 }) }}",
+          "options": {
+            "timeout": 60000
+          }
+        },
+        "id": "7e3b59e1-9747-40fc-8fe0-dd487936597b",
+        "name": "Triage Agent",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4,
+        "position": [
+          77936,
+          13472
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const raw = $input.first().json.choices[0].message.content;let triage_result = { pipeline_variant: 'standard', subject_period: null,  birth_year_estimate: null, complexity: 'medium', primary_location: null };const t = raw.trim(); const s = t.indexOf('{'); const e = t.lastIndexOf('}');if (s !== -1 && e > s) { try { const p = JSON.parse(t.slice(s, e + 1));  if (p.pipeline_variant || p.complexity) triage_result = p; } catch(err) {} }return [{ json: { triage_result } }];"
+        },
+        "id": "2994e56a-ce1c-4eeb-8144-8a3da707b5a3",
+        "name": "Extract Triage",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          78192,
+          13472
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const body = $('Webhook').first().json.body;const fact_map = $('Extract Fact Map').first().json.fact_map;const triage_result = $('Extract Triage').first().json.triage_result || {};const subject = fact_map.subject || {};const timeline = (fact_map.timeline || []).slice(0, 20);const locations = (fact_map.locations || []).map(l => l.name);return [{ json: { wrapped_input: JSON.stringify({  phase: 'A',  project_id: String(body.draft_id || body.telegram_id),  subject: {    name: body.character_name || subject.name || 'Неизвестно',    birth_year: subject.birth_year || triage_result.birth_year_estimate || null,    birth_place: subject.birth_place || triage_result.primary_location || null,    known_period: triage_result.subject_period || null  },  key_life_events: timeline.map(ev => ({ date: ev.date, event: ev.title || ev.event || '' })),  locations: locations,  complexity: triage_result.complexity || 'medium'}) }}];"
+        },
+        "id": "80fe5681-35f5-4a2a-ac0b-93e14f6497ee",
+        "name": "Wrap Historian",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          79696,
+          13776
+        ]
+      },
+      {
+        "parameters": {
+          "url": "http://127.0.0.1:5001/api/prompts/historian",
+          "options": {
+            "timeout": 10000
+          }
+        },
+        "id": "ec47c622-c9fd-4d12-be03-7b2119daa11a",
+        "name": "Get Prompt: Historian",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4,
+        "position": [
+          79936,
+          13776
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const r = $input.first().json;const historical_context = r.historical_context || {};return [{ json: { historical_context } }];"
+        },
+        "id": "b7d93aba-4e50-4fc2-b61a-3d7c1647363e",
+        "name": "Extract Historian",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          80448,
+          13776
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const body = $('Webhook').first().json.body;const fact_map = $('Extract Fact Map').first().json.fact_map;const historical_context = $('Extract Historian').first().json.historical_context || {};const triage_result = $('Extract Triage').first().json.triage_result || {};const subject = fact_map.subject || {};return [{ json: { wrapped_input: JSON.stringify({  phase: 'A',  project_id: String(body.draft_id || body.telegram_id),  subject: {    name: body.character_name || subject.name || 'Герой книги',    birth_year: subject.birth_year || triage_result.birth_year_estimate || null,    birth_place: subject.birth_place || triage_result.primary_location || null  },  period: triage_result.subject_period || null,  key_themes: triage_result.key_themes || [],  historical_backdrop: historical_context.historical_backdrop || '',  period_overview: historical_context.period_overview || '',  tone: triage_result.language_style || 'warm'}) }}];"
+        },
+        "id": "5a3f709d-4261-4a6a-a896-de07977ead6d",
+        "name": "Wrap Cover Designer",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          81440,
+          13776
+        ]
+      },
+      {
+        "parameters": {
+          "url": "http://127.0.0.1:5001/api/prompts/cover_designer",
+          "options": {
+            "timeout": 10000
+          }
+        },
+        "id": "a404040e-6e4e-41a7-85dc-44ec4cf51a52",
+        "name": "Get Prompt: Cover Designer",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4,
+        "position": [
+          81696,
+          13776
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.openai.com/v1/chat/completions",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "={{ 'Bearer ' + $env.OPENAI_API_KEY }}"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "contentType": "raw",
+          "rawContentType": "application/json",
+          "body": "={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [ { role: 'system', content: $('Get Prompt: Cover Designer').item.json.text || 'Ты Дизайнер обложки семейной книги. Создай концепцию обложки. Верни только валидный JSON с полями: title (заголовок книги — имя героя или поэтичное название), subtitle (подзаголовок, например: Семейная биография), tagline (короткая фраза 5-10 слов — суть жизни героя), image_description (описание образа для обложки в 2-3 предложения), visual_style (warm/classic/modern/vintage), color_palette (описание цветовой гаммы).' }, { role: 'user', content: $('Wrap Cover Designer').item.json.wrapped_input } ], temperature: 0.6, max_tokens: 800 }) }}",
+          "options": {
+            "timeout": 60000
+          }
+        },
+        "id": "026dd448-d4ca-4e86-844a-673396d0544f",
+        "name": "Cover Designer",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4,
+        "position": [
+          81936,
+          13776
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const raw = $input.first().json.choices[0].message.content;let cover_spec = { title: '', subtitle: 'Семейная биография', tagline: '',  image_description: '', visual_style: 'warm', color_palette: 'cream_gold' };const t = raw.trim(); const s = t.indexOf('{'); const e = t.lastIndexOf('}');if (s !== -1 && e > s) { try { const p = JSON.parse(t.slice(s, e + 1));  if (p.title || p.subtitle) cover_spec = { ...cover_spec, ...p }; } catch(err) {} }return [{ json: { cover_spec } }];"
+        },
+        "id": "298ec153-74f0-40f2-9d21-432fedc2b41e",
+        "name": "Extract Cover Designer",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          82192,
+          13776
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "http://127.0.0.1:5001/api/state/transition",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "contentType": "raw",
+          "rawContentType": "application/json",
+          "body": "={{ JSON.stringify({  telegram_id: $('Webhook').first().json.body.telegram_id,  state: 'assembling_phase_a',  draft_id: $('Webhook').first().json.body.draft_id || 0,  character_name: $('Webhook').first().json.body.character_name || '',  phase: 'A'}) }}",
+          "options": {
+            "timeout": 10000
+          }
+        },
+        "id": "c658c84c-63c5-4d1c-a3e1-fd1bed409e62",
+        "name": "State: assembling_phase_a",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4,
+        "position": [
+          78384,
+          13472
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "http://127.0.0.1:5001/api/state/transition",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "contentType": "raw",
+          "rawContentType": "application/json",
+          "body": "={{ JSON.stringify({  telegram_id: $('Webhook').first().json.body.telegram_id,  state: 'delivered_v1',  draft_id: $('Webhook').first().json.body.draft_id || 0,  character_name: $('Webhook').first().json.body.character_name || '',  phase: 'A',  notes: 'PDF delivered'}) }}",
+          "options": {
+            "timeout": 10000
+          }
+        },
+        "id": "6c62eaff-c55e-4b3d-93d7-cbc09988dea4",
+        "name": "State: delivered_v1",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4,
+        "position": [
+          87696,
+          13616
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "={{ 'https://api.telegram.org/bot' + $('Webhook').first().json.body.bot_token + '/sendMessage' }}",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "contentType": "raw",
+          "rawContentType": "application/json",
+          "body": "={{ JSON.stringify({  chat_id: $('Webhook').first().json.body.telegram_id,  text: '📖 Начинаем работу над вашей книгой. Это займёт несколько минут — мы пришлём результат сюда.'}) }}",
+          "options": {
+            "timeout": 15000
+          }
+        },
+        "id": "007d220c-7e17-4caa-b41a-0cd005a7f1c2",
+        "name": "Notify: Pipeline Started",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4,
+        "position": [
+          78384,
+          13312
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const body = $('Webhook').first().json.body;const fact_map = $('Extract Fact Map').first().json.fact_map;const triage = $('Extract Triage').first().json.triage_result || {};return [{ json: { wrapped_input: JSON.stringify({  phase: 'A',  project_id: String(body.draft_id || body.telegram_id),  character_name: body.character_name || 'Герой книги',  pipeline_variant: triage.pipeline_variant || 'standard',  subject_period: triage.subject_period || 'советский',  timeline: (fact_map && fact_map.timeline) || [],  subject: (fact_map && fact_map.subject) || {},  task: 'Добавь исторический контекст: что происходило в стране и мире в ключевые периоды жизни героя. Помоги читателю понять эпоху.'}) } }];"
+        },
+        "id": "17a71843-5d88-4634-bf26-4e534188356f",
+        "name": "Wrap for Historian",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          79696,
+          13776
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "http://127.0.0.1:5001/api/agents/historian",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "contentType": "raw",
+          "rawContentType": "application/json",
+          "body": "={{ JSON.stringify({ fact_map: $('Extract Fact Map').first().json.fact_map || {}, triage_result: $('Extract Triage').first().json.triage_result || {}, character_name: $('Webhook').first().json.body.character_name || 'Герой книги', project_id: String($('Webhook').first().json.body.draft_id || $('Webhook').first().json.body.telegram_id) }) }}",
+          "options": {
+            "timeout": 120000
+          }
+        },
+        "id": "e028f870-196c-429f-9e30-f225cd25d562",
+        "name": "Historian",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4,
+        "position": [
+          80192,
+          13776
+        ]
+      }
+    ],
+    "connections": {
+      "Webhook": {
+        "main": [
+          [
+            {
+              "node": "Wrap Triage",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Wrap for Fact Extractor": {
+        "main": [
+          [
+            {
+              "node": "Get Prompt: Fact Extractor",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Prompt: Fact Extractor": {
+        "main": [
+          [
+            {
+              "node": "Fact Extractor",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fact Extractor": {
+        "main": [
+          [
+            {
+              "node": "Extract Fact Map",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Extract Fact Map": {
+        "main": [
+          [
+            {
+              "node": "Wrap Historian",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Wrap for Photo Editor",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Wrap for Historian",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Wrap for Photo Editor": {
+        "main": [
+          [
+            {
+              "node": "Get Prompt: Photo Editor",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Prompt: Photo Editor": {
+        "main": [
+          [
+            {
+              "node": "Photo Editor",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Photo Editor": {
+        "main": [
+          [
+            {
+              "node": "Extract from Photo Editor",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Extract from Photo Editor": {
+        "main": [
+          [
+            {
+              "node": "Merge: Text + Photos",
+              "type": "main",
+              "index": 1
+            }
+          ]
+        ]
+      },
+      "Wrap for Ghostwriter": {
+        "main": [
+          [
+            {
+              "node": "Get Prompt: Ghostwriter",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Prompt: Ghostwriter": {
+        "main": [
+          [
+            {
+              "node": "Ghostwriter",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Ghostwriter": {
+        "main": [
+          [
+            {
+              "node": "Extract Book Draft",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Extract Book Draft": {
+        "main": [
+          [
+            {
+              "node": "Wrap Orch: Fact Check",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Wrap for Interview Architect",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Wrap for Proofreader": {
+        "main": [
+          [
+            {
+              "node": "Get Prompt: Proofreader",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Prompt: Proofreader": {
+        "main": [
+          [
+            {
+              "node": "Proofreader",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Proofreader": {
+        "main": [
+          [
+            {
+              "node": "Extract from Proofreader",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Extract from Proofreader": {
+        "main": [
+          [
+            {
+              "node": "Merge: Text + Photos",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Wrap for Interview Architect": {
+        "main": [
+          [
+            {
+              "node": "Get Prompt: Interview Architect",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Prompt: Interview Architect": {
+        "main": [
+          [
+            {
+              "node": "Interview Architect",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Interview Architect": {
+        "main": [
+          [
+            {
+              "node": "Extract from Interview Architect",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Extract from Interview Architect": {
+        "main": [
+          [
+            {
+              "node": "Merge: Layout + Questions",
+              "type": "main",
+              "index": 1
+            }
+          ]
+        ]
+      },
+      "Merge: Text + Photos": {
+        "main": [
+          [
+            {
+              "node": "Wrap for Layout Designer",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Wrap for Layout Designer": {
+        "main": [
+          [
+            {
+              "node": "Get Prompt: Layout Designer",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Prompt: Layout Designer": {
+        "main": [
+          [
+            {
+              "node": "Layout Designer",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Layout Designer": {
+        "main": [
+          [
+            {
+              "node": "Extract from Layout Designer",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Extract from Layout Designer": {
+        "main": [
+          [
+            {
+              "node": "Wrap Orch: Layout QA",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Merge: Layout + Questions": {
+        "main": [
+          [
+            {
+              "node": "Wrap for Producer",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Wrap for Producer": {
+        "main": [
+          [
+            {
+              "node": "Get Prompt: Producer",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Prompt: Producer": {
+        "main": [
+          [
+            {
+              "node": "Producer",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Producer": {
+        "main": [
+          [
+            {
+              "node": "Extract from Producer",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Extract from Producer": {
+        "main": [
+          [
+            {
+              "node": "Send Intro to Telegram",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Send Bio PDF to Telegram",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Send Questions to Telegram",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Send Intro to Telegram": {
+        "main": [
+          [
+            {
+              "node": "Update Job Status",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Send Questions to Telegram": {
+        "main": [
+          [
+            {
+              "node": "Update Job Status",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Wrap Orch: Fact Check": {
+        "main": [
+          [
+            {
+              "node": "Call Orch: Fact Check",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Call Orch: Fact Check": {
+        "main": [
+          [
+            {
+              "node": "Wrap Orch: Literary Edit",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Wrap Orch: Literary Edit": {
+        "main": [
+          [
+            {
+              "node": "Call Orch: Literary Edit",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Call Orch: Literary Edit": {
+        "main": [
+          [
+            {
+              "node": "Wrap for Proofreader",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Wrap Cover Designer",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Wrap Orch: Layout QA": {
+        "main": [
+          [
+            {
+              "node": "Call Orch: Layout QA",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Call Orch: Layout QA": {
+        "main": [
+          [
+            {
+              "node": "Merge: Layout + Questions",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Wrap Triage": {
+        "main": [
+          [
+            {
+              "node": "Get Prompt: Triage",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Prompt: Triage": {
+        "main": [
+          [
+            {
+              "node": "Triage Agent",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Triage Agent": {
+        "main": [
+          [
+            {
+              "node": "Extract Triage",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Extract Triage": {
+        "main": [
+          [
+            {
+              "node": "State: assembling_phase_a",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Notify: Pipeline Started",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Wrap Historian": {
+        "main": [
+          [
+            {
+              "node": "Get Prompt: Historian",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Prompt: Historian": {
+        "main": [
+          [
+            {
+              "node": "Historian",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Extract Historian": {
+        "main": [
+          [
+            {
+              "node": "Wrap for Ghostwriter",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Wrap Cover Designer": {
+        "main": [
+          [
+            {
+              "node": "Get Prompt: Cover Designer",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Prompt: Cover Designer": {
+        "main": [
+          [
+            {
+              "node": "Cover Designer",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Cover Designer": {
+        "main": [
+          [
+            {
+              "node": "Extract Cover Designer",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "State: assembling_phase_a": {
+        "main": [
+          [
+            {
+              "node": "Wrap for Fact Extractor",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Update Job Status": {
+        "main": [
+          [
+            {
+              "node": "State: delivered_v1",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Send Bio PDF to Telegram": {
+        "main": [
+          [
+            {
+              "node": "Update Job Status",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Wrap for Historian": {
+        "main": [
+          [
+            {
+              "node": "Get Prompt: Historian",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Historian": {
+        "main": [
+          [
+            {
+              "node": "Extract Historian",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Nikita Morgos",
+    "name": null,
+    "description": null,
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-03-20T06:38:34.133Z",
+        "id": 72,
+        "workflowId": "Cr3pGd3OWqx5SnER",
+        "versionId": "fd80f40a-d6d9-4a71-b73c-9027b1ad7590",
+        "event": "activated",
+        "userId": "9687943e-c471-48f5-a1d4-0cb625fc818d"
+      }
+    ]
+  }
+}

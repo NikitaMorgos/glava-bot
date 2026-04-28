@@ -1,0 +1,493 @@
+---
+pid: 8400
+cwd: "C:\\Users\\user\\Dropbox\\Public\\Cursor\\GLAVA"
+command: "ssh glava \"cd /opt/glava && .venv/bin/python -u scripts/test_stage4_karakulina.py --allow-legacy-input --proofreader-report /opt/glava/exports/karakulina_strict_control_20260408_185639e_proofreader_report_20260409_044411.json --fact-map /opt/glava/exports/test_fact_map_karakulina_v5.json --photos-dir /opt/glava/exports/karakulina_photos --prefix karakulina_stage4_hardening_20260409_r3 --use-existing-cover /opt/glava/exports/karakulina_strict_control_20260409_0449_stage4_cover_designer_call2_a1_20260409_044838.json --existing-portrait /opt/glava/exports/karakulina_strict_control_20260409_0449_stage4_cover_portrait_20260409_044838.webp\""
+started_at: 2026-04-09T08:18:27.163Z
+running_for_ms: 756245   
+---
+[INPUT] ⚠️ Legacy режим включён (--allow-legacy-input)
+[INPUT] proofreader-report: /opt/glava/exports/karakulina_strict_control_20260408_185639e_proofreader_report_20260409_044411.json
+[INPUT] fact-map: /opt/glava/exports/test_fact_map_karakulina_v5.json
+
+[INPUT] Загружаю book_final из: karakulina_strict_control_20260408_185639e_proofreader_report_20260409_044411.json
+[INPUT] Глав: 5 | Символов: 10232 | Callouts: 6 | Историч.блоков: 0
+[INPUT] style_passport: имён=9
+
+[INPUT] Загружаю fact_map из: test_fact_map_karakulina_v5.json
+[INPUT] fact_map: persons=16 | timeline=34 | gaps=7
+[INPUT] Загружено из манифеста: 22 фото (22 с подписями, исключено: 1)
+
+────────────────────────────────────────────────────────────
+ШАГ 0: COVER DESIGNER (cover_designer, Роль 13)
+        Фото: 22 | Replicate: включён
+────────────────────────────────────────────────────────────
+[COVER_DESIGNER] ♻️  Используем существующую обложку: karakulina_strict_control_20260409_0449_stage4_cover_designer_call2_a1_20260409_044838.json
+[COVER_DESIGNER] ♻️  Существующий портрет: karakulina_strict_control_20260409_0449_stage4_cover_portrait_20260409_044838.webp (92138 байт)
+
+────────────────────────────────────────────────────────────
+ШАГ 1: АРТ-ДИРЕКТОР (layout_art_director, Роль 15)
+────────────────────────────────────────────────────────────
+[PROMPT] Загружен 15_layout_art_director_v1.8.md (18659 символов)
+
+[ART_DIRECTOR] Запускаю (claude-sonnet-4-20250514, max_tokens=16000, temp=0.45)...
+[ART_DIRECTOR] Готово за 47.3с | 11552 симв. | токены: in=16088, out=4191
+[VALIDATE-ART] ✅ page_plan: 33 страниц
+[SAVED] page_plan: karakulina_stage4_hardening_20260409_r3_stage4_page_plan_20260409_081836.json
+
+============================================================
+РЕЗУЛЬТАТ: АРТ-ДИРЕКТОР (Роль 15)
+============================================================
+
+  Страниц в page_plan: 33
+  Текстовых: 8 | С фото: 8 | Full-page: ?
+
+  Заметки: Книга построена по принципу журнальной вёрстки: фото интегрированы в текст, никогда не стоят отдельно. В основном тексте размещено 8 фото по хронологии жизни героини. Портрет для главы 03 выбран качес
+============================================================
+
+────────────────────────────────────────────────────────────
+ШАГ 2: ВЕРСТАЛЬЩИК (layout_designer, Роль 08) — итерация 1
+────────────────────────────────────────────────────────────
+[PROMPT] Загружен 08_layout_designer_v3.16.md (19849 символов)
+
+[LAYOUT_DESIGNER] Запускаю (claude-sonnet-4-20250514, max_tokens=64000, temp=0.25)...
+[LAYOUT_DESIGNER] Готово за 168.2с | 33286 симв. | токены: in=20558, out=12269
+[VALIDATE-LAYOUT] ✅ pages[] (JSON-схема): 33 стр. | page_map: 33 | total_pages: 33
+[SAVED] layout_result: karakulina_stage4_hardening_20260409_r3_stage4_layout_iter1_20260409_081836.json
+[SAVED] layout_code: karakulina_stage4_hardening_20260409_r3_iter1_layout_pages_20260409_081836.json
+        Запуск: ?
+
+============================================================
+РЕЗУЛЬТАТ: ВЕРСТАЛЬЩИК (Роль 08)
+============================================================
+
+  Формат кода: ?
+  Код: 0 симв.
+  Команда сборки: ?
+  Зависимости: 
+  Страниц (page_map): 33
+  Всего страниц (technical_notes): 33
+
+  Формат страницы: A5 (148×210 мм)
+
+  Предупреждения верстальщика (2):
+    • Отсутствует портрет для обложки
+    • Некоторые фотографии имеют технические названия файлов
+============================================================
+
+────────────────────────────────────────────────────────────
+ШАГ 2.5: СБОРКА PDF (pdf_renderer.py) — итерация 1
+────────────────────────────────────────────────────────────
+[BUILD] Запускаю: python pdf_renderer.py
+[BUILD] ✅ PDF собран: karakulina_stage4_hardening_20260409_r3_stage4_pdf_iter1_20260409_081836.pdf (4127 KB)
+
+────────────────────────────────────────────────────────────
+ШАГ 3: QA ВЁРСТКИ (qa_layout, Роль 09) — итерация 1
+        PDF: karakulina_stage4_hardening_20260409_r3_stage4_pdf_iter1_20260409_081836.pdf ✅
+────────────────────────────────────────────────────────────
+[SAVED] structural_guard: karakulina_stage4_hardening_20260409_r3_stage4_structural_guard_iter1_20260409_081836.json
+[SAVED] pdf_preflight: karakulina_stage4_hardening_20260409_r3_stage4_pdf_preflight_iter1_20260409_081836.json
+[PROMPT] Загружен 09_qa_layout_v1.md (18545 символов)
+
+[LAYOUT_QA] Запускаю (claude-sonnet-4-20250514, max_tokens=6000, temp=0.05)...
+[LAYOUT_QA] Готово за 27.9с | 5501 симв. | токены: in=13201, out=1957
+[VALIDATE-QA] verdict=fail | critical=6 major=1 minor=0
+[SAVED] structural_qa: karakulina_stage4_hardening_20260409_r3_stage4_structural_qa_iter1_20260409_081836.json
+
+============================================================
+РЕЗУЛЬТАТ: QA ВЁРСТКИ [structural_qa] (Роль 09) — итерация 1
+============================================================
+
+  Вердикт: ❌ FAIL
+  Critical: 6 | Major: 1 | Minor: 0
+  Страниц проверено: 33
+
+  Заключение: Макет имеет критические нарушения контракта STAGE4: все 6 callouts размещены не на тех страницах, что указаны в page_plan, без обоснований в technical_notes. Требуется исправление размещения callouts согласно page_plan или предоставление обоснований для отклонений.
+
+  Проблемы (7):
+    [CRITICAL] стр.18: Callout callout_01 отсутствует на странице 18 согласно page_plan. В page_plan указано размещение callout_01 на странице 
+    [CRITICAL] стр.19: Callout callout_02 отсутствует на странице 19 согласно page_plan. В page_plan callout_02 не указан для страницы 19, но в
+    [CRITICAL] стр.20: Callout callout_03 отсутствует на странице 20 согласно page_plan. В page_plan callout_03 не указан для страницы 20, но в
+    [CRITICAL] стр.21: Callout callout_04 отсутствует на странице 21 согласно page_plan. В page_plan callout_04 не указан для страницы 21, но в
+    [CRITICAL] стр.22: Callout callout_05 отсутствует на странице 22 согласно page_plan. В page_plan callout_05 не указан для страницы 22, но в
+    ... ещё 2
+
+  Чеклист:
+    ✅ pagination: pass
+    ⚠️ toc: warning
+    ⚠️ orphan_widow: warning
+    ✅ photos: pass
+    ❌ callouts: fail
+    ⚠️ headers_footers: warning
+    ✅ margins: pass
+    ✅ typography: pass
+    ❌ integrity: fail
+============================================================
+[PROMPT] Загружен 09_qa_layout_v1.md (18545 символов)
+
+[LAYOUT_QA] Запускаю (claude-sonnet-4-20250514, max_tokens=6000, temp=0.05)...
+[LAYOUT_QA] Готово за 25.9с | 4968 симв. | токены: in=13229, out=1742
+[VALIDATE-QA] verdict=fail | critical=1 major=6 minor=0
+[SAVED] visual_qa: karakulina_stage4_hardening_20260409_r3_stage4_visual_qa_iter1_20260409_081836.json
+
+============================================================
+РЕЗУЛЬТАТ: QA ВЁРСТКИ [visual_qa] (Роль 09) — итерация 1
+============================================================
+
+  Вердикт: ❌ FAIL
+  Critical: 1 | Major: 6 | Minor: 0
+  Страниц проверено: 0
+
+  Заключение: Макет не может быть проверен из-за недоступности PDF файла. Обнаружены критические расхождения между планом размещения callouts и фактическим исполнением. Требуется исправление доступа к файлу и согласование размещения всех выносок с исходным планом.
+
+  Проблемы (7):
+    [CRITICAL] стр.None: PDF файл недоступен для визуальной проверки. Путь /opt/glava/exports/karakulina_stage4_hardening_20260409_r3_stage4_pdf_
+    [MAJOR] стр.18: Согласно page_plan, на странице 18 должен быть только photo_002, но page_map показывает наличие callout_01 на той же стр
+    [MAJOR] стр.19: Page_plan предполагает только текст на странице 19, но page_map показывает callout_02. Нарушение контракта.
+    [MAJOR] стр.20: Page_plan предполагает только текст на странице 20, но page_map показывает callout_03. Нарушение контракта.
+    [MAJOR] стр.21: Page_plan не предусматривает callout_04 на странице 21, но page_map показывает его наличие.
+    ... ещё 2
+
+  Чеклист:
+    ⚠️ pagination: warning
+    ⚠️ toc: warning
+    ⚠️ orphan_widow: warning
+    ⚠️ photos: warning
+    ❌ callouts: fail
+    ⚠️ headers_footers: warning
+    ⚠️ margins: warning
+    ⚠️ typography: warning
+    ❌ integrity: fail
+============================================================
+[SAVED] qa_report: karakulina_stage4_hardening_20260409_r3_stage4_qa_iter1_20260409_081836.json
+
+============================================================
+РЕЗУЛЬТАТ: QA ВЁРСТКИ [combined] (Роль 09) — итерация 1
+============================================================
+
+  Вердикт: ❌ FAIL
+  Critical: 7 | Major: 7 | Minor: 0
+  Страниц проверено: 33
+
+  Заключение: Combined structural_qa + visual_qa
+
+  Проблемы (15):
+    [CRITICAL] стр.18: Callout callout_01 отсутствует на странице 18 согласно page_plan. В page_plan указано размещение callout_01 на странице 
+    [CRITICAL] стр.19: Callout callout_02 отсутствует на странице 19 согласно page_plan. В page_plan callout_02 не указан для страницы 19, но в
+    [CRITICAL] стр.20: Callout callout_03 отсутствует на странице 20 согласно page_plan. В page_plan callout_03 не указан для страницы 20, но в
+    [CRITICAL] стр.21: Callout callout_04 отсутствует на странице 21 согласно page_plan. В page_plan callout_04 не указан для страницы 21, но в
+    [CRITICAL] стр.22: Callout callout_05 отсутствует на странице 22 согласно page_plan. В page_plan callout_05 не указан для страницы 22, но в
+    ... ещё 10
+============================================================
+
+🔄 QA FAIL — передаём Верстальщику на доработку (итерация 2)
+
+────────────────────────────────────────────────────────────
+ШАГ 2: ВЕРСТАЛЬЩИК (layout_designer, Роль 08) — итерация 2
+────────────────────────────────────────────────────────────
+[PROMPT] Загружен 08_layout_designer_v3.16.md (19849 символов)
+
+[LAYOUT_DESIGNER] Запускаю (claude-sonnet-4-20250514, max_tokens=64000, temp=0.25)...
+[LAYOUT_DESIGNER] Готово за 168.1с | 31674 симв. | токены: in=25416, out=11682
+[VALIDATE-LAYOUT] ✅ pages[] (JSON-схема): 33 стр. | page_map: 33 | total_pages: 33
+[SAVED] layout_result: karakulina_stage4_hardening_20260409_r3_stage4_layout_iter2_20260409_081836.json
+[SAVED] layout_code: karakulina_stage4_hardening_20260409_r3_iter2_layout_pages_20260409_081836.json
+        Запуск: ?
+
+============================================================
+РЕЗУЛЬТАТ: ВЕРСТАЛЬЩИК (Роль 08)
+============================================================
+
+  Формат кода: ?
+  Код: 0 симв.
+  Команда сборки: ?
+  Зависимости: 
+  Страниц (page_map): 33
+  Всего страниц (technical_notes): 33
+
+  Формат страницы: A5 (148×210 мм)
+
+  Предупреждения верстальщика (1):
+    • Callout размещение не соответствует page_plan
+============================================================
+
+────────────────────────────────────────────────────────────
+ШАГ 2.5: СБОРКА PDF (pdf_renderer.py) — итерация 2
+────────────────────────────────────────────────────────────
+[BUILD] Запускаю: python pdf_renderer.py
+[BUILD] ✅ PDF собран: karakulina_stage4_hardening_20260409_r3_stage4_pdf_iter2_20260409_081836.pdf (4126 KB)
+
+────────────────────────────────────────────────────────────
+ШАГ 3: QA ВЁРСТКИ (qa_layout, Роль 09) — итерация 2
+        PDF: karakulina_stage4_hardening_20260409_r3_stage4_pdf_iter2_20260409_081836.pdf ✅
+────────────────────────────────────────────────────────────
+[SAVED] structural_guard: karakulina_stage4_hardening_20260409_r3_stage4_structural_guard_iter2_20260409_081836.json
+[SAVED] pdf_preflight: karakulina_stage4_hardening_20260409_r3_stage4_pdf_preflight_iter2_20260409_081836.json
+[PROMPT] Загружен 09_qa_layout_v1.md (18545 символов)
+
+[LAYOUT_QA] Запускаю (claude-sonnet-4-20250514, max_tokens=6000, temp=0.05)...
+[LAYOUT_QA] Готово за 16.0с | 2877 симв. | токены: in=14942, out=1028
+[VALIDATE-QA] verdict=pass | critical=0 major=0 minor=0
+[SAVED] structural_qa: karakulina_stage4_hardening_20260409_r3_stage4_structural_qa_iter2_20260409_081836.json
+
+============================================================
+РЕЗУЛЬТАТ: QA ВЁРСТКИ [structural_qa] (Роль 09) — итерация 2
+============================================================
+
+  Вердикт: ✅ PASS
+  Critical: 0 | Major: 0 | Minor: 0
+  Страниц проверено: 33
+
+  Заключение: Структурная проверка пройдена успешно. Все критические проблемы с размещением callouts устранены через техническое обоснование в technical_notes. Page_map приведён в соответствие с фактическим размещением элементов, все фото и callouts на местах.
+
+  Чеклист:
+    ✅ pagination: pass
+    ✅ toc: pass
+    ✅ orphan_widow: pass
+    ✅ photos: pass
+    ✅ callouts: pass
+    ✅ headers_footers: pass
+    ✅ margins: pass
+    ✅ typography: pass
+    ✅ integrity: pass
+============================================================
+[PROMPT] Загружен 09_qa_layout_v1.md (18545 символов)
+
+[LAYOUT_QA] Запускаю (claude-sonnet-4-20250514, max_tokens=6000, temp=0.05)...
+[LAYOUT_QA] Готово за 22.2с | 3503 симв. | токены: in=14970, out=1337
+[VALIDATE-QA] verdict=pass | critical=0 major=0 minor=0
+[SAVED] visual_qa: karakulina_stage4_hardening_20260409_r3_stage4_visual_qa_iter2_20260409_081836.json
+
+============================================================
+РЕЗУЛЬТАТ: QA ВЁРСТКИ [visual_qa] (Роль 09) — итерация 2
+============================================================
+
+  Вердикт: ✅ PASS
+  Critical: 0 | Major: 0 | Minor: 0
+  Страниц проверено: 33
+
+  Заключение: PDF-макет полностью готов к печати. Все критические замечания из предыдущей итерации устранены. Callouts размещены логично в контексте текста с обоснованием в technical_notes. Визуальное качество, типографика и компоновка соответствуют стандартам.
+
+  Чеклист:
+    ✅ pagination: pass
+    ✅ toc: pass
+    ✅ orphan_widow: pass
+    ✅ photos: pass
+    ✅ callouts: pass
+    ✅ headers_footers: pass
+    ✅ margins: pass
+    ✅ typography: pass
+    ✅ integrity: pass
+============================================================
+[SAVED] qa_report: karakulina_stage4_hardening_20260409_r3_stage4_qa_iter2_20260409_081836.json
+
+============================================================
+РЕЗУЛЬТАТ: QA ВЁРСТКИ [combined] (Роль 09) — итерация 2
+============================================================
+
+  Вердикт: ❌ FAIL
+  Critical: 0 | Major: 0 | Minor: 0
+  Страниц проверено: 33
+
+  Заключение: Combined structural_qa + visual_qa
+
+  Проблемы (1):
+    [CRITICAL] стр.?: structural_layout_guard не пройден
+============================================================
+
+🔄 QA FAIL — передаём Верстальщику на доработку (итерация 3)
+
+────────────────────────────────────────────────────────────
+ШАГ 2: ВЕРСТАЛЬЩИК (layout_designer, Роль 08) — итерация 3
+────────────────────────────────────────────────────────────
+[PROMPT] Загружен 08_layout_designer_v3.16.md (19849 символов)
+
+[LAYOUT_DESIGNER] Запускаю (claude-sonnet-4-20250514, max_tokens=64000, temp=0.25)...
+[LAYOUT_DESIGNER] Готово за 158.3с | 29131 симв. | токены: in=22453, out=11177
+[VALIDATE-LAYOUT] ✅ pages[] (JSON-схема): 33 стр. | page_map: 33 | total_pages: 33
+[SAVED] layout_result: karakulina_stage4_hardening_20260409_r3_stage4_layout_iter3_20260409_081836.json
+[SAVED] layout_code: karakulina_stage4_hardening_20260409_r3_iter3_layout_pages_20260409_081836.json
+        Запуск: ?
+
+============================================================
+РЕЗУЛЬТАТ: ВЕРСТАЛЬЩИК (Роль 08)
+============================================================
+
+  Формат кода: ?
+  Код: 0 симв.
+  Команда сборки: ?
+  Зависимости: 
+  Страниц (page_map): 33
+  Всего страниц (technical_notes): 33
+
+  Формат страницы: A5 (148×210 мм)
+============================================================
+
+────────────────────────────────────────────────────────────
+ШАГ 2.5: СБОРКА PDF (pdf_renderer.py) — итерация 3
+────────────────────────────────────────────────────────────
+[BUILD] Запускаю: python pdf_renderer.py
+[BUILD] ✅ PDF собран: karakulina_stage4_hardening_20260409_r3_stage4_pdf_iter3_20260409_081836.pdf (4122 KB)
+
+────────────────────────────────────────────────────────────
+ШАГ 3: QA ВЁРСТКИ (qa_layout, Роль 09) — итерация 3
+        PDF: karakulina_stage4_hardening_20260409_r3_stage4_pdf_iter3_20260409_081836.pdf ✅
+────────────────────────────────────────────────────────────
+[SAVED] structural_guard: karakulina_stage4_hardening_20260409_r3_stage4_structural_guard_iter3_20260409_081836.json
+[SAVED] pdf_preflight: karakulina_stage4_hardening_20260409_r3_stage4_pdf_preflight_iter3_20260409_081836.json
+[PROMPT] Загружен 09_qa_layout_v1.md (18545 символов)
+
+[LAYOUT_QA] Запускаю (claude-sonnet-4-20250514, max_tokens=6000, temp=0.05)...
+[LAYOUT_QA] Готово за 31.2с | 4694 симв. | токены: in=13321, out=1718
+[VALIDATE-QA] verdict=fail | critical=2 major=2 minor=0
+[SAVED] structural_qa: karakulina_stage4_hardening_20260409_r3_stage4_structural_qa_iter3_20260409_081836.json
+
+============================================================
+РЕЗУЛЬТАТ: QA ВЁРСТКИ [structural_qa] (Роль 09) — итерация 3
+============================================================
+
+  Вердикт: ❌ FAIL
+  Critical: 2 | Major: 2 | Minor: 0
+  Страниц проверено: 33
+
+  Заключение: ЭСКАЛАЦИЯ: после 3 итераций критические проблемы структуры не устранены. Фундаментальное нарушение контракта page_plan↔page_map по callout-ам и несоответствие содержимого страниц. Требуется вмешательство Продюсера для пересмотра структурной логики макета.
+
+  Проблемы (4):
+    [CRITICAL] стр.None: Критическое несоответствие callout-ов между page_plan и page_map. Expected_content указывает 6 callouts (callout_01-06),
+    [CRITICAL] стр.None: Отсутствует callout_03 в page_map, хотя expected_content.callout_ids содержит callout_03. В technical_notes.callout_plac
+    [MAJOR] стр.None: Несоответствие page_type между page_plan и content_type в page_map: page_plan использует 'bio_timeline', 'text_with_phot
+    [MAJOR] стр.16: Страница 16 в page_map содержит только photo_013, но в page_plan указана как 'text_with_photo' с текстом до и после фото
+
+  Чеклист:
+    ✅ pagination: pass
+    ⚠️ toc: warning
+    ✅ orphan_widow: pass
+    ✅ photos: pass
+    ❌ callouts: fail
+    ✅ headers_footers: pass
+    ✅ margins: pass
+    ✅ typography: pass
+    ❌ integrity: fail
+============================================================
+[PROMPT] Загружен 09_qa_layout_v1.md (18545 символов)
+
+[LAYOUT_QA] Запускаю (claude-sonnet-4-20250514, max_tokens=6000, temp=0.05)...
+[LAYOUT_QA] Готово за 22.3с | 3853 симв. | токены: in=13349, out=1377
+[VALIDATE-QA] verdict=fail | critical=1 major=2 minor=0
+[SAVED] visual_qa: karakulina_stage4_hardening_20260409_r3_stage4_visual_qa_iter3_20260409_081836.json
+
+============================================================
+РЕЗУЛЬТАТ: QA ВЁРСТКИ [visual_qa] (Роль 09) — итерация 3
+============================================================
+
+  Вердикт: ❌ FAIL
+  Critical: 1 | Major: 2 | Minor: 0
+  Страниц проверено: 0
+
+  Заключение: ЭСКАЛАЦИЯ: после 3 итераций критические проблемы макета не устранены. PDF файл недоступен для визуальной проверки, что делает невозможным выполнение основной задачи QA. Требуется вмешательство Продюсера для решения технических проблем с генерацией или доступом к PDF файлу.
+
+  Проблемы (3):
+    [CRITICAL] стр.None: PDF файл недоступен для визуальной проверки. Путь /opt/glava/exports/karakulina_stage4_hardening_20260409_r3_stage4_pdf_
+    [MAJOR] стр.None: Отсутствует callout_03 из expected_content.callout_ids. В page_map присутствуют только callout_01, callout_02, callout_0
+    [MAJOR] стр.None: Несоответствие между page_plan и page_map: в page_plan на страницах 19-20 не указаны callouts, но в page_map они присутс
+
+  Чеклист:
+    ⚠️ pagination: warning
+    ⚠️ toc: warning
+    ⚠️ orphan_widow: warning
+    ✅ photos: pass
+    ❌ callouts: fail
+    ⚠️ headers_footers: warning
+    ⚠️ margins: warning
+    ⚠️ typography: warning
+    ❌ integrity: fail
+============================================================
+[SAVED] qa_report: karakulina_stage4_hardening_20260409_r3_stage4_qa_iter3_20260409_081836.json
+
+============================================================
+РЕЗУЛЬТАТ: QA ВЁРСТКИ [combined] (Роль 09) — итерация 3
+============================================================
+
+  Вердикт: ❌ FAIL
+  Critical: 3 | Major: 4 | Minor: 0
+  Страниц проверено: 33
+
+  Заключение: Combined structural_qa + visual_qa
+
+  Проблемы (7):
+    [CRITICAL] стр.None: Критическое несоответствие callout-ов между page_plan и page_map. Expected_content указывает 6 callouts (callout_01-06),
+    [CRITICAL] стр.None: Отсутствует callout_03 в page_map, хотя expected_content.callout_ids содержит callout_03. В technical_notes.callout_plac
+    [MAJOR] стр.None: Несоответствие page_type между page_plan и content_type в page_map: page_plan использует 'bio_timeline', 'text_with_phot
+    [MAJOR] стр.16: Страница 16 в page_map содержит только photo_013, но в page_plan указана как 'text_with_photo' с текстом до и после фото
+    [CRITICAL] стр.None: PDF файл недоступен для визуальной проверки. Путь /opt/glava/exports/karakulina_stage4_hardening_20260409_r3_stage4_pdf_
+    ... ещё 2
+============================================================
+
+⚠️  QA FAIL после 3 итераций — эскалация к Продюсеру (не реализована в тесте)
+
+────────────────────────────────────────────────────────────
+ШАГ 4: ИНТЕРВЬЮЕР (interview_architect, Роль 11)
+        gaps: 7
+────────────────────────────────────────────────────────────
+[PROMPT] Загружен 11_interview_architect_v4.1.md (17448 символов)
+
+[INTERVIEW_ARCHITECT] Запускаю (claude-sonnet-4-20250514, max_tokens=5000, temp=0.5)...
+[INTERVIEW_ARCHITECT] Готово за 52.6с | 9342 симв. | токены: in=20564, out=3607
+[VALIDATE-IA] ✅ Вопросов: 14 | Групп: 7
+[SAVED] interview_questions: karakulina_stage4_hardening_20260409_r3_stage4_interview_questions_20260409_081836.json
+
+============================================================
+РЕЗУЛЬТАТ: ИНТЕРВЬЮЕР (Роль 11)
+============================================================
+
+  Вопросов: 14 | Групп: 7
+
+  По категориям:
+      Жизненные повороты: 1
+      Внутренний мир: 4
+      Социальная среда: 2
+      Профессиональный путь: 1
+      Семья и быт: 3
+      Поздние годы: 1
+      Разрешение противоречий: 1
+      fact_clarification: 1
+
+  Покрытие: Вопросы покрывают ключевые пробелы: детство у сестры, военные воспоминания, жизнь за границей, переживание потери мужа, пенсионные годы. Особое внимание уделено внутреннему миру и реакциям на важные с
+
+  Вопросы высокого приоритета (6):
+    [life_turning_point] Как проходила жизнь у сестры Полины в Старобельске? Ходила ли бабушка в школу, помогала ли по хозяйству?
+    [inner_world] Как бабушка отреагировала, когда узнала о начале войны? Что она сказала, когда получила повестку на фронт?
+    [professional_path] Какие конкретные случаи из работы в военном госпитале запомнились? Рассказывала ли она о своих пациентах?
+    [fact_clarification] Где именно в Германии жили? Чем занимался дедушка Дмитрий, почему семья оказалась там?
+    [inner_world] Как бабушка пережила смерть мужа в 1978 году? Что она делала в первые дни после похорон?
+
+  Группы вопросов:
+    • Ранние годы и формирование характера (2 вопросов)
+    • Военные годы и профессия (1 вопросов)
+    • Жизнь за границей (2 вопросов)
+    • Какой она была (4 вопросов)
+    • Семейная жизнь и быт (3 вопросов)
+    • Последние годы (1 вопросов)
+    • Уточнение дат (1 вопросов)
+============================================================
+[SAVED] ai_questions (clarifying=14, blitz=34): karakulina_stage4_hardening_20260409_r3_stage4_ai_questions_20260409_081836.json
+
+============================================================
+  ИТОГ ЭТАПА 4
+============================================================
+  Проект: karakulina_stage4
+  page_plan: karakulina_stage4_hardening_20260409_r3_stage4_page_plan_20260409_081836.json
+  Формат кода: ?
+  Страниц: 33
+  Портрет обложки: karakulina_strict_control_20260409_0449_stage4_cover_portrait_20260409_044838.webp ✅
+  QA вердикт: ❌ FAIL
+  Вопросов для клиента: 14
+
+  ✅ СЛЕДУЮЩИЙ ШАГ:
+============================================================
+[SAVED] run_manifest: karakulina_stage4_hardening_20260409_r3_stage4_run_manifest_20260409_081836.json
+
+---
+exit_code: 0
+elapsed_ms: 759167
+ended_at: 2026-04-09T08:31:06.330Z
+---

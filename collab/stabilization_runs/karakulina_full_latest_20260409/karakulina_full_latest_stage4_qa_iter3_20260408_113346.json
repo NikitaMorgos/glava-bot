@@ -1,0 +1,73 @@
+{
+  "project_id": "karakulina_stage4",
+  "iteration": 3,
+  "verdict": "fail",
+  "issues": [
+    {
+      "id": "issue_001",
+      "category": "integrity",
+      "severity": "critical",
+      "page": null,
+      "description": "PDF-файл по пути /opt/glava/exports/karakulina_full_latest_stage4_pdf_iter3_20260408_113346.pdf недоступен для визуальной проверки. Невозможно выполнить основную задачу QA — проверку визуального качества макета.",
+      "fix_suggestion": "Убедиться, что PDF-файл корректно сгенерирован и сохранён по указанному пути. Проверить права доступа к файлу и его целостность. Возможно, требуется повторная генерация PDF."
+    }
+  ],
+  "checklist": {
+    "pagination": {
+      "status": "fail",
+      "details": "Невозможно проверить нумерацию страниц без доступа к PDF-файлу"
+    },
+    "toc": {
+      "status": "fail",
+      "details": "Невозможно сверить оглавление с реальными страницами без визуального доступа к макету"
+    },
+    "orphan_widow": {
+      "status": "fail",
+      "details": "Невозможно проверить висячие строки без визуального анализа страниц"
+    },
+    "photos": {
+      "status": "fail",
+      "total_expected": 22,
+      "total_found": 0,
+      "details": "Невозможно проверить размещение, обрезку и подписи фотографий без доступа к PDF"
+    },
+    "callouts": {
+      "status": "fail",
+      "total_expected": 6,
+      "total_found": 0,
+      "details": "Невозможно проверить оформление и размещение выносок без визуального доступа"
+    },
+    "headers_footers": {
+      "status": "fail",
+      "details": "Невозможно проверить колонтитулы без просмотра страниц"
+    },
+    "margins": {
+      "status": "fail",
+      "details": "Невозможно проверить соответствие полей style_guide без визуального анализа"
+    },
+    "typography": {
+      "status": "fail",
+      "details": "Невозможно проверить шрифты, читаемость и embedded fonts без доступа к PDF"
+    },
+    "integrity": {
+      "status": "fail",
+      "details": "Критическая проблема: PDF-файл недоступен для проверки"
+    }
+  },
+  "regression_check": {
+    "performed": true,
+    "previous_issues_resolved": [
+      {
+        "issue_id": "issue_001",
+        "status": "persists"
+      }
+    ]
+  },
+  "summary": {
+    "critical_issues": 1,
+    "major_issues": 0,
+    "minor_issues": 0,
+    "total_pages_checked": 0,
+    "overall_assessment": "ЭСКАЛАЦИЯ: после 3 итераций критические проблемы макета не устранены. Требуется вмешательство Продюсера. PDF-файл остаётся недоступным для визуальной проверки, что делает невозможным выполнение основной задачи QA. Проблема носит технический характер и требует диагностики процесса генерации PDF."
+  }
+}

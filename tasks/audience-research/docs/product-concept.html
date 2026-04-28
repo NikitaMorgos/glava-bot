@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ГЛАВА — Концепт продукта и план развития</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#f9f7f2; --paper:#f0ead9; --parchment:#dfd5c2;
+    --ink:#181208; --brown:#44311f; --muted:#72614e;
+    --gold:#a8823c; --gold-light:#c9a05e; --white:#ffffff;
+    --red:#c0392b; --orange:#d4760a; --green:#27ae60;
+    --phase0:#181208; --phase1:#3a5a3a; --phase2:#3a4a6a; --phase3:#6a3a5a;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Manrope',sans-serif;background:var(--cream);color:var(--ink);font-size:15px;line-height:1.7}
+
+  /* ── NAV ── */
+  nav{position:sticky;top:0;z-index:100;background:rgba(249,247,242,.94);backdrop-filter:blur(14px);border-bottom:1px solid var(--parchment);padding:0 2.5rem;display:flex;align-items:center;justify-content:space-between;height:54px}
+  .nav-logo{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700}
+  .nav-logo span{color:var(--gold)}
+  .nav-links{display:flex;gap:1.75rem;list-style:none;font-size:.73rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase}
+  .nav-links a{color:var(--muted);text-decoration:none;transition:color .2s}
+  .nav-links a:hover{color:var(--gold)}
+  .nav-doc{font-size:.7rem;color:var(--muted);font-weight:500}
+
+  /* ── COVER ── */
+  .cover{min-height:100vh;background:var(--ink);display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:6rem 2.5rem;position:relative;overflow:hidden}
+  .cover::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 90% 60% at 50% -5%,rgba(168,130,60,.18) 0%,transparent 65%)}
+  .cover::after{content:'ГЛАВА';position:absolute;bottom:-80px;left:50%;transform:translateX(-50%);font-family:'Playfair Display',serif;font-size:28rem;font-weight:700;color:rgba(255,255,255,.018);white-space:nowrap;pointer-events:none;line-height:1}
+  .cover-eyebrow{font-size:.65rem;font-weight:700;letter-spacing:.25em;text-transform:uppercase;color:var(--gold);margin-bottom:1.5rem;position:relative}
+  .cover h1{font-family:'Playfair Display',serif;font-size:clamp(3rem,7vw,5.5rem);font-weight:700;color:var(--cream);line-height:1.0;margin-bottom:1.5rem;position:relative}
+  .cover h1 em{font-style:italic;color:var(--gold-light)}
+  .cover-desc{font-size:1.05rem;color:rgba(249,247,242,.55);max-width:600px;margin:0 auto 3rem;line-height:1.75;position:relative}
+  .cover-meta{display:flex;justify-content:center;gap:2rem;flex-wrap:wrap;position:relative}
+  .cover-meta-item{text-align:center;padding:.6rem 1.5rem;border:1px solid rgba(168,130,60,.35);border-radius:8px}
+  .cover-meta-item .m-val{font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:700;color:var(--gold-light)}
+  .cover-meta-item .m-lab{font-size:.65rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(249,247,242,.4);margin-top:.1rem}
+  .scroll-hint{position:absolute;bottom:2.5rem;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:.5rem;color:rgba(249,247,242,.25);font-size:.7rem;letter-spacing:.1em;text-transform:uppercase}
+  .scroll-hint-dot{width:6px;height:6px;border-radius:50%;background:var(--gold);animation:bounce 1.8s ease-in-out infinite}
+  @keyframes bounce{0%,100%{transform:translateY(0);opacity:.4}50%{transform:translateY(8px);opacity:1}}
+
+  /* ── SECTION HEADERS ── */
+  .section-strip{padding:3rem 2.5rem;text-align:center;border-top:1px solid var(--parchment);border-bottom:1px solid var(--parchment)}
+  .section-strip.dark{background:var(--ink)}
+  .section-strip.paper{background:var(--paper)}
+  .sec-label{font-size:.65rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:.5rem}
+  .sec-title{font-family:'Playfair Display',serif;font-size:clamp(1.7rem,3.5vw,2.8rem);font-weight:700}
+  .section-strip.dark .sec-title{color:var(--cream)}
+  .sec-sub{margin-top:.6rem;font-size:.95rem;color:var(--muted);max-width:580px;margin-left:auto;margin-right:auto}
+  .section-strip.dark .sec-sub{color:rgba(249,247,242,.5)}
+
+  /* ── CONTAINER ── */
+  .w{max-width:1080px;margin:0 auto;padding:5rem 2.5rem}
+  .w.tight{max-width:760px}
+  h2.s{font-family:'Playfair Display',serif;font-size:1.55rem;font-weight:700;margin-bottom:1.75rem}
+  h3.ss{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;color:var(--brown);margin-bottom:.75rem}
+  hr.d{border:none;border-top:1px solid var(--parchment);margin:3rem 0}
+
+  /* ── INSIGHT CALLOUT ── */
+  .callout{background:var(--paper);border-left:4px solid var(--gold);border-radius:0 10px 10px 0;padding:1.25rem 1.5rem;margin-bottom:2rem}
+  .callout-label{font-size:.62rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--gold);margin-bottom:.35rem}
+  .callout p{font-size:.9rem;color:var(--brown);line-height:1.65}
+  .callout p strong{color:var(--ink)}
+
+  /* ── VALUE PROPS ── */
+  .vp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-bottom:3rem}
+  @media(max-width:750px){.vp-grid{grid-template-columns:1fr}}
+  .vp-card{background:var(--white);border:1px solid var(--parchment);border-radius:12px;padding:1.75rem;position:relative;overflow:hidden}
+  .vp-card::before{content:attr(data-icon);position:absolute;top:-5px;right:10px;font-size:4rem;opacity:.08;line-height:1;pointer-events:none}
+  .vp-num{font-family:'Playfair Display',serif;font-size:3rem;font-weight:700;color:var(--parchment);line-height:1;margin-bottom:.5rem}
+  .vp-card h4{font-weight:700;font-size:1rem;color:var(--ink);margin-bottom:.5rem}
+  .vp-card p{font-size:.84rem;color:var(--muted);line-height:1.65}
+  .vp-source{display:inline-block;margin-top:.75rem;font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:.2rem .6rem;border-radius:4px;background:var(--paper);color:var(--muted)}
+
+  /* ── USER FLOWS ── */
+  .flow-tabs{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1.5rem}
+  .flow-tab{padding:.4rem 1rem;border-radius:20px;font-size:.8rem;font-weight:600;border:1.5px solid var(--parchment);cursor:pointer;transition:all .2s;background:var(--white)}
+  .flow-tab.active{background:var(--ink);color:var(--cream);border-color:var(--ink)}
+  .flow-content{display:none}
+  .flow-content.active{display:block}
+  .flow-steps{display:flex;flex-direction:column;gap:.75rem}
+  .flow-step{display:flex;gap:1rem;align-items:flex-start;background:var(--white);border:1px solid var(--parchment);border-radius:10px;padding:1rem 1.25rem}
+  .flow-step-num{width:28px;height:28px;border-radius:50%;background:var(--ink);color:var(--cream);font-size:.75rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .flow-step-body h5{font-weight:700;font-size:.9rem;color:var(--ink)}
+  .flow-step-body p{font-size:.82rem;color:var(--muted);line-height:1.55;margin-top:.2rem}
+  .flow-step.gap{border-color:#f0b8b8;background:#fff9f9}
+  .flow-step.gap .flow-step-num{background:var(--red)}
+  .flow-step.gap .flow-step-body h5{color:var(--red)}
+
+  /* ── MVP BOX ── */
+  .mvp-box{background:var(--ink);border-radius:16px;padding:3rem;margin-bottom:3rem;position:relative;overflow:hidden}
+  .mvp-box::before{content:'MVP';position:absolute;bottom:-40px;right:-20px;font-family:'Playfair Display',serif;font-size:12rem;font-weight:700;color:rgba(255,255,255,.03);line-height:1;pointer-events:none}
+  .mvp-box .mvp-title{font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:700;color:var(--cream);margin-bottom:.5rem}
+  .mvp-box .mvp-sub{font-size:.9rem;color:rgba(249,247,242,.5);margin-bottom:2rem}
+  .mvp-cols{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.5rem}
+  @media(max-width:750px){.mvp-cols{grid-template-columns:1fr}}
+  .mvp-col h4{font-size:.65rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--gold);margin-bottom:.75rem}
+  .mvp-item{font-size:.84rem;color:rgba(249,247,242,.65);padding-left:1rem;position:relative;margin-bottom:.45rem;line-height:1.55}
+  .mvp-item::before{content:'→';position:absolute;left:0;color:var(--gold);font-size:.75rem;top:.08rem}
+
+  /* ── PHASE ROADMAP ── */
+  .phases{display:flex;flex-direction:column;gap:0}
+  .phase{border-radius:14px;overflow:hidden;margin-bottom:1.5rem}
+  .phase-header{padding:1.5rem 2rem;display:flex;align-items:center;gap:1.25rem;cursor:pointer;user-select:none}
+  .phase-header:hover{filter:brightness(1.05)}
+  .phase-badge{font-size:.68rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#fff;padding:.3rem .9rem;border-radius:6px;white-space:nowrap;flex-shrink:0}
+  .phase-title-block{flex:1}
+  .phase-title-block h3{font-family:'Playfair Display',serif;font-size:1.25rem;font-weight:700;color:#fff}
+  .phase-title-block .phase-meta{font-size:.78rem;color:rgba(255,255,255,.55);margin-top:.15rem}
+  .phase-toggle{width:26px;height:26px;border-radius:50%;border:1.5px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;font-size:1rem;color:rgba(255,255,255,.6);transition:transform .25s;flex-shrink:0}
+  .phase-toggle.open{transform:rotate(45deg)}
+  .phase-body{display:none;background:var(--white);padding:2rem;border:1px solid var(--parchment);border-top:none;border-radius:0 0 14px 14px}
+  .phase-body.open{display:block}
+  .phase-cols{display:grid;grid-template-columns:1fr 1fr;gap:2rem}
+  @media(max-width:700px){.phase-cols{grid-template-columns:1fr}}
+  .task-list{display:flex;flex-direction:column;gap:.6rem}
+  .task-item{display:flex;gap:.75rem;align-items:flex-start}
+  .task-dot{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:700;color:#fff;flex-shrink:0;margin-top:.15rem}
+  .task-text{font-size:.875rem;color:var(--brown);line-height:1.55}
+  .task-text strong{color:var(--ink)}
+  .phase-metric{background:var(--paper);border-radius:10px;padding:1.25rem 1.5rem;margin-top:1.5rem}
+  .phase-metric-label{font-size:.62rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--gold);margin-bottom:.5rem}
+  .metric-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
+  @media(max-width:600px){.metric-grid{grid-template-columns:1fr 1fr}}
+  .metric-item{text-align:center}
+  .metric-val{font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:700;color:var(--ink)}
+  .metric-lab{font-size:.7rem;color:var(--muted);margin-top:.1rem}
+
+  .seg-chip{display:inline-block;font-size:.68rem;font-weight:700;padding:.15rem .55rem;border-radius:4px;color:#fff;margin:.1rem}
+
+  /* ── NORTH STAR ── */
+  .north-star{background:var(--paper);border:1px solid var(--parchment);border-radius:16px;padding:3rem;text-align:center;margin-bottom:3rem}
+  .north-star-label{font-size:.65rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:1rem}
+  .north-star-metric{font-family:'Playfair Display',serif;font-size:clamp(2.5rem,6vw,4.5rem);font-weight:700;color:var(--ink);line-height:1.1;margin-bottom:.75rem}
+  .north-star-sub{font-size:.9rem;color:var(--muted);max-width:500px;margin:0 auto}
+
+  /* ── RISK TABLE ── */
+  .risk-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:3rem}
+  @media(max-width:700px){.risk-grid{grid-template-columns:1fr}}
+  .risk-card{background:var(--white);border:1px solid var(--parchment);border-radius:10px;padding:1.4rem}
+  .risk-level{font-size:.62rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin-bottom:.4rem}
+  .risk-high .risk-level{color:var(--red)}
+  .risk-med .risk-level{color:var(--orange)}
+  .risk-card h4{font-weight:700;font-size:.9rem;color:var(--ink);margin-bottom:.4rem}
+  .risk-card p{font-size:.82rem;color:var(--muted);line-height:1.6}
+  .risk-card .mitigation{margin-top:.6rem;font-size:.8rem;padding:.5rem .75rem;border-radius:6px;background:var(--paper)}
+  .risk-high .mitigation{background:#fff8f8;border:1px solid #f8d5d5}
+  .risk-med .mitigation{background:#fffbf3;border:1px solid #f5e8c5}
+
+  /* ── TIMELINE VIS ── */
+  .timeline{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-bottom:3rem;border-radius:12px;overflow:hidden;border:1px solid var(--parchment)}
+  .tl-col{padding:1.5rem 1.25rem;border-right:1px solid var(--parchment)}
+  .tl-col:last-child{border-right:none}
+  .tl-col-header{margin-bottom:1rem}
+  .tl-phase-dot{width:10px;height:10px;border-radius:50%;margin-bottom:.5rem}
+  .tl-col-header h4{font-weight:700;font-size:.85rem;color:var(--ink)}
+  .tl-col-header .tl-period{font-size:.72rem;color:var(--muted);margin-top:.1rem}
+  .tl-items{list-style:none;display:flex;flex-direction:column;gap:.35rem}
+  .tl-items li{font-size:.78rem;color:var(--brown);padding-left:.85rem;position:relative;line-height:1.45}
+  .tl-items li::before{content:'·';position:absolute;left:0;font-size:1rem;line-height:1.2}
+  @media(max-width:700px){.timeline{grid-template-columns:1fr 1fr}.tl-col{border-bottom:1px solid var(--parchment)}}
+  @media(max-width:450px){.timeline{grid-template-columns:1fr}}
+
+  /* ── FINAL ── */
+  .final{background:var(--ink);border-radius:20px;padding:4rem 3rem;text-align:center;margin-top:3rem;position:relative;overflow:hidden}
+  .final::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 50% 0%,rgba(168,130,60,.15) 0%,transparent 70%)}
+  .final h2{font-family:'Playfair Display',serif;font-size:clamp(1.8rem,4vw,3rem);font-weight:700;color:var(--cream);margin-bottom:1rem;position:relative}
+  .final h2 em{font-style:italic;color:var(--gold-light)}
+  .final p{font-size:.95rem;color:rgba(249,247,242,.5);max-width:520px;margin:0 auto 2.5rem;position:relative}
+  .final-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;position:relative}
+  @media(max-width:700px){.final-grid{grid-template-columns:1fr}}
+  .final-item{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:1.5rem}
+  .final-item .fi-week{font-size:.62rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--gold);margin-bottom:.5rem}
+  .final-item h4{font-weight:700;font-size:.9rem;color:var(--cream);margin-bottom:.5rem}
+  .final-item ul{list-style:none;display:flex;flex-direction:column;gap:.3rem}
+  .final-item ul li{font-size:.8rem;color:rgba(249,247,242,.5);padding-left:.85rem;position:relative}
+  .final-item ul li::before{content:'→';position:absolute;left:0;color:var(--gold);font-size:.7rem;top:.1rem}
+
+  footer{background:var(--ink);border-top:1px solid rgba(255,255,255,.06);color:rgba(249,247,242,.35);text-align:center;padding:2rem;font-size:.78rem}
+  footer strong{color:var(--gold)}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">ГЛАВА<span>.</span></div>
+  <ul class="nav-links">
+    <li><a href="#concept">Концепт</a></li>
+    <li><a href="#mvp">MVP</a></li>
+    <li><a href="#phases">Фазы</a></li>
+    <li><a href="#timeline">Timeline</a></li>
+    <li><a href="#metrics">Метрики</a></li>
+  </ul>
+  <div class="nav-doc">На основе FG-исследования · Апрель 2026</div>
+</nav>
+
+<!-- COVER -->
+<div class="cover" id="top">
+  <div class="cover-eyebrow">Продуктовая стратегия · Апрель 2026</div>
+  <h1>Семейная биография<br>как <em>сервис</em></h1>
+  <p class="cover-desc">MVP, концепт продукта и план развития по фазам — на основе симулированных фокус-групп с 7 сегментами аудитории</p>
+  <div class="cover-meta">
+    <div class="cover-meta-item"><div class="m-val">7</div><div class="m-lab">Сегментов исследовано</div></div>
+    <div class="cover-meta-item"><div class="m-val">4</div><div class="m-lab">Фазы развития</div></div>
+    <div class="cover-meta-item"><div class="m-val">10</div><div class="m-lab">Продуктовых гипотез</div></div>
+    <div class="cover-meta-item"><div class="m-val">~6 нед.</div><div class="m-lab">До завершения фазы 0</div></div>
+  </div>
+  <div class="scroll-hint">
+    <span>Листайте вниз</span>
+    <div class="scroll-hint-dot"></div>
+  </div>
+</div>
+
+
+<!-- ── PART 1: КОНЦЕПТ ── -->
+<div class="section-strip paper" id="concept">
+  <div class="sec-label">Часть 1</div>
+  <h2 class="sec-title">Концепт продукта</h2>
+  <p class="sec-sub">Что такое ГЛАВА на самом деле — если смотреть глазами аудитории, а не через технологию</p>
+</div>
+
+<div class="w">
+  <div class="callout">
+    <div class="callout-label">Главный инсайт исследования</div>
+    <p>Люди не покупают «транскрипцию и PDF». Они покупают <strong>разрешение начать разговор</strong>, которые давно хотели — и <strong>уверенность что из него получится что-то настоящее</strong>. Продукт — это не инструмент, а <strong>эмоциональный посредник между поколениями</strong>.</p>
+  </div>
+
+  <h2 class="s">Что ГЛАВА делает по-настоящему</h2>
+
+  <div class="vp-grid">
+    <div class="vp-card" data-icon="💬">
+      <div class="vp-num">01</div>
+      <h4>Снимает барьер «не знаю что спрашивать»</h4>
+      <p>11 из 16 участников фокус-групп назвали это главным страхом. ГЛАВА даёт готовые вопросы — и разговор начинается сам собой. Это не функция, это главная ценность.</p>
+      <span class="vp-source">FG: S1, S2, S7</span>
+    </div>
+    <div class="vp-card" data-icon="📖">
+      <div class="vp-num">02</div>
+      <h4>Превращает разговор в литературу</h4>
+      <p>Не транскрипцию, не резюме — живую биографию с характером человека. Слово «AI» убивает это восприятие. Слова «литературная обработка» и «редактор» — работают.</p>
+      <span class="vp-source">FG: S1, S3, S4</span>
+    </div>
+    <div class="vp-card" data-icon="🎁">
+      <div class="vp-num">03</div>
+      <h4>Создаёт повод для важного разговора</h4>
+      <p>«Это повод задать те вопросы, которые давно хочу задать» (S2, Артём, 30). Продукт — не только книга. Это сам разговор, который без ГЛАВА не состоялся бы.</p>
+      <span class="vp-source">FG: S2, S1</span>
+    </div>
+  </div>
+
+  <hr class="d">
+
+  <h2 class="s">Позиционирование — как это должно звучать</h2>
+
+  <div style="background:var(--ink);border-radius:16px;padding:3rem;margin-bottom:2.5rem;position:relative;overflow:hidden">
+    <div style="position:absolute;inset:0;background:radial-gradient(ellipse 70% 50% at 50% -10%,rgba(168,130,60,.15) 0%,transparent 70%)"></div>
+    <div style="position:relative">
+      <div style="font-size:.65rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:1.5rem">Формула позиционирования (подтверждена исследованием)</div>
+      <div style="font-family:'Playfair Display',serif;font-size:clamp(1.4rem,3.5vw,2.2rem);color:var(--cream);line-height:1.4;margin-bottom:2rem">
+        «Мы задаём вопросы —<br>вам нужно только <em style="color:var(--gold-light)">разговаривать</em>»
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.5rem">
+        <div>
+          <div style="font-size:.65rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(249,247,242,.4);margin-bottom:.4rem">Для кого</div>
+          <div style="font-size:.85rem;color:rgba(249,247,242,.7)">Тот, кто хочет записать историю близкого, но не знает с чего начать и боится что ничего не получится</div>
+        </div>
+        <div>
+          <div style="font-size:.65rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(249,247,242,.4);margin-bottom:.4rem">Что даём</div>
+          <div style="font-size:.85rem;color:rgba(249,247,242,.7)">Структуру разговора, литературную обработку и красивый PDF-документ с фотографиями, готовый к печати</div>
+        </div>
+        <div>
+          <div style="font-size:.65rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(249,247,242,.4);margin-bottom:.4rem">Чем отличаемся</div>
+          <div style="font-size:.85rem;color:rgba(249,247,242,.7)">Не диктофон и не редактор — полный путь от «не знаю как начать» до «книга готова» за 3–5 дней</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="s">Основные сценарии использования</h2>
+
+  <div class="flow-tabs">
+    <div class="flow-tab active" onclick="switchFlow('s1')">S1 · Дочь/сын</div>
+    <div class="flow-tab" onclick="switchFlow('s3')">S3 · Юбилей</div>
+    <div class="flow-tab" onclick="switchFlow('s2')">S2 · Внук</div>
+    <div class="flow-tab" onclick="switchFlow('s5')">S5 · Утрата</div>
+    <div class="flow-tab" onclick="switchFlow('s6')">S6 · Корпоратив</div>
+  </div>
+
+  <div class="flow-content active" id="flow-s1">
+    <div class="flow-steps">
+      <div class="flow-step"><div class="flow-step-num">1</div><div class="flow-step-body"><h5>Триггер</h5><p>Болезнь родителя, разговор с ребёнком про прабабушку, или «просто вспомнила что надо бы»</p></div></div>
+      <div class="flow-step"><div class="flow-step-num">2</div><div class="flow-step-body"><h5>Лендинг → скачивает пример</h5><p>Смотрит реальную биографию — убеждается в качестве. Это точка принятия решения.</p></div></div>
+      <div class="flow-step"><div class="flow-step-num">3</div><div class="flow-step-body"><h5>Telegram-бот → оформление заказа</h5><p>Вводит имя мамы, получает список вопросов-подсказок, звонит маме в другом городе и записывает разговор</p></div></div>
+      <div class="flow-step"><div class="flow-step-num">4</div><div class="flow-step-body"><h5>Загружает аудио и фото</h5><p>Через бот или веб-кабинет. Добавляет подписи к фото.</p></div></div>
+      <div class="flow-step"><div class="flow-step-num">5</div><div class="flow-step-body"><h5>Получает биографию за 3–5 дней</h5><p>PDF с фотографиями, 10–25 страниц. Скачивает, отправляет сестре, сохраняет для детей.</p></div></div>
+    </div>
+  </div>
+
+  <div class="flow-content" id="flow-s3">
+    <div class="flow-steps">
+      <div class="flow-step"><div class="flow-step-num">1</div><div class="flow-step-body"><h5>Триггер</h5><p>Юбилей мамы/папы/бабушки через 4–8 недель. Ищет «необычный подарок».</p></div></div>
+      <div class="flow-step"><div class="flow-step-num">2</div><div class="flow-step-body"><h5>Покупает подарочный сертификат</h5><p>Красивая PDF-карточка с именем юбиляра. Распечатывает или показывает на планшете в момент вручения на празднике.</p></div></div>
+      <div class="flow-step"><div class="flow-step-num">3</div><div class="flow-step-body"><h5>Юбиляр соглашается</h5><p>Потому что это «его история» и «ему дали слово». Не просьба о чём-то — а подарок от детей.</p></div></div>
+      <div class="flow-step"><div class="flow-step-num">4</div><div class="flow-step-body"><h5>Запись в удобное время после праздника</h5><p>1–3 сессии через Telegram или встречу лично. Без спешки.</p></div></div>
+      <div class="flow-step flow-gap"><div class="flow-step-num">!</div><div class="flow-step-body"><h5>Текущий gap: нет подарочного сертификата</h5><p>Без этого формата сегмент S3 в значительной мере потерян. «Подарить ссылку на бот» — не работает.</p></div></div>
+    </div>
+  </div>
+
+  <div class="flow-content" id="flow-s2">
+    <div class="flow-steps">
+      <div class="flow-step"><div class="flow-step-num">1</div><div class="flow-step-body"><h5>Триггер</h5><p>Умер другой дедушка, бабушка «сдаёт», импульсивное «надо сделать прямо сейчас»</p></div></div>
+      <div class="flow-step"><div class="flow-step-num">2</div><div class="flow-step-body"><h5>Оформляет заказ сам</h5><p>Без участия пожилого человека. Он — посредник и организатор.</p></div></div>
+      <div class="flow-step"><div class="flow-step-num">3</div><div class="flow-step-body"><h5>Записывает разговор на телефон</h5><p>Приходит к бабушке, ставит телефон, следует вопросам-подсказкам из бота. Бабушка просто разговаривает.</p></div></div>
+      <div class="flow-step"><div class="flow-step-num">4</div><div class="flow-step-body"><h5>Загружает аудио через кабинет или бот</h5><p>Файл до 500 МБ через веб, или голосовые через Telegram.</p></div></div>
+      <div class="flow-step flow-gap"><div class="flow-step-num">!</div><div class="flow-step-body"><h5>Текущий gap: нет явной поддержки «сценария посредника»</h5><p>Бот ведёт себя так, будто пожилой человек — это и есть пользователь. Нужно явно поддержать сценарий «внук организует».</p></div></div>
+    </div>
+  </div>
+
+  <div class="flow-content" id="flow-s5">
+    <div class="flow-steps">
+      <div class="flow-step"><div class="flow-step-num">1</div><div class="flow-step-body"><h5>Триггер</h5><p>Смерть близкого 2–12 месяцев назад. Нашёл голосовые в телефоне или старые письма. Хочет действовать.</p></div></div>
+      <div class="flow-step"><div class="flow-step-num">2</div><div class="flow-step-body"><h5>«Хватит ли 40 минут?»</h5><p>Первый вопрос. Нужна явная коммуникация: «Хватит. Мы работаем с любым объёмом».</p></div></div>
+      <div class="flow-step"><div class="flow-step-num">3</div><div class="flow-step-body"><h5>Загружает всё что есть</h5><p>Аудио, фото, текстовые воспоминания, сканы писем.</p></div></div>
+      <div class="flow-step flow-gap"><div class="flow-step-num">!</div><div class="flow-step-body"><h5>Текущий gap: нет приёма текстовых материалов без аудио</h5><p>«У меня только письма и фото» — незакрытый запрос. Нужна возможность создать биографию по текстовым источникам.</p></div></div>
+    </div>
+  </div>
+
+  <div class="flow-content" id="flow-s6">
+    <div class="flow-steps">
+      <div class="flow-step"><div class="flow-step-num">1</div><div class="flow-step-body"><h5>Триггер</h5><p>Сотрудник уходит на пенсию. Нужен достойный подарок, не «грамота».</p></div></div>
+      <div class="flow-step"><div class="flow-step-num">2</div><div class="flow-step-body"><h5>Запрос КП и счёта на юрлицо</h5><p>HR-директор не может платить с личной карты. Нужен счёт, акт, НДС.</p></div></div>
+      <div class="flow-step"><div class="flow-step-num">3</div><div class="flow-step-body"><h5>Профессиональное интервью</h5><p>«Директор не будет в Telegram». Нужен человек, который приедет и проведёт разговор.</p></div></div>
+      <div class="flow-step"><div class="flow-step-num">4</div><div class="flow-step-body"><h5>Напечатанная книга в твёрдой обложке</h5><p>PDF не работает как корпоративный подарок. Нужна физическая книга с доставкой.</p></div></div>
+      <div class="flow-step flow-gap"><div class="flow-step-num">!</div><div class="flow-step-body"><h5>Текущий gap: весь сценарий не поддержан</h5><p>S6 требует отдельного B2B-продукта, а не настройки существующего. Это следующая фаза.</p></div></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ── PART 2: MVP ── -->
+<div class="section-strip dark" id="mvp">
+  <div class="sec-label">Часть 2</div>
+  <h2 class="sec-title" style="color:var(--cream)">MVP — что это сейчас</h2>
+  <p class="sec-sub">Что считаем продуктом на текущем этапе: что работает, что нужно доделать в первую очередь</p>
+</div>
+
+<div class="w">
+  <div class="callout">
+    <div class="callout-label">Тезис</div>
+    <p>Текущий продукт уже решает боль S1 и S2 на 70%. <strong>Оставшиеся 30% — это не фичи, а коммуникация и два конкретных формата</strong>: подарочный сертификат и явная поддержка сценария «внук организует».</p>
+  </div>
+
+  <div class="mvp-box">
+    <div class="mvp-title">MVP — ГЛАВА сегодня</div>
+    <div class="mvp-sub">Продукт, который мы продаём прямо сейчас и который уже создаёт ценность</div>
+    <div class="mvp-cols">
+      <div>
+        <h4>Продуктовое ядро</h4>
+        <div class="mvp-item">Telegram-бот с онбордингом</div>
+        <div class="mvp-item">Список вопросов-подсказок для интервью</div>
+        <div class="mvp-item">Приём голосовых и аудиофайлов (до 20 МБ через TG, до 500 МБ через веб)</div>
+        <div class="mvp-item">Приём фото с подписями</div>
+        <div class="mvp-item">AI-транскрипция + литературная обработка</div>
+        <div class="mvp-item">PDF-биография 10–25 страниц</div>
+        <div class="mvp-item">3 круга правок включены</div>
+      </div>
+      <div>
+        <h4>Кому продаём сейчас</h4>
+        <div class="mvp-item">S1 — дочь/сын (основной сегмент)</div>
+        <div class="mvp-item">S2 — внук/внучка (высокий urgency)</div>
+        <div class="mvp-item">S3 — организатор юбилея (частично, без сертификата)</div>
+        <div class="mvp-item">S5 — переживающий утрату (если есть аудио)</div>
+      </div>
+      <div>
+        <h4>Что не закрыто (critical gaps)</h4>
+        <div class="mvp-item" style="color:rgba(249,247,242,.45)">Подарочный сертификат — нет</div>
+        <div class="mvp-item" style="color:rgba(249,247,242,.45)">Приём текстовых материалов без аудио — нет</div>
+        <div class="mvp-item" style="color:rgba(249,247,242,.45)">«AI» в коммуникации — отпугивает</div>
+        <div class="mvp-item" style="color:rgba(249,247,242,.45)">Пример книги не на первом экране</div>
+        <div class="mvp-item" style="color:rgba(249,247,242,.45)">Корпоративный формат — не поддержан</div>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="s">Чем измеряем успех MVP</h2>
+  <div class="north-star">
+    <div class="north-star-label">North Star Metric</div>
+    <div class="north-star-metric">% клиентов, получивших<br>готовую книгу</div>
+    <div class="north-star-sub">Не «заказы», не «оплаты» — именно завершённые биографии. Это единственная метрика, подтверждающая что продукт создал ценность.</div>
+  </div>
+</div>
+
+
+<!-- ── PART 3: ФАЗЫ ── -->
+<div class="section-strip paper" id="phases">
+  <div class="sec-label">Часть 3</div>
+  <h2 class="sec-title">План развития по фазам</h2>
+  <p class="sec-sub">4 фазы — от «починить то что есть» до «масштабировать на B2B и новые форматы»</p>
+</div>
+
+<div class="w">
+
+  <!-- PHASE 0 -->
+  <div class="phase">
+    <div class="phase-header" style="background:#1a1208" onclick="togglePhase(this)">
+      <span class="phase-badge" style="background:rgba(168,130,60,.3);color:var(--gold-light)">Фаза 0</span>
+      <div class="phase-title-block">
+        <h3>Быстрые победы — починить коммуникацию</h3>
+        <div class="phase-meta">Неделя 1–2 · Без разработки · Максимальный ROI на минимальных усилиях</div>
+      </div>
+      <div class="phase-toggle">+</div>
+    </div>
+    <div class="phase-body open">
+      <div class="phase-cols">
+        <div>
+          <h3 class="ss">Что делаем</h3>
+          <div class="task-list">
+            <div class="task-item">
+              <div class="task-dot" style="background:var(--red)">1</div>
+              <div class="task-text"><strong>Убрать «AI» из всех коммуникаций.</strong> Лендинг, бот, реклама. Заменить на «литературная обработка» и «редактор работает с вашим текстом». Одно изменение — три точки применения.</div>
+            </div>
+            <div class="task-item">
+              <div class="task-dot" style="background:var(--red)">2</div>
+              <div class="task-text"><strong>PDF-пример на первый экран лендинга.</strong> Кнопка «Скачать пример» — до цены и до описания процесса. Участники всех 4 групп волны 1 назвали это условием покупки.</div>
+            </div>
+            <div class="task-item">
+              <div class="task-dot" style="background:var(--red)">3</div>
+              <div class="task-text"><strong>«Мы задаём вопросы — вам нужно только разговаривать» — в герой.</strong> Сейчас это спрятано в описании процесса. Нужно в первый экран как главный claim.</div>
+            </div>
+            <div class="task-item">
+              <div class="task-dot" style="background:var(--orange)">4</div>
+              <div class="task-text"><strong>«Работает из любого города» — явная коммуникация.</strong> На лендинге и в боте. У половины S1 — родители в другом городе. Это снимает барьер молча.</div>
+            </div>
+            <div class="task-item">
+              <div class="task-dot" style="background:var(--orange)">5</div>
+              <div class="task-text"><strong>«Даже 30 минут достаточно» — в FAQ и приветствие бота.</strong> Снимает главный страх S5. Можно добавить за 15 минут.</div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <h3 class="ss">Почему это приоритет №1</h3>
+          <p style="font-size:.87rem;color:var(--muted);margin-bottom:1rem">Эти изменения не требуют разработки — только редактирование текстов. При этом они затрагивают самые сильные барьеры у самых широких сегментов.</p>
+          <div style="background:var(--paper);border-radius:10px;padding:1.25rem;margin-bottom:1rem">
+            <div style="font-size:.75rem;font-weight:700;color:var(--gold);margin-bottom:.5rem">Затронутые сегменты</div>
+            <div>
+              <span class="seg-chip" style="background:#7c5c3e">S1</span>
+              <span class="seg-chip" style="background:#3e6b7c">S2</span>
+              <span class="seg-chip" style="background:#6b7c3e">S3</span>
+              <span class="seg-chip" style="background:#7c3e6b">S4</span>
+              <span class="seg-chip" style="background:#5c3e7c">S5</span>
+            </div>
+          </div>
+          <div style="background:var(--paper);border-radius:10px;padding:1.25rem">
+            <div style="font-size:.75rem;font-weight:700;color:var(--gold);margin-bottom:.5rem">Ожидаемый эффект</div>
+            <p style="font-size:.83rem;color:var(--muted)">Рост конверсии лендинга на попытку скачать пример. Снижение «отвала» после слова «AI». Рост завершённости заказов у S5.</p>
+          </div>
+
+          <h3 class="ss" style="margin-top:1.5rem">Что НЕ делаем в фазе 0</h3>
+          <p style="font-size:.84rem;color:var(--muted)">Никакой разработки, никаких новых функций. Только текст и позиционирование. Цель — проверить гипотезы нулевой ценой.</p>
+        </div>
+      </div>
+
+      <div class="phase-metric">
+        <div class="phase-metric-label">Метрики успеха фазы 0</div>
+        <div class="metric-grid">
+          <div class="metric-item"><div class="metric-val">↑ CTR</div><div class="metric-lab">Кнопки «Начать» на лендинге</div></div>
+          <div class="metric-item"><div class="metric-val">↑ PDF</div><div class="metric-lab">Скачиваний примера</div></div>
+          <div class="metric-item"><div class="metric-val">↓ Bounce</div><div class="metric-lab">После упоминания AI</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PHASE 1 -->
+  <div class="phase">
+    <div class="phase-header" style="background:#1e3a1e" onclick="togglePhase(this)">
+      <span class="phase-badge" style="background:rgba(39,174,96,.25);color:#6fcf97">Фаза 1</span>
+      <div class="phase-title-block">
+        <h3>Разблокировка ключевых сегментов</h3>
+        <div class="phase-meta">Недели 3–6 · Лёгкая разработка · S3 полностью, S2 и S5 — глубже</div>
+      </div>
+      <div class="phase-toggle">+</div>
+    </div>
+    <div class="phase-body">
+      <div class="phase-cols">
+        <div>
+          <h3 class="ss">Подарочный сертификат (S3)</h3>
+          <div class="task-list">
+            <div class="task-item">
+              <div class="task-dot" style="background:var(--green)">✓</div>
+              <div class="task-text"><strong>PDF-карточка с именем юбиляра</strong> — генерируется после оплаты. Красивое оформление в стиле бренда.</div>
+            </div>
+            <div class="task-item">
+              <div class="task-dot" style="background:var(--green)">✓</div>
+              <div class="task-text"><strong>Отдельный путь оформления «Подарок»</strong> — в боте: «Оформить для себя» / «Подарить».</div>
+            </div>
+            <div class="task-item">
+              <div class="task-dot" style="background:var(--green)">✓</div>
+              <div class="task-text"><strong>Инструкция «Как вручить и объяснить»</strong> — как рассказать юбиляру что его ждёт и что от него требуется.</div>
+            </div>
+          </div>
+
+          <h3 class="ss" style="margin-top:1.5rem">Сценарий посредника (S2, S7)</h3>
+          <div class="task-list">
+            <div class="task-item">
+              <div class="task-dot" style="background:var(--green)">✓</div>
+              <div class="task-text"><strong>Явный онбординг «ты организуешь — близкий рассказывает»</strong> в боте: отдельный сценарий с инструкцией для посредника.</div>
+            </div>
+            <div class="task-item">
+              <div class="task-dot" style="background:var(--green)">✓</div>
+              <div class="task-text"><strong>Инструкция для пожилого участника</strong> — распечатываемый листок: «Что будет происходить и что от вас нужно».</div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <h3 class="ss">Расширение материалов (S4, S5)</h3>
+          <div class="task-list">
+            <div class="task-item">
+              <div class="task-dot" style="background:var(--green)">✓</div>
+              <div class="task-text"><strong>Приём текстовых материалов без аудио</strong> — письма, воспоминания в текстовом виде, загрузка через кабинет.</div>
+            </div>
+            <div class="task-item">
+              <div class="task-dot" style="background:var(--green)">✓</div>
+              <div class="task-text"><strong>Явный минимальный порог</strong> — в интерфейсе: «У вас 20 минут записи — этого хватит. Загружайте.»</div>
+            </div>
+          </div>
+
+          <h3 class="ss" style="margin-top:1.5rem">Конфиденциальность (S5)</h3>
+          <div class="task-list">
+            <div class="task-item">
+              <div class="task-dot" style="background:var(--green)">✓</div>
+              <div class="task-text"><strong>Явная политика конфиденциальности</strong> в боте и кабинете: «Ваши материалы видите только вы. Удаляем по запросу.»</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phase-metric">
+        <div class="phase-metric-label">Метрики успеха фазы 1</div>
+        <div class="metric-grid">
+          <div class="metric-item"><div class="metric-val">+40%</div><div class="metric-lab">Заказов от S3 (сертификат)</div></div>
+          <div class="metric-item"><div class="metric-val">+25%</div><div class="metric-lab">Завершённости у S2/S5</div></div>
+          <div class="metric-item"><div class="metric-val">NPS</div><div class="metric-lab">Первые измерения по сегментам</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PHASE 2 -->
+  <div class="phase">
+    <div class="phase-header" style="background:#1a2a4a" onclick="togglePhase(this)">
+      <span class="phase-badge" style="background:rgba(62,92,124,.4);color:#7eb8d4">Фаза 2</span>
+      <div class="phase-title-block">
+        <h3>Качество и расширение форматов</h3>
+        <div class="phase-meta">Месяц 2–3 · Средняя разработка · S4 + улучшение опыта всех сегментов</div>
+      </div>
+      <div class="phase-toggle">+</div>
+    </div>
+    <div class="phase-body">
+      <div class="phase-cols">
+        <div>
+          <h3 class="ss">Улучшение качества (S4)</h3>
+          <div class="task-list">
+            <div class="task-item">
+              <div class="task-dot" style="background:#3e5c7c">✓</div>
+              <div class="task-text"><strong>Расширенный тариф</strong> — «Архивный»: неограниченные правки, загрузка большого объёма материалов, предварительное согласование структуры.</div>
+            </div>
+            <div class="task-item">
+              <div class="task-dot" style="background:#3e5c7c">✓</div>
+              <div class="task-text"><strong>Предварительная структура книги</strong> — клиент утверждает оглавление до начала написания.</div>
+            </div>
+            <div class="task-item">
+              <div class="task-dot" style="background:#3e5c7c">✓</div>
+              <div class="task-text"><strong>Прозрачность редакции</strong> — указание что текст проходит ручную редактуру, не только AI.</div>
+            </div>
+          </div>
+
+          <h3 class="ss" style="margin-top:1.5rem">Печать и физический формат</h3>
+          <div class="task-list">
+            <div class="task-item">
+              <div class="task-dot" style="background:#3e5c7c">✓</div>
+              <div class="task-text"><strong>Услуга печати как опция</strong> — интеграция с типографией, доставка напечатанной книги. Разблокирует S3 и S7 дополнительно.</div>
+            </div>
+            <div class="task-item">
+              <div class="task-dot" style="background:#3e5c7c">✓</div>
+              <div class="task-text"><strong>Форматы для печати</strong> — A5 «семейный», A4 «архивный», мягкая / твёрдая обложка.</div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <h3 class="ss">Опыт и ретеншн</h3>
+          <div class="task-list">
+            <div class="task-item">
+              <div class="task-dot" style="background:#3e5c7c">✓</div>
+              <div class="task-text"><strong>Повторные заказы</strong> — механика «заказать для другого персонажа», реферальная программа «расскажи сестре».</div>
+            </div>
+            <div class="task-item">
+              <div class="task-dot" style="background:#3e5c7c">✓</div>
+              <div class="task-text"><strong>Отзывы по сегментам</strong> — собирать и публиковать отдельно для S1, S3, S2 с разными крючками.</div>
+            </div>
+            <div class="task-item">
+              <div class="task-dot" style="background:#3e5c7c">✓</div>
+              <div class="task-text"><strong>Telegram-канал с контентом</strong> — примеры отрывков биографий, истории клиентов, вопросы-подсказки. Органический трафик.</div>
+            </div>
+          </div>
+
+          <h3 class="ss" style="margin-top:1.5rem">Продуктовые A/B-тесты</h3>
+          <div class="task-list">
+            <div class="task-item">
+              <div class="task-dot" style="background:#3e5c7c">✓</div>
+              <div class="task-text">«Повод для разговора» vs «Сохраните историю» — тест заголовка лендинга</div>
+            </div>
+            <div class="task-item">
+              <div class="task-dot" style="background:#3e5c7c">✓</div>
+              <div class="task-text">Пример биографии до vs после блока цен — конверсия</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phase-metric">
+        <div class="phase-metric-label">Метрики успеха фазы 2</div>
+        <div class="metric-grid">
+          <div class="metric-item"><div class="metric-val">≥ 4.5</div><div class="metric-lab">NPS по завершённым заказам</div></div>
+          <div class="metric-item"><div class="metric-val">↑ AOV</div><div class="metric-lab">Средний чек (тариф + печать)</div></div>
+          <div class="metric-item"><div class="metric-val">≥ 15%</div><div class="metric-lab">Повторные заказы (другой персонаж)</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PHASE 3 -->
+  <div class="phase">
+    <div class="phase-header" style="background:#3a1a3a" onclick="togglePhase(this)">
+      <span class="phase-badge" style="background:rgba(106,58,90,.5);color:#d49fc5">Фаза 3</span>
+      <div class="phase-title-block">
+        <h3>B2B и масштаб</h3>
+        <div class="phase-meta">Месяц 4–6 · Сложная разработка · Корпоративный сегмент S6 + рост</div>
+      </div>
+      <div class="phase-toggle">+</div>
+    </div>
+    <div class="phase-body">
+      <div class="phase-cols">
+        <div>
+          <h3 class="ss">Корпоративный продукт (S6)</h3>
+          <div class="task-list">
+            <div class="task-item">
+              <div class="task-dot" style="background:var(--s6)">✓</div>
+              <div class="task-text"><strong>B2B лендинг с КП</strong> — отдельная страница для корпоративных клиентов, форма запроса КП.</div>
+            </div>
+            <div class="task-item">
+              <div class="task-dot" style="background:var(--s6)">✓</div>
+              <div class="task-text"><strong>Юридическое оформление</strong> — счёт на юрлицо, НДС, акт выполненных работ, договор.</div>
+            </div>
+            <div class="task-item">
+              <div class="task-dot" style="background:var(--s6)">✓</div>
+              <div class="task-text"><strong>«Белый перчаточный» формат</strong> — опция с профессиональным интервьюером: мы проводим интервью сами.</div>
+            </div>
+            <div class="task-item">
+              <div class="task-dot" style="background:var(--s6)">✓</div>
+              <div class="task-text"><strong>Групповой тариф</strong> — скидки при заказе 3+, 5+, 10+ книг одновременно.</div>
+            </div>
+            <div class="task-item">
+              <div class="task-dot" style="background:var(--s6)">✓</div>
+              <div class="task-text"><strong>Кейсы для B2B</strong> — анонимные истории «как компания X проводила ветерана».</div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <h3 class="ss">Масштабирование каналов</h3>
+          <div class="task-list">
+            <div class="task-item">
+              <div class="task-dot" style="background:var(--s6)">✓</div>
+              <div class="task-text"><strong>Партнёрства</strong> — похоронные агентства (S5), свадебные организаторы, ювелирные магазины (подарки к юбилеям).</div>
+            </div>
+            <div class="task-item">
+              <div class="task-dot" style="background:var(--s6)">✓</div>
+              <div class="task-text"><strong>Реферальная программа</strong> — «подарите другу скидку». Органика через рекомендации внутри семьи.</div>
+            </div>
+            <div class="task-item">
+              <div class="task-dot" style="background:var(--s6)">✓</div>
+              <div class="task-text"><strong>SEO и контент-маркетинг</strong> — статьи «как провести интервью с бабушкой», «вопросы для биографии» — органический трафик S1 и S2.</div>
+            </div>
+          </div>
+
+          <h3 class="ss" style="margin-top:1.5rem">Долгосрочные гипотезы</h3>
+          <div class="task-list">
+            <div class="task-item">
+              <div class="task-dot" style="background:var(--muted)">?</div>
+              <div class="task-text">Мобильное приложение для проведения интервью (если Telegram перестаёт быть достаточным)</div>
+            </div>
+            <div class="task-item">
+              <div class="task-dot" style="background:var(--muted)">?</div>
+              <div class="task-text">Международный рынок — русскоязычная диаспора, потом локализации</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phase-metric">
+        <div class="phase-metric-label">Метрики успеха фазы 3</div>
+        <div class="metric-grid">
+          <div class="metric-item"><div class="metric-val">≥ 20%</div><div class="metric-lab">Выручки от B2B (S6)</div></div>
+          <div class="metric-item"><div class="metric-val">↑ 3×</div><div class="metric-lab">Объём заказов vs фаза 0</div></div>
+          <div class="metric-item"><div class="metric-val">≥ 30%</div><div class="metric-lab">Заказов из органики (SEO+реферал)</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ── TIMELINE ── -->
+<div class="section-strip paper" id="timeline">
+  <div class="sec-label">Визуальный Timeline</div>
+  <h2 class="sec-title">Что и когда</h2>
+  <p class="sec-sub">Компактная карта по четырём фазам</p>
+</div>
+
+<div class="w">
+  <div class="timeline">
+    <div class="tl-col">
+      <div class="tl-col-header">
+        <div class="tl-phase-dot" style="background:#a8823c"></div>
+        <h4>Фаза 0</h4>
+        <div class="tl-period">Нед. 1–2 · Сейчас</div>
+      </div>
+      <ul class="tl-items">
+        <li>Убрать «AI» → «редактура»</li>
+        <li>Пример PDF на первый экран</li>
+        <li>«Задаём вопросы» в герой</li>
+        <li>«Из любого города»</li>
+        <li>«30 мин достаточно»</li>
+      </ul>
+    </div>
+    <div class="tl-col">
+      <div class="tl-col-header">
+        <div class="tl-phase-dot" style="background:#27ae60"></div>
+        <h4>Фаза 1</h4>
+        <div class="tl-period">Нед. 3–6</div>
+      </div>
+      <ul class="tl-items">
+        <li>Подарочный сертификат</li>
+        <li>Сценарий посредника</li>
+        <li>Инструкция для пожилого</li>
+        <li>Приём текстовых материалов</li>
+        <li>Явная конфиденциальность</li>
+      </ul>
+    </div>
+    <div class="tl-col">
+      <div class="tl-col-header">
+        <div class="tl-phase-dot" style="background:#3e5c7c"></div>
+        <h4>Фаза 2</h4>
+        <div class="tl-period">Месяц 2–3</div>
+      </div>
+      <ul class="tl-items">
+        <li>Тариф «Архивный» + правки∞</li>
+        <li>Предварительная структура</li>
+        <li>Услуга печати</li>
+        <li>Повторные заказы</li>
+        <li>A/B тесты лендинга</li>
+        <li>Telegram-канал</li>
+      </ul>
+    </div>
+    <div class="tl-col">
+      <div class="tl-col-header">
+        <div class="tl-phase-dot" style="background:#6a3a5a"></div>
+        <h4>Фаза 3</h4>
+        <div class="tl-period">Месяц 4–6</div>
+      </div>
+      <ul class="tl-items">
+        <li>B2B лендинг + КП</li>
+        <li>Юрлицо + документы</li>
+        <li>Интервьюер на выезде</li>
+        <li>Групповой тариф</li>
+        <li>Партнёрства</li>
+        <li>SEO + контент</li>
+      </ul>
+    </div>
+  </div>
+
+  <hr class="d">
+
+  <!-- RISKS -->
+  <h2 class="s" id="metrics">Риски и митигации</h2>
+  <div class="risk-grid">
+    <div class="risk-card risk-high">
+      <div class="risk-level">Высокий риск</div>
+      <h4>Качество текста не оправдывает ожиданий</h4>
+      <p>Участники S1 и S4 готовы платить, но только если результат «живой». Один плохой отзыв в аудитории S3 (юбилей) — потеря нескольких клиентов.</p>
+      <div class="mitigation"><strong>Митигация:</strong> Обязательная ручная редактура на первых 50 заказах. Показывать только лучшие примеры. Проактивно предлагать правки.</div>
+    </div>
+    <div class="risk-card risk-high">
+      <div class="risk-level">Высокий риск</div>
+      <h4>Конкурент копирует подарочный сертификат</h4>
+      <p>Формат сертификата легко скопировать. Защита — только качество и скорость исполнения.</p>
+      <div class="mitigation"><strong>Митигация:</strong> Выпустить сертификат как можно быстрее, до потенциальных копирований. Бренд и качество — главный ров.</div>
+    </div>
+    <div class="risk-card risk-med">
+      <div class="risk-level">Средний риск</div>
+      <h4>S6 требует слишком сложной разработки</h4>
+      <p>«Белый перчаточный» формат — это фактически новый операционный процесс с живыми интервьюерами.</p>
+      <div class="mitigation"><strong>Митигация:</strong> Начать с ручного процесса: принимать B2B заказы «вручную», без автоматизации, пока не накопится 10+ кейсов.</div>
+    </div>
+    <div class="risk-card risk-med">
+      <div class="risk-level">Средний риск</div>
+      <h4>Urgency-клиенты (S2, S5) ожидают скорость</h4>
+      <p>Urgency-аудитория покупает импульсивно и хочет результат «вчера». 3–5 дней может казаться долго при высокой тревоге.</p>
+      <div class="mitigation"><strong>Митигация:</strong> Чёткое управление ожиданиями. Промежуточные статусы в кабинете. Опция «срочно» с доплатой и сроком 24ч.</div>
+    </div>
+  </div>
+
+  <!-- FINAL -->
+  <div class="final">
+    <h2>С чего начинаем<br><em>прямо сейчас</em></h2>
+    <p>Первые две недели — без разработки. Только три файла и одно решение.</p>
+    <div class="final-grid">
+      <div class="final-item">
+        <div class="fi-week">На этой неделе</div>
+        <h4>Лендинг</h4>
+        <ul>
+          <li>Убрать «AI» → «литературная обработка»</li>
+          <li>Поднять кнопку примера выше цены</li>
+          <li>Добавить «Задаём вопросы» в hero</li>
+          <li>Добавить «Из любого города»</li>
+        </ul>
+      </div>
+      <div class="final-item">
+        <div class="fi-week">На следующей неделе</div>
+        <h4>Бот + FAQ</h4>
+        <ul>
+          <li>«30 мин записи достаточно» в FAQ</li>
+          <li>Явная политика конфиденциальности</li>
+          <li>Начать дизайн подарочного сертификата</li>
+        </ul>
+      </div>
+      <div class="final-item">
+        <div class="fi-week">Через 2–4 недели</div>
+        <h4>Фаза 1</h4>
+        <ul>
+          <li>Запустить подарочный сертификат</li>
+          <li>Добавить сценарий посредника в бот</li>
+          <li>Принимать текстовые материалы</li>
+          <li>Инструкция для пожилого участника</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <strong>ГЛАВА</strong> · Концепт продукта и план развития · Апрель 2026<br>
+  <span style="font-size:.72rem;margin-top:.3rem;display:block">На основе исследования 7 сегментов аудитории · glava.family</span>
+</footer>
+
+<script>
+function switchFlow(id){
+  document.querySelectorAll('.flow-tab').forEach((t,i)=>{
+    t.classList.toggle('active', t.getAttribute('onclick')===`switchFlow('${id}')`)
+  })
+  document.querySelectorAll('.flow-content').forEach(c=>{
+    c.classList.toggle('active', c.id==='flow-'+id)
+  })
+}
+function togglePhase(header){
+  const body=header.nextElementSibling;
+  const toggle=header.querySelector('.phase-toggle');
+  const isOpen=body.classList.contains('open');
+  body.classList.toggle('open',!isOpen);
+  toggle.classList.toggle('open',!isOpen);
+  toggle.textContent=isOpen?'+':'×';
+}
+// open first phase by default toggle icon
+document.querySelectorAll('.phase-toggle').forEach((t,i)=>{
+  if(i===0){t.textContent='×'}
+})
+document.querySelectorAll('a[href^="#"]').forEach(a=>{
+  a.addEventListener('click',e=>{e.preventDefault();const t=document.querySelector(a.getAttribute('href'));if(t)t.scrollIntoView({behavior:'smooth',block:'start'})})
+})
+</script>
+</body>
+</html>

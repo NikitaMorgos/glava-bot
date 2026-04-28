@@ -1,0 +1,62 @@
+[
+  {
+    "marker": "пианино",
+    "old": true,
+    "new": false
+  },
+  {
+    "marker": "шуб",
+    "old": true,
+    "new": false
+  },
+  {
+    "marker": "братья",
+    "old": true,
+    "new": false
+  },
+  {
+    "marker": "драма",
+    "old": true,
+    "new": false
+  },
+  {
+    "marker": "утомил",
+    "old": true,
+    "new": false
+  },
+  {
+    "marker": "сконч",
+    "old": false,
+    "new": false
+  },
+  {
+    "marker": "умерла в 2005",
+    "old": false,
+    "new": false
+  },
+  {
+    "marker": "тётя Шура",
+    "old": false,
+    "new": false
+  },
+  {
+    "marker": "Капашвара",
+    "old": false,
+    "new": true
+  },
+  {
+    "marker": "Капошвара",
+    "old": true,
+    "new": false
+  },
+  {
+    "marker": "выковыр",
+    "old": false,
+    "new": false
+  },
+  {
+    "marker": "документы",
+    "old": true,
+    "new": true
+  }
+]

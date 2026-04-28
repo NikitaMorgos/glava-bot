@@ -1,0 +1,342 @@
+{
+  "verdict": "fail",
+  "issues": [
+    {
+      "id": "issue_001",
+      "category": "pagination",
+      "severity": "critical",
+      "page": null,
+      "description": "Критическое несоответствие в нумерации страниц: page_map показывает дублирование номеров страниц 1 и 2. Обложка (стр. 1), пустая страница (стр. 2), затем снова оглавление (стр. 1) и начало главы 1 (стр. 2). Это создаёт конфликт нумерации.",
+      "fix_suggestion": "Исправить нумерацию в page_map: обложка и пустая страница должны быть без номеров, оглавление должно стать страницей 1, глава 1 — страницей 2, и так далее последовательно до страницы 31."
+    },
+    {
+      "id": "issue_002",
+      "category": "integrity",
+      "severity": "critical",
+      "page": null,
+      "description": "Серьёзное расхождение между page_map и page_plan: page_map показывает 31 страницу, а page_plan — 33 страницы. Также различается размещение элементов: в page_map callouts размещены на страницах 13, 15, 17, 18, 20, а в page_plan предусмотрены другие позиции.",
+      "fix_suggestion": "Привести page_map в соответствие с page_plan: обеспечить 33 страницы, разместить все callouts согласно page_plan, проверить соответствие размещения фотографий."
+    },
+    {
+      "id": "issue_003",
+      "category": "callout",
+      "severity": "major",
+      "page": null,
+      "description": "Несоответствие размещения callouts между page_map и expected_content: page_map показывает 6 callouts (callout_01-06), но их размещение не соответствует page_plan. Например, в page_plan callout_02 и callout_03 должны быть в главе 3, но в page_map они на разных страницах.",
+      "fix_suggestion": "Разместить callouts строго согласно page_plan: callout_01 в главе 2, callout_02 и callout_03 в главе 3 (страница 17), callout_04 и callout_05 в главе 4, callout_06 в эпилоге."
+    },
+    {
+      "id": "issue_004",
+      "category": "photo",
+      "severity": "major",
+      "page": null,
+      "description": "Расхождение в размещении фотографий: page_map показывает фото в главах на страницах 5, 7-10, 12, 14, но page_plan предусматривает другое размещение. Например, page_plan показывает photo_017 на странице 7, а page_map — на странице 5.",
+      "fix_suggestion": "Привести размещение фотографий в соответствие с page_plan: photo_017 на стр. 7, photo_021 на стр. 9, photo_014 на стр. 10, photo_018 на стр. 11, photo_008 на стр. 12, photo_013 на стр. 14, photo_002 на стр. 16."
+    },
+    {
+      "id": "issue_005",
+      "category": "toc",
+      "severity": "major",
+      "page": 1,
+      "description": "Оглавление требует полного пересчёта из-за исправления нумерации и структурных изменений. При корректной нумерации главы должны начинаться на других страницах, чем указано в текущем page_map.",
+      "fix_suggestion": "Пересчитать оглавление с учётом исправленной структуры: после исправления нумерации и приведения к 33 страницам, проверить реальные номера страниц начала каждой главы и обновить оглавление."
+    },
+    {
+      "id": "issue_001",
+      "category": "integrity",
+      "severity": "critical",
+      "page": null,
+      "description": "Критическое несоответствие между page_map и page_plan: page_map показывает 31 страницу, но нумерация в page_map некорректна (дублируется страница 1 и 2). Также page_map показывает оглавление как страницу 1, но затем chapter_start ch_01 тоже как страницу 2.",
+      "fix_suggestion": "Исправить page_map: обложка (стр. 1, без номера), пустая (стр. 2, без номера), оглавление (стр. 3 → нумерация как стр. 1), главы начинаются с правильных страниц согласно исправленной нумерации."
+    },
+    {
+      "id": "issue_002",
+      "category": "pagination",
+      "severity": "critical",
+      "page": null,
+      "description": "Нумерация в page_map показывает дублирование: две страницы с номером 1 (оглавление и chapter_start ch_01) и две с номером 2 (blank и chapter_body ch_01). Это указывает на системную ошибку нумерации.",
+      "fix_suggestion": "Пересчитать всю нумерацию: обложка и форзац без номеров, оглавление = стр. 1, далее последовательно. Обновить page_map с корректными номерами страниц."
+    },
+    {
+      "id": "issue_003",
+      "category": "callout",
+      "severity": "major",
+      "page": null,
+      "description": "Регрессия: предыдущие замечания о недостающих callouts частично не исправлены. Page_map показывает только callout_01 на стр. 13, но отсутствуют callout_02, callout_03 на стр. 15, callout_04 на стр. 17, callout_05 на стр. 18, callout_06 на стр. 20.",
+      "fix_suggestion": "Добавить все недостающие callouts согласно expected_content: callout_02 и callout_03 на стр. 15, callout_04 на стр. 17, callout_05 на стр. 18, callout_06 на стр. 20."
+    },
+    {
+      "id": "issue_004",
+      "category": "toc",
+      "severity": "critical",
+      "page": 1,
+      "description": "Регрессия: оглавление по-прежнему содержит неверные номера страниц. При корректной нумерации (оглавление = стр. 1) главы должны начинаться: ch_01 на стр. 2, ch_02 на стр. 4, ch_03 на стр. 14, ch_04 на стр. 17, epilogue на стр. 19.",
+      "fix_suggestion": "Пересчитать оглавление с учетом исправленной нумерации: Основные даты жизни → стр. 2, История жизни → стр. 4, Портрет человека → стр. 14, Интересные факты → стр. 17, Путь длиною в жизнь → стр. 19."
+    },
+    {
+      "id": "issue_005",
+      "category": "integrity",
+      "severity": "major",
+      "page": null,
+      "description": "Несоответствие между page_map (31 страница) и page_plan (33 страницы). Page_map заканчивается на странице 31, но page_plan предусматривает страницы до 33.",
+      "fix_suggestion": "Привести в соответствие page_map и page_plan. Если итоговая книга содержит 31 страницу, обновить page_plan. Если должно быть 33 страницы, добавить недостающие страницы в page_map."
+    },
+    {
+      "severity": "critical",
+      "type": "structural_guard_failed",
+      "description": "structural_layout_guard не пройден"
+    }
+  ],
+  "summary": {
+    "critical_issues": 5,
+    "major_issues": 5,
+    "minor_issues": 0,
+    "total_pages_checked": 31,
+    "overall_assessment": "Combined structural_qa + visual_qa",
+    "fonts_embedded": true
+  },
+  "qa_modes": {
+    "structural_qa": {
+      "project_id": "karakulina_stage4",
+      "iteration": 2,
+      "verdict": "fail",
+      "issues": [
+        {
+          "id": "issue_001",
+          "category": "pagination",
+          "severity": "critical",
+          "page": null,
+          "description": "Критическое несоответствие в нумерации страниц: page_map показывает дублирование номеров страниц 1 и 2. Обложка (стр. 1), пустая страница (стр. 2), затем снова оглавление (стр. 1) и начало главы 1 (стр. 2). Это создаёт конфликт нумерации.",
+          "fix_suggestion": "Исправить нумерацию в page_map: обложка и пустая страница должны быть без номеров, оглавление должно стать страницей 1, глава 1 — страницей 2, и так далее последовательно до страницы 31."
+        },
+        {
+          "id": "issue_002",
+          "category": "integrity",
+          "severity": "critical",
+          "page": null,
+          "description": "Серьёзное расхождение между page_map и page_plan: page_map показывает 31 страницу, а page_plan — 33 страницы. Также различается размещение элементов: в page_map callouts размещены на страницах 13, 15, 17, 18, 20, а в page_plan предусмотрены другие позиции.",
+          "fix_suggestion": "Привести page_map в соответствие с page_plan: обеспечить 33 страницы, разместить все callouts согласно page_plan, проверить соответствие размещения фотографий."
+        },
+        {
+          "id": "issue_003",
+          "category": "callout",
+          "severity": "major",
+          "page": null,
+          "description": "Несоответствие размещения callouts между page_map и expected_content: page_map показывает 6 callouts (callout_01-06), но их размещение не соответствует page_plan. Например, в page_plan callout_02 и callout_03 должны быть в главе 3, но в page_map они на разных страницах.",
+          "fix_suggestion": "Разместить callouts строго согласно page_plan: callout_01 в главе 2, callout_02 и callout_03 в главе 3 (страница 17), callout_04 и callout_05 в главе 4, callout_06 в эпилоге."
+        },
+        {
+          "id": "issue_004",
+          "category": "photo",
+          "severity": "major",
+          "page": null,
+          "description": "Расхождение в размещении фотографий: page_map показывает фото в главах на страницах 5, 7-10, 12, 14, но page_plan предусматривает другое размещение. Например, page_plan показывает photo_017 на странице 7, а page_map — на странице 5.",
+          "fix_suggestion": "Привести размещение фотографий в соответствие с page_plan: photo_017 на стр. 7, photo_021 на стр. 9, photo_014 на стр. 10, photo_018 на стр. 11, photo_008 на стр. 12, photo_013 на стр. 14, photo_002 на стр. 16."
+        },
+        {
+          "id": "issue_005",
+          "category": "toc",
+          "severity": "major",
+          "page": 1,
+          "description": "Оглавление требует полного пересчёта из-за исправления нумерации и структурных изменений. При корректной нумерации главы должны начинаться на других страницах, чем указано в текущем page_map.",
+          "fix_suggestion": "Пересчитать оглавление с учётом исправленной структуры: после исправления нумерации и приведения к 33 страницам, проверить реальные номера страниц начала каждой главы и обновить оглавление."
+        }
+      ],
+      "checklist": {
+        "pagination": {
+          "status": "fail",
+          "details": "Критическая ошибка: дублирование номеров страниц 1 и 2 в page_map. Нумерация должна быть последовательной без дублирования."
+        },
+        "toc": {
+          "status": "fail",
+          "details": "Оглавление требует пересчёта после исправления структурных проблем с нумерацией и размещением контента."
+        },
+        "orphan_widow": {
+          "status": "warning",
+          "details": "Невозможно проверить без визуального доступа к PDF в режиме structural_qa."
+        },
+        "photos": {
+          "status": "fail",
+          "total_expected": 22,
+          "total_found": 22,
+          "details": "Все 22 фото присутствуют, но их размещение не соответствует page_plan. Требуется перераспределение согласно плану вёрстки."
+        },
+        "callouts": {
+          "status": "fail",
+          "total_expected": 6,
+          "total_found": 6,
+          "details": "Все 6 callouts присутствуют, но размещены не согласно page_plan. Требуется корректировка позиций."
+        },
+        "headers_footers": {
+          "status": "warning",
+          "details": "Невозможно проверить без визуального доступа к PDF в режиме structural_qa."
+        },
+        "margins": {
+          "status": "warning",
+          "details": "Невозможно проверить без визуального доступа к PDF в режиме structural_qa."
+        },
+        "typography": {
+          "status": "warning",
+          "details": "Невозможно проверить без визуального доступа к PDF в режиме structural_qa."
+        },
+        "integrity": {
+          "status": "fail",
+          "details": "Критические расхождения между page_map и page_plan: разное количество страниц (31 vs 33), несоответствие размещения элементов, дублирование номеров страниц."
+        }
+      },
+      "regression_check": {
+        "performed": true,
+        "previous_issues_resolved": [
+          {
+            "issue_id": "issue_001",
+            "status": "persists"
+          },
+          {
+            "issue_id": "issue_002",
+            "status": "persists"
+          },
+          {
+            "issue_id": "issue_003",
+            "status": "partially_resolved"
+          },
+          {
+            "issue_id": "issue_004",
+            "status": "persists"
+          },
+          {
+            "issue_id": "issue_005",
+            "status": "persists"
+          }
+        ]
+      },
+      "summary": {
+        "critical_issues": 2,
+        "major_issues": 3,
+        "minor_issues": 0,
+        "total_pages_checked": 31,
+        "overall_assessment": "Макет содержит критические структурные ошибки: дублирование номеров страниц и серьёзные расхождения между page_map и page_plan. Несмотря на попытки исправления предыдущих замечаний, основные проблемы с нумерацией и размещением контента сохраняются. Требуется полная синхронизация page_map с page_plan и исправление нумерации."
+      }
+    },
+    "visual_qa": {
+      "project_id": "karakulina_stage4",
+      "iteration": 2,
+      "verdict": "fail",
+      "issues": [
+        {
+          "id": "issue_001",
+          "category": "integrity",
+          "severity": "critical",
+          "page": null,
+          "description": "Критическое несоответствие между page_map и page_plan: page_map показывает 31 страницу, но нумерация в page_map некорректна (дублируется страница 1 и 2). Также page_map показывает оглавление как страницу 1, но затем chapter_start ch_01 тоже как страницу 2.",
+          "fix_suggestion": "Исправить page_map: обложка (стр. 1, без номера), пустая (стр. 2, без номера), оглавление (стр. 3 → нумерация как стр. 1), главы начинаются с правильных страниц согласно исправленной нумерации."
+        },
+        {
+          "id": "issue_002",
+          "category": "pagination",
+          "severity": "critical",
+          "page": null,
+          "description": "Нумерация в page_map показывает дублирование: две страницы с номером 1 (оглавление и chapter_start ch_01) и две с номером 2 (blank и chapter_body ch_01). Это указывает на системную ошибку нумерации.",
+          "fix_suggestion": "Пересчитать всю нумерацию: обложка и форзац без номеров, оглавление = стр. 1, далее последовательно. Обновить page_map с корректными номерами страниц."
+        },
+        {
+          "id": "issue_003",
+          "category": "callout",
+          "severity": "major",
+          "page": null,
+          "description": "Регрессия: предыдущие замечания о недостающих callouts частично не исправлены. Page_map показывает только callout_01 на стр. 13, но отсутствуют callout_02, callout_03 на стр. 15, callout_04 на стр. 17, callout_05 на стр. 18, callout_06 на стр. 20.",
+          "fix_suggestion": "Добавить все недостающие callouts согласно expected_content: callout_02 и callout_03 на стр. 15, callout_04 на стр. 17, callout_05 на стр. 18, callout_06 на стр. 20."
+        },
+        {
+          "id": "issue_004",
+          "category": "toc",
+          "severity": "critical",
+          "page": 1,
+          "description": "Регрессия: оглавление по-прежнему содержит неверные номера страниц. При корректной нумерации (оглавление = стр. 1) главы должны начинаться: ch_01 на стр. 2, ch_02 на стр. 4, ch_03 на стр. 14, ch_04 на стр. 17, epilogue на стр. 19.",
+          "fix_suggestion": "Пересчитать оглавление с учетом исправленной нумерации: Основные даты жизни → стр. 2, История жизни → стр. 4, Портрет человека → стр. 14, Интересные факты → стр. 17, Путь длиною в жизнь → стр. 19."
+        },
+        {
+          "id": "issue_005",
+          "category": "integrity",
+          "severity": "major",
+          "page": null,
+          "description": "Несоответствие между page_map (31 страница) и page_plan (33 страницы). Page_map заканчивается на странице 31, но page_plan предусматривает страницы до 33.",
+          "fix_suggestion": "Привести в соответствие page_map и page_plan. Если итоговая книга содержит 31 страницу, обновить page_plan. Если должно быть 33 страницы, добавить недостающие страницы в page_map."
+        }
+      ],
+      "checklist": {
+        "pagination": {
+          "status": "fail",
+          "details": "Критические ошибки нумерации: дублирование номеров страниц в page_map, несоответствие между заявленной и фактической нумерацией"
+        },
+        "toc": {
+          "status": "fail",
+          "details": "Оглавление содержит неверные номера страниц, не исправлено после предыдущей итерации"
+        },
+        "orphan_widow": {
+          "status": "warning",
+          "details": "Невозможно проверить без визуального доступа к PDF, но структурные проблемы указывают на возможные типографические ошибки"
+        },
+        "photos": {
+          "status": "warning",
+          "total_expected": 22,
+          "total_found": 22,
+          "details": "Все 22 фото присутствуют в page_map, но невозможно проверить качество размещения без доступа к PDF"
+        },
+        "callouts": {
+          "status": "fail",
+          "total_expected": 6,
+          "total_found": 1,
+          "details": "Критическая регрессия: только 1 из 6 callouts присутствует в page_map, остальные 5 отсутствуют"
+        },
+        "headers_footers": {
+          "status": "warning",
+          "details": "Невозможно проверить без визуального доступа к PDF"
+        },
+        "margins": {
+          "status": "warning",
+          "details": "Невозможно проверить без визуального доступа к PDF"
+        },
+        "typography": {
+          "status": "warning",
+          "details": "Невозможно проверить без визуального доступа к PDF"
+        },
+        "integrity": {
+          "status": "fail",
+          "details": "Множественные структурные проблемы: несоответствие page_map и page_plan, ошибки нумерации, отсутствие callouts"
+        }
+      },
+      "regression_check": {
+        "performed": true,
+        "previous_issues_resolved": [
+          {
+            "issue_id": "issue_001",
+            "status": "persists"
+          },
+          {
+            "issue_id": "issue_002",
+            "status": "persists"
+          },
+          {
+            "issue_id": "issue_003",
+            "status": "partially_resolved"
+          },
+          {
+            "issue_id": "issue_004",
+            "status": "persists"
+          },
+          {
+            "issue_id": "issue_005",
+            "status": "persists"
+          }
+        ]
+      },
+      "summary": {
+        "critical_issues": 3,
+        "major_issues": 2,
+        "minor_issues": 0,
+        "total_pages_checked": 31,
+        "overall_assessment": "Критическая регрессия: основные проблемы из предыдущей итерации не исправлены. Нумерация страниц по-прежнему некорректна, оглавление содержит неверные номера, большинство callouts отсутствуют. Макет требует серьезной доработки перед передачей клиенту."
+      }
+    }
+  }
+}

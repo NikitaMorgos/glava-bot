@@ -1,0 +1,44 @@
+{
+  "gate": "structural_layout_guard",
+  "passed": false,
+  "checks": {
+    "page_map_not_empty": true,
+    "page_plan_not_empty": true,
+    "page_plan_vs_page_map_exact_len": true,
+    "technical_total_matches_page_map": true,
+    "page_plan_contract_ok": true,
+    "callouts_follow_page_plan": true,
+    "pagination_model_ok": false
+  },
+  "contract_violations": [],
+  "callouts": {
+    "expected_from_page_plan": {},
+    "found_in_page_map": {
+      "callout_01": 18,
+      "callout_02": 19,
+      "callout_03": 20,
+      "callout_04": 21,
+      "callout_05": 22,
+      "callout_06": 24
+    },
+    "violations": [],
+    "warnings": []
+  },
+  "pagination_model": {
+    "checks": {
+      "first_page_is_cover": true,
+      "second_page_is_blank": true,
+      "third_page_is_toc": true,
+      "toc_visible_numbering_matches_chapter_starts": false
+    },
+    "toc_mismatches": [
+      {
+        "index": 0,
+        "toc_page": 1,
+        "expected_visible_page": 2,
+        "chapter_id": "ch_01",
+        "chapter_physical_page": 4
+      }
+    ]
+  }
+}

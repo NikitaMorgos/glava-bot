@@ -1,0 +1,52 @@
+{
+  "gate": "structural_layout_guard",
+  "passed": true,
+  "checks": {
+    "page_map_not_empty": true,
+    "page_plan_not_empty": true,
+    "page_plan_vs_page_map_exact_len": true,
+    "technical_total_matches_page_map": true,
+    "page_plan_contract_ok": true,
+    "callouts_follow_page_plan": true,
+    "pagination_model_ok": true
+  },
+  "page_type_mapping_table": {
+    "cover": "cover",
+    "blank": "blank",
+    "toc": "toc",
+    "chapter_start": "chapter_start",
+    "text_only/text_with_photo/text_with_photos/text_with_callout/bio_timeline": "chapter_body",
+    "photo_section/photo_section_start/full_page_photo": "photo_page",
+    "final_page": "final_page"
+  },
+  "contract_violations": [],
+  "callouts": {
+    "expected_from_page_plan": {
+      "callout_01": 19,
+      "callout_02": 20,
+      "callout_03": 21,
+      "callout_04": 23,
+      "callout_05": 24,
+      "callout_06": 26
+    },
+    "found_in_page_map": {
+      "callout_01": 19,
+      "callout_02": 20,
+      "callout_03": 21,
+      "callout_04": 23,
+      "callout_05": 24,
+      "callout_06": 26
+    },
+    "violations": [],
+    "warnings": []
+  },
+  "pagination_model": {
+    "checks": {
+      "first_page_is_cover": true,
+      "second_page_is_blank": true,
+      "third_page_is_toc": true,
+      "toc_visible_numbering_matches_chapter_starts": true
+    },
+    "toc_mismatches": []
+  }
+}

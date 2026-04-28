@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ГЛАВА — Second Opinion: почему это может не взлететь</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0f0d0a; --surface:#1a1612; --surface2:#221e19;
+    --border:#2e2820; --border2:#3d342a;
+    --cream:#f9f7f2; --paper:#f0ead9; --parchment:#dfd5c2;
+    --muted:#72614e; --light:#a89880;
+    --gold:#a8823c; --gold-light:#c9a05e;
+    --red:#e74c3c; --red-dim:#8b2d24; --red-bg:#1f0d0a;
+    --orange:#e67e22; --orange-dim:#8b5014; --orange-bg:#1a1008;
+    --yellow:#f1c40f; --yellow-bg:#1a1700;
+    --green:#2ecc71; --green-dim:#1a6b3c; --green-bg:#0a1a0f;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Manrope',sans-serif;background:var(--bg);color:var(--cream);font-size:15px;line-height:1.7}
+
+  /* NAV */
+  nav{position:sticky;top:0;z-index:100;background:rgba(15,13,10,.95);backdrop-filter:blur(14px);border-bottom:1px solid var(--border);padding:0 2.5rem;display:flex;align-items:center;justify-content:space-between;height:54px}
+  .nav-logo{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;color:var(--cream)}
+  .nav-logo span{color:var(--red)}
+  .nav-badge{background:var(--red-dim);color:var(--red);font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:.25rem .75rem;border-radius:20px;border:1px solid var(--red-dim)}
+  .nav-links{display:flex;gap:1.5rem;list-style:none;font-size:.73rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase}
+  .nav-links a{color:#5a4f44;text-decoration:none;transition:color .2s}
+  .nav-links a:hover{color:var(--gold)}
+
+  /* COVER */
+  .cover{min-height:100vh;background:var(--bg);display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:6rem 2.5rem;position:relative;overflow:hidden}
+  .cover-grid{position:absolute;inset:0;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:60px 60px;opacity:.5}
+  .cover::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 50%,rgba(231,76,60,.06) 0%,transparent 65%)}
+  .cover-eyebrow{font-size:.65rem;font-weight:700;letter-spacing:.25em;text-transform:uppercase;color:var(--red);margin-bottom:1.5rem;position:relative;z-index:1}
+  .cover h1{font-family:'Playfair Display',serif;font-size:clamp(2.5rem,6vw,5rem);font-weight:700;color:var(--cream);line-height:1.05;margin-bottom:1.5rem;position:relative;z-index:1}
+  .cover h1 em{font-style:italic;color:var(--red);opacity:.9}
+  .cover-desc{font-size:1rem;color:rgba(249,247,242,.45);max-width:580px;margin:0 auto 3rem;line-height:1.8;position:relative;z-index:1}
+  .cover-disclaimer{display:inline-block;background:rgba(231,76,60,.1);border:1px solid var(--red-dim);border-radius:8px;padding:.75rem 1.5rem;font-size:.8rem;color:rgba(249,247,242,.5);position:relative;z-index:1;max-width:560px}
+  .cover-disclaimer strong{color:var(--red)}
+  .scroll-hint{position:absolute;bottom:2.5rem;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:.5rem;color:#3a3028;font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;z-index:1}
+  .dot-anim{width:6px;height:6px;border-radius:50%;background:var(--red);animation:bd 2s ease-in-out infinite}
+  @keyframes bd{0%,100%{transform:translateY(0);opacity:.3}50%{transform:translateY(8px);opacity:.8}}
+
+  /* CONTAINERS */
+  .w{max-width:1080px;margin:0 auto;padding:5rem 2.5rem}
+  .w.tight{max-width:780px}
+
+  /* SECTION STRIPS */
+  .strip{padding:3rem 2.5rem;text-align:center;border-top:1px solid var(--border);border-bottom:1px solid var(--border);background:var(--surface)}
+  .strip-label{font-size:.65rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--red);margin-bottom:.5rem}
+  .strip h2{font-family:'Playfair Display',serif;font-size:clamp(1.7rem,3.5vw,2.6rem);font-weight:700;color:var(--cream)}
+  .strip p{margin-top:.6rem;font-size:.9rem;color:rgba(249,247,242,.4);max-width:560px;margin-left:auto;margin-right:auto}
+
+  h2.s{font-family:'Playfair Display',serif;font-size:1.55rem;font-weight:700;color:var(--cream);margin-bottom:1.75rem}
+  h3.ss{font-family:'Playfair Display',serif;font-size:1.05rem;font-weight:600;color:rgba(249,247,242,.7);margin-bottom:.75rem;margin-top:1.75rem}
+  h3.ss:first-child{margin-top:0}
+  hr.d{border:none;border-top:1px solid var(--border);margin:3rem 0}
+
+  /* TL;DR CARDS */
+  .tldr-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--border);border-radius:14px;overflow:hidden;margin-bottom:3rem}
+  @media(max-width:750px){.tldr-grid{grid-template-columns:1fr}}
+  .tldr-card{background:var(--surface);padding:1.75rem;position:relative;overflow:hidden}
+  .tldr-card::before{content:attr(data-n);position:absolute;bottom:-15px;right:10px;font-family:'Playfair Display',serif;font-size:6rem;font-weight:700;color:rgba(231,76,60,.06);line-height:1;pointer-events:none}
+  .tldr-card h4{font-weight:700;font-size:.95rem;color:var(--cream);margin-bottom:.4rem;position:relative}
+  .tldr-card p{font-size:.83rem;color:rgba(249,247,242,.45);line-height:1.6;position:relative}
+  .fatal-badge{display:inline-block;margin-bottom:.75rem;font-size:.62rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:.2rem .65rem;border-radius:4px}
+  .fatal{background:rgba(231,76,60,.15);color:var(--red);border:1px solid var(--red-dim)}
+  .serious{background:rgba(230,126,34,.15);color:var(--orange);border:1px solid var(--orange-dim)}
+  .watch{background:rgba(241,196,15,.12);color:var(--yellow);border:1px solid rgba(180,145,10,.4)}
+
+  /* RISK SECTIONS */
+  .risk-block{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:1.5rem}
+  .risk-block-header{padding:1.5rem 2rem;display:flex;align-items:center;gap:1.25rem;cursor:pointer;user-select:none;transition:background .2s}
+  .risk-block-header:hover{background:var(--surface2)}
+  .risk-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
+  .risk-title-block{flex:1}
+  .risk-title-block h3{font-family:'Playfair Display',serif;font-size:1.15rem;font-weight:700;color:var(--cream)}
+  .risk-title-block .risk-meta{font-size:.78rem;color:rgba(249,247,242,.35);margin-top:.1rem}
+  .risk-severity{font-size:.65rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:.25rem .75rem;border-radius:20px;white-space:nowrap;flex-shrink:0}
+  .sev-fatal{background:rgba(231,76,60,.15);color:var(--red);border:1px solid var(--red-dim)}
+  .sev-high{background:rgba(230,126,34,.12);color:var(--orange);border:1px solid var(--orange-dim)}
+  .sev-med{background:rgba(241,196,15,.1);color:var(--yellow);border:1px solid rgba(180,145,10,.35)}
+  .risk-toggle{width:24px;height:24px;border-radius:50%;border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:1rem;color:rgba(249,247,242,.3);transition:transform .25s;flex-shrink:0}
+  .risk-toggle.open{transform:rotate(45deg)}
+  .risk-body{display:none;padding:0 2rem 2rem;border-top:1px solid var(--border)}
+  .risk-body.open{display:block}
+  .risk-cols{display:grid;grid-template-columns:1fr 1fr;gap:2rem;padding-top:1.75rem}
+  @media(max-width:700px){.risk-cols{grid-template-columns:1fr}}
+
+  /* EVIDENCE */
+  .evidence{background:var(--bg);border-radius:10px;padding:1.25rem 1.5rem;margin-bottom:1rem}
+  .ev-label{font-size:.62rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--red);margin-bottom:.5rem}
+  .ev-text{font-size:.85rem;color:rgba(249,247,242,.6);line-height:1.65}
+  .ev-text strong{color:rgba(249,247,242,.85)}
+
+  /* COUNTER */
+  .counter{background:var(--green-bg);border:1px solid var(--green-dim);border-radius:10px;padding:1.25rem 1.5rem}
+  .counter-label{font-size:.62rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--green);margin-bottom:.5rem}
+  .counter-text{font-size:.85rem;color:rgba(249,247,242,.55);line-height:1.65}
+  .counter-text strong{color:rgba(249,247,242,.75)}
+
+  /* QUOTE / CALLOUT */
+  .dark-quote{border-left:3px solid var(--red);padding:.85rem 1rem;margin-bottom:.75rem;background:var(--surface2);border-radius:0 8px 8px 0}
+  .dark-quote p{font-size:.875rem;font-style:italic;color:rgba(249,247,242,.55);line-height:1.6}
+  .dark-quote .dq-attr{font-size:.7rem;color:rgba(249,247,242,.3);margin-top:.3rem;font-style:normal;font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+
+  /* UNIT ECONOMICS */
+  .ue-table{width:100%;border-collapse:collapse;font-size:.875rem;margin-bottom:2rem}
+  .ue-table th{background:var(--surface2);color:rgba(249,247,242,.45);font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:.75rem 1rem;text-align:left;border-bottom:1px solid var(--border2)}
+  .ue-table td{padding:.85rem 1rem;border-bottom:1px solid var(--border);vertical-align:top}
+  .ue-table tr:last-child td{border-bottom:none}
+  .ue-table .ue-bad{color:var(--red)}
+  .ue-table .ue-warn{color:var(--orange)}
+  .ue-table .ue-ok{color:var(--green)}
+  .ue-table .ue-unknown{color:rgba(249,247,242,.35)}
+
+  /* FUNNEL */
+  .funnel{display:flex;flex-direction:column;gap:.5rem;margin-bottom:2rem}
+  .funnel-step{display:flex;align-items:center;gap:1rem}
+  .funnel-bar-wrap{flex:1;background:var(--surface2);border-radius:4px;overflow:hidden;height:32px;position:relative}
+  .funnel-bar{height:100%;border-radius:4px;display:flex;align-items:center;padding:0 1rem;font-size:.8rem;font-weight:700;color:var(--cream);white-space:nowrap;transition:width .3s}
+  .funnel-label{font-size:.8rem;color:rgba(249,247,242,.45);min-width:220px;text-align:right}
+  .funnel-pct{font-size:.75rem;font-weight:700;min-width:50px}
+
+  /* VERDICT */
+  .verdict{border-radius:16px;padding:3rem;margin-bottom:3rem;position:relative;overflow:hidden}
+  .verdict::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 50% 0%,rgba(231,76,60,.1) 0%,transparent 65%)}
+  .verdict-grid{display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin-top:2rem}
+  @media(max-width:700px){.verdict-grid{grid-template-columns:1fr}}
+  .verdict-col h4{font-size:.65rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;margin-bottom:.75rem}
+  .verdict-list{display:flex;flex-direction:column;gap:.5rem}
+  .verdict-item{display:flex;gap:.65rem;align-items:flex-start;font-size:.855rem;line-height:1.55}
+  .verdict-dot{width:18px;height:18px;border-radius:50%;font-size:.65rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:.15rem}
+
+  /* PROOF MATRIX */
+  .proof-table{width:100%;border-collapse:collapse;font-size:.84rem;margin-bottom:2rem}
+  .proof-table th{background:var(--surface2);color:rgba(249,247,242,.4);font-size:.67rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:.7rem 1rem;text-align:left;border-bottom:1px solid var(--border2)}
+  .proof-table td{padding:.85rem 1rem;border-bottom:1px solid var(--border);vertical-align:top;color:rgba(249,247,242,.6)}
+  .proof-table td:first-child{color:rgba(249,247,242,.8);font-weight:600}
+  .proof-table tr:last-child td{border-bottom:none}
+  .status-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:.4rem}
+  .s-unknown{background:rgba(249,247,242,.2)}
+  .s-risk{background:var(--red)}
+  .s-ok{background:var(--green)}
+
+  footer{background:var(--surface);border-top:1px solid var(--border);color:rgba(249,247,242,.25);text-align:center;padding:2rem;font-size:.78rem}
+  footer strong{color:var(--gold)}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">ГЛАВА<span>.</span> Second Opinion</div>
+  <ul class="nav-links">
+    <li><a href="#tldr">TL;DR</a></li>
+    <li><a href="#structural">Структура</a></li>
+    <li><a href="#product">Продукт</a></li>
+    <li><a href="#economics">Экономика</a></li>
+    <li><a href="#competition">Конкуренты</a></li>
+    <li><a href="#verdict">Вердикт</a></li>
+  </ul>
+  <div class="nav-badge">Честный взгляд</div>
+</nav>
+
+<!-- COVER -->
+<div class="cover">
+  <div class="cover-grid"></div>
+  <div class="cover-eyebrow">Second Opinion · Апрель 2026</div>
+  <h1>Почему ГЛАВА<br>скорее всего <em>не взлетит</em><br>в нынешнем виде</h1>
+  <p class="cover-desc">Критический разбор структурных рисков, подводных камней бизнес-модели и продуктовых ловушек — на основе исследования аудитории и здравого смысла</p>
+  <div class="cover-disclaimer">
+    <strong>Важно:</strong> это не приговор — это список вопросов, на которые у проекта пока нет ответов. Каждый из этих рисков преодолим. Но игнорировать их — значит столкнуться с ними лицом к лицу в самый неудобный момент.
+  </div>
+  <div class="scroll-hint">
+    <span>Читать честно</span>
+    <div class="dot-anim"></div>
+  </div>
+</div>
+
+
+<!-- TL;DR -->
+<div class="strip" id="tldr">
+  <div class="strip-label">TL;DR</div>
+  <h2>6 причин провала — коротко</h2>
+  <p>Самые опасные риски одной фразой</p>
+</div>
+
+<div class="w">
+  <div class="tldr-grid">
+    <div class="tldr-card" data-n="1">
+      <div class="fatal-badge fatal">Структурный</div>
+      <h4>Основной конкурент — «сделаю потом»</h4>
+      <p>Рынок не в чужих продуктах. Главный враг — человеческая инерция. Люди не делают это даже бесплатно.</p>
+    </div>
+    <div class="tldr-card" data-n="2">
+      <div class="fatal-badge fatal">Модельный</div>
+      <h4>Одноразовая покупка на одного человека</h4>
+      <p>Биографию дедушки делают один раз. Нет повторных продаж, нет подписки. Нужен постоянный приток новых клиентов.</p>
+    </div>
+    <div class="tldr-card" data-n="3">
+      <div class="fatal-badge serious">Продуктовый</div>
+      <h4>Клиент платит — и не завершает</h4>
+      <p>Записать 2–3 часа аудио — это домашнее задание. Многие заплатят и забудут. Это воронка внутри продукта, о которой никто не говорит.</p>
+    </div>
+    <div class="tldr-card" data-n="4">
+      <div class="fatal-badge serious">Качество</div>
+      <h4>Качество AI-текста сломает доверие</h4>
+      <p>Один «машинный» текст — и сарафанное радио идёт в обратную сторону. При масштабе качество нестабильно.</p>
+    </div>
+    <div class="tldr-card" data-n="5">
+      <div class="fatal-badge watch">Экономика</div>
+      <h4>CAC может съесть маржу</h4>
+      <p>При LTV ~4–5 тыс. ₽ (после затрат) и стоимости привлечения в нишевой аудитории — юнит-экономика может не сходиться.</p>
+    </div>
+    <div class="tldr-card" data-n="6">
+      <div class="fatal-badge watch">Рынок</div>
+      <h4>Категория не существует в голове клиента</h4>
+      <p>«Семейная биография как сервис» — неизвестный продукт. Огромная стоимость обучения рынка. Клиент не ищет это в Google.</p>
+    </div>
+  </div>
+
+  <hr class="d">
+
+
+  <!-- STRUCTURAL RISKS -->
+  <h2 class="s" id="structural">I. Структурные проблемы рынка</h2>
+
+  <!-- R1 -->
+  <div class="risk-block">
+    <div class="risk-block-header" onclick="toggleR(this)">
+      <div class="risk-icon" style="background:rgba(231,76,60,.1)">🪨</div>
+      <div class="risk-title-block">
+        <h3>Главный конкурент — человеческая инерция</h3>
+        <div class="risk-meta">«Я всё понимаю — но сделаю потом» · Структурный · Неустраним</div>
+      </div>
+      <span class="risk-severity sev-fatal">Фатальный</span>
+      <div class="risk-toggle">+</div>
+    </div>
+    <div class="risk-body open">
+      <div class="risk-cols">
+        <div>
+          <div class="evidence">
+            <div class="ev-label">Доказательство из исследования</div>
+            <div class="ev-text"><strong>Марина, 44 (S1):</strong> «Уже лет пять думаю "вот приеду летом, тогда и поговорим". Лето приходит и уходит.»</div>
+          </div>
+          <div class="evidence">
+            <div class="ev-label">Что это означает для бизнеса</div>
+            <div class="ev-text">Люди признают проблему, соглашаются с важностью, но <strong>не делают</strong>. Даже бесплатно. Даже с готовой инструкцией. Это не барьер к покупке — это барьер к действию как таковому. Продукт конкурирует не с другими сервисами, а с <strong>«когда-нибудь потом»</strong>.</div>
+          </div>
+          <div class="evidence">
+            <div class="ev-label">Масштаб проблемы</div>
+            <div class="ev-text">Из всей потенциальной аудитории (~10 млн человек в возрасте 35–55 с живыми пожилыми родственниками) реально <strong>готовы действовать прямо сейчас</strong> — ничтожная доля. Конверсия из «понимаю важность» в «куплю сегодня» исторически крайне низкая в категориях «важно, но не срочно».</div>
+          </div>
+        </div>
+        <div>
+          <div class="counter">
+            <div class="counter-label">Контраргумент (слабый)</div>
+            <div class="counter-text">Urgency-триггеры (болезнь, смерть, юбилей) создают окно действия. Если поймать клиента в этот момент — конверсия высокая. <strong>Но это делает продукт зависимым от событийного маркетинга.</strong></div>
+          </div>
+
+          <h3 class="ss">Почему это не решается продуктом</h3>
+          <div class="dark-quote">
+            <p>Никакая функция, никакой UX и никакое снижение цены не заставят человека позвонить маме в другой город прямо сейчас. Это решение эмоциональное, не рациональное. Продукт может снизить барьеры — но не создать мотивацию с нуля.</p>
+          </div>
+          <div class="dark-quote">
+            <p>Сравнение: фитнес-приложения стоят $9.99/мес и у них та же проблема. Люди покупают, не ходят, отменяют. ГЛАВА стоит 6 900 ₽ и требует ещё 3–5 часов работы от клиента после оплаты.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- R2 -->
+  <div class="risk-block">
+    <div class="risk-block-header" onclick="toggleR(this)">
+      <div class="risk-icon" style="background:rgba(231,76,60,.1)">📉</div>
+      <div class="risk-title-block">
+        <h3>Категория не существует в сознании клиента</h3>
+        <div class="risk-meta">Клиент не ищет «семейную биографию» в поиске · Высокая стоимость обучения рынка</div>
+      </div>
+      <span class="risk-severity sev-fatal">Фатальный</span>
+      <div class="risk-toggle">+</div>
+    </div>
+    <div class="risk-body">
+      <div class="risk-cols">
+        <div>
+          <div class="evidence">
+            <div class="ev-label">Проверьте сами</div>
+            <div class="ev-text">Запросы в Google/Яндекс: «семейная биография» — <strong>почти нет</strong>. «Записать историю бабушки» — <strong>единицы</strong>. «Биография на заказ» — конкуренция с академическими агентствами. Органического спроса на продукт практически не существует.</div>
+          </div>
+          <div class="evidence">
+            <div class="ev-label">Что это означает</div>
+            <div class="ev-text">Весь трафик должен приходить через <strong>создание потребности с нуля</strong> — контент, таргет, сарафан. Это дорого и медленно. Нет «горячего» спроса, который можно перехватить в поиске.</div>
+          </div>
+        </div>
+        <div>
+          <div class="evidence">
+            <div class="ev-label">Цена обучения рынка</div>
+            <div class="ev-text">Компании, которые создавали новые категории (<strong>StoryWorth, Remento</strong> — западные аналоги), потратили <strong>годы и десятки миллионов долларов</strong> на формирование категории. StoryWorth привлёк $47M инвестиций. <strong>ГЛАВА решает эту задачу без внешнего капитала.</strong></div>
+          </div>
+          <div class="counter">
+            <div class="counter-label">Контраргумент</div>
+            <div class="counter-text">Можно работать на существующем спросе — «подарок на юбилей», «необычный подарок маме». Перехват через намерение купить подарок, а не через осознание потребности в биографии. Это работает, но <strong>ограничивает охват</strong>.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- R3 -->
+  <div class="risk-block">
+    <div class="risk-block-header" onclick="toggleR(this)">
+      <div class="risk-icon" style="background:rgba(230,126,34,.1)">🔁</div>
+      <div class="risk-title-block">
+        <h3>Одноразовая бизнес-модель без LTV</h3>
+        <div class="risk-meta">Биографию делают один раз · Нет подписки · Высокая зависимость от CAC</div>
+      </div>
+      <span class="risk-severity sev-high">Высокий</span>
+      <div class="risk-toggle">+</div>
+    </div>
+    <div class="risk-body">
+      <div class="risk-cols">
+        <div>
+          <div class="evidence">
+            <div class="ev-label">Структура LTV</div>
+            <div class="ev-text">Биографию дедушки делают <strong>один раз</strong>. Даже если клиент счастлив — следующий заказ случится через 2–5 лет (другой родственник) или не случится вовсе. <strong>LTV ≈ одной транзакции</strong> для большинства клиентов.</div>
+          </div>
+          <div class="evidence">
+            <div class="ev-label">Что это означает для роста</div>
+            <div class="ev-text">Нужен постоянный приток <strong>новых</strong> клиентов. Каждый месяц — с нуля. Без рекуррентного дохода нет «маховика»: каждый рубль выручки нужно зарабатывать заново через маркетинг.</div>
+          </div>
+        </div>
+        <div>
+          <div class="evidence">
+            <div class="ev-label">Сравнение с устойчивыми бизнес-моделями</div>
+            <div class="ev-text">Подписочные сервисы имеют LTV в 20–50× первой оплаты. ГЛАВА имеет LTV в 1–1.5× первой оплаты. <strong>Это не плохо само по себе — но требует исключительно эффективного маркетинга и низкого CAC.</strong></div>
+          </div>
+          <div class="counter">
+            <div class="counter-label">Контраргумент</div>
+            <div class="counter-text">Реферальность. Если клиент в восторге — он расскажет сестре, подруге, коллеге. Органический рост через WOM может снизить CAC. <strong>Но это предполагает стабильно высокое качество продукта при масштабировании.</strong></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="d">
+
+
+  <!-- PRODUCT RISKS -->
+  <h2 class="s" id="product">II. Продуктовые ловушки</h2>
+
+  <!-- R4 -->
+  <div class="risk-block">
+    <div class="risk-block-header" onclick="toggleR(this)">
+      <div class="risk-icon" style="background:rgba(231,76,60,.1)">🏚️</div>
+      <div class="risk-title-block">
+        <h3>«Домашнее задание»: клиент платит и не завершает</h3>
+        <div class="risk-meta">Самый опасный невидимый риск · Проблема воронки ВНУТРИ продукта</div>
+      </div>
+      <span class="risk-severity sev-fatal">Фатальный</span>
+      <div class="risk-toggle">+</div>
+    </div>
+    <div class="risk-body">
+      <div class="risk-cols">
+        <div>
+          <div class="evidence">
+            <div class="ev-label">Что происходит после оплаты</div>
+            <div class="ev-text">Клиент оплатил 6 900 ₽. Теперь ему нужно: <strong>организовать встречу с пожилым родственником → убедить его говорить → записать 1–3 часа аудио → загрузить → добавить фотографии → написать подписи.</strong> Это 5+ отдельных барьеров после оплаты.</div>
+          </div>
+          <div class="evidence">
+            <div class="ev-label">Аналогия из других категорий</div>
+            <div class="ev-text">Онлайн-курсы: покупают 100% — заканчивают <strong>3–10%</strong>. Фитнес-подписки: покупают в январе — приходят в феврале <strong>40% купивших</strong>. <strong>Что думаем о завершаемости заказов ГЛАВА?</strong> Этого не знаем — и это само по себе риск.</div>
+          </div>
+        </div>
+        <div>
+          <h3 class="ss">Воронка внутри продукта</h3>
+          <div class="funnel">
+            <div class="funnel-step">
+              <div class="funnel-label">Оплатили</div>
+              <div class="funnel-bar-wrap"><div class="funnel-bar" style="width:100%;background:#2ecc71">100%</div></div>
+              <div class="funnel-pct ue-ok">100%</div>
+            </div>
+            <div class="funnel-step">
+              <div class="funnel-label">Загрузили аудио</div>
+              <div class="funnel-bar-wrap"><div class="funnel-bar" style="width:65%;background:#f39c12">?</div></div>
+              <div class="funnel-pct ue-warn">~65%?</div>
+            </div>
+            <div class="funnel-step">
+              <div class="funnel-label">Достаточный объём</div>
+              <div class="funnel-bar-wrap"><div class="funnel-bar" style="width:45%;background:#e74c3c">?</div></div>
+              <div class="funnel-pct ue-bad">~45%?</div>
+            </div>
+            <div class="funnel-step">
+              <div class="funnel-label">Добавили фото</div>
+              <div class="funnel-bar-wrap"><div class="funnel-bar" style="width:35%;background:#c0392b">?</div></div>
+              <div class="funnel-pct ue-bad">~35%?</div>
+            </div>
+            <div class="funnel-step">
+              <div class="funnel-label">Получили книгу</div>
+              <div class="funnel-bar-wrap"><div class="funnel-bar" style="width:28%;background:#8e1a10">?</div></div>
+              <div class="funnel-pct ue-bad">~28%?</div>
+            </div>
+          </div>
+          <p style="font-size:.75rem;color:rgba(249,247,242,.3);margin-top:.5rem">* Цифры — гипотетические. Реальных данных нет. Это само по себе проблема.</p>
+          <div class="evidence" style="margin-top:1rem">
+            <div class="ev-label">Что это означает</div>
+            <div class="ev-text">Если только 30–40% оплативших завершают заказ — <strong>реальная стоимость «готовой книги» для бизнеса ~17–20 тыс. ₽</strong>, а не 6 900 ₽. Остальное — потерянные деньги на поддержку, незавершённые заказы и негативные отзывы.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- R5 -->
+  <div class="risk-block">
+    <div class="risk-block-header" onclick="toggleR(this)">
+      <div class="risk-icon" style="background:rgba(231,76,60,.1)">⚡</div>
+      <div class="risk-title-block">
+        <h3>Качество текста при масштабировании</h3>
+        <div class="risk-meta">Один плохой отзыв = потеря нескольких клиентов через сарафан</div>
+      </div>
+      <span class="risk-severity sev-fatal">Фатальный</span>
+      <div class="risk-toggle">+</div>
+    </div>
+    <div class="risk-body">
+      <div class="risk-cols">
+        <div>
+          <div class="evidence">
+            <div class="ev-label">Природа риска</div>
+            <div class="ev-text">Продукт продаётся через эмоцию и обещание «живого текста». Если результат воспринимается как <strong>«машинный», «шаблонный», «не похожий на маму»</strong> — это не просто возврат денег. Это человек, который расскажет всем знакомым.</div>
+          </div>
+          <div class="evidence">
+            <div class="ev-label">Проблема масштаба</div>
+            <div class="ev-text">При 10 заказах в месяц можно контролировать каждый. При 100 — уже нет. AI-тексты имеют системные артефакты: одинаковые обороты, потеря интонации, «причёсанность». <strong>Для клиента С4 (хранитель) это неприемлемо. И он об этом расскажет.</strong></div>
+          </div>
+        </div>
+        <div>
+          <div class="evidence">
+            <div class="ev-label">Структурная проблема</div>
+            <div class="ev-text">Если в процессе нужен <strong>живой редактор</strong> — масштабирование ограничено количеством редакторов. Если без редактора — качество падает. <strong>Это дилемма, которую пока никто не решил явно.</strong></div>
+          </div>
+          <div class="evidence">
+            <div class="ev-label">Worst case сценарий</div>
+            <div class="ev-text">Клиент заказывает биографию папы на 70-летие, получает «шаблонный» текст, делает скриншот и публикует. <strong>Один вирусный негативный пост в Telegram-канале про семейную память — и весь органический трафик встаёт.</strong></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- R6 -->
+  <div class="risk-block">
+    <div class="risk-block-header" onclick="toggleR(this)">
+      <div class="risk-icon" style="background:rgba(230,126,34,.1)">🔗</div>
+      <div class="risk-title-block">
+        <h3>Зависимость от Telegram и внешних API</h3>
+        <div class="risk-meta">Единые точки отказа · Блокировка в РФ · Изменение политик</div>
+      </div>
+      <span class="risk-severity sev-high">Высокий</span>
+      <div class="risk-toggle">+</div>
+    </div>
+    <div class="risk-body">
+      <div class="risk-cols">
+        <div>
+          <div class="evidence">
+            <div class="ev-label">Telegram как критичная инфраструктура</div>
+            <div class="ev-text">Весь UX построен вокруг Telegram. <strong>Telegram однажды уже был заблокирован в РФ</strong> (2018–2020). Повторная блокировка = продукт перестаёт существовать за один день.</div>
+          </div>
+          <div class="evidence">
+            <div class="ev-label">OpenAI из России</div>
+            <div class="ev-text">OpenAI официально <strong>не работает в России</strong>. Доступ через прокси. Любое закручивание санкций или изменение политики — и ключевой компонент пайплайна отваливается.</div>
+          </div>
+        </div>
+        <div>
+          <div class="evidence">
+            <div class="ev-label">AssemblyAI, Replicate и другие</div>
+            <div class="ev-text">Транскрипция, генерация обложки — через иностранные сервисы. <strong>Каждый — потенциальная точка отказа</strong>, на которую команда не имеет влияния.</div>
+          </div>
+          <div class="counter">
+            <div class="counter-label">Митигация существует</div>
+            <div class="counter-text">Замена на российские аналоги: Яндекс SpeechKit, Yandex GPT. Но <strong>качество хуже</strong>, переход потребует переработки пайплайна. Не критично, но работа.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="d">
+
+
+  <!-- ECONOMICS -->
+  <h2 class="s" id="economics">III. Вопросы к юнит-экономике</h2>
+
+  <div class="risk-block">
+    <div class="risk-block-header" onclick="toggleR(this)">
+      <div class="risk-icon" style="background:rgba(241,196,15,.08)">💰</div>
+      <div class="risk-title-block">
+        <h3>CAC / LTV — где деньги?</h3>
+        <div class="risk-meta">Реальной юнит-экономики нет · Пока не посчитано</div>
+      </div>
+      <span class="risk-severity sev-high">Высокий</span>
+      <div class="risk-toggle">+</div>
+    </div>
+    <div class="risk-body" style="padding-top:0">
+      <div style="padding:1.75rem 0">
+        <p style="font-size:.88rem;color:rgba(249,247,242,.45);margin-bottom:1.5rem">Примерный расчёт — с реалистичными допущениями. Точные цифры могут отличаться. Цель — показать, где могут быть проблемы.</p>
+        <table class="ue-table">
+          <thead>
+            <tr>
+              <th>Показатель</th>
+              <th>Оптимистично</th>
+              <th>Реалистично</th>
+              <th>Пессимистично</th>
+              <th>Статус</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Цена продукта</td>
+              <td class="ue-ok">6 900 ₽</td>
+              <td class="ue-ok">6 900 ₽</td>
+              <td class="ue-ok">6 900 ₽</td>
+              <td><span class="status-dot s-ok"></span>Известно</td>
+            </tr>
+            <tr>
+              <td>Стоимость API (транскрипция + LLM + layout)</td>
+              <td class="ue-ok">~300 ₽</td>
+              <td class="ue-warn">~600 ₽</td>
+              <td class="ue-bad">~900 ₽</td>
+              <td><span class="status-dot s-ok"></span>Посчитать</td>
+            </tr>
+            <tr>
+              <td>Время редактора (если есть)</td>
+              <td class="ue-ok">0 ₽ (авто)</td>
+              <td class="ue-warn">~1 500 ₽ (1.5 ч)</td>
+              <td class="ue-bad">~3 000 ₽ (3 ч)</td>
+              <td><span class="status-dot s-risk"></span>Неясно</td>
+            </tr>
+            <tr>
+              <td>Поддержка / правки (3 круга)</td>
+              <td class="ue-ok">~300 ₽</td>
+              <td class="ue-warn">~700 ₽</td>
+              <td class="ue-bad">~1 500 ₽</td>
+              <td><span class="status-dot s-unknown"></span>Гипотеза</td>
+            </tr>
+            <tr>
+              <td><strong>Gross Margin</strong></td>
+              <td class="ue-ok"><strong>~88%</strong></td>
+              <td class="ue-warn"><strong>~59%</strong></td>
+              <td class="ue-bad"><strong>~36%</strong></td>
+              <td><span class="status-dot s-unknown"></span>Неизвестно</td>
+            </tr>
+            <tr>
+              <td>CAC (таргет + контент)</td>
+              <td class="ue-ok">~1 500 ₽</td>
+              <td class="ue-warn">~3 000 ₽</td>
+              <td class="ue-bad">~6 000 ₽</td>
+              <td><span class="status-dot s-risk"></span>Нет данных</td>
+            </tr>
+            <tr>
+              <td><strong>Contribution Margin</strong></td>
+              <td class="ue-ok"><strong>~4 800 ₽</strong></td>
+              <td class="ue-warn"><strong>~1 100 ₽</strong></td>
+              <td class="ue-bad"><strong>-2 600 ₽</strong></td>
+              <td><span class="status-dot s-unknown"></span>Неизвестно</td>
+            </tr>
+            <tr>
+              <td>Завершаемость заказов</td>
+              <td class="ue-ok">80%</td>
+              <td class="ue-warn">50%</td>
+              <td class="ue-bad">30%</td>
+              <td><span class="status-dot s-risk"></span>Нет данных</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="evidence">
+          <div class="ev-label">Главный вывод</div>
+          <div class="ev-text">При реалистичном сценарии — продукт зарабатывает ~1 100 ₽ с заказа. Это мало, но жить можно. При пессимистичном — <strong>продукт убыточен на уровне юнита</strong>. Точных данных нет ни по CAC, ни по завершаемости. Без этих цифр — невозможно управлять бизнесом.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="d">
+
+
+  <!-- COMPETITION -->
+  <h2 class="s" id="competition">IV. Конкурентные риски</h2>
+
+  <div class="risk-block">
+    <div class="risk-block-header" onclick="toggleR(this)">
+      <div class="risk-icon" style="background:rgba(230,126,34,.1)">🦁</div>
+      <div class="risk-title-block">
+        <h3>Большой игрок может скопировать за три месяца</h3>
+        <div class="risk-meta">Нет технологического рва · Нет патентов · Нет сетевых эффектов</div>
+      </div>
+      <span class="risk-severity sev-high">Высокий</span>
+      <div class="risk-toggle">+</div>
+    </div>
+    <div class="risk-body">
+      <div class="risk-cols">
+        <div>
+          <div class="evidence">
+            <div class="ev-label">Что легко скопировать</div>
+            <div class="ev-text">Telegram-бот с вопросами → GPT-промпт → PDF. Это <strong>3–4 недели разработки</strong> для любой команды с опытом. Яндекс, ВКонтакте, СберДомострой, любое агентство — могут сделать это в качестве сайдпроекта.</div>
+          </div>
+          <div class="evidence">
+            <div class="ev-label">Западные прямые конкуренты</div>
+            <div class="ev-text"><strong>StoryWorth</strong> ($47M инвестиций), <strong>Remento</strong> — делают то же самое. Если любой из них выйдет в Россию/СНГ или сделает русскоязычную версию — ГЛАВА столкнётся с конкурентом с многолетним опытом и бюджетом.</div>
+          </div>
+        </div>
+        <div>
+          <div class="evidence">
+            <div class="ev-label">Что сложно скопировать</div>
+            <div class="ev-text">Российский контекст (понимание аудитории, культурные коды), <strong>живой сарафан</strong>, доверие клиентов, база промптов под русскоязычный нарратив. Это реальный ров — но небольшой.</div>
+          </div>
+          <div class="evidence">
+            <div class="ev-label">Человек-гострайтер как конкурент</div>
+            <div class="ev-text">За 15–30 тыс. ₽ живой биограф напишет биографию вручную. Сегмент S4 (хранитель памяти, перфекционист) <strong>скорее заплатит больше живому редактору</strong>, чем меньше алгоритму.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="d">
+
+
+  <!-- EXECUTION RISKS -->
+  <h2 class="s">V. Операционные и команда</h2>
+
+  <div class="risk-block">
+    <div class="risk-block-header" onclick="toggleR(this)">
+      <div class="risk-icon" style="background:rgba(241,196,15,.08)">⚙️</div>
+      <div class="risk-title-block">
+        <h3>Масштабирование — узкое место в операциях</h3>
+        <div class="risk-meta">Ручной редактор vs качество · Поддержка при росте · Пайплайн</div>
+      </div>
+      <span class="risk-severity sev-med">Средний</span>
+      <div class="risk-toggle">+</div>
+    </div>
+    <div class="risk-body">
+      <div class="risk-cols">
+        <div>
+          <div class="evidence">
+            <div class="ev-label">Производственный потолок</div>
+            <div class="ev-text">Если качество обеспечивается ручной редактурой — <strong>масштабирование ограничено мощностью редакторов</strong>. 10 заказов в неделю = 1 FTE редактор. 50 заказов = 5 FTE. Это линейные затраты, а не экспоненциальный рост.</div>
+          </div>
+          <div class="evidence">
+            <div class="ev-label">Поддержка в моменте</div>
+            <div class="ev-text">Сегменты S5 (утрата) и S2 (внук в тревоге) <strong>эмоционально уязвимы</strong>. Им нужен живой ответ в течение часа, а не автоответчик. При 100+ заказах в месяц поддержка становится дорогой операцией.</div>
+          </div>
+        </div>
+        <div>
+          <div class="evidence">
+            <div class="ev-label">Нестабильность пайплайна</div>
+            <div class="ev-text">14 агентов n8n, несколько внешних API, Telegram-бот — <strong>это сложная система с множеством точек отказа</strong>. При росте числа заказов дебаггинг и мониторинг становятся fulltime-задачей.</div>
+          </div>
+          <div class="evidence">
+            <div class="ev-label">Команда</div>
+            <div class="ev-text">Неизвестно сколько человек работает над продуктом. Если это 1–2 человека — <strong>bus factor = 1</strong>. Болезнь, выгорание, уход одного человека = продукт встаёт.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="d">
+
+
+  <!-- VERDICT -->
+  <h2 class="s" id="verdict">VI. Вердикт и что нужно доказать</h2>
+
+  <div style="background:var(--surface);border:1px solid var(--border2);border-radius:16px;padding:2.5rem;margin-bottom:2rem">
+    <div style="font-size:.65rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--red);margin-bottom:1.5rem">Общая оценка</div>
+    <div style="font-family:'Playfair Display',serif;font-size:clamp(1.2rem,2.5vw,1.6rem);color:rgba(249,247,242,.8);line-height:1.5;margin-bottom:1.5rem">
+      Продукт решает <em style="color:var(--gold-light)">реальную боль</em> реальной аудитории. Но это ещё не доказательство, что бизнес будет работать. Главные вопросы — не продуктовые, а <em style="color:var(--red)">операционные и экономические</em>.
+    </div>
+    <div class="verdict-grid">
+      <div class="verdict-col">
+        <h4 style="color:var(--green)">✓ Что работает</h4>
+        <div class="verdict-list">
+          <div class="verdict-item"><div class="verdict-dot" style="background:var(--green)">✓</div><div style="color:rgba(249,247,242,.55)">Реальная незакрытая боль у большой аудитории</div></div>
+          <div class="verdict-item"><div class="verdict-dot" style="background:var(--green)">✓</div><div style="color:rgba(249,247,242,.55)">Urgency-сегменты (S2, S5) конвертируют быстро и с высоким чеком</div></div>
+          <div class="verdict-item"><div class="verdict-dot" style="background:var(--green)">✓</div><div style="color:rgba(249,247,242,.55)">Нет конкуренции в нише на российском рынке сейчас</div></div>
+          <div class="verdict-item"><div class="verdict-dot" style="background:var(--green)">✓</div><div style="color:rgba(249,247,242,.55)">Технический стек работает, продукт уже существует</div></div>
+          <div class="verdict-item"><div class="verdict-dot" style="background:var(--green)">✓</div><div style="color:rgba(249,247,242,.55)">Сильный виральный потенциал при хорошем продукте</div></div>
+        </div>
+      </div>
+      <div class="verdict-col">
+        <h4 style="color:var(--red)">✗ Что не доказано</h4>
+        <div class="verdict-list">
+          <div class="verdict-item"><div class="verdict-dot" style="background:var(--red)">✗</div><div style="color:rgba(249,247,242,.55)">Реальная завершаемость заказов (этого никто не знает)</div></div>
+          <div class="verdict-item"><div class="verdict-dot" style="background:var(--red)">✗</div><div style="color:rgba(249,247,242,.55)">CAC при платном трафике в нише «семейная память»</div></div>
+          <div class="verdict-item"><div class="verdict-dot" style="background:var(--red)">✗</div><div style="color:rgba(249,247,242,.55)">Стабильность качества AI-текста при 50+ заказах/мес</div></div>
+          <div class="verdict-item"><div class="verdict-dot" style="background:var(--red)">✗</div><div style="color:rgba(249,247,242,.55)">Операционная модель при росте (кто редактор?)</div></div>
+          <div class="verdict-item"><div class="verdict-dot" style="background:var(--red)">✗</div><div style="color:rgba(249,247,242,.55)">Повторные покупки / реферальность в реальных числах</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="s">Что нужно измерить в первые 60 дней</h2>
+  <p style="font-size:.88rem;color:rgba(249,247,242,.4);margin-bottom:1.5rem">Это таблица вопросов, на которые у команды должны быть ответы прежде чем вкладывать деньги в рост</p>
+
+  <table class="proof-table">
+    <thead>
+      <tr>
+        <th>Вопрос</th>
+        <th>Почему критично</th>
+        <th>Как измерить</th>
+        <th>Статус</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Какой % оплативших загружают аудио?</td>
+        <td style="color:rgba(249,247,242,.4)">Ключевой продуктовый KPI. Если &lt;50% — проблема</td>
+        <td style="color:rgba(249,247,242,.4)">Аналитика в БД: paid→audio_uploaded</td>
+        <td><span class="status-dot s-unknown"></span>Неизвестно</td>
+      </tr>
+      <tr>
+        <td>Какой % доходит до готовой книги?</td>
+        <td style="color:rgba(249,247,242,.4)">North Star. Если &lt;40% — продукт не работает</td>
+        <td style="color:rgba(249,247,242,.4)">Воронка paid→book_delivered</td>
+        <td><span class="status-dot s-unknown"></span>Неизвестно</td>
+      </tr>
+      <tr>
+        <td>Какова стоимость привлечения (CAC)?</td>
+        <td style="color:rgba(249,247,242,.4)">Без CAC невозможно считать unit-экономику</td>
+        <td style="color:rgba(249,247,242,.4)">Тест 30–50 тыс. ₽ в таргете по основным аудиториям</td>
+        <td><span class="status-dot s-risk"></span>Нет данных</td>
+      </tr>
+      <tr>
+        <td>Как клиенты оценивают качество текста?</td>
+        <td style="color:rgba(249,247,242,.4)">Если NPS &lt;40 — качество убьёт сарафан</td>
+        <td style="color:rgba(249,247,242,.4)">Опрос после получения книги, 1 вопрос</td>
+        <td><span class="status-dot s-unknown"></span>Неизвестно</td>
+      </tr>
+      <tr>
+        <td>Сколько реферралов даёт один довольный клиент?</td>
+        <td style="color:rgba(249,247,242,.4)">Если k&gt;0.3 — можно строить на органике</td>
+        <td style="color:rgba(249,247,242,.4)">UTM-метки, вопрос «откуда узнали»</td>
+        <td><span class="status-dot s-unknown"></span>Нет данных</td>
+      </tr>
+      <tr>
+        <td>Каков реальный gross margin на заказ?</td>
+        <td style="color:rgba(249,247,242,.4)">Без этого невозможно принимать решения о ценообразовании</td>
+        <td style="color:rgba(249,247,242,.4)">Учёт всех затрат на 20 заказах вручную</td>
+        <td><span class="status-dot s-risk"></span>Неизвестно</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- FINAL BLOCK -->
+  <div style="background:var(--surface2);border-radius:16px;padding:2.5rem;border:1px solid var(--border2);margin-top:2rem">
+    <div style="font-size:.65rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:1rem">Итоговый тезис</div>
+    <div style="font-family:'Playfair Display',serif;font-size:1.3rem;color:rgba(249,247,242,.8);line-height:1.55;margin-bottom:1.5rem;max-width:760px">
+      ГЛАВА — это хорошая идея с доказанной болью. Но прямо сейчас это
+      <em style="color:var(--gold-light)">гипотеза о бизнесе</em>, а не бизнес.
+      Разница между ними — в трёх цифрах, которых пока нет:
+      CAC, завершаемость заказов, gross margin.
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem">
+      <div style="background:rgba(231,76,60,.08);border:1px solid var(--red-dim);border-radius:8px;padding:1.25rem">
+        <div style="font-size:.65rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--red);margin-bottom:.4rem">Если не знаешь</div>
+        <p style="font-size:.83rem;color:rgba(249,247,242,.5)">Сколько стоит привлечь одного клиента — нельзя масштабировать маркетинг</p>
+      </div>
+      <div style="background:rgba(231,76,60,.08);border:1px solid var(--red-dim);border-radius:8px;padding:1.25rem">
+        <div style="font-size:.65rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--red);margin-bottom:.4rem">Если не знаешь</div>
+        <p style="font-size:.83rem;color:rgba(249,247,242,.5)">Сколько % заказов завершается — нельзя строить производство</p>
+      </div>
+      <div style="background:rgba(168,130,60,.1);border:1px solid rgba(168,130,60,.3);border-radius:8px;padding:1.25rem">
+        <div style="font-size:.65rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:.4rem">Если знаешь</div>
+        <p style="font-size:.83rem;color:rgba(249,247,242,.5)">Эти три цифры — и понимаешь куда двигаться. Приоритет №1 — их получить.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <strong>ГЛАВА</strong> · Second Opinion · Апрель 2026<br>
+  <span style="font-size:.72rem;margin-top:.3rem;display:block">Это не приговор — это список вопросов. Чем быстрее на них ответите, тем лучше.</span>
+</footer>
+
+<script>
+function toggleR(header){
+  const body=header.nextElementSibling;
+  const t=header.querySelector('.risk-toggle');
+  const open=body.classList.contains('open');
+  body.classList.toggle('open',!open);
+  t.classList.toggle('open',!open);
+  t.textContent=open?'+':'×';
+}
+// open first one by default
+document.querySelectorAll('.risk-toggle')[0].textContent='×';
+document.querySelectorAll('a[href^="#"]').forEach(a=>{
+  a.addEventListener('click',e=>{e.preventDefault();const t=document.querySelector(a.getAttribute('href'));if(t)t.scrollIntoView({behavior:'smooth',block:'start'})})
+})
+</script>
+</body>
+</html>

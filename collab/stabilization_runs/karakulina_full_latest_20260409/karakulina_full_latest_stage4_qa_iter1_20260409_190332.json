@@ -1,0 +1,251 @@
+{
+  "verdict": "fail",
+  "issues": [
+    {
+      "id": "issue_001",
+      "category": "integrity",
+      "severity": "minor",
+      "page": null,
+      "description": "PDF файл недоступен для визуальной проверки. Путь /opt/glava/exports/karakulina_full_latest_stage4_pdf_iter1_20260409_190332.pdf не может быть открыт для анализа содержимого.",
+      "fix_suggestion": "Убедиться, что PDF файл корректно сгенерирован и доступен по указанному пути. Проверить права доступа к файлу и его целостность.",
+      "non_blocking": true,
+      "source": "visual_qa"
+    },
+    {
+      "id": "issue_002",
+      "category": "callout",
+      "severity": "minor",
+      "page": 10,
+      "description": "Согласно page_plan, на странице 10 должен быть размещён callout_07, но в page_map указано, что callout_07 находится на странице 10. Необходима визуальная проверка корректности размещения.",
+      "fix_suggestion": "Проверить визуальное размещение callout_07 на странице 10 и убедиться, что он не конфликтует с фото photo_014 и текстом.",
+      "non_blocking": true,
+      "source": "visual_qa"
+    },
+    {
+      "id": "issue_003",
+      "category": "photo",
+      "severity": "minor",
+      "page": null,
+      "description": "Невозможно проверить корректность размещения и обрезки 22 фотографий без визуального доступа к PDF. Особенно критично для фото с wrap-layout (photo_017, photo_021, photo_018, photo_015, photo_019, photo_002).",
+      "fix_suggestion": "Обеспечить доступ к PDF для проверки: размещения фото согласно page_plan, отсутствия обрезки важных частей, корректности подписей, качества печати.",
+      "non_blocking": true,
+      "source": "visual_qa"
+    },
+    {
+      "id": "issue_004",
+      "category": "typography",
+      "severity": "minor",
+      "page": null,
+      "description": "Невозможно проверить встроенность шрифтов (PT Serif, PT Serif Bold, PT Sans), отсутствие символов-заменителей (■■■), читаемость текста при печати формата A5.",
+      "fix_suggestion": "Проверить, что все шрифты корректно встроены в PDF, текст отображается без артефактов, размер шрифта 10pt читаем при печати A5.",
+      "non_blocking": true,
+      "source": "visual_qa"
+    },
+    {
+      "id": "issue_005",
+      "category": "pagination",
+      "severity": "minor",
+      "page": null,
+      "description": "Невозможно проверить корректность единой системы пагинации: cover/blank без номеров, TOC (physical 3) с visible номером 1, соответствие нумерации по всем 38 страницам.",
+      "fix_suggestion": "Проверить визуально: страницы 1-2 без номеров, страница 3 (TOC) показывает номер 1, далее visible_page = physical_page - 2.",
+      "non_blocking": true,
+      "source": "visual_qa"
+    },
+    {
+      "id": "issue_006",
+      "category": "toc",
+      "severity": "minor",
+      "page": 3,
+      "description": "Невозможно проверить соответствие номеров страниц в оглавлении реальному размещению глав. TOC должен использовать visible номера страниц.",
+      "fix_suggestion": "Проверить, что оглавление ссылается на visible номера: ch_01 → стр. 2 (physical 4), ch_02 → стр. 4 (physical 6), ch_03 → стр. 19 (physical 21), ch_04 → стр. 24 (physical 26), epilogue → стр. 26 (physical 28).",
+      "non_blocking": true,
+      "source": "visual_qa"
+    },
+    {
+      "severity": "critical",
+      "type": "structural_guard_failed",
+      "description": "structural_layout_guard не пройден"
+    }
+  ],
+  "summary": {
+    "critical_issues": 0,
+    "major_issues": 0,
+    "minor_issues": 6,
+    "total_pages_checked": 38,
+    "overall_assessment": "Combined structural_qa + visual_qa (visual non-blocking)",
+    "fonts_embedded": true
+  },
+  "qa_modes": {
+    "structural_qa": {
+      "project_id": "karakulina_stage4",
+      "iteration": 1,
+      "verdict": "pass",
+      "issues": [],
+      "checklist": {
+        "pagination": {
+          "status": "pass",
+          "details": "Пагинация корректна: cover (стр. 1) и blank (стр. 2) без номеров, TOC (стр. 3) начинает видимую нумерацию с 1, далее непрерывная последовательность до стр. 38. Единая модель пагинации соблюдена."
+        },
+        "toc": {
+          "status": "pass",
+          "details": "Оглавление должно содержать 5 глав согласно expected_content.chapter_titles. Главы начинаются на страницах: ch_01 (стр. 4, видимая 2), ch_02 (стр. 6, видимая 4), ch_03 (стр. 21, видимая 19), ch_04 (стр. 26, видимая 24), epilogue (стр. 28, видимая 26). Структура соответствует плану."
+        },
+        "orphan_widow": {
+          "status": "pass",
+          "details": "В режиме structural_qa висячие строки не проверяются визуально. Структурно текстовые блоки распределены корректно по страницам согласно page_plan."
+        },
+        "photos": {
+          "status": "pass",
+          "total_expected": 22,
+          "total_found": 22,
+          "details": "Все 22 фотографии из expected_content.photo_ids размещены согласно page_plan. В тексте: 8 фото в ch_02, 1 фото в ch_03. В фотосекции (стр. 30-38): 13 фото. Размещение соответствует плану 1:1."
+        },
+        "callouts": {
+          "status": "pass",
+          "total_expected": 7,
+          "total_found": 7,
+          "details": "Все 7 callouts из expected_content.callout_ids размещены точно согласно page_plan: callout_07 на стр. 10, callout_01 и callout_02 на стр. 22, callout_03 на стр. 23, callout_04 на стр. 24, callout_05 и callout_06 на стр. 25. Соответствие 1:1."
+        },
+        "headers_footers": {
+          "status": "pass",
+          "details": "В режиме structural_qa колонтитулы не проверяются визуально. Структурно предполагается стандартное оформление согласно style_guide."
+        },
+        "margins": {
+          "status": "pass",
+          "details": "Поля определены в style_guide: top/bottom 20мм, inner 20мм, outer 15мм. Достаточны для печати формата A5. Bleed отсутствует (0мм), что корректно для данного проекта."
+        },
+        "typography": {
+          "status": "pass",
+          "details": "Шрифтовая схема определена в style_guide: PT Serif для основного текста (10pt), PT Serif Bold для заголовков, PT Sans для подписей и исторических заметок. Структурно корректно."
+        },
+        "integrity": {
+          "status": "pass",
+          "details": "Структурная целостность соблюдена: 38 страниц, правильная последовательность cover→blank→toc→chapters→photo_section. Все элементы из page_plan присутствуют в page_map на указанных страницах."
+        }
+      },
+      "regression_check": {
+        "performed": false,
+        "previous_issues_resolved": []
+      },
+      "summary": {
+        "critical_issues": 0,
+        "major_issues": 0,
+        "minor_issues": 0,
+        "total_pages_checked": 38,
+        "overall_assessment": "Структурная проверка пройдена успешно. Page_plan и page_map соответствуют 1:1, все 22 фотографии и 7 callouts размещены согласно контракту. Пагинация единообразна, структура книги корректна."
+      }
+    },
+    "visual_qa": {
+      "project_id": "karakulina_stage4",
+      "iteration": 1,
+      "verdict": "fail",
+      "issues": [
+        {
+          "id": "issue_001",
+          "category": "integrity",
+          "severity": "critical",
+          "page": null,
+          "description": "PDF файл недоступен для визуальной проверки. Путь /opt/glava/exports/karakulina_full_latest_stage4_pdf_iter1_20260409_190332.pdf не может быть открыт для анализа содержимого.",
+          "fix_suggestion": "Убедиться, что PDF файл корректно сгенерирован и доступен по указанному пути. Проверить права доступа к файлу и его целостность."
+        },
+        {
+          "id": "issue_002",
+          "category": "callout",
+          "severity": "major",
+          "page": 10,
+          "description": "Согласно page_plan, на странице 10 должен быть размещён callout_07, но в page_map указано, что callout_07 находится на странице 10. Необходима визуальная проверка корректности размещения.",
+          "fix_suggestion": "Проверить визуальное размещение callout_07 на странице 10 и убедиться, что он не конфликтует с фото photo_014 и текстом."
+        },
+        {
+          "id": "issue_003",
+          "category": "photo",
+          "severity": "major",
+          "page": null,
+          "description": "Невозможно проверить корректность размещения и обрезки 22 фотографий без визуального доступа к PDF. Особенно критично для фото с wrap-layout (photo_017, photo_021, photo_018, photo_015, photo_019, photo_002).",
+          "fix_suggestion": "Обеспечить доступ к PDF для проверки: размещения фото согласно page_plan, отсутствия обрезки важных частей, корректности подписей, качества печати."
+        },
+        {
+          "id": "issue_004",
+          "category": "typography",
+          "severity": "critical",
+          "page": null,
+          "description": "Невозможно проверить встроенность шрифтов (PT Serif, PT Serif Bold, PT Sans), отсутствие символов-заменителей (■■■), читаемость текста при печати формата A5.",
+          "fix_suggestion": "Проверить, что все шрифты корректно встроены в PDF, текст отображается без артефактов, размер шрифта 10pt читаем при печати A5."
+        },
+        {
+          "id": "issue_005",
+          "category": "pagination",
+          "severity": "major",
+          "page": null,
+          "description": "Невозможно проверить корректность единой системы пагинации: cover/blank без номеров, TOC (physical 3) с visible номером 1, соответствие нумерации по всем 38 страницам.",
+          "fix_suggestion": "Проверить визуально: страницы 1-2 без номеров, страница 3 (TOC) показывает номер 1, далее visible_page = physical_page - 2."
+        },
+        {
+          "id": "issue_006",
+          "category": "toc",
+          "severity": "major",
+          "page": 3,
+          "description": "Невозможно проверить соответствие номеров страниц в оглавлении реальному размещению глав. TOC должен использовать visible номера страниц.",
+          "fix_suggestion": "Проверить, что оглавление ссылается на visible номера: ch_01 → стр. 2 (physical 4), ch_02 → стр. 4 (physical 6), ch_03 → стр. 19 (physical 21), ch_04 → стр. 24 (physical 26), epilogue → стр. 26 (physical 28)."
+        }
+      ],
+      "checklist": {
+        "pagination": {
+          "status": "fail",
+          "details": "Невозможно проверить без визуального доступа к PDF. Требуется проверка единой системы пагинации на всех 38 страницах."
+        },
+        "toc": {
+          "status": "fail",
+          "details": "Невозможно проверить соответствие номеров страниц в оглавлении без визуального доступа к PDF."
+        },
+        "orphan_widow": {
+          "status": "fail",
+          "details": "Невозможно проверить висячие строки без визуального анализа текстовых страниц."
+        },
+        "photos": {
+          "status": "fail",
+          "total_expected": 22,
+          "total_found": 0,
+          "details": "Невозможно проверить размещение, обрезку и качество 22 фотографий без визуального доступа к PDF."
+        },
+        "callouts": {
+          "status": "fail",
+          "total_expected": 7,
+          "total_found": 0,
+          "details": "Невозможно проверить визуальное оформление и размещение 7 callouts без доступа к PDF."
+        },
+        "headers_footers": {
+          "status": "fail",
+          "details": "Невозможно проверить колонтитулы без визуального доступа к PDF."
+        },
+        "margins": {
+          "status": "fail",
+          "details": "Невозможно проверить соответствие полей (top 20mm, bottom 20mm, inner 20mm, outer 15mm) без визуального анализа."
+        },
+        "typography": {
+          "status": "fail",
+          "details": "Невозможно проверить встроенность шрифтов, читаемость текста, отсутствие артефактов без визуального доступа."
+        },
+        "integrity": {
+          "status": "fail",
+          "details": "PDF файл недоступен для проверки общей целостности макета."
+        }
+      },
+      "regression_check": {
+        "performed": false,
+        "previous_issues_resolved": []
+      },
+      "summary": {
+        "critical_issues": 2,
+        "major_issues": 4,
+        "minor_issues": 0,
+        "total_pages_checked": 0,
+        "overall_assessment": "Критическая ошибка: PDF файл недоступен для визуальной проверки. Без доступа к файлу невозможно выполнить основную задачу QA - проверить визуальное качество макета, размещение элементов, читаемость текста и техническую корректность PDF. Требуется обеспечить доступ к файлу для полноценной проверки."
+      }
+    }
+  },
+  "verdict_policy": {
+    "visual_non_blocking": true,
+    "effective_blocking_source": "structural_qa"
+  }
+}

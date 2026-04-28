@@ -1,0 +1,116 @@
+{
+  "project_id": "karakulina_stage4",
+  "iteration": 1,
+  "verdict": "fail",
+  "issues": [
+    {
+      "id": "issue_001",
+      "category": "callout",
+      "severity": "critical",
+      "page": 18,
+      "description": "Callout callout_01 отсутствует на странице 18 согласно page_plan. В page_plan указано размещение callout_01 на странице 18, но в page_map этот callout не зафиксирован в elements.",
+      "fix_suggestion": "Добавить callout_01 на страницу 18 согласно page_plan или предоставить обоснование в technical_notes для изменения размещения."
+    },
+    {
+      "id": "issue_002",
+      "category": "callout",
+      "severity": "critical",
+      "page": 19,
+      "description": "Callout callout_02 отсутствует на странице 19 согласно page_plan. В page_plan callout_02 не указан для страницы 19, но в page_map он присутствует в elements.",
+      "fix_suggestion": "Убрать callout_02 со страницы 19 или обновить page_plan с обоснованием размещения."
+    },
+    {
+      "id": "issue_003",
+      "category": "callout",
+      "severity": "critical",
+      "page": 20,
+      "description": "Callout callout_03 отсутствует на странице 20 согласно page_plan. В page_plan callout_03 не указан для страницы 20, но в page_map он присутствует в elements.",
+      "fix_suggestion": "Убрать callout_03 со страницы 20 или обновить page_plan с обоснованием размещения."
+    },
+    {
+      "id": "issue_004",
+      "category": "callout",
+      "severity": "critical",
+      "page": 21,
+      "description": "Callout callout_04 отсутствует на странице 21 согласно page_plan. В page_plan callout_04 не указан для страницы 21, но в page_map он присутствует в elements.",
+      "fix_suggestion": "Убрать callout_04 со страницы 21 или обновить page_plan с обоснованием размещения."
+    },
+    {
+      "id": "issue_005",
+      "category": "callout",
+      "severity": "critical",
+      "page": 22,
+      "description": "Callout callout_05 отсутствует на странице 22 согласно page_plan. В page_plan callout_05 не указан для страницы 22, но в page_map он присутствует в elements.",
+      "fix_suggestion": "Убрать callout_05 со страницы 22 или обновить page_plan с обоснованием размещения."
+    },
+    {
+      "id": "issue_006",
+      "category": "callout",
+      "severity": "critical",
+      "page": 24,
+      "description": "Callout callout_06 отсутствует на странице 24 согласно page_plan. В page_plan callout_06 не указан для страницы 24, но в page_map он присутствует в elements.",
+      "fix_suggestion": "Убрать callout_06 со страницы 24 или обновить page_plan с обоснованием размещения."
+    },
+    {
+      "id": "issue_007",
+      "category": "integrity",
+      "severity": "major",
+      "page": null,
+      "description": "Несоответствие между page_plan и page_map по типам страниц. Page_plan использует page_type, а page_map использует content_type с частично разными значениями (bio_timeline vs chapter_body, text_with_photo vs chapter_body, photo_section vs photo_page).",
+      "fix_suggestion": "Привести в соответствие терминологию типов страниц между page_plan и page_map или обеспечить корректное сопоставление типов."
+    }
+  ],
+  "checklist": {
+    "pagination": {
+      "status": "pass",
+      "details": "Пагинация корректна: 33 страницы, непрерывная нумерация. Cover (стр.1) и blank (стр.2) без номеров, TOC начинается с физической страницы 3."
+    },
+    "toc": {
+      "status": "warning",
+      "details": "TOC присутствует на странице 3, но без возможности проверить соответствие номеров страниц реальному содержанию в режиме structural_qa."
+    },
+    "orphan_widow": {
+      "status": "warning",
+      "details": "Невозможно проверить висячие строки в режиме structural_qa без визуального анализа PDF."
+    },
+    "photos": {
+      "status": "pass",
+      "total_expected": 22,
+      "total_found": 22,
+      "details": "Все 22 фотографии присутствуют в page_map согласно expected_content.photo_ids. Размещение соответствует page_plan."
+    },
+    "callouts": {
+      "status": "fail",
+      "total_expected": 6,
+      "total_found": 6,
+      "details": "Все 6 callouts присутствуют в page_map, но размещение не соответствует page_plan. Критическое несоответствие контракта page_plan и отчёта page_map."
+    },
+    "headers_footers": {
+      "status": "warning",
+      "details": "Невозможно проверить колонтитулы в режиме structural_qa без визуального анализа PDF."
+    },
+    "margins": {
+      "status": "pass",
+      "details": "Поля определены в style_guide: top/bottom 20mm, inner 20mm, outer 15mm. Достаточны для печати A5."
+    },
+    "typography": {
+      "status": "pass",
+      "details": "Шрифты определены в style_guide: PT Serif для основного текста, PT Sans для подписей. Размеры читаемы для формата A5."
+    },
+    "integrity": {
+      "status": "fail",
+      "details": "Критическое несоответствие между page_plan (контракт) и page_map (отчёт исполнения) по размещению callouts. Также несоответствие терминологии типов страниц."
+    }
+  },
+  "regression_check": {
+    "performed": false,
+    "previous_issues_resolved": []
+  },
+  "summary": {
+    "critical_issues": 6,
+    "major_issues": 1,
+    "minor_issues": 0,
+    "total_pages_checked": 33,
+    "overall_assessment": "Макет имеет критические нарушения контракта STAGE4: все 6 callouts размещены не на тех страницах, что указаны в page_plan, без обоснований в technical_notes. Требуется исправление размещения callouts согласно page_plan или предоставление обоснований для отклонений."
+  }
+}

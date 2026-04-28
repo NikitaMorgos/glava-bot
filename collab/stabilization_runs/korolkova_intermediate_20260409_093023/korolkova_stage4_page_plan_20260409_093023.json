@@ -1,0 +1,340 @@
+{
+  "project_id": "korolkova_stage4",
+  "page_plan": [
+    {
+      "page_number": 1,
+      "page_type": "cover",
+      "content": "cover_composition"
+    },
+    {
+      "page_number": 2,
+      "page_type": "blank",
+      "content": null
+    },
+    {
+      "page_number": 3,
+      "page_type": "toc",
+      "content": "auto_generate"
+    },
+    {
+      "page_number": 4,
+      "page_type": "chapter_start",
+      "chapter_id": "ch_01",
+      "elements": [
+        {
+          "type": "chapter_header"
+        },
+        {
+          "type": "bio_data_block"
+        }
+      ]
+    },
+    {
+      "page_number": 5,
+      "page_type": "bio_timeline",
+      "chapter_id": "ch_01",
+      "elements": [
+        {
+          "type": "timeline_block"
+        }
+      ]
+    },
+    {
+      "page_number": 6,
+      "page_type": "chapter_start",
+      "chapter_id": "ch_02",
+      "elements": [
+        {
+          "type": "chapter_header"
+        },
+        {
+          "type": "text",
+          "paragraphs": [
+            "p_001",
+            "p_002"
+          ]
+        }
+      ]
+    },
+    {
+      "page_number": 7,
+      "page_type": "text_with_photo",
+      "chapter_id": "ch_02",
+      "elements": [
+        {
+          "type": "photo",
+          "photo_id": "photo_001",
+          "orientation": "vertical",
+          "layout": "wrap_right",
+          "width_percent": 40,
+          "text_beside_photo": [
+            "p_003",
+            "p_004"
+          ],
+          "text_after_photo": [
+            "p_005"
+          ],
+          "rationale": "Первое семейное фото размещается в начале рассказа о детстве, вертикальный формат позволяет использовать wrap-right"
+        }
+      ]
+    },
+    {
+      "page_number": 8,
+      "page_type": "text_only",
+      "chapter_id": "ch_02",
+      "elements": [
+        {
+          "type": "text",
+          "paragraphs": [
+            "p_006",
+            "p_007",
+            "p_008"
+          ]
+        }
+      ]
+    },
+    {
+      "page_number": 9,
+      "page_type": "text_with_photo",
+      "chapter_id": "ch_02",
+      "elements": [
+        {
+          "type": "photo",
+          "photo_id": "photo_002",
+          "orientation": "horizontal",
+          "layout": "full_width",
+          "text_before_photo": [
+            "p_009"
+          ],
+          "text_after_photo": [
+            "p_010",
+            "p_011"
+          ],
+          "rationale": "Групповое горизонтальное фото военного времени размещается full_width между абзацами о войне"
+        }
+      ]
+    },
+    {
+      "page_number": 10,
+      "page_type": "text_only",
+      "chapter_id": "ch_02",
+      "elements": [
+        {
+          "type": "text",
+          "paragraphs": [
+            "p_012",
+            "p_013",
+            "p_014"
+          ]
+        }
+      ]
+    },
+    {
+      "page_number": 11,
+      "page_type": "text_only",
+      "chapter_id": "ch_02",
+      "elements": [
+        {
+          "type": "text",
+          "paragraphs": [
+            "p_015",
+            "p_016",
+            "p_017"
+          ]
+        }
+      ]
+    },
+    {
+      "page_number": 12,
+      "page_type": "text_only",
+      "chapter_id": "ch_02",
+      "elements": [
+        {
+          "type": "text",
+          "paragraphs": [
+            "p_018",
+            "p_019",
+            "p_020"
+          ]
+        }
+      ]
+    },
+    {
+      "page_number": 13,
+      "page_type": "text_only",
+      "chapter_id": "ch_02",
+      "elements": [
+        {
+          "type": "text",
+          "paragraphs": [
+            "p_021",
+            "p_022",
+            "p_023"
+          ]
+        }
+      ]
+    },
+    {
+      "page_number": 14,
+      "page_type": "chapter_start",
+      "chapter_id": "ch_03",
+      "elements": [
+        {
+          "type": "chapter_header"
+        },
+        {
+          "type": "photo",
+          "photo_id": "photo_003",
+          "orientation": "vertical",
+          "layout": "wrap_right",
+          "width_percent": 40,
+          "text_beside_photo": [
+            "p_ch03_001",
+            "p_ch03_002"
+          ],
+          "text_after_photo": [
+            "p_ch03_003"
+          ],
+          "rationale": "Глава 03 — лучший портрет героя обязательно wrap-right с первым абзацем главы 'Портрет человека'"
+        }
+      ]
+    },
+    {
+      "page_number": 15,
+      "page_type": "text_only",
+      "chapter_id": "ch_03",
+      "elements": [
+        {
+          "type": "text",
+          "paragraphs": [
+            "p_ch03_004",
+            "p_ch03_005",
+            "p_ch03_006"
+          ]
+        }
+      ]
+    },
+    {
+      "page_number": 16,
+      "page_type": "text_only",
+      "chapter_id": "ch_03",
+      "elements": [
+        {
+          "type": "text",
+          "paragraphs": [
+            "p_ch03_007",
+            "p_ch03_008",
+            "p_ch03_009"
+          ]
+        }
+      ]
+    },
+    {
+      "page_number": 17,
+      "page_type": "text_only",
+      "chapter_id": "ch_03",
+      "elements": [
+        {
+          "type": "text",
+          "paragraphs": [
+            "p_ch03_010",
+            "p_ch03_011",
+            "p_ch03_012"
+          ]
+        }
+      ]
+    },
+    {
+      "page_number": 18,
+      "page_type": "chapter_start",
+      "chapter_id": "ch_04",
+      "elements": [
+        {
+          "type": "chapter_header"
+        },
+        {
+          "type": "text",
+          "paragraphs": [
+            "p_ch04_001",
+            "p_ch04_002"
+          ]
+        }
+      ]
+    },
+    {
+      "page_number": 19,
+      "page_type": "text_only",
+      "chapter_id": "ch_04",
+      "elements": [
+        {
+          "type": "text",
+          "paragraphs": [
+            "p_ch04_003",
+            "p_ch04_004",
+            "p_ch04_005"
+          ]
+        }
+      ]
+    },
+    {
+      "page_number": 20,
+      "page_type": "text_only",
+      "chapter_id": "ch_04",
+      "elements": [
+        {
+          "type": "text",
+          "paragraphs": [
+            "p_ch04_006",
+            "p_ch04_007",
+            "p_ch04_008"
+          ]
+        }
+      ]
+    },
+    {
+      "page_number": 21,
+      "page_type": "chapter_start",
+      "chapter_id": "epilogue",
+      "elements": [
+        {
+          "type": "chapter_header"
+        },
+        {
+          "type": "text",
+          "paragraphs": [
+            "p_epilogue_001",
+            "p_epilogue_002"
+          ]
+        }
+      ]
+    },
+    {
+      "page_number": 22,
+      "page_type": "text_only",
+      "chapter_id": "epilogue",
+      "elements": [
+        {
+          "type": "text",
+          "paragraphs": [
+            "p_epilogue_003",
+            "p_epilogue_004"
+          ]
+        }
+      ]
+    }
+  ],
+  "photo_distribution": {
+    "total_photos": 3,
+    "photos_in_text": 3,
+    "photos_in_section": 0,
+    "portrait_ch03": "photo_003",
+    "has_photo_section": false
+  },
+  "layout_stats": {
+    "total_pages": 22,
+    "text_only_pages": 12,
+    "text_with_photo_pages": 3,
+    "photo_section_pages": 0
+  },
+  "design_notes": "Книга получилась компактной с хорошим балансом текста и фотографий. Все три фото размещены в основном тексте с соблюдением принципов журнальной вёрстки. Портретное фото photo_003 зарезервировано для главы 'Портрет человека' согласно правилу. Горизонтальное фото размещено через full_width, вертикальные через wrap для создания динамичного ритма. Фотораздел не требуется, так как все фото органично вплетены в текст."
+}

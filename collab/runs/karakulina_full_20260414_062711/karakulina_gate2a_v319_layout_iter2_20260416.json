@@ -1,0 +1,622 @@
+{
+  "project_id": "karakulina_stage4",
+  "pages": [
+    {
+      "page_number": 1,
+      "type": "cover",
+      "elements": [
+        {
+          "type": "cover_title",
+          "text": "Каракулина Валентина Ивановна"
+        },
+        {
+          "type": "cover_subtitle",
+          "text": "Книга памяти"
+        }
+      ]
+    },
+    {
+      "page_number": 2,
+      "type": "blank",
+      "elements": []
+    },
+    {
+      "page_number": 3,
+      "type": "toc",
+      "items": [
+        {
+          "title": "Основные даты жизни",
+          "page": 2
+        },
+        {
+          "title": "История жизни",
+          "page": 4
+        },
+        {
+          "title": "Портрет человека",
+          "page": 8
+        },
+        {
+          "title": "Интересные факты и жизненные истории",
+          "page": 12
+        },
+        {
+          "title": "Путь длиною в жизнь",
+          "page": 15
+        }
+      ]
+    },
+    {
+      "page_number": 4,
+      "type": "chapter_start",
+      "chapter_id": "ch_01",
+      "chapter_number": "01",
+      "chapter_title": "Основные даты жизни",
+      "chapter_subtitle": "Мариевка · 1920–2005",
+      "elements": [
+        {
+          "type": "paragraph",
+          "chapter_id": "ch_01",
+          "paragraph_id": "p1"
+        }
+      ]
+    },
+    {
+      "page_number": 5,
+      "type": "bio_timeline",
+      "chapter_id": "ch_01",
+      "elements": [
+        {
+          "type": "timeline_block",
+          "timeline_items": [
+            {
+              "year": "1920",
+              "event": "Рождение в селе Мариевка"
+            },
+            {
+              "year": "1933",
+              "event": "Голод, смерть матери, детдом"
+            },
+            {
+              "year": "1938",
+              "event": "Поступление в фельдшерско-акушерскую школу"
+            },
+            {
+              "year": "1940",
+              "event": "Окончание школы, работа акушеркой"
+            },
+            {
+              "year": "1941",
+              "event": "Призыв в армию, служба в госпиталях"
+            },
+            {
+              "year": "1946",
+              "event": "Знакомство с Дмитрием, свадьба"
+            },
+            {
+              "year": "1962",
+              "event": "Переезд в Химинститут, начало работы в поликлинике"
+            },
+            {
+              "year": "1994",
+              "event": "Выход на пенсию"
+            },
+            {
+              "year": "2005",
+              "event": "Смерть"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "page_number": 6,
+      "type": "chapter_start",
+      "chapter_id": "ch_02",
+      "chapter_number": "02",
+      "chapter_title": "История жизни",
+      "chapter_subtitle": "От украинского села до советского города",
+      "elements": []
+    },
+    {
+      "page_number": 7,
+      "type": "text",
+      "chapter_id": "ch_02",
+      "elements": [
+        {
+          "type": "paragraph",
+          "chapter_id": "ch_02",
+          "paragraph_id": "p_02_001"
+        },
+        {
+          "type": "paragraph",
+          "chapter_id": "ch_02",
+          "paragraph_id": "p_02_002"
+        }
+      ]
+    },
+    {
+      "page_number": 8,
+      "type": "text",
+      "chapter_id": "ch_02",
+      "elements": [
+        {
+          "type": "paragraph",
+          "chapter_id": "ch_02",
+          "paragraph_id": "p_02_003"
+        },
+        {
+          "type": "paragraph",
+          "chapter_id": "ch_02",
+          "paragraph_id": "p_02_004"
+        }
+      ]
+    },
+    {
+      "page_number": 9,
+      "type": "text",
+      "chapter_id": "ch_02",
+      "elements": [
+        {
+          "type": "paragraph",
+          "chapter_id": "ch_02",
+          "paragraph_id": "p_02_005"
+        }
+      ]
+    },
+    {
+      "page_number": 10,
+      "type": "chapter_start",
+      "chapter_id": "ch_03",
+      "chapter_number": "03",
+      "chapter_title": "Портрет человека",
+      "chapter_subtitle": "Характер, выкованный жизнью",
+      "elements": []
+    },
+    {
+      "page_number": 11,
+      "type": "text",
+      "chapter_id": "ch_03",
+      "elements": [
+        {
+          "type": "paragraph",
+          "chapter_id": "ch_03",
+          "paragraph_id": "p_03_001"
+        },
+        {
+          "type": "callout",
+          "callout_id": "callout_01",
+          "text": "Пережив сиротство, она стала очень самостоятельной и привыкла полагаться только на себя."
+        },
+        {
+          "type": "callout",
+          "callout_id": "callout_02",
+          "text": "Валентина была как муравей, а не стрекоза из известной басни — трудолюбивая, запасливая, всегда готовая к трудностям."
+        }
+      ]
+    },
+    {
+      "page_number": 12,
+      "type": "text",
+      "chapter_id": "ch_03",
+      "elements": [
+        {
+          "type": "paragraph",
+          "chapter_id": "ch_03",
+          "paragraph_id": "p_03_002"
+        },
+        {
+          "type": "callout",
+          "callout_id": "callout_03",
+          "text": "Это была работящая натура — не наслаждающаяся жизнью, а постоянно деятельная."
+        }
+      ]
+    },
+    {
+      "page_number": 13,
+      "type": "text",
+      "chapter_id": "ch_03",
+      "elements": [
+        {
+          "type": "paragraph",
+          "chapter_id": "ch_03",
+          "paragraph_id": "p_03_003"
+        },
+        {
+          "type": "paragraph",
+          "chapter_id": "ch_03",
+          "paragraph_id": "p_03_004"
+        },
+        {
+          "type": "callout",
+          "callout_id": "callout_04",
+          "text": "У каждой вещи должно быть своё место"
+        }
+      ]
+    },
+    {
+      "page_number": 14,
+      "type": "chapter_start",
+      "chapter_id": "ch_04",
+      "chapter_number": "04",
+      "chapter_title": "Интересные факты и жизненные истории",
+      "chapter_subtitle": "Семейные предания и характерные эпизоды",
+      "elements": []
+    },
+    {
+      "page_number": 15,
+      "type": "text",
+      "chapter_id": "ch_04",
+      "elements": [
+        {
+          "type": "paragraph",
+          "chapter_id": "ch_04",
+          "paragraph_id": "p_04_001"
+        }
+      ]
+    },
+    {
+      "page_number": 16,
+      "type": "text",
+      "chapter_id": "ch_04",
+      "elements": [
+        {
+          "type": "paragraph",
+          "chapter_id": "ch_04",
+          "paragraph_id": "p_04_002"
+        },
+        {
+          "type": "callout",
+          "callout_id": "callout_05",
+          "text": "стойким оловянным солдатиком"
+        }
+      ]
+    },
+    {
+      "page_number": 17,
+      "type": "chapter_start",
+      "chapter_id": "epilogue",
+      "chapter_number": "05",
+      "chapter_title": "Путь длиною в жизнь",
+      "chapter_subtitle": "Итоги судьбы",
+      "elements": []
+    },
+    {
+      "page_number": 18,
+      "type": "text",
+      "chapter_id": "epilogue",
+      "elements": [
+        {
+          "type": "paragraph",
+          "chapter_id": "epilogue",
+          "paragraph_id": "p1"
+        },
+        {
+          "type": "paragraph",
+          "chapter_id": "epilogue",
+          "paragraph_id": "p2"
+        },
+        {
+          "type": "paragraph",
+          "chapter_id": "epilogue",
+          "paragraph_id": "p3"
+        }
+      ]
+    }
+  ],
+  "photo_captions": {},
+  "style_guide": {
+    "page": {
+      "format": "A5",
+      "width_mm": 148,
+      "height_mm": 210,
+      "margins": {
+        "top_mm": 18,
+        "bottom_mm": 14,
+        "inner_mm": 16,
+        "outer_mm": 14
+      },
+      "bleed_mm": 0
+    },
+    "typography": {
+      "body_font": {
+        "family": "PTSerif-Regular",
+        "size_pt": 11,
+        "line_height": 1.4,
+        "color": "#111111"
+      },
+      "heading_font": {
+        "family": "PTSans-Regular",
+        "chapter_title_size_pt": 18,
+        "section_title_size_pt": 14,
+        "color": "#111111"
+      },
+      "caption_font": {
+        "family": "PTSans-Regular",
+        "size_pt": 9,
+        "color": "#666666"
+      },
+      "callout_font": {
+        "family": "PTSerif-Italic",
+        "size_pt": 12,
+        "style": "italic",
+        "color": "#3d2e1f"
+      },
+      "historical_note_font": {
+        "family": "PTSans-Regular",
+        "size_pt": 10,
+        "style": "bold_italic",
+        "color": "#ffffff"
+      }
+    },
+    "colors": {
+      "background": "#faf8f5",
+      "text_primary": "#111111",
+      "text_secondary": "#666666",
+      "accent": "#c4a070",
+      "callout_background": "#f5f2ed",
+      "callout_border": "#e8e0d4",
+      "chapter_divider": "#e8e0d4"
+    },
+    "spacing": {
+      "paragraph_spacing_pt": 12,
+      "chapter_start_offset_pt": 36,
+      "photo_margin_pt": 18,
+      "callout_padding_pt": 12
+    }
+  },
+  "page_map": [
+    {
+      "page_number": 1,
+      "content_type": "cover",
+      "chapter_id": null,
+      "elements": [
+        "cover_title",
+        "cover_subtitle"
+      ],
+      "visible_page_number": null
+    },
+    {
+      "page_number": 2,
+      "content_type": "blank",
+      "chapter_id": null,
+      "elements": [],
+      "visible_page_number": null
+    },
+    {
+      "page_number": 3,
+      "content_type": "toc",
+      "chapter_id": null,
+      "elements": [
+        "toc_items"
+      ],
+      "visible_page_number": 1,
+      "toc_details": {
+        "items": [
+          {
+            "title": "Основные даты жизни",
+            "visible_page": 2,
+            "physical_page": 4
+          },
+          {
+            "title": "История жизни",
+            "visible_page": 4,
+            "physical_page": 6
+          },
+          {
+            "title": "Портрет человека",
+            "visible_page": 8,
+            "physical_page": 10
+          },
+          {
+            "title": "Интересные факты и жизненные истории",
+            "visible_page": 12,
+            "physical_page": 14
+          },
+          {
+            "title": "Путь длиною в жизнь",
+            "visible_page": 15,
+            "physical_page": 17
+          }
+        ]
+      }
+    },
+    {
+      "page_number": 4,
+      "content_type": "chapter_start",
+      "chapter_id": "ch_01",
+      "elements": [
+        "chapter_header",
+        "bio_data_block"
+      ],
+      "visible_page_number": 2
+    },
+    {
+      "page_number": 5,
+      "content_type": "bio_timeline",
+      "chapter_id": "ch_01",
+      "elements": [
+        "timeline_block"
+      ],
+      "visible_page_number": 3
+    },
+    {
+      "page_number": 6,
+      "content_type": "chapter_start",
+      "chapter_id": "ch_02",
+      "elements": [
+        "chapter_header"
+      ],
+      "visible_page_number": 4
+    },
+    {
+      "page_number": 7,
+      "content_type": "text",
+      "chapter_id": "ch_02",
+      "elements": [
+        "p_02_001",
+        "p_02_002"
+      ],
+      "visible_page_number": 5
+    },
+    {
+      "page_number": 8,
+      "content_type": "text",
+      "chapter_id": "ch_02",
+      "elements": [
+        "p_02_003",
+        "p_02_004"
+      ],
+      "visible_page_number": 6
+    },
+    {
+      "page_number": 9,
+      "content_type": "text",
+      "chapter_id": "ch_02",
+      "elements": [
+        "p_02_005"
+      ],
+      "visible_page_number": 7
+    },
+    {
+      "page_number": 10,
+      "content_type": "chapter_start",
+      "chapter_id": "ch_03",
+      "elements": [
+        "chapter_header"
+      ],
+      "visible_page_number": 8
+    },
+    {
+      "page_number": 11,
+      "content_type": "text",
+      "chapter_id": "ch_03",
+      "elements": [
+        "p_03_001",
+        "callout_01",
+        "callout_02"
+      ],
+      "visible_page_number": 9
+    },
+    {
+      "page_number": 12,
+      "content_type": "text",
+      "chapter_id": "ch_03",
+      "elements": [
+        "p_03_002",
+        "callout_03"
+      ],
+      "visible_page_number": 10
+    },
+    {
+      "page_number": 13,
+      "content_type": "text",
+      "chapter_id": "ch_03",
+      "elements": [
+        "p_03_003",
+        "p_03_004",
+        "callout_04"
+      ],
+      "visible_page_number": 11
+    },
+    {
+      "page_number": 14,
+      "content_type": "chapter_start",
+      "chapter_id": "ch_04",
+      "elements": [
+        "chapter_header"
+      ],
+      "visible_page_number": 12
+    },
+    {
+      "page_number": 15,
+      "content_type": "text",
+      "chapter_id": "ch_04",
+      "elements": [
+        "p_04_001"
+      ],
+      "visible_page_number": 13
+    },
+    {
+      "page_number": 16,
+      "content_type": "text",
+      "chapter_id": "ch_04",
+      "elements": [
+        "p_04_002",
+        "callout_05"
+      ],
+      "visible_page_number": 14
+    },
+    {
+      "page_number": 17,
+      "content_type": "chapter_start",
+      "chapter_id": "epilogue",
+      "elements": [
+        "chapter_header"
+      ],
+      "visible_page_number": 15
+    },
+    {
+      "page_number": 18,
+      "content_type": "text",
+      "chapter_id": "epilogue",
+      "elements": [
+        "p1",
+        "p2",
+        "p3"
+      ],
+      "visible_page_number": 16
+    }
+  ],
+  "technical_notes": {
+    "total_pages": 18,
+    "chapters_layout": [
+      {
+        "chapter_id": "ch_01",
+        "start_page": 4,
+        "end_page": 5,
+        "photos_placed": [],
+        "callouts_placed": []
+      },
+      {
+        "chapter_id": "ch_02",
+        "start_page": 6,
+        "end_page": 9,
+        "photos_placed": [],
+        "callouts_placed": []
+      },
+      {
+        "chapter_id": "ch_03",
+        "start_page": 10,
+        "end_page": 13,
+        "photos_placed": [],
+        "callouts_placed": [
+          "callout_01",
+          "callout_02",
+          "callout_03",
+          "callout_04"
+        ]
+      },
+      {
+        "chapter_id": "ch_04",
+        "start_page": 14,
+        "end_page": 16,
+        "photos_placed": [],
+        "callouts_placed": [
+          "callout_05"
+        ]
+      },
+      {
+        "chapter_id": "epilogue",
+        "start_page": 17,
+        "end_page": 18,
+        "photos_placed": [],
+        "callouts_placed": []
+      }
+    ],
+    "potential_issues": [],
+    "print_ready": true,
+    "notes": "Исправлены критические несоответствия между page_plan и page_map: унифицированы типы страниц, добавлена информация о видимой пагинации, детализировано содержимое TOC. Все callouts размещены согласно плану. Модель пагинации: cover/blank без номеров, TOC = visible 1, далее visible = physical - 2."
+  },
+  "_layout_format": "pages_json"
+}

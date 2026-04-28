@@ -1,0 +1,20 @@
+import json
+d = json.load(open("/opt/glava/exports/karakulina_book_draft_v3_20260327_062706.json"))
+bd = d.get("book_draft", d)
+chs = bd.get("chapters", [])
+print("chapters:", len(chs))
+if chs:
+    print("keys:", list(chs[0].keys()))
+    c0 = chs[0].get("content","")
+    print("content len:", len(c0))
+
+text = " ".join(ch.get("content","") for ch in chs)
+print("total text:", len(text))
+print("Новомиргород:", text.count("Новомиргород"))
+print("Новомергород:", text.count("Новомергород"))
+print("Кирсанов:", text.count("Кирсанов"))
+print("Керсанов:", text.count("Керсанов"))
+print("Капошвара:", text.count("Капошвара"))
+print("Капашвара:", text.count("Капашвара"))
+print("Предположительно в 1958:", text.count("Предположительно в 1958"))
+print("В 1958 году семья:", text.count("В 1958 году семья"))

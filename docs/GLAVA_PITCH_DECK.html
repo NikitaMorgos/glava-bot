@@ -1,0 +1,1476 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GLAVA — Архитектурная презентация</title>
+  <style>
+    :root {
+      --bg: #0d0d14;
+      --surface: #14141f;
+      --card: #1a1a2e;
+      --border: rgba(255,255,255,0.07);
+      --accent: #7c6fff;
+      --accent2: #ff6b9d;
+      --accent3: #4ecdc4;
+      --accent4: #ffd166;
+      --text: #e8e8f0;
+      --muted: #888899;
+      --radius: 16px;
+      --gap: 24px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      line-height: 1.6;
+      overflow: hidden;
+      height: 100vh;
+    }
+
+    /* ─── SLIDE SYSTEM ─── */
+    .deck {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      padding: 48px 64px;
+      opacity: 0;
+      transform: translateX(60px);
+      transition: opacity 0.45s ease, transform 0.45s ease;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .slide.active {
+      opacity: 1;
+      transform: translateX(0);
+      pointer-events: all;
+    }
+
+    .slide.exit {
+      opacity: 0;
+      transform: translateX(-60px);
+    }
+
+    /* ─── NAV ─── */
+    .nav {
+      position: fixed;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      z-index: 100;
+      background: rgba(20,20,31,0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      padding: 10px 24px;
+    }
+
+    .nav button {
+      background: none;
+      border: none;
+      color: var(--text);
+      font-size: 18px;
+      cursor: pointer;
+      opacity: 0.6;
+      transition: opacity 0.2s;
+      padding: 4px 8px;
+    }
+    .nav button:hover { opacity: 1; }
+    .nav button:disabled { opacity: 0.2; cursor: default; }
+
+    .dots {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--muted);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .dot.active {
+      background: var(--accent);
+      width: 20px;
+      border-radius: 3px;
+    }
+
+    .slide-counter {
+      font-size: 12px;
+      color: var(--muted);
+      min-width: 40px;
+      text-align: center;
+    }
+
+    /* ─── SLIDE NUMBER TAG ─── */
+    .slide-tag {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 12px;
+      opacity: 0.8;
+    }
+
+    /* ─── TYPOGRAPHY ─── */
+    h1 {
+      font-size: clamp(36px, 5vw, 64px);
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+    }
+
+    h2 {
+      font-size: clamp(26px, 3.5vw, 42px);
+      font-weight: 700;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      margin-bottom: 32px;
+    }
+
+    h3 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    p { color: var(--muted); font-size: 15px; }
+
+    .highlight { color: var(--accent); }
+    .highlight2 { color: var(--accent2); }
+    .highlight3 { color: var(--accent3); }
+    .highlight4 { color: var(--accent4); }
+
+    .gradient-text {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* ─── COMPONENTS ─── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(124,111,255,0.12);
+      border: 1px solid rgba(124,111,255,0.25);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 20px;
+      letter-spacing: 0.5px;
+    }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap); }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--gap); }
+    .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: var(--gap); }
+
+    /* ─── SLIDE 1: HERO ─── */
+    #s1 {
+      justify-content: center;
+      background:
+        radial-gradient(ellipse 80% 60% at 70% 50%, rgba(124,111,255,0.12) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 40% at 20% 80%, rgba(255,107,157,0.08) 0%, transparent 60%),
+        var(--bg);
+    }
+
+    .hero-eyebrow {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .logo-mark {
+      font-size: 28px;
+      font-weight: 900;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -0.02em;
+    }
+
+    .hero-subtitle {
+      font-size: clamp(16px, 2vw, 22px);
+      color: var(--muted);
+      margin-top: 20px;
+      max-width: 600px;
+      line-height: 1.5;
+    }
+
+    .hero-meta {
+      display: flex;
+      gap: 16px;
+      margin-top: 40px;
+      flex-wrap: wrap;
+    }
+
+    .meta-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      padding: 8px 16px;
+      font-size: 13px;
+    }
+
+    .meta-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+    }
+
+    /* ─── SLIDE 2: PROBLEM/SOLUTION ─── */
+    .vs-layout {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 32px;
+      align-items: start;
+      flex: 1;
+    }
+
+    .vs-divider {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding-top: 60px;
+      gap: 8px;
+    }
+
+    .vs-circle {
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 14px;
+      color: white;
+    }
+
+    .problem-list, .solution-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-top: 16px;
+    }
+
+    .problem-list li, .solution-list li {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      font-size: 15px;
+      color: var(--text);
+    }
+
+    .icon-bullet {
+      font-size: 18px;
+      line-height: 1.4;
+      flex-shrink: 0;
+    }
+
+    /* ─── SLIDE 3: CJM ─── */
+    .cjm-flow {
+      display: flex;
+      align-items: stretch;
+      gap: 0;
+      flex: 1;
+      margin-top: 8px;
+    }
+
+    .cjm-step {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .cjm-step:not(:last-child)::after {
+      content: '→';
+      position: absolute;
+      right: -14px;
+      top: 36px;
+      font-size: 20px;
+      color: var(--accent);
+      z-index: 1;
+    }
+
+    .cjm-header {
+      background: linear-gradient(135deg, rgba(124,111,255,0.15), rgba(78,205,196,0.1));
+      border: 1px solid rgba(124,111,255,0.2);
+      border-radius: 12px 12px 0 0;
+      padding: 14px 16px;
+      margin-right: 24px;
+    }
+
+    .cjm-step:last-child .cjm-header { margin-right: 0; }
+
+    .cjm-num {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .cjm-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .cjm-body {
+      flex: 1;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-top: none;
+      border-radius: 0 0 12px 12px;
+      padding: 14px 16px;
+      margin-right: 24px;
+    }
+
+    .cjm-step:last-child .cjm-body { margin-right: 0; }
+
+    .cjm-action {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+    }
+
+    .cjm-action::before { content: '·'; color: var(--accent3); font-size: 14px; line-height: 1.2; }
+
+    .emotion {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+      font-size: 11px;
+      color: var(--accent4);
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    /* ─── SLIDE 4: ARCHITECTURE ─── */
+    .arch-diagram {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      flex: 1;
+    }
+
+    .arch-row {
+      display: flex;
+      gap: 12px;
+      align-items: stretch;
+    }
+
+    .arch-layer {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .arch-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--muted);
+      white-space: nowrap;
+      writing-mode: vertical-lr;
+      transform: rotate(180deg);
+      display: flex;
+      align-items: center;
+      padding: 0 4px;
+    }
+
+    .arch-box {
+      flex: 1;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid transparent;
+    }
+
+    .arch-box.blue {
+      background: rgba(124,111,255,0.12);
+      border-color: rgba(124,111,255,0.3);
+      color: #b0a8ff;
+    }
+    .arch-box.teal {
+      background: rgba(78,205,196,0.1);
+      border-color: rgba(78,205,196,0.25);
+      color: #6ee7e0;
+    }
+    .arch-box.pink {
+      background: rgba(255,107,157,0.1);
+      border-color: rgba(255,107,157,0.25);
+      color: #ff9fc0;
+    }
+    .arch-box.yellow {
+      background: rgba(255,209,102,0.1);
+      border-color: rgba(255,209,102,0.25);
+      color: #ffd166;
+    }
+    .arch-box.green {
+      background: rgba(80,200,120,0.1);
+      border-color: rgba(80,200,120,0.25);
+      color: #7de0a0;
+    }
+    .arch-box.gray {
+      background: rgba(255,255,255,0.04);
+      border-color: var(--border);
+      color: var(--muted);
+    }
+
+    .arch-arrow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      font-size: 18px;
+      padding: 0 4px;
+    }
+
+    .arch-note {
+      font-size: 11px;
+      color: var(--muted);
+      opacity: 0.6;
+      font-weight: 400;
+    }
+
+    /* ─── SLIDE 5: TECH STACK ─── */
+    .stack-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      flex: 1;
+    }
+
+    .stack-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .stack-category {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .stack-icon {
+      width: 36px; height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .stack-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .stack-items {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .tag {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 6px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    .tag.accent { background: rgba(124,111,255,0.12); border-color: rgba(124,111,255,0.25); color: var(--accent); }
+    .tag.teal { background: rgba(78,205,196,0.1); border-color: rgba(78,205,196,0.2); color: var(--accent3); }
+    .tag.pink { background: rgba(255,107,157,0.1); border-color: rgba(255,107,157,0.2); color: var(--accent2); }
+    .tag.yellow { background: rgba(255,209,102,0.1); border-color: rgba(255,209,102,0.2); color: var(--accent4); }
+    .tag.green { background: rgba(80,200,120,0.1); border-color: rgba(80,200,120,0.2); color: #7de0a0; }
+
+    /* ─── SLIDE 6: AI PIPELINE ─── */
+    .pipeline-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      flex: 1;
+    }
+
+    .pipeline-stage {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .stage-label {
+      background: linear-gradient(135deg, rgba(124,111,255,0.2), rgba(78,205,196,0.15));
+      border: 1px solid rgba(124,111,255,0.2);
+      border-radius: 10px;
+      padding: 8px 12px;
+      text-align: center;
+    }
+
+    .stage-num {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    .stage-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .stage-flow {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .stage-agent {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .stage-arrow {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .loop-badge {
+      font-size: 10px;
+      font-weight: 700;
+      background: rgba(255,107,157,0.15);
+      border: 1px solid rgba(255,107,157,0.3);
+      color: var(--accent2);
+      padding: 3px 8px;
+      border-radius: 6px;
+      letter-spacing: 0.5px;
+    }
+
+    /* ─── SLIDE 7: ROLES ─── */
+    .roles-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      flex: 1;
+    }
+
+    .role-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: border-color 0.2s;
+    }
+
+    .role-card:hover {
+      border-color: rgba(124,111,255,0.4);
+    }
+
+    .role-emoji {
+      font-size: 28px;
+      line-height: 1;
+    }
+
+    .role-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .role-desc {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .role-output {
+      margin-top: auto;
+      font-size: 11px;
+      color: var(--accent3);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* ─── SLIDE 8: SERVICES & BUSINESS ─── */
+    .biz-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      flex: 1;
+    }
+
+    .services-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .service-row {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      align-items: center;
+      gap: 12px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+    }
+
+    .service-name {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .service-port {
+      font-size: 11px;
+      font-family: monospace;
+      color: var(--muted);
+    }
+
+    .status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #4ade80;
+      box-shadow: 0 0 6px rgba(74,222,128,0.5);
+    }
+
+    .moat-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .moat-item {
+      display: flex;
+      gap: 14px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      align-items: flex-start;
+    }
+
+    .moat-icon {
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .moat-text h4 { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+    .moat-text p { font-size: 12px; }
+
+    /* ─── SLIDE 9: SUMMARY ─── */
+    #s9 {
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      background:
+        radial-gradient(ellipse 70% 70% at 50% 50%, rgba(124,111,255,0.1) 0%, transparent 70%),
+        var(--bg);
+    }
+
+    .summary-stats {
+      display: flex;
+      gap: 40px;
+      justify-content: center;
+      margin: 40px 0;
+    }
+
+    .stat {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .stat-value {
+      font-size: 48px;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .stat-label {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .summary-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 40px;
+    }
+
+    /* ─── KEYBOARD HINT ─── */
+    .key-hint {
+      position: fixed;
+      top: 24px;
+      right: 32px;
+      font-size: 11px;
+      color: var(--muted);
+      opacity: 0.5;
+    }
+
+    /* ─── DECORATIVE BG SHAPES ─── */
+    .bg-shape {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      pointer-events: none;
+      z-index: -1;
+    }
+  </style>
+</head>
+<body>
+<div class="deck" id="deck">
+
+  <!-- ────────────────── SLIDE 1: HERO ────────────────── -->
+  <section class="slide active" id="s1">
+    <div class="bg-shape" style="width:600px;height:600px;background:rgba(124,111,255,0.08);top:-200px;right:-100px;"></div>
+    <div class="bg-shape" style="width:400px;height:400px;background:rgba(255,107,157,0.06);bottom:-100px;left:100px;"></div>
+
+    <div class="hero-eyebrow">
+      <div class="logo-mark">GLAVA</div>
+      <div class="badge">Архитектурная презентация · 2026</div>
+    </div>
+
+    <h1>Семейные биографии,<br>созданные <span class="gradient-text">искусственным интеллектом</span></h1>
+
+    <p class="hero-subtitle">
+      Telegram-бот + мультиагентный AI-пайплайн, который превращает голосовые сообщения и фотографии в профессионально изданную книгу-биографию с доставкой в PDF.
+    </p>
+
+    <div class="hero-meta">
+      <div class="meta-pill">
+        <div class="meta-dot" style="background:#4ade80;box-shadow:0 0 6px rgba(74,222,128,0.5)"></div>
+        Production-ready
+      </div>
+      <div class="meta-pill">
+        <div class="meta-dot" style="background:var(--accent)"></div>
+        10+ AI-агентов
+      </div>
+      <div class="meta-pill">
+        <div class="meta-dot" style="background:var(--accent2)"></div>
+        Python · n8n · GPT-4o
+      </div>
+      <div class="meta-pill">
+        <div class="meta-dot" style="background:var(--accent4)"></div>
+        Оплата через ЮKassa
+      </div>
+    </div>
+  </section>
+
+  <!-- ────────────────── SLIDE 2: ПРОБЛЕМА И РЕШЕНИЕ ────────────────── -->
+  <section class="slide" id="s2">
+    <div class="slide-tag">01 — Проблема и решение</div>
+    <h2>Почему семейные истории <span class="highlight">теряются</span></h2>
+
+    <div class="vs-layout">
+      <div>
+        <div class="badge" style="background:rgba(255,107,157,0.1);border-color:rgba(255,107,157,0.25);color:var(--accent2)">Без GLAVA</div>
+        <ul class="problem-list">
+          <li><span class="icon-bullet">😓</span><span>Голосовые истории хранятся в мессенджерах и теряются</span></li>
+          <li><span class="icon-bullet">📁</span><span>Тысячи фото без подписей и систематизации</span></li>
+          <li><span class="icon-bullet">⏳</span><span>Написать биографию с нуля — долго, дорого, непонятно с чего начать</span></li>
+          <li><span class="icon-bullet">🏢</span><span>Профессиональные издательства — дорогостоящий и долгий процесс</span></li>
+          <li><span class="icon-bullet">💔</span><span>Старшее поколение не пользуется сложными приложениями</span></li>
+        </ul>
+      </div>
+
+      <div class="vs-divider">
+        <div class="vs-circle">VS</div>
+      </div>
+
+      <div>
+        <div class="badge">С GLAVA</div>
+        <ul class="solution-list">
+          <li><span class="icon-bullet">📱</span><span>Привычный Telegram — никакого нового приложения</span></li>
+          <li><span class="icon-bullet">🎙</span><span>Голосовые сообщения → автоматическая транскрипция с диаризацией</span></li>
+          <li><span class="icon-bullet">🤖</span><span>10+ AI-агентов редактируют, проверяют факты, верстают книгу</span></li>
+          <li><span class="icon-bullet">📖</span><span>Готовый PDF с обложкой — за несколько часов</span></li>
+          <li><span class="icon-bullet">💳</span><span>Оплата онлайн, доставка прямо в чат</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ────────────────── SLIDE 3: CJM ────────────────── -->
+  <section class="slide" id="s3">
+    <div class="slide-tag">02 — Customer Journey Map</div>
+    <h2>Путь клиента от идеи до книги</h2>
+
+    <div class="cjm-flow">
+
+      <div class="cjm-step">
+        <div class="cjm-header">
+          <div class="cjm-num">Шаг 1</div>
+          <div class="cjm-title">Знакомство</div>
+        </div>
+        <div class="cjm-body">
+          <div class="cjm-action">Находит лендинг glava.family</div>
+          <div class="cjm-action">Видит примеры готовых книг</div>
+          <div class="cjm-action">Переходит в Telegram-бот</div>
+          <div class="cjm-action">Получает приветствие и цены</div>
+          <div class="emotion">✨ «Это именно то, что я искал»</div>
+        </div>
+      </div>
+
+      <div class="cjm-step">
+        <div class="cjm-header">
+          <div class="cjm-num">Шаг 2</div>
+          <div class="cjm-title">Оплата</div>
+        </div>
+        <div class="cjm-body">
+          <div class="cjm-action">Выбирает объём (кол-во знаков)</div>
+          <div class="cjm-action">Вводит e-mail для чека</div>
+          <div class="cjm-action">Оплачивает через ЮKassa</div>
+          <div class="cjm-action">Получает подтверждение в боте</div>
+          <div class="emotion">💳 Безопасно, привычно, быстро</div>
+        </div>
+      </div>
+
+      <div class="cjm-step">
+        <div class="cjm-header">
+          <div class="cjm-num">Шаг 3</div>
+          <div class="cjm-title">Сбор материала</div>
+        </div>
+        <div class="cjm-body">
+          <div class="cjm-action">Записывает и отправляет голосовые</div>
+          <div class="cjm-action">Загружает фотографии</div>
+          <div class="cjm-action">Подключает онлайн-интервью</div>
+          <div class="cjm-action">Видит статус в личном кабинете</div>
+          <div class="emotion">🎙 Удобно — как написать другу</div>
+        </div>
+      </div>
+
+      <div class="cjm-step">
+        <div class="cjm-header">
+          <div class="cjm-num">Шаг 4</div>
+          <div class="cjm-title">AI обрабатывает</div>
+        </div>
+        <div class="cjm-body">
+          <div class="cjm-action">Транскрипция с диаризацией</div>
+          <div class="cjm-action">Извлечение фактов и хронологии</div>
+          <div class="cjm-action">Написание биографии (GPT-4o)</div>
+          <div class="cjm-action">Вёрстка, обложка, QA-проверки</div>
+          <div class="emotion">⚡ Работает пока клиент занят</div>
+        </div>
+      </div>
+
+      <div class="cjm-step">
+        <div class="cjm-header">
+          <div class="cjm-num">Шаг 5</div>
+          <div class="cjm-title">Получение книги</div>
+        </div>
+        <div class="cjm-body">
+          <div class="cjm-action">PDF приходит прямо в Telegram</div>
+          <div class="cjm-action">Доступен в личном кабинете</div>
+          <div class="cjm-action">Получает список доп. вопросов</div>
+          <div class="cjm-action">Может запросить правки (Phase B)</div>
+          <div class="emotion">📖 «Мама плакала от радости»</div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ────────────────── SLIDE 4: АРХИТЕКТУРА ────────────────── -->
+  <section class="slide" id="s4">
+    <div class="slide-tag">03 — Архитектура системы</div>
+    <h2>Как всё устроено внутри</h2>
+
+    <div class="arch-diagram">
+
+      <!-- Row 1: User interfaces -->
+      <div class="arch-row">
+        <div class="arch-label">Интерфейсы</div>
+        <div style="display:flex;gap:10px;flex:1">
+          <div class="arch-box blue" style="flex:2">📱 Telegram Bot <span class="arch-note">— основной канал</span></div>
+          <div class="arch-box blue" style="flex:2">🌐 cabinet.glava.family <span class="arch-note">— личный кабинет</span></div>
+          <div class="arch-box blue" style="flex:1.5">🛠 admin.glava.family <span class="arch-note">— панель операторов</span></div>
+          <div class="arch-box blue" style="flex:1.5">🏠 glava.family <span class="arch-note">— лендинг</span></div>
+        </div>
+      </div>
+
+      <div class="arch-row" style="justify-content:flex-start;padding-left:64px">
+        <div class="arch-arrow">↓</div>
+        <div style="flex:1;border-top:1px dashed var(--border);margin:0 16px;align-self:center"></div>
+        <div class="arch-arrow">↓</div>
+      </div>
+
+      <!-- Row 2: Application layer -->
+      <div class="arch-row">
+        <div class="arch-label">Приложения</div>
+        <div style="display:flex;gap:10px;flex:1">
+          <div class="arch-box teal" style="flex:2">🐍 main.py <span class="arch-note">— Telegram бот (python-telegram-bot)</span></div>
+          <div class="arch-box teal" style="flex:2">🧪 cabinet/app.py <span class="arch-note">— Flask + Gunicorn :5000</span></div>
+          <div class="arch-box teal" style="flex:1.5">⚙️ orchestrator.py <span class="arch-note">— QA-циклы агентов</span></div>
+          <div class="arch-box teal" style="flex:1.5">🔄 n8n :5678 <span class="arch-note">— граф пайплайна</span></div>
+        </div>
+      </div>
+
+      <div class="arch-row" style="justify-content:flex-start;padding-left:64px">
+        <div class="arch-arrow">↓</div>
+        <div style="flex:1;border-top:1px dashed var(--border);margin:0 16px;align-self:center"></div>
+        <div class="arch-arrow">↓</div>
+      </div>
+
+      <!-- Row 3: AI services -->
+      <div class="arch-row">
+        <div class="arch-label">AI / ML</div>
+        <div style="display:flex;gap:10px;flex:1">
+          <div class="arch-box pink">🧠 OpenAI GPT-4o <span class="arch-note">биография, агенты</span></div>
+          <div class="arch-box pink">📝 Anthropic <span class="arch-note">вёрстка PDF</span></div>
+          <div class="arch-box pink">🎨 Replicate <span class="arch-note">генерация обложки</span></div>
+          <div class="arch-box pink">🎙 AssemblyAI / SpeechKit <span class="arch-note">транскрипция</span></div>
+        </div>
+      </div>
+
+      <div class="arch-row" style="justify-content:flex-start;padding-left:64px">
+        <div class="arch-arrow">↓</div>
+      </div>
+
+      <!-- Row 4: Data -->
+      <div class="arch-row">
+        <div class="arch-label">Данные</div>
+        <div style="display:flex;gap:10px;flex:1">
+          <div class="arch-box yellow" style="flex:2">🗄 PostgreSQL <span class="arch-note">— пользователи, заказы, артефакты</span></div>
+          <div class="arch-box yellow" style="flex:2">🪣 S3 / Yandex Object Storage <span class="arch-note">— аудио, фото, PDF</span></div>
+          <div class="arch-box yellow" style="flex:1.5">💳 YooKassa <span class="arch-note">— оплата и чеки</span></div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ────────────────── SLIDE 5: TECH STACK ────────────────── -->
+  <section class="slide" id="s5">
+    <div class="slide-tag">04 — Технологический стек</div>
+    <h2>Чем построен GLAVA</h2>
+
+    <div class="stack-grid">
+
+      <div class="stack-card">
+        <div class="stack-category">
+          <div class="stack-icon" style="background:rgba(124,111,255,0.15)">🐍</div>
+          <div class="stack-name">Backend / Runtime</div>
+        </div>
+        <div class="stack-items">
+          <span class="tag accent">Python 3.10+</span>
+          <span class="tag accent">Flask</span>
+          <span class="tag accent">Gunicorn</span>
+          <span class="tag">psycopg2</span>
+          <span class="tag">boto3</span>
+          <span class="tag">python-telegram-bot</span>
+        </div>
+      </div>
+
+      <div class="stack-card">
+        <div class="stack-category">
+          <div class="stack-icon" style="background:rgba(78,205,196,0.12)">🤖</div>
+          <div class="stack-name">AI / LLM</div>
+        </div>
+        <div class="stack-items">
+          <span class="tag teal">OpenAI GPT-4o</span>
+          <span class="tag teal">Anthropic Claude</span>
+          <span class="tag teal">Replicate</span>
+          <span class="tag">AssemblyAI</span>
+          <span class="tag">Yandex SpeechKit</span>
+        </div>
+      </div>
+
+      <div class="stack-card">
+        <div class="stack-category">
+          <div class="stack-icon" style="background:rgba(255,107,157,0.12)">🔄</div>
+          <div class="stack-name">Оркестрация</div>
+        </div>
+        <div class="stack-items">
+          <span class="tag pink">n8n (Docker)</span>
+          <span class="tag pink">Webhooks</span>
+          <span class="tag">State Machine</span>
+          <span class="tag">Phase A + B</span>
+        </div>
+      </div>
+
+      <div class="stack-card">
+        <div class="stack-category">
+          <div class="stack-icon" style="background:rgba(255,209,102,0.12)">🗄</div>
+          <div class="stack-name">Данные и хранение</div>
+        </div>
+        <div class="stack-items">
+          <span class="tag yellow">PostgreSQL</span>
+          <span class="tag yellow">S3 API</span>
+          <span class="tag yellow">Yandex Cloud</span>
+          <span class="tag">Presigned URLs</span>
+        </div>
+      </div>
+
+      <div class="stack-card">
+        <div class="stack-category">
+          <div class="stack-icon" style="background:rgba(80,200,120,0.12)">⚙️</div>
+          <div class="stack-name">Инфраструктура</div>
+        </div>
+        <div class="stack-items">
+          <span class="tag green">VPS Linux</span>
+          <span class="tag green">systemd</span>
+          <span class="tag green">nginx</span>
+          <span class="tag green">Docker</span>
+          <span class="tag">ops.sh</span>
+        </div>
+      </div>
+
+      <div class="stack-card">
+        <div class="stack-category">
+          <div class="stack-icon" style="background:rgba(124,111,255,0.12)">💳</div>
+          <div class="stack-name">Бизнес-сервисы</div>
+        </div>
+        <div class="stack-items">
+          <span class="tag accent">YooKassa</span>
+          <span class="tag accent">SMSimple (SMS)</span>
+          <span class="tag">Промо-коды</span>
+          <span class="tag">E-mail чеки</span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ────────────────── SLIDE 6: AI PIPELINE ────────────────── -->
+  <section class="slide" id="s6">
+    <div class="slide-tag">05 — AI-пайплайн</div>
+    <h2>Как работает <span class="highlight">автоматическое издательство</span></h2>
+
+    <div class="pipeline-wrap">
+
+      <div class="pipeline-stage">
+        <div class="stage-label">
+          <div class="stage-num">Стадия 1</div>
+          <div class="stage-name">Транскрипция</div>
+        </div>
+        <div class="stage-flow">
+          <div class="stage-agent">🎙 Голос / фото</div>
+          <div class="stage-arrow">→</div>
+          <div class="stage-agent">📝 Транскрибатор</div>
+          <div class="stage-arrow">→</div>
+          <div class="stage-agent">🧹 Очистка текста</div>
+          <div class="stage-arrow">→</div>
+          <div class="stage-agent">🗺 Fact Extractor</div>
+          <div style="margin-left:8px;font-size:12px;color:var(--muted)">→ факт-карта + чистый текст</div>
+        </div>
+      </div>
+
+      <div class="pipeline-stage">
+        <div class="stage-label">
+          <div class="stage-num">Стадия 2</div>
+          <div class="stage-name">Создание черновика</div>
+        </div>
+        <div class="stage-flow">
+          <div class="stage-agent">📚 Историк</div>
+          <div class="stage-arrow">→</div>
+          <div class="stage-agent">✍️ Ghostwriter</div>
+          <div class="stage-arrow">→</div>
+          <div class="loop-badge">⟳ fact-check loop</div>
+          <div style="margin-left:8px;font-size:12px;color:var(--muted)">→ черновик биографии</div>
+        </div>
+      </div>
+
+      <div class="pipeline-stage">
+        <div class="stage-label">
+          <div class="stage-num">Стадия 3</div>
+          <div class="stage-name">Редактура</div>
+        </div>
+        <div class="stage-flow">
+          <div class="stage-agent">✏️ Литературный редактор</div>
+          <div class="stage-arrow">→</div>
+          <div class="stage-agent">🔍 Корректор</div>
+          <div class="stage-arrow">→</div>
+          <div class="loop-badge">⟳ literary loop</div>
+          <div style="margin-left:8px;font-size:12px;color:var(--muted)">→ итоговый текст</div>
+        </div>
+      </div>
+
+      <div class="pipeline-stage">
+        <div class="stage-label">
+          <div class="stage-num">Стадия 4</div>
+          <div class="stage-name">Издание</div>
+        </div>
+        <div class="stage-flow">
+          <div class="stage-agent">🎨 Дизайнер обложки</div>
+          <div class="stage-arrow">→</div>
+          <div class="stage-agent">📐 Верстальщик</div>
+          <div class="stage-arrow">→</div>
+          <div class="loop-badge">⟳ layout QA loop</div>
+          <div class="stage-arrow">→</div>
+          <div class="stage-agent">📦 Продюсер</div>
+          <div style="margin-left:8px;font-size:12px;color:var(--muted)">→ PDF + вопросы</div>
+        </div>
+      </div>
+
+      <div style="background:rgba(124,111,255,0.06);border:1px solid rgba(124,111,255,0.15);border-radius:10px;padding:14px 20px;display:flex;gap:24px;align-items:center">
+        <div style="font-size:13px;color:var(--muted)"><strong style="color:var(--accent)">Phase B — Правки:</strong> клиент отправляет комментарии → Triage B → ревизия → новый PDF v2, v3…</div>
+        <div style="margin-left:auto;font-size:12px;color:var(--muted)">Версионирование через state machine (delivered_v1, revising_phase_b, delivered_vN)</div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ────────────────── SLIDE 7: AI ROLES ────────────────── -->
+  <section class="slide" id="s7">
+    <div class="slide-tag">06 — AI-агенты</div>
+    <h2>Команда из <span class="highlight">10+ AI-специалистов</span></h2>
+
+    <div class="roles-grid">
+      <div class="role-card">
+        <div class="role-emoji">🗺</div>
+        <div class="role-title">Fact Extractor</div>
+        <div class="role-desc">Извлекает имена, даты, места из транскрипта. Строит структурированную факт-карту.</div>
+        <div class="role-output">→ fact_map.json</div>
+      </div>
+
+      <div class="role-card">
+        <div class="role-emoji">📚</div>
+        <div class="role-title">Историк</div>
+        <div class="role-desc">Контекстуализирует события, добавляет историческую справку эпохи.</div>
+        <div class="role-output">→ context_layer</div>
+      </div>
+
+      <div class="role-card">
+        <div class="role-emoji">✍️</div>
+        <div class="role-title">Ghostwriter</div>
+        <div class="role-desc">Пишет биографический нарратив по фактам и контексту. Центральный агент пайплайна.</div>
+        <div class="role-output">→ bio_draft.md</div>
+      </div>
+
+      <div class="role-card">
+        <div class="role-emoji">✅</div>
+        <div class="role-title">Fact Checker</div>
+        <div class="role-desc">Сверяет черновик с факт-картой. Возвращает ghostwriter на доработку при несоответствиях.</div>
+        <div class="role-output">→ pass / iterate</div>
+      </div>
+
+      <div class="role-card">
+        <div class="role-emoji">✏️</div>
+        <div class="role-title">Литературный редактор</div>
+        <div class="role-desc">Улучшает стиль, ритм, образность. Правит нарратив без искажения фактов.</div>
+        <div class="role-output">→ edited_draft</div>
+      </div>
+
+      <div class="role-card">
+        <div class="role-emoji">🔍</div>
+        <div class="role-title">Корректор</div>
+        <div class="role-desc">Исправляет орфографию, пунктуацию, грамматику. Финальный текстовый фильтр.</div>
+        <div class="role-output">→ clean_text</div>
+      </div>
+
+      <div class="role-card">
+        <div class="role-emoji">🎨</div>
+        <div class="role-title">Cover Designer</div>
+        <div class="role-desc">Генерирует концепцию обложки. Запускает Replicate для создания визуала.</div>
+        <div class="role-output">→ cover.png</div>
+      </div>
+
+      <div class="role-card">
+        <div class="role-emoji">📐</div>
+        <div class="role-title">Layout Designer</div>
+        <div class="role-desc">Верстает PDF: типографика, расстановка фото, стили. QA-цикл по WCAG.</div>
+        <div class="role-output">→ layout.pdf</div>
+      </div>
+
+      <div class="role-card">
+        <div class="role-emoji">❓</div>
+        <div class="role-title">Interview Architect</div>
+        <div class="role-desc">Генерирует персонализированные вопросы для углублённого интервью.</div>
+        <div class="role-output">→ questions.json</div>
+      </div>
+
+      <div class="role-card">
+        <div class="role-emoji">📦</div>
+        <div class="role-title">Продюсер</div>
+        <div class="role-desc">Финальная упаковка: объединяет PDF, фото, вопросы. Отправляет через Telegram API.</div>
+        <div class="role-output">→ deliver 🚀</div>
+      </div>
+
+      <div class="role-card">
+        <div class="role-emoji">🔀</div>
+        <div class="role-title">Triage</div>
+        <div class="role-desc">Маршрутизатор: определяет тип входящего запроса и направляет в нужную ветку пайплайна.</div>
+        <div class="role-output">→ routing</div>
+      </div>
+
+      <div class="role-card">
+        <div class="role-emoji">💬</div>
+        <div class="role-title">Support Bot (CCO)</div>
+        <div class="role-desc">GPT-4o агент поддержки. Отвечает на вопросы клиентов, работает в отдельном боте.</div>
+        <div class="role-output">→ ответ клиенту</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ────────────────── SLIDE 8: СЕРВИСЫ И КОНКУРЕНТНЫЕ ПРЕИМУЩЕСТВА ────────────────── -->
+  <section class="slide" id="s8">
+    <div class="slide-tag">07 — Сервисы и конкурентные преимущества</div>
+    <h2>Готовая инфраструктура и <span class="highlight">точки роста</span></h2>
+
+    <div class="biz-layout">
+      <div>
+        <h3 style="margin-bottom:16px;color:var(--muted);font-size:13px;letter-spacing:1px;text-transform:uppercase;font-weight:700">Развёрнутые сервисы</h3>
+        <div class="services-list">
+          <div class="service-row">
+            <div class="service-name">🤖 Telegram Bot (glava)</div>
+            <div class="service-port">systemd</div>
+            <div class="status-dot"></div>
+          </div>
+          <div class="service-row">
+            <div class="service-name">🌐 Личный кабинет (glava-cabinet)</div>
+            <div class="service-port">:5000</div>
+            <div class="status-dot"></div>
+          </div>
+          <div class="service-row">
+            <div class="service-name">🛠 Панель администратора (glava-admin)</div>
+            <div class="service-port">:5001</div>
+            <div class="status-dot"></div>
+          </div>
+          <div class="service-row">
+            <div class="service-name">💬 CCO Support Bot (glava-cco)</div>
+            <div class="service-port">systemd</div>
+            <div class="status-dot"></div>
+          </div>
+          <div class="service-row">
+            <div class="service-name">🔄 n8n Workflow Engine (glava-n8n)</div>
+            <div class="service-port">:5678</div>
+            <div class="status-dot"></div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h3 style="margin-bottom:16px;color:var(--muted);font-size:13px;letter-spacing:1px;text-transform:uppercase;font-weight:700">Конкурентные преимущества</h3>
+        <div class="moat-list">
+          <div class="moat-item">
+            <div class="moat-icon">🔒</div>
+            <div class="moat-text">
+              <h4>Paywall-first архитектура</h4>
+              <p>Пайплайн, транскрипция и обработка файлов запускаются только после подтверждения оплаты. Защита от злоупотреблений.</p>
+            </div>
+          </div>
+          <div class="moat-item">
+            <div class="moat-icon">🔁</div>
+            <div class="moat-text">
+              <h4>QA-циклы с обратной связью</h4>
+              <p>Агенты итерируют до получения качественного результата — автоматическая проверка фактов, стиля, вёрстки.</p>
+            </div>
+          </div>
+          <div class="moat-item">
+            <div class="moat-icon">🧩</div>
+            <div class="moat-text">
+              <h4>Версионирование промптов</h4>
+              <p>Операторы меняют поведение агентов через Admin API без деплоя кода. Быстрые итерации продукта.</p>
+            </div>
+          </div>
+          <div class="moat-item">
+            <div class="moat-icon">📡</div>
+            <div class="moat-text">
+              <h4>Мультиканальный сбор данных</h4>
+              <p>Голос, фото, веб-загрузка >20 МБ, запись онлайн-встреч (Zoom, Telemost, Jitsi) — всё в одной системе.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ────────────────── SLIDE 9: SUMMARY ────────────────── -->
+  <section class="slide" id="s9">
+    <div class="bg-shape" style="width:700px;height:700px;background:rgba(124,111,255,0.07);top:50%;left:50%;transform:translate(-50%,-50%);"></div>
+
+    <div style="text-align:center;flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center">
+      <div class="badge" style="margin-bottom:24px">GLAVA · Итоги</div>
+      <h1 style="max-width:700px">Полноценное <span class="gradient-text">AI-издательство</span> в Telegram</h1>
+
+      <div class="summary-stats">
+        <div class="stat">
+          <div class="stat-value gradient-text">10+</div>
+          <div class="stat-label">AI-агентов</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value" style="color:var(--accent3)">4</div>
+          <div class="stat-label">стадии пайплайна</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value" style="color:var(--accent2)">5</div>
+          <div class="stat-label">продакшн-сервисов</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value" style="color:var(--accent4)">∞</div>
+          <div class="stat-label">правок (Phase B)</div>
+        </div>
+      </div>
+
+      <div class="summary-tags">
+        <span class="tag accent">Python 3.10+</span>
+        <span class="tag teal">n8n</span>
+        <span class="tag pink">GPT-4o</span>
+        <span class="tag yellow">PostgreSQL</span>
+        <span class="tag green">S3</span>
+        <span class="tag accent">YooKassa</span>
+        <span class="tag teal">AssemblyAI</span>
+        <span class="tag pink">Replicate</span>
+        <span class="tag yellow">systemd + nginx</span>
+        <span class="tag">Telegram Bot API</span>
+        <span class="tag">Flask</span>
+        <span class="tag">Docker</span>
+      </div>
+
+      <p style="max-width:560px;font-size:15px;line-height:1.7">
+        Готовая система с оплатой, мультиагентным AI, QA-циклами, версионированием и полным набором инструментов для масштабирования — от семейных биографий до корпоративного white-label.
+      </p>
+    </div>
+  </section>
+
+</div>
+
+<!-- ─── NAV ─── -->
+<div class="nav">
+  <button id="btn-prev" onclick="navigate(-1)">←</button>
+  <div class="dots" id="dots"></div>
+  <button id="btn-next" onclick="navigate(1)">→</button>
+  <div class="slide-counter" id="counter">1 / 9</div>
+</div>
+
+<div class="key-hint">← → для навигации</div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const dotsEl = document.getElementById('dots');
+  const counter = document.getElementById('counter');
+  const btnPrev = document.getElementById('btn-prev');
+  const btnNext = document.getElementById('btn-next');
+  let current = 0;
+  const total = slides.length;
+
+  // build dots
+  slides.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === 0 ? ' active' : '');
+    d.onclick = () => goTo(i);
+    dotsEl.appendChild(d);
+  });
+
+  function goTo(n) {
+    slides[current].classList.remove('active');
+    slides[current].classList.add('exit');
+    setTimeout(() => slides[current - (n > current ? -1 : 0) + (n > current ? 0 : -1)].classList.remove('exit'), 450);
+
+    // clean up all exits
+    slides.forEach(s => {
+      if (s !== slides[current] && s !== slides[n]) {
+        s.classList.remove('exit', 'active');
+      }
+    });
+
+    const prevSlide = slides[current];
+    setTimeout(() => prevSlide.classList.remove('exit'), 450);
+
+    current = n;
+    slides[current].classList.add('active');
+    slides[current].classList.remove('exit');
+
+    // update dots
+    document.querySelectorAll('.dot').forEach((d, i) => {
+      d.classList.toggle('active', i === current);
+    });
+
+    counter.textContent = `${current + 1} / ${total}`;
+    btnPrev.disabled = current === 0;
+    btnNext.disabled = current === total - 1;
+  }
+
+  function navigate(dir) {
+    const next = Math.max(0, Math.min(total - 1, current + dir));
+    if (next !== current) goTo(next);
+  }
+
+  // keyboard
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') navigate(1);
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') navigate(-1);
+  });
+
+  // init
+  btnPrev.disabled = true;
+  goTo(0);
+</script>
+
+</body>
+</html>

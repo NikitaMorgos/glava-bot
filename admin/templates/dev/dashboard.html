@@ -80,6 +80,9 @@
           <div class="text-xs text-gray-500 mt-1">МБ</div>
         </div>
       </div>
+      {% if s3_metrics.get('note') %}
+        <div class="text-xs text-amber-700 mt-2">{{ s3_metrics.note }}</div>
+      {% endif %}
     {% endif %}
   </div>
 

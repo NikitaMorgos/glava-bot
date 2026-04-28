@@ -1,0 +1,632 @@
+{
+  "project_id": "karakulina_stage4",
+  "page_plan": [
+    {
+      "page_number": 1,
+      "page_type": "cover",
+      "content": "cover_composition"
+    },
+    {
+      "page_number": 2,
+      "page_type": "blank",
+      "content": null
+    },
+    {
+      "page_number": 3,
+      "page_type": "toc",
+      "content": "auto_generate"
+    },
+    {
+      "page_number": 4,
+      "page_type": "chapter_start",
+      "chapter_id": "ch_01",
+      "elements": [
+        {
+          "type": "chapter_header"
+        },
+        {
+          "type": "bio_data_block"
+        }
+      ]
+    },
+    {
+      "page_number": 5,
+      "page_type": "bio_timeline",
+      "chapter_id": "ch_01",
+      "elements": [
+        {
+          "type": "timeline_block"
+        }
+      ]
+    },
+    {
+      "page_number": 6,
+      "page_type": "chapter_start",
+      "chapter_id": "ch_02",
+      "elements": [
+        {
+          "type": "chapter_header"
+        },
+        {
+          "type": "text",
+          "paragraphs": [
+            "p_ch02_001",
+            "p_ch02_002"
+          ]
+        }
+      ]
+    },
+    {
+      "page_number": 7,
+      "page_type": "text_with_photo",
+      "chapter_id": "ch_02",
+      "elements": [
+        {
+          "type": "photo",
+          "photo_id": "photo_017",
+          "orientation": "vertical",
+          "layout": "wrap_right",
+          "width_percent": 40,
+          "text_beside_photo": [
+            "p_ch02_003"
+          ],
+          "text_after_photo": [
+            "p_ch02_004"
+          ],
+          "rationale": "Фото 'До войны' — вертикальный портрет молодой Валентины, размещён рядом с абзацем про учёбу в фельдшерско-акушерской школе 1938-1940"
+        }
+      ]
+    },
+    {
+      "page_number": 8,
+      "page_type": "text_only",
+      "chapter_id": "ch_02",
+      "elements": [
+        {
+          "type": "text",
+          "paragraphs": [
+            "p_ch02_005",
+            "p_ch02_006"
+          ]
+        }
+      ]
+    },
+    {
+      "page_number": 9,
+      "page_type": "text_with_photo",
+      "chapter_id": "ch_02",
+      "elements": [
+        {
+          "type": "photo",
+          "photo_id": "photo_021",
+          "orientation": "vertical",
+          "layout": "wrap_left",
+          "width_percent": 40,
+          "text_beside_photo": [
+            "p_ch02_007"
+          ],
+          "text_after_photo": [
+            "p_ch02_008"
+          ],
+          "rationale": "Фото 'На фронте' — вертикальный портрет в военной форме, размещён рядом с абзацем про призыв 23 июня 1941 года"
+        }
+      ]
+    },
+    {
+      "page_number": 10,
+      "page_type": "text_with_photo",
+      "chapter_id": "ch_02",
+      "elements": [
+        {
+          "type": "text",
+          "paragraphs": [
+            "p_ch02_009"
+          ]
+        },
+        {
+          "type": "photo",
+          "photo_id": "photo_018",
+          "orientation": "horizontal",
+          "layout": "full_width",
+          "text_before_photo": [
+            "p_ch02_009"
+          ],
+          "text_after_photo": [
+            "p_ch02_010"
+          ],
+          "rationale": "Фото 'Госпиталь, 1944' — горизонтальное групповое фото медперсонала, full_width между абзацами про военную службу"
+        }
+      ]
+    },
+    {
+      "page_number": 11,
+      "page_type": "text_with_photo",
+      "chapter_id": "ch_02",
+      "elements": [
+        {
+          "type": "callout",
+          "callout_id": "callout_07",
+          "rationale": "Callout про начало работы в 40 лет размещён в главе ch_02 рядом с соответствующим абзацем"
+        },
+        {
+          "type": "photo",
+          "photo_id": "photo_014",
+          "orientation": "horizontal",
+          "layout": "full_width",
+          "text_before_photo": [
+            "p_ch02_011"
+          ],
+          "text_after_photo": [
+            "p_ch02_012"
+          ],
+          "rationale": "Фото 'На фронте, с подругами, 1944' — горизонтальное групповое фото военного времени"
+        }
+      ]
+    },
+    {
+      "page_number": 12,
+      "page_type": "text_only",
+      "chapter_id": "ch_02",
+      "elements": [
+        {
+          "type": "text",
+          "paragraphs": [
+            "p_ch02_013",
+            "p_ch02_014"
+          ]
+        }
+      ]
+    },
+    {
+      "page_number": 13,
+      "page_type": "text_with_photo",
+      "chapter_id": "ch_02",
+      "elements": [
+        {
+          "type": "photo",
+          "photo_id": "photo_008",
+          "orientation": "vertical",
+          "layout": "wrap_right",
+          "width_percent": 40,
+          "text_beside_photo": [
+            "p_ch02_015"
+          ],
+          "text_after_photo": [
+            "p_ch02_016"
+          ],
+          "rationale": "Фото 'Семья, 1958' — вертикальное семейное фото, размещено рядом с абзацем про переезд в Венгрию в 1958 году"
+        }
+      ]
+    },
+    {
+      "page_number": 14,
+      "page_type": "text_with_photo",
+      "chapter_id": "ch_02",
+      "elements": [
+        {
+          "type": "text",
+          "paragraphs": [
+            "p_ch02_017"
+          ]
+        },
+        {
+          "type": "photo",
+          "photo_id": "photo_019",
+          "orientation": "vertical",
+          "layout": "wrap_left",
+          "width_percent": 40,
+          "text_beside_photo": [
+            "p_ch02_018"
+          ],
+          "text_after_photo": [
+            "p_ch02_019"
+          ],
+          "rationale": "Фото 'Возможно, в Венгрии' — вертикальный портрет периода венгерской службы"
+        }
+      ]
+    },
+    {
+      "page_number": 15,
+      "page_type": "text_only",
+      "chapter_id": "ch_02",
+      "elements": [
+        {
+          "type": "text",
+          "paragraphs": [
+            "p_ch02_020",
+            "p_ch02_021"
+          ]
+        }
+      ]
+    },
+    {
+      "page_number": 16,
+      "page_type": "text_with_photo",
+      "chapter_id": "ch_02",
+      "elements": [
+        {
+          "type": "photo",
+          "photo_id": "photo_013",
+          "orientation": "horizontal",
+          "layout": "full_width",
+          "text_before_photo": [
+            "p_ch02_022"
+          ],
+          "text_after_photo": [
+            "p_ch02_023"
+          ],
+          "rationale": "Фото 'Поликлиника №3, Химинститут, 1967' — горизонтальное фото рабочего коллектива, размещено рядом с абзацем про работу в поликлинике с 1962 года"
+        }
+      ]
+    },
+    {
+      "page_number": 17,
+      "page_type": "text_only",
+      "chapter_id": "ch_02",
+      "elements": [
+        {
+          "type": "text",
+          "paragraphs": [
+            "p_ch02_024",
+            "p_ch02_025"
+          ]
+        }
+      ]
+    },
+    {
+      "page_number": 18,
+      "page_type": "chapter_start",
+      "chapter_id": "ch_03",
+      "elements": [
+        {
+          "type": "chapter_header"
+        },
+        {
+          "type": "photo",
+          "photo_id": "photo_002",
+          "orientation": "vertical",
+          "layout": "wrap_right",
+          "width_percent": 40,
+          "text_beside_photo": [
+            "p_ch03_001",
+            "p_ch03_002"
+          ],
+          "text_after_photo": [
+            "p_ch03_003"
+          ],
+          "rationale": "ГЛАВА 03 — лучший портрет героя 'Фотопортрет' обязательно wrap-right с первым абзацем главы о характере"
+        }
+      ]
+    },
+    {
+      "page_number": 19,
+      "page_type": "text_only",
+      "chapter_id": "ch_03",
+      "elements": [
+        {
+          "type": "callout",
+          "callout_id": "callout_01",
+          "rationale": "Callout про самостоятельность после сиротства в главе ch_03"
+        },
+        {
+          "type": "text",
+          "paragraphs": [
+            "p_ch03_004",
+            "p_ch03_005"
+          ]
+        }
+      ]
+    },
+    {
+      "page_number": 20,
+      "page_type": "text_only",
+      "chapter_id": "ch_03",
+      "elements": [
+        {
+          "type": "callout",
+          "callout_id": "callout_02",
+          "rationale": "Callout про сварливость после смерти мужа в главе ch_03"
+        },
+        {
+          "type": "text",
+          "paragraphs": [
+            "p_ch03_006",
+            "p_ch03_007"
+          ]
+        }
+      ]
+    },
+    {
+      "page_number": 21,
+      "page_type": "text_only",
+      "chapter_id": "ch_03",
+      "elements": [
+        {
+          "type": "callout",
+          "callout_id": "callout_03",
+          "rationale": "Callout про бессеребренность в главе ch_03"
+        },
+        {
+          "type": "text",
+          "paragraphs": [
+            "p_ch03_008",
+            "p_ch03_009"
+          ]
+        }
+      ]
+    },
+    {
+      "page_number": 22,
+      "page_type": "text_only",
+      "chapter_id": "ch_03",
+      "elements": [
+        {
+          "type": "callout",
+          "callout_id": "callout_04",
+          "rationale": "Callout про отношение к внукам в главе ch_03"
+        },
+        {
+          "type": "text",
+          "paragraphs": [
+            "p_ch03_010",
+            "p_ch03_011"
+          ]
+        }
+      ]
+    },
+    {
+      "page_number": 23,
+      "page_type": "text_only",
+      "chapter_id": "ch_03",
+      "elements": [
+        {
+          "type": "callout",
+          "callout_id": "callout_05",
+          "rationale": "Callout про тягу к красоте в главе ch_03"
+        },
+        {
+          "type": "text",
+          "paragraphs": [
+            "p_ch03_012",
+            "p_ch03_013"
+          ]
+        }
+      ]
+    },
+    {
+      "page_number": 24,
+      "page_type": "text_only",
+      "chapter_id": "ch_03",
+      "elements": [
+        {
+          "type": "callout",
+          "callout_id": "callout_06",
+          "rationale": "Callout про трудолюбие как муравей в главе ch_03"
+        },
+        {
+          "type": "text",
+          "paragraphs": [
+            "p_ch03_014",
+            "p_ch03_015"
+          ]
+        }
+      ]
+    },
+    {
+      "page_number": 25,
+      "page_type": "chapter_start",
+      "chapter_id": "ch_04",
+      "elements": [
+        {
+          "type": "chapter_header"
+        },
+        {
+          "type": "text",
+          "paragraphs": [
+            "p_ch04_001",
+            "p_ch04_002"
+          ]
+        }
+      ]
+    },
+    {
+      "page_number": 26,
+      "page_type": "text_only",
+      "chapter_id": "ch_04",
+      "elements": [
+        {
+          "type": "text",
+          "paragraphs": [
+            "p_ch04_003",
+            "p_ch04_004",
+            "p_ch04_005"
+          ]
+        }
+      ]
+    },
+    {
+      "page_number": 27,
+      "page_type": "chapter_start",
+      "chapter_id": "epilogue",
+      "elements": [
+        {
+          "type": "chapter_header"
+        },
+        {
+          "type": "text",
+          "paragraphs": [
+            "p_epilogue_001",
+            "p_epilogue_002",
+            "p_epilogue_003"
+          ]
+        }
+      ]
+    },
+    {
+      "page_number": 28,
+      "page_type": "photo_section",
+      "chapter_id": null,
+      "elements": [
+        {
+          "type": "section_header",
+          "title": "Фотографии"
+        },
+        {
+          "type": "photo",
+          "photo_id": "photo_020",
+          "orientation": "vertical",
+          "layout": "full_width",
+          "rationale": "Раздел фотографий: заголовок + первое вертикальное фото 'Фотопортрет' на одной странице"
+        }
+      ]
+    },
+    {
+      "page_number": 29,
+      "page_type": "photo_section",
+      "chapter_id": null,
+      "elements": [
+        {
+          "type": "photo",
+          "photo_id": "photo_015",
+          "orientation": "vertical",
+          "layout": "full_width",
+          "rationale": "Вертикальное фото 'Калинин, на прогулке, 1957' — одно на страницу, полная ширина"
+        }
+      ]
+    },
+    {
+      "page_number": 30,
+      "page_type": "photo_section",
+      "chapter_id": null,
+      "elements": [
+        {
+          "type": "photo",
+          "photo_id": "photo_016",
+          "orientation": "vertical",
+          "layout": "full_width",
+          "rationale": "Вертикальное фото 'Горсад, на прогулке, 1957' — одно на страницу, полная ширина"
+        }
+      ]
+    },
+    {
+      "page_number": 31,
+      "page_type": "photo_section",
+      "chapter_id": null,
+      "elements": [
+        {
+          "type": "photo",
+          "photo_id": "photo_009",
+          "orientation": "vertical",
+          "layout": "full_width",
+          "rationale": "Вертикальное фото 'Семейство, 1957' — одно на страницу, полная ширина"
+        }
+      ]
+    },
+    {
+      "page_number": 32,
+      "page_type": "photo_section",
+      "chapter_id": null,
+      "elements": [
+        {
+          "type": "photo",
+          "photo_id": "photo_010",
+          "orientation": "vertical",
+          "layout": "full_width",
+          "rationale": "Вертикальное фото 'С детьми' — одно на страницу, полная ширина"
+        }
+      ]
+    },
+    {
+      "page_number": 33,
+      "page_type": "photo_section",
+      "chapter_id": null,
+      "elements": [
+        {
+          "type": "photo",
+          "photo_id": "photo_011",
+          "orientation": "vertical",
+          "layout": "full_width",
+          "rationale": "Вертикальное фото 'С Валерой' — одно на страницу, полная ширина"
+        }
+      ]
+    },
+    {
+      "page_number": 34,
+      "page_type": "photo_section",
+      "chapter_id": null,
+      "elements": [
+        {
+          "type": "photo_pair",
+          "layout": "pair_stack",
+          "photos": [
+            "photo_003",
+            "photo_022"
+          ],
+          "rationale": "Два горизонтальных фото 'Сухуми, 1960' стопкой — оба из одного периода отпусков"
+        }
+      ]
+    },
+    {
+      "page_number": 35,
+      "page_type": "photo_section",
+      "chapter_id": null,
+      "elements": [
+        {
+          "type": "photo_pair",
+          "layout": "pair_stack",
+          "photos": [
+            "photo_004",
+            "photo_005"
+          ],
+          "rationale": "Два горизонтальных фото из Сочи стопкой — 'Сочи, парк' и 'Сочи, дендрарий'"
+        }
+      ]
+    },
+    {
+      "page_number": 36,
+      "page_type": "photo_section",
+      "chapter_id": null,
+      "elements": [
+        {
+          "type": "photo_pair",
+          "layout": "pair_stack",
+          "photos": [
+            "photo_006",
+            "photo_007"
+          ],
+          "rationale": "Два горизонтальных фото стопкой — 'Сочи, дендрарий, 1955' и 'Сочи, на море, 1960'"
+        }
+      ]
+    },
+    {
+      "page_number": 37,
+      "page_type": "photo_section",
+      "chapter_id": null,
+      "elements": [
+        {
+          "type": "photo_pair",
+          "layout": "pair_stack",
+          "photos": [
+            "photo_012",
+            "photo_001"
+          ],
+          "rationale": "Два горизонтальных фото стопкой — 'Алушта, с родственниками, 1978' и 'Поликлиника №3, Химинститут'"
+        }
+      ]
+    }
+  ],
+  "photo_distribution": {
+    "total_photos": 22,
+    "photos_in_text": 8,
+    "photos_in_section": 14,
+    "portrait_ch03": "photo_002",
+    "has_photo_section": true
+  },
+  "layout_stats": {
+    "total_pages": 37,
+    "text_only_pages": 12,
+    "text_with_photo_pages": 15,
+    "photo_section_pages": 10
+  },
+  "design_notes": "Книга имеет хороший ритм: фото равномерно распределены по основному тексту (1 фото на 2-3 страницы текста). В главе 03 размещён лучший портрет героя согласно правилу. Все callouts явно прописаны в page_plan. Фотораздел содержит 14 оставшихся фото: вертикальные размещены по одному на страницу для максимального размера, горизонтальные сгруппированы парами стопкой. Хронологический порядок соблюдён: довоенные фото в начале текста, военные в середине, послевоенные ближе к концу."
+}

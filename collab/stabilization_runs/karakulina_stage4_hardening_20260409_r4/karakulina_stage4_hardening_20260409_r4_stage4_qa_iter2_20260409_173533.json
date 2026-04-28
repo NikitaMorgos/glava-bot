@@ -1,0 +1,205 @@
+{
+  "verdict": "pass",
+  "issues": [
+    {
+      "id": "issue_001",
+      "category": "integrity",
+      "severity": "minor",
+      "page": 17,
+      "description": "Страница 17 в page_map содержит пустой массив elements [], что может указывать на отсутствие контента на странице",
+      "fix_suggestion": "Проверить, что страница 17 содержит текстовый контент согласно page_plan (абзацы p_ch02_027, p_ch02_028). Если страница действительно пустая, рассмотреть перераспределение контента."
+    },
+    {
+      "id": "issue_001",
+      "category": "integrity",
+      "severity": "minor",
+      "page": null,
+      "description": "PDF файл недоступен для визуальной проверки. Путь /opt/glava/exports/karakulina_stage4_hardening_20260409_r4_stage4_pdf_iter2_20260409_173533.pdf не может быть открыт для анализа содержимого.",
+      "fix_suggestion": "Убедиться, что PDF файл корректно сгенерирован и доступен по указанному пути. Проверить права доступа к файлу и его целостность. Возможно, требуется пересоздание PDF с корректными правами доступа.",
+      "non_blocking": true,
+      "source": "visual_qa"
+    },
+    {
+      "id": "issue_002",
+      "category": "integrity",
+      "severity": "minor",
+      "page": null,
+      "description": "Структурная проверка не пройдена (structural_layout_guard failed). Это указывает на критические нарушения в структуре макета или несоответствие page_plan и page_map.",
+      "fix_suggestion": "Провести полную проверку соответствия page_plan и page_map. Убедиться, что все элементы размещены на правильных страницах, все callout_ids присутствуют, пагинация корректна.",
+      "non_blocking": true,
+      "source": "visual_qa"
+    }
+  ],
+  "summary": {
+    "critical_issues": 0,
+    "major_issues": 0,
+    "minor_issues": 3,
+    "total_pages_checked": 35,
+    "overall_assessment": "Combined structural_qa + visual_qa (visual non-blocking)",
+    "fonts_embedded": true
+  },
+  "qa_modes": {
+    "structural_qa": {
+      "project_id": "karakulina_stage4",
+      "iteration": 2,
+      "verdict": "pass",
+      "issues": [
+        {
+          "id": "issue_001",
+          "category": "integrity",
+          "severity": "minor",
+          "page": 17,
+          "description": "Страница 17 в page_map содержит пустой массив elements [], что может указывать на отсутствие контента на странице",
+          "fix_suggestion": "Проверить, что страница 17 содержит текстовый контент согласно page_plan (абзацы p_ch02_027, p_ch02_028). Если страница действительно пустая, рассмотреть перераспределение контента."
+        }
+      ],
+      "checklist": {
+        "pagination": {
+          "status": "pass",
+          "details": "Пагинация корректна: 35 страниц, обложка (стр. 1) и blank (стр. 2) без номеров, TOC начинается с физической страницы 3 как видимая страница 1. Нумерация непрерывна."
+        },
+        "toc": {
+          "status": "pass",
+          "details": "Оглавление должно содержать 5 глав согласно expected_content. Главы начинаются на страницах: ch_01 (стр. 4), ch_02 (стр. 6), ch_03 (стр. 18), ch_04 (стр. 22), epilogue (стр. 25)."
+        },
+        "orphan_widow": {
+          "status": "pass",
+          "details": "Структурная проверка не выявила проблем с висячими строками. Требуется визуальная проверка PDF для окончательной оценки."
+        },
+        "photos": {
+          "status": "pass",
+          "total_expected": 22,
+          "total_found": 22,
+          "details": "Все 22 фотографии размещены согласно page_plan и page_map. Фото распределены: ch_02 (7 фото), ch_03 (1 фото), фотосекция (14 фото)."
+        },
+        "callouts": {
+          "status": "pass",
+          "total_expected": 6,
+          "total_found": 6,
+          "details": "Все 6 callout-ов размещены точно согласно page_plan: callout_01-03 в ch_03 (стр. 19-21), callout_04-05 в ch_04 (стр. 23-24), callout_06 в epilogue (стр. 26)."
+        },
+        "headers_footers": {
+          "status": "pass",
+          "details": "Структурная проверка не выявила проблем с колонтитулами. Требуется визуальная проверка для оценки содержания и оформления."
+        },
+        "margins": {
+          "status": "pass",
+          "details": "Поля соответствуют style_guide: top/bottom 20мм, inner 20мм, outer 15мм. Внутреннее поле достаточно для переплёта."
+        },
+        "typography": {
+          "status": "pass",
+          "details": "Шрифты соответствуют style_guide: PT Serif для основного текста, PT Serif Bold для заголовков, PT Sans для подписей, PT Serif Italic для callout-ов."
+        },
+        "integrity": {
+          "status": "warning",
+          "details": "Структура макета соответствует page_plan. Обнаружена одна потенциальная проблема: страница 17 с пустым массивом elements."
+        }
+      },
+      "regression_check": {
+        "performed": true,
+        "previous_issues_resolved": [
+          {
+            "issue_id": "issue_001",
+            "status": "persists"
+          },
+          {
+            "issue_id": "structural_guard_failed",
+            "status": "resolved"
+          }
+        ]
+      },
+      "summary": {
+        "critical_issues": 0,
+        "major_issues": 0,
+        "minor_issues": 1,
+        "total_pages_checked": 35,
+        "overall_assessment": "Структурная проверка макета пройдена успешно. Все ключевые элементы (фотографии, callout-ы, главы) размещены согласно page_plan. Обнаружена одна минорная проблема с потенциально пустой страницей 17, которая не блокирует публикацию."
+      }
+    },
+    "visual_qa": {
+      "project_id": "karakulina_stage4",
+      "iteration": 2,
+      "verdict": "fail",
+      "issues": [
+        {
+          "id": "issue_001",
+          "category": "integrity",
+          "severity": "critical",
+          "page": null,
+          "description": "PDF файл недоступен для визуальной проверки. Путь /opt/glava/exports/karakulina_stage4_hardening_20260409_r4_stage4_pdf_iter2_20260409_173533.pdf не может быть открыт для анализа содержимого.",
+          "fix_suggestion": "Убедиться, что PDF файл корректно сгенерирован и доступен по указанному пути. Проверить права доступа к файлу и его целостность. Возможно, требуется пересоздание PDF с корректными правами доступа."
+        },
+        {
+          "id": "issue_002",
+          "category": "integrity",
+          "severity": "critical",
+          "page": null,
+          "description": "Структурная проверка не пройдена (structural_layout_guard failed). Это указывает на критические нарушения в структуре макета или несоответствие page_plan и page_map.",
+          "fix_suggestion": "Провести полную проверку соответствия page_plan и page_map. Убедиться, что все элементы размещены на правильных страницах, все callout_ids присутствуют, пагинация корректна."
+        }
+      ],
+      "checklist": {
+        "pagination": {
+          "status": "fail",
+          "details": "Невозможно проверить пагинацию из-за недоступности PDF файла"
+        },
+        "toc": {
+          "status": "fail",
+          "details": "Невозможно проверить оглавление из-за недоступности PDF файла"
+        },
+        "orphan_widow": {
+          "status": "fail",
+          "details": "Невозможно проверить висячие строки из-за недоступности PDF файла"
+        },
+        "photos": {
+          "status": "fail",
+          "total_expected": 22,
+          "total_found": 0,
+          "details": "Невозможно проверить размещение и качество 22 фотографий из-за недоступности PDF файла"
+        },
+        "callouts": {
+          "status": "fail",
+          "total_expected": 6,
+          "total_found": 0,
+          "details": "Невозможно проверить размещение и оформление 6 callout-ов из-за недоступности PDF файла"
+        },
+        "headers_footers": {
+          "status": "fail",
+          "details": "Невозможно проверить колонтитулы из-за недоступности PDF файла"
+        },
+        "margins": {
+          "status": "fail",
+          "details": "Невозможно проверить поля и отступы из-за недоступности PDF файла"
+        },
+        "typography": {
+          "status": "fail",
+          "details": "Невозможно проверить шрифты и читаемость из-за недоступности PDF файла"
+        },
+        "integrity": {
+          "status": "fail",
+          "details": "Критические проблемы: PDF недоступен, structural_layout_guard не пройден"
+        }
+      },
+      "regression_check": {
+        "performed": true,
+        "previous_issues_resolved": [
+          {
+            "issue_id": "issue_001",
+            "status": "persists"
+          }
+        ]
+      },
+      "summary": {
+        "critical_issues": 2,
+        "major_issues": 0,
+        "minor_issues": 0,
+        "total_pages_checked": 0,
+        "overall_assessment": "Макет не может быть проверен из-за недоступности PDF файла и критических структурных нарушений. Проблема с доступом к файлу сохраняется со второй итерации, что указывает на системные проблемы генерации PDF. Требуется немедленное исправление процесса создания PDF файла."
+      }
+    }
+  },
+  "verdict_policy": {
+    "visual_non_blocking": true,
+    "effective_blocking_source": "structural_qa"
+  }
+}

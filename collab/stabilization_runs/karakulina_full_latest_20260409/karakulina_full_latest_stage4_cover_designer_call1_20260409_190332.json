@@ -1,0 +1,170 @@
+{
+  "project_id": "karakulina_stage4",
+  "call_type": "initial",
+  "selected_photo": {
+    "photo_id": "photo_013",
+    "reason": "Фото из поликлиники №3 показывает Валентину Ивановну в зрелом возрасте (1967 год) в профессиональной обстановке. Лицо хорошо видно, есть характерная медицинская одежда, которая отражает её профессию. Это портретное фото с достаточной контрастностью для создания выразительного скетча."
+  },
+  "portrait_generation": {
+    "image_gen_prompt": "Ink sketch portrait of a middle-aged woman in medical uniform, white coat or medical dress, standing in professional pose. Based on reference photo from 1960s medical setting. Traditional ink brushwork with expressive lines, varying thickness from bold to fading strokes. Portrait from chest up, showing professional dignity and quiet strength. Loose brushwork style, minimal detail but maximum character. Pure white background, no shading, no color - only black ink on white. Style reminiscent of quick cafe sketch or Pushkin's margin doodles.",
+    "negative_prompt": "photorealistic, detailed, smooth, digital art, 3d, gradient, color, background, frame, shadows, shading",
+    "style_keywords": [
+      "ink sketch",
+      "brush portrait",
+      "loose linework"
+    ],
+    "aspect_ratio": "3:4",
+    "reference_photo_id": "photo_013",
+    "post_processing": {
+      "remove_background": true,
+      "tint_color": "#5a4a38",
+      "target_opacity": 0.7,
+      "crop_to_content": true
+    },
+    "quality_criteria": [
+      "Медицинская одежда узнаваема (белый халат или медицинское платье)",
+      "Это скетч, а не фотореалистичный рисунок",
+      "Линии живые, экспрессивные, разной толщины",
+      "Нет фона, цвета, градиентных теней"
+    ]
+  },
+  "cover_composition": {
+    "background_color": "#faf6f0",
+    "accent_color": "#c4a070",
+    "text_primary_color": "#3d2e1f",
+    "text_secondary_color": "#8b7355",
+    "text_muted_color": "#b8a88a",
+    "cover_layout": {
+      "description": "Три зоны БЕЗ ПЕРЕСЕЧЕНИЙ. Текст никогда не наезжает на портрет.",
+      "zones": {
+        "top": {
+          "purpose": "Фамилия + имя",
+          "y_start_mm": 0,
+          "y_end_mm": 52.5,
+          "y_start_percent": 0,
+          "y_end_percent": 25,
+          "elements": [
+            "top_line",
+            "surname",
+            "first_name",
+            "bottom_line"
+          ]
+        },
+        "center": {
+          "purpose": "Портрет — ТОЛЬКО изображение",
+          "y_start_mm": 52.5,
+          "y_end_mm": 168,
+          "y_start_percent": 25,
+          "y_end_percent": 80,
+          "elements": [
+            "portrait_image"
+          ]
+        },
+        "bottom": {
+          "purpose": "Годы + подзаголовок",
+          "y_start_mm": 168,
+          "y_end_mm": 210,
+          "y_start_percent": 80,
+          "y_end_percent": 100,
+          "elements": [
+            "bottom_line",
+            "years_line",
+            "subtitle"
+          ]
+        }
+      },
+      "layers_order": [
+        "background",
+        "portrait_image",
+        "accent_lines",
+        "typography"
+      ]
+    },
+    "portrait_placement": {
+      "zone": "center",
+      "x_percent": 50,
+      "y_percent": 52,
+      "height_percent": 50,
+      "opacity": 0.7,
+      "note": "Горизонтально по центру. Оркестратор центрирует PNG в canvas 800×800 перед передачей."
+    },
+    "typography": {
+      "surname": {
+        "text": "КАРАКУЛИНА",
+        "font": "PT Serif Bold",
+        "size_pt": 27,
+        "weight": 700,
+        "style": "normal",
+        "transform": "uppercase",
+        "letter_spacing_px": 6,
+        "color": "#3d2e1f",
+        "align": "center",
+        "zone": "top"
+      },
+      "first_name": {
+        "text": "Валентина Ивановна",
+        "font": "PT Serif Italic",
+        "size_pt": 14,
+        "weight": 400,
+        "style": "italic",
+        "color": "#8b7355",
+        "align": "center",
+        "zone": "top",
+        "margin_top_pt": 4
+      },
+      "years_line": {
+        "text": "1920 — 2005",
+        "font": "PT Sans",
+        "size_pt": 9,
+        "weight": 400,
+        "letter_spacing_px": 2,
+        "color": "#b8a88a",
+        "align": "center",
+        "zone": "bottom"
+      },
+      "subtitle": {
+        "text": "История жизни, рассказанная родными",
+        "font": "PT Sans",
+        "size_pt": 6,
+        "weight": 400,
+        "transform": "uppercase",
+        "letter_spacing_px": 2,
+        "color": "#b8a88a",
+        "align": "center",
+        "zone": "bottom",
+        "margin_top_pt": 4
+      }
+    },
+    "decorative_elements": {
+      "line_top_A": {
+        "color": "#c4a070",
+        "opacity": 0.4,
+        "height_pt": 0.5,
+        "width_mm": 108,
+        "zone": "top",
+        "position": "НАД фамилией — верхняя граница блока имени"
+      },
+      "line_bottom_A": {
+        "color": "#c4a070",
+        "opacity": 0.4,
+        "height_pt": 0.5,
+        "width_mm": 108,
+        "zone": "top",
+        "position": "ПОД именем-отчеством — нижняя граница блока имени"
+      },
+      "line_top_C": {
+        "color": "#c4a070",
+        "opacity": 0.4,
+        "height_pt": 0.5,
+        "width_mm": 108,
+        "zone": "bottom",
+        "position": "НАД годами жизни — верхняя граница нижней зоны"
+      }
+    }
+  },
+  "notes": {
+    "portrait_description": "Портрет медицинского работника в профессиональной обстановке, передающий спокойную силу и достоинство человека, посвятившего жизнь помощи людям",
+    "design_rationale": "Выбрана классическая трёхзонная композиция с акцентом на профессиональную деятельность героини. Тушевой портрет создаст ощущение тёплого воспоминания о человеке, который всю жизнь заботился о других",
+    "fallback_if_portrait_fails": "При неудаче с портретом можно использовать duotone-обработку того же фото с низкой прозрачностью или создать чисто типографическую обложку с декоративными элементами"
+  }
+}

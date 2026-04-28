@@ -1,0 +1,116 @@
+{
+  "project_id": "karakulina_stage4",
+  "iteration": 1,
+  "verdict": "fail",
+  "issues": [
+    {
+      "id": "issue_001",
+      "category": "integrity",
+      "severity": "critical",
+      "page": null,
+      "description": "PDF файл недоступен для визуальной проверки. Путь /opt/glava/exports/karakulina_stage4_hardening_20260409_r3_stage4_pdf_iter1_20260409_081836.pdf не может быть открыт для анализа содержимого.",
+      "fix_suggestion": "Убедиться, что PDF файл существует по указанному пути и доступен для чтения. Проверить права доступа к файлу."
+    },
+    {
+      "id": "issue_002",
+      "category": "callout",
+      "severity": "major",
+      "page": 18,
+      "description": "Согласно page_plan, на странице 18 должен быть только photo_002, но page_map показывает наличие callout_01 на той же странице. Это нарушает контракт page_plan.",
+      "fix_suggestion": "Переместить callout_01 на страницу 19 или предоставить техническое обоснование размещения callout_01 на странице 18 в technical_notes."
+    },
+    {
+      "id": "issue_003",
+      "category": "callout",
+      "severity": "major",
+      "page": 19,
+      "description": "Page_plan предполагает только текст на странице 19, но page_map показывает callout_02. Нарушение контракта.",
+      "fix_suggestion": "Согласовать размещение callout_02 с page_plan или переместить на другую страницу."
+    },
+    {
+      "id": "issue_004",
+      "category": "callout",
+      "severity": "major",
+      "page": 20,
+      "description": "Page_plan предполагает только текст на странице 20, но page_map показывает callout_03. Нарушение контракта.",
+      "fix_suggestion": "Согласовать размещение callout_03 с page_plan или переместить на другую страницу."
+    },
+    {
+      "id": "issue_005",
+      "category": "callout",
+      "severity": "major",
+      "page": 21,
+      "description": "Page_plan не предусматривает callout_04 на странице 21, но page_map показывает его наличие.",
+      "fix_suggestion": "Согласовать размещение callout_04 с page_plan или предоставить техническое обоснование."
+    },
+    {
+      "id": "issue_006",
+      "category": "callout",
+      "severity": "major",
+      "page": 22,
+      "description": "Page_plan не предусматривает callout_05 на странице 22, но page_map показывает его наличие.",
+      "fix_suggestion": "Согласовать размещение callout_05 с page_plan или предоставить техническое обоснование."
+    },
+    {
+      "id": "issue_007",
+      "category": "callout",
+      "severity": "major",
+      "page": 24,
+      "description": "Page_plan не предусматривает callout_06 на странице 24, но page_map показывает его наличие.",
+      "fix_suggestion": "Согласовать размещение callout_06 с page_plan или предоставить техническое обоснование."
+    }
+  ],
+  "checklist": {
+    "pagination": {
+      "status": "warning",
+      "details": "Невозможно проверить визуальную нумерацию без доступа к PDF файлу. Структурно page_map показывает 33 страницы с корректной последовательностью."
+    },
+    "toc": {
+      "status": "warning",
+      "details": "Невозможно проверить соответствие номеров страниц в оглавлении без визуального доступа к PDF."
+    },
+    "orphan_widow": {
+      "status": "warning",
+      "details": "Невозможно проверить висячие строки без визуального анализа PDF."
+    },
+    "photos": {
+      "status": "warning",
+      "total_expected": 22,
+      "total_found": 22,
+      "details": "Все 22 фотографии присутствуют в page_map согласно expected_content, но визуальное качество и размещение не может быть проверено без доступа к PDF."
+    },
+    "callouts": {
+      "status": "fail",
+      "total_expected": 6,
+      "total_found": 6,
+      "details": "Все 6 callouts присутствуют, но их размещение не соответствует page_plan. Критическое нарушение контракта между планом и исполнением."
+    },
+    "headers_footers": {
+      "status": "warning",
+      "details": "Невозможно проверить колонтитулы без визуального доступа к PDF."
+    },
+    "margins": {
+      "status": "warning",
+      "details": "Невозможно проверить поля и отступы без визуального анализа PDF."
+    },
+    "typography": {
+      "status": "warning",
+      "details": "Невозможно проверить шрифты, читаемость и embedded fonts без визуального доступа к PDF."
+    },
+    "integrity": {
+      "status": "fail",
+      "details": "Критическая проблема: PDF файл недоступен для проверки. Также обнаружены серьёзные расхождения между page_plan и page_map в размещении callouts."
+    }
+  },
+  "regression_check": {
+    "performed": false,
+    "previous_issues_resolved": []
+  },
+  "summary": {
+    "critical_issues": 1,
+    "major_issues": 6,
+    "minor_issues": 0,
+    "total_pages_checked": 0,
+    "overall_assessment": "Макет не может быть проверен из-за недоступности PDF файла. Обнаружены критические расхождения между планом размещения callouts и фактическим исполнением. Требуется исправление доступа к файлу и согласование размещения всех выносок с исходным планом."
+  }
+}

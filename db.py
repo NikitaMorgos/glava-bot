@@ -273,3 +273,127 @@ def get_user_all_data(telegram_id: int) -> tuple[dict, list[dict], list[dict]]:
             )
             photos = [dict(r) for r in cur.fetchall()]
             return user, voices, photos
+
+
+# ── book_versions ─────────────────────────────────────────────────────────────
+
+def save_book_version(
+    telegram_id: int,
+    bio_text: str,
+    character_name: str = "",
+    transcript_hash: str = "",
+    pipeline_source: str = "python",
+) -> dict:
+    """
+    Сохраняет новую версию биографии в book_versions.
+
+    Защита: если у пользователя уже есть версия с is_approved=TRUE,
+    новая версия сохраняется как НЕ одобренная (is_approved=FALSE),
+    что позволяет редактору сравнить и принять решение вручную.
+
+    Возвращает {"id": int, "version": int, "is_approved": bool}.
+    """
+    with get_connection() as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            # Проверяем наличие одобренной версии
+            cur.execute(
+                "SELECT id, version FROM book_versions "
+                "WHERE telegram_id = %s AND is_approved = TRUE "
+                "ORDER BY version DESC LIMIT 1",
+                (telegram_id,),
+            )
+            has_approved = cur.fetchone()
+
+            # Следующий номер версии
+            cur.execute(
+                "SELECT COALESCE(MAX(version), 0) FROM book_versions WHERE telegram_id = %s",
+                (telegram_id,),
+            )
+            max_v = cur.fetchone()["coalesce"]
+            new_version = max_v + 1
+
+            cur.execute(
+                """INSERT INTO book_versions
+                   (telegram_id, version, bio_text, character_name,
+                    is_approved, transcript_hash, pipeline_source, created_at)
+                   VALUES (%s, %s, %s, %s, FALSE, %s, %s, NOW())
+                   RETURNING id, version, is_approved""",
+                (telegram_id, new_version, bio_text,
+                 character_name or "Герой книги",
+                 transcript_hash or None, pipeline_source),
+            )
+            row = dict(cur.fetchone())
+
+        conn.commit()
+
+    if has_approved:
+        import logging as _logging
+        _logging.getLogger(__name__).warning(
+            "db.save_book_version: tg=%s имеет одобренную версию v=%s; "
+            "новая v=%s сохранена без одобрения",
+            telegram_id, has_approved["version"], new_version,
+        )
+    return row
+
+
+def approve_book_version(version_id: int) -> bool:
+    """
+    Помечает конкретную версию как одобренную (is_approved=TRUE).
+    Все предыдущие одобрения для этого пользователя снимаются.
+    Возвращает True при успехе.
+    """
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            # Определяем telegram_id для этой версии
+            cur.execute(
+                "SELECT telegram_id FROM book_versions WHERE id = %s", (version_id,)
+            )
+            row = cur.fetchone()
+            if not row:
+                return False
+            telegram_id = row[0]
+
+            # Снимаем все предыдущие одобрения
+            cur.execute(
+                "UPDATE book_versions SET is_approved = FALSE WHERE telegram_id = %s",
+                (telegram_id,),
+            )
+            # Одобряем нужную версию
+            cur.execute(
+                "UPDATE book_versions SET is_approved = TRUE WHERE id = %s",
+                (version_id,),
+            )
+        conn.commit()
+    return True
+
+
+def get_approved_book_version(telegram_id: int) -> dict | None:
+    """Возвращает одобренную версию книги или None."""
+    with get_connection() as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(
+                """SELECT id, version, bio_text, character_name, created_at,
+                          transcript_hash, pipeline_source
+                   FROM book_versions
+                   WHERE telegram_id = %s AND is_approved = TRUE
+                   ORDER BY version DESC LIMIT 1""",
+                (telegram_id,),
+            )
+            row = cur.fetchone()
+            return dict(row) if row else None
+
+
+def get_latest_book_version(telegram_id: int) -> dict | None:
+    """Возвращает последнюю версию книги (одобренную или нет)."""
+    with get_connection() as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(
+                """SELECT id, version, bio_text, character_name, created_at,
+                          is_approved, transcript_hash, pipeline_source
+                   FROM book_versions
+                   WHERE telegram_id = %s
+                   ORDER BY version DESC LIMIT 1""",
+                (telegram_id,),
+            )
+            row = cur.fetchone()
+            return dict(row) if row else None

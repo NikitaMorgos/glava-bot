@@ -29,7 +29,9 @@ def get_connection():
 _DRAFT_COLS = """id, user_id, status, email, characters, total_price, currency,
                   payment_provider, payment_id, payment_url,
                   character_relation, narrators, bot_state, revision_count,
-                  pending_revision, revision_deadline, created_at, updated_at"""
+                  pending_revision, revision_deadline,
+                  promo_code_id, discount_amount,
+                  created_at, updated_at"""
 
 
 def _hydrate(row: dict) -> dict:
@@ -168,6 +170,24 @@ def update_draft_email(draft_id: int, email: str) -> None:
             )
 
 
+def reset_draft_after_price_change(draft_id: int) -> None:
+    """
+    После смены суммы (промо): сбрасывает незавершённый платёж,
+    чтобы пользователь создал новый с актуальной суммой.
+    """
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE draft_orders
+                SET status = 'draft', payment_id = NULL, payment_url = NULL,
+                    payment_provider = NULL, updated_at = NOW()
+                WHERE id = %s AND status = 'payment_pending'
+                """,
+                (draft_id,),
+            )
+
+
 def set_draft_payment_pending(draft_id: int, payment_id: str, payment_url: str, provider: str = "stub") -> None:
     with get_connection() as conn:
         with conn.cursor() as cur:
@@ -201,10 +221,18 @@ def cancel_draft(draft_id: int) -> None:
             )
 
 
-def _calc_total(characters_count: int) -> int:
-    """Цена в копейках."""
+def _calc_total(characters_count: int, discount_amount: int = 0) -> int:
+    """Цена в копейках с учётом скидки."""
     price_per_char = getattr(config, "PRICE_PER_CHARACTER", 1000)
-    return characters_count * price_per_char
+    total = characters_count * price_per_char
+    return max(0, total - discount_amount)
+
+
+def get_final_price(draft: dict) -> int:
+    """Итоговая цена заказа с учётом скидки (в копейках)."""
+    total = int(draft.get("total_price") or 0)
+    discount = int(draft.get("discount_amount") or 0)
+    return max(0, total - discount)
 
 
 # ── Расширения bot_scenario_v2 ──────────────────────────────────────────────

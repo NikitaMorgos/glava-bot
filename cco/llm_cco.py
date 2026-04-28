@@ -101,9 +101,11 @@ _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 # Модель для анализа скринов (Claude — лучше структурирует документы)
 CCO_ANALYSIS_MODEL = os.getenv("CCO_ANALYSIS_MODEL", "claude-opus-4-5")
+MAX_CONTEXT_CHARS = int(os.getenv("CCO_ANALYSIS_CONTEXT_CHARS", "60000"))
 
-ANALYSIS_PROMPT = """Ты — продуктовый аналитик ГЛАВА. Тебе даны скриншоты из сервиса-конкурента {topic}.
-Имена файлов — это подписи/комментарии исследователя к каждому скрину.
+ANALYSIS_PROMPT = """Ты — продуктовый аналитик ГЛАВА. Тебе даны материалы из сервиса-конкурента {topic}
+(скриншоты и/или текстовые заметки).
+Имена файлов — это подписи/комментарии исследователя к материалам.
 
 Проанализируй продукт и составь структурированный отчёт со следующими разделами:
 
@@ -128,22 +130,110 @@ ANALYSIS_PROMPT = """Ты — продуктовый аналитик ГЛАВА
 
 {extra_context}
 
-Пиши по-русски. Будь конкретным — ссылайся на то, что видишь на скринах. Формат: Markdown с заголовками ##.
+Пиши по-русски. Будь конкретным — ссылайся на то, что видишь в материалах. Формат: Markdown с заголовками ##.
 """
+
+QUESTION_BANK_PROMPT = """Ты — Chief Product Officer для GLAVA.
+Тебе дан сырой список вопросов конкурента {topic} и рубрикатор категорий.
+
+Сделай отчёт ФОКУСИРОВАННО по question bank (а не по продукту в целом) со структурой:
+
+## Что внутри question bank
+- объем, типы вопросов, логика рубрикатора
+
+## Качество банка
+- сильные стороны
+- слабые стороны
+- заметные дубликаты / near-duplicates
+- редакционные проблемы
+
+## Карта рубрик и покрытие JTBD
+- какие жизненные зоны покрыты хорошо
+- где перекосы/дыры
+
+## Что перенять в GLAVA
+- 10-15 конкретных продуктовых решений по библиотеке вопросов
+- приоритеты (🔴/🟠/🟢)
+
+## План очистки и запуска в GLAVA
+- шаги: dedupe, теги, глубина, чувствительность, локализация
+- целевой формат данных (поля схемы)
+
+## Открытые вопросы исследования
+- что надо дополнительно проверить
+
+Важно:
+- Игнорируй общий обзор Storyworth, фокус только на системе вопросов.
+- Пиши по-русски, структурированно, в Markdown с заголовками ##.
+"""
+
+
+def _read_input_texts(input_dir: Path) -> list[str]:
+    """Читает все текстовые файлы из input-dir в виде блоков контекста."""
+    blocks: list[str] = []
+    if not input_dir.exists():
+        return blocks
+    for file_path in sorted(input_dir.iterdir()):
+        if file_path.suffix.lower() not in {".md", ".txt"}:
+            continue
+        try:
+            text = file_path.read_text(encoding="utf-8")[:MAX_CONTEXT_CHARS]
+            blocks.append(f"Файл: {file_path.name}\n```\n{text}\n```")
+        except Exception:
+            logger.exception("Не удалось прочитать контекст %s", file_path)
+    return blocks
+
+
+def analyze_question_bank_from_input(
+    topic: str,
+    input_dir: Optional[Path] = None,
+    api_key: Optional[str] = None,
+) -> Optional[str]:
+    """Анализирует question bank из текстовой input-папки (без скринов)."""
+    key = api_key or os.getenv("ANTHROPIC_API_KEY", "")
+    if not key:
+        return "Ошибка: ANTHROPIC_API_KEY не задан в .env"
+
+    if input_dir is None:
+        input_dir = _PROJECT_ROOT / "tasks" / "audience-research" / f"{topic}-input"
+
+    text_blocks = _read_input_texts(input_dir)
+    if not text_blocks:
+        return f"В папке {input_dir} нет текстовых материалов (*.md/*.txt) для анализа question bank."
+
+    content: list = [
+        {"type": "text", "text": QUESTION_BANK_PROMPT.format(topic=topic.capitalize())},
+        {"type": "text", "text": "\n\n".join(text_blocks)},
+    ]
+
+    try:
+        from anthropic import Anthropic
+        client = Anthropic(api_key=key, timeout=VISION_TIMEOUT)
+        resp = client.messages.create(
+            model=CCO_ANALYSIS_MODEL,
+            max_tokens=4000,
+            messages=[{"role": "user", "content": content}],
+        )
+        return (resp.content[0].text or "").strip()
+    except Exception as e:
+        logger.exception("Question-bank analysis error: %s", e)
+        return f"Ошибка анализа question bank: {e}"
 
 
 def analyze_images_from_folder(
     topic: str,
     screens_folder: Optional[Path] = None,
     context_file: Optional[Path] = None,
+    input_dir: Optional[Path] = None,
     api_key: Optional[str] = None,
 ) -> Optional[str]:
-    """Анализирует скриншоты из папки через Claude Vision и возвращает Markdown-отчёт.
+    """Анализирует скриншоты/текстовые материалы через Claude и возвращает Markdown-отчёт.
 
     Args:
         topic: Название продукта/темы (напр. "storyworth")
         screens_folder: Папка со скриншотами. По умолчанию tasks/audience-research/{topic}-screens/
         context_file: Файл с доп. контекстом (md/txt). По умолчанию tasks/audience-research/docs/{topic}-analysis.md
+        input_dir: Папка с доп. материалами (*.md/*.txt). По умолчанию tasks/audience-research/{topic}-input/
         api_key: Anthropic API key. По умолчанию из env ANTHROPIC_API_KEY.
     """
     key = api_key or os.getenv("ANTHROPIC_API_KEY", "")
@@ -155,22 +245,57 @@ def analyze_images_from_folder(
         screens_folder = _PROJECT_ROOT / "tasks" / "audience-research" / f"{topic}-screens"
     if context_file is None:
         context_file = _PROJECT_ROOT / "tasks" / "audience-research" / "docs" / f"{topic}-analysis.md"
+    if input_dir is None:
+        input_dir = _PROJECT_ROOT / "tasks" / "audience-research" / f"{topic}-input"
 
-    if not screens_folder.exists():
-        logger.error("Папка со скринами не найдена: %s", screens_folder)
-        return f"Папка {screens_folder} не найдена. Положи скриншоты туда и попробуй снова."
+    image_files: list[Path] = []
+    if screens_folder.exists():
+        image_files = sorted(
+            [f for f in screens_folder.iterdir() if f.suffix.lower() in _IMAGE_EXTS]
+        )
+    elif screens_folder is not None:
+        logger.warning("Папка со скринами не найдена: %s", screens_folder)
 
-    image_files = sorted(
-        [f for f in screens_folder.iterdir() if f.suffix.lower() in _IMAGE_EXTS]
+    logger.info(
+        "Материалы для анализа: images=%d, screens=%s, input=%s, model=%s",
+        len(image_files),
+        screens_folder,
+        input_dir,
+        CCO_ANALYSIS_MODEL,
     )
-    if not image_files:
-        return f"В папке {screens_folder} нет изображений ({', '.join(_IMAGE_EXTS)})."
 
-    logger.info("Найдено %d скринов в %s (модель: %s)", len(image_files), screens_folder, CCO_ANALYSIS_MODEL)
-
-    extra_context = ""
+    extra_context_parts: list[str] = []
     if context_file.exists():
-        extra_context = f"\n\nДополнительный контекст (предыдущие заметки исследователя):\n```\n{context_file.read_text(encoding='utf-8')[:3000]}\n```"
+        extra_context_parts.append(
+            "Файл контекста (analysis.md):\n```\n"
+            + context_file.read_text(encoding="utf-8")[:MAX_CONTEXT_CHARS]
+            + "\n```"
+        )
+
+    # Дополнительные материалы исследователя:
+    # tasks/audience-research/{topic}-input/*.md|*.txt
+    if input_dir.exists():
+        for file_path in sorted(input_dir.iterdir()):
+            if file_path.suffix.lower() not in {".md", ".txt"}:
+                continue
+            try:
+                text = file_path.read_text(encoding="utf-8")[:MAX_CONTEXT_CHARS]
+                extra_context_parts.append(
+                    f"Файл контекста ({file_path.name}):\n```\n{text}\n```"
+                )
+            except Exception:
+                logger.exception("Не удалось прочитать контекст %s", file_path)
+
+    extra_context = "\n\n".join(extra_context_parts)
+
+    # Нужен хотя бы один источник: изображения или текстовый контекст
+    if not image_files and not extra_context.strip():
+        return (
+            f"Не нашёл материалов для анализа.\n"
+            f"- Скрины: {screens_folder}\n"
+            f"- Текст: {input_dir}\n"
+            f"Добавь изображения (*.jpg/*.png) или файлы *.md/*.txt и попробуй снова."
+        )
 
     content: list = []
     for img_path in image_files:

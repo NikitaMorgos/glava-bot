@@ -1,0 +1,44 @@
+Total mentions: 12
+
+--- 1 ---
+"Владимир Маргось"], "asr_variants": ["Владимир Маргось"], "reasoning": "зять Валентины, первый муж Татьяны", "confidence": "high", "birth_year": null, "death_year": null, "relation_to_subject": "зять", "description": "не любил непрошенных советов, имел чувство юмора", "genealogy_note": null, "access_stat
+
+--- 2 ---
+009", "name": "Кужба Олег", "aliases": [], "asr_variants": ["Олег Кужба"], "reasoning": "второй муж Татьяны", "confidence": "high", "birth_year": null, "death_year": null, "relation_to_subject": "зять", "description": null, "genealogy_note": null, "access_status": "available", "contact_notes": "женился на
+
+--- 3 ---
+ "high", "birth_year": null, "death_year": null, "relation_to_subject": "внук", "description": "сын Татьяны, почерк с отрицательным наклоном как у бабушки", "genealogy_note": null, "access_status": "available", "contact_notes": "ломал руку в 3 года и в 5 лет", "source_interview_id": "int_001", "is_new": t
+
+--- 4 ---
+igh", "birth_year": null, "death_year": null, "relation_to_subject": "внучка", "description": "дочь Татьяны", "genealogy_note": null, "access_status": "available", "contact_notes": "к ней бабушка относилась получше, чем к Никите", "source_interview_id": "int_001", "is_new": true, "needs_verification": fal
+
+--- 5 ---
+ null, "access_status": "unknown", "contact_notes": "была авторитетом для Валентины, что раздражало Татьяну", "source_interview_id": "int_001", "is_new": true, "needs_verification": true}], "timeline": [{"id": "event_001", "date": {"year": 1920, "month": 12, "day": 17, "precision": "exact"}, "title": "Рож
+
+--- 6 ---
+: {"year": 1956, "month": null, "day": null, "precision": "approximate"}, "title": "Рождение дочери Татьяны", "description": "Родилась дочь Татьяна Каракулина в Твери", "location": "Тверь", "participants": ["person_006", "narrator_001"], "life_period": "family", "emotional_tone": "positive", "source_inter
+
+--- 7 ---
+": {"year": 1977, "month": null, "day": null, "precision": "approximate"}, "title": "Свадьба дочери Татьяны", "description": "Дочь Татьяна вышла замуж за Владимира Маргося", "location": "Калинин", "participants": ["narrator_001", "person_008"], "life_period": "family", "emotional_tone": "bittersweet", "so
+
+--- 8 ---
+": null, "precision": "approximate"}, "title": "Дочь переехала в центр Твери", "description": "Дочь Татьяна вышла замуж за Олега Кужбу и переехала с детьми на улицу Капошвара в центр Твери", "location": "Тверь, улица Капошвара", "participants": ["narrator_001", "person_009", "person_010", "person_011"], "
+
+--- 9 ---
+"В 1996 году, в сентябре, осталась в химинституте одна в двухкомнатной квартире, потому что её дочь Татьяна вышла замуж за Олега Кужбу и вместе со своими детьми, то есть с внуками Валентины, с Никитой и с Дашей, переехали в город Тверь, в центр Твери, на Капашвара", "confidence": "high", "needs_verificati
+
+--- 10 ---
+ {"person_a": "person_010", "person_b": "subject", "relation_type": "внук-бабушка", "details": "сын Татьяны, почерк с отрицательным наклоном как у бабушки", "source_interview_id": "int_001"}, {"person_a": "person_011", "person_b": "subject", "relation_type": "внучка-бабушка", "details": "дочь Татьяны, к н
+
+--- 11 ---
+", "type": "address", "location_role": "residence", "context": "улица в центре Твери, где жила дочь Татьяна", "period": "1996-2005+", "asr_variants": ["Капашвара", "Капошвара"], "reasoning": "улица в Твери, названа в честь венгерского города Kaposvár. Официальная русская транслитерация — «Капошвара». ASR 
+
+--- 12 ---
+, "is_new": true}, {"trait": "никакого отношения к спорту", "category": "habit", "evidence": "Когда Татьяна брала своего сына Никиту в ДК «Синтетик» на аэробику, Валентина удивлялась, зачем это надо", "described_by": "narrator_001", "source_interview_id": "int_001", "is_new": true}, {"trait": "почерк с от
+
+
+=== STRUCTURE ===
+
+subject: {'name': 'Каракулина Валентина Ивановна', 'birth_year': 1920, 'birth_place': 'село Мариевка, Новомиргородский район, Кировоградская область', 'death_year': None, 'death_place': None, 'death_year_unconfirmed': True}
+
+Top-level keys: project_id, version, updated_at, subject, persons, timeline, relationships, locations, character_traits, quotes, conflicts, gaps, processing_notes

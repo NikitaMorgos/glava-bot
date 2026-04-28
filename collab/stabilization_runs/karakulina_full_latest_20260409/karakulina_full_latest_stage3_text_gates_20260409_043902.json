@@ -1,0 +1,58 @@
+{
+  "stage": "stage3",
+  "passed": true,
+  "gates": [
+    {
+      "gate": "non_empty_book",
+      "passed": true,
+      "issues": [],
+      "min_chapter_chars": 120
+    },
+    {
+      "gate": "required_entities",
+      "passed": true,
+      "required_total": 17,
+      "critical_total": 7,
+      "critical_matched_total": 7,
+      "critical_missing_total": 0,
+      "critical_missing": [],
+      "optional_total": 10,
+      "optional_matched_total": 7,
+      "optional_missing_total": 3,
+      "optional_missing": [
+        {
+          "type": "person",
+          "label": "Даша",
+          "variants": [
+            "даша"
+          ]
+        },
+        {
+          "type": "person",
+          "label": "тётя Шура",
+          "variants": [
+            "тётя шура",
+            "тётя",
+            "шура"
+          ]
+        },
+        {
+          "type": "person",
+          "label": "тётя Маша",
+          "variants": [
+            "тётя маша",
+            "тётя",
+            "маша"
+          ]
+        }
+      ]
+    },
+    {
+      "gate": "cross_chapter_repetition",
+      "passed": true,
+      "ngram_size": 5,
+      "threshold": 0.22,
+      "violations": []
+    }
+  ]
+}

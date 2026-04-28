@@ -1,0 +1,1205 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ГЛАВА — Исследование аудитории</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream:     #f9f7f2;
+    --paper:     #f0ead9;
+    --parchment: #dfd5c2;
+    --ink:       #181208;
+    --brown:     #44311f;
+    --muted:     #72614e;
+    --gold:      #a8823c;
+    --gold-light:#c9a05e;
+    --white:     #ffffff;
+    --dark:      #100e08;
+    --s1:        #7c5c3e;
+    --s2:        #3e6b7c;
+    --s3:        #6b7c3e;
+    --s4:        #7c3e6b;
+    --s5:        #5c3e7c;
+    --s6:        #3e5c7c;
+    --s7:        #7c6b3e;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Manrope', sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    font-size: 15px;
+    line-height: 1.7;
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(249,247,242,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--parchment);
+    padding: 0 2.5rem;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 56px;
+  }
+  .nav-logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.25rem; font-weight: 700;
+    color: var(--ink); letter-spacing: 0.02em;
+  }
+  .nav-logo span { color: var(--gold); }
+  .nav-links {
+    display: flex; gap: 1.5rem; list-style: none;
+    font-size: 0.78rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+  }
+  .nav-links a { color: var(--muted); text-decoration: none; transition: color .2s; }
+  .nav-links a:hover { color: var(--gold); }
+
+  /* ── HERO ── */
+  .hero {
+    background: var(--ink);
+    color: var(--cream);
+    padding: 7rem 2.5rem 6rem;
+    text-align: center;
+    position: relative; overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(168,130,60,0.18) 0%, transparent 70%);
+  }
+  .hero-eyebrow {
+    font-size: 0.7rem; font-weight: 700; letter-spacing: 0.2em;
+    text-transform: uppercase; color: var(--gold);
+    margin-bottom: 1.2rem;
+  }
+  .hero h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.8rem, 6vw, 5rem);
+    font-weight: 700; line-height: 1.1;
+    margin-bottom: 1.2rem;
+    position: relative;
+  }
+  .hero h1 em { font-style: italic; color: var(--gold-light); }
+  .hero-sub {
+    font-size: 1.1rem; color: rgba(249,247,242,0.65);
+    max-width: 560px; margin: 0 auto 2.5rem;
+    font-weight: 400;
+  }
+  .hero-meta {
+    display: flex; justify-content: center; gap: 2rem; flex-wrap: wrap;
+    font-size: 0.78rem; color: rgba(249,247,242,0.45);
+    letter-spacing: 0.06em; text-transform: uppercase;
+  }
+  .hero-meta span::before { content: '·'; margin-right: 0.5rem; color: var(--gold); }
+  .hero-meta span:first-child::before { display: none; }
+
+  /* ── SECTIONS ── */
+  section { padding: 5rem 2.5rem; max-width: 1100px; margin: 0 auto; }
+  .section-full { max-width: 100%; padding: 5rem 0; }
+  .section-full > * { max-width: 1100px; margin-left: auto; margin-right: auto; padding-left: 2.5rem; padding-right: 2.5rem; }
+
+  .part-header {
+    background: var(--paper);
+    border-top: 1px solid var(--parchment);
+    border-bottom: 1px solid var(--parchment);
+    padding: 3.5rem 2.5rem;
+    text-align: center;
+  }
+  .part-header .part-num {
+    font-size: 0.7rem; font-weight: 700; letter-spacing: 0.2em;
+    text-transform: uppercase; color: var(--gold);
+    margin-bottom: 0.7rem;
+  }
+  .part-header h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+    font-weight: 700; color: var(--ink);
+  }
+  .part-header p {
+    margin-top: 0.75rem; color: var(--muted);
+    font-size: 1rem; max-width: 600px; margin-left: auto; margin-right: auto;
+  }
+
+  h2.section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.8rem; font-weight: 700;
+    color: var(--ink); margin-bottom: 2rem;
+  }
+  h3.sub-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.25rem; font-weight: 600;
+    color: var(--brown); margin-bottom: 1rem;
+  }
+
+  /* ── SEGMENT OVERVIEW TABLE ── */
+  .overview-table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.88rem; margin-bottom: 4rem;
+  }
+  .overview-table th {
+    background: var(--ink); color: var(--cream);
+    font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase;
+    font-size: 0.7rem; padding: 0.8rem 1rem; text-align: left;
+  }
+  .overview-table td {
+    padding: 0.85rem 1rem; border-bottom: 1px solid var(--parchment);
+    vertical-align: top;
+  }
+  .overview-table tr:hover td { background: var(--paper); }
+  .seg-badge {
+    display: inline-block; padding: 0.2rem 0.6rem;
+    border-radius: 4px; font-weight: 700; font-size: 0.75rem;
+    color: white; min-width: 36px; text-align: center;
+  }
+  .priority-high   { color: #c0392b; font-weight: 700; }
+  .priority-medium { color: #e67e22; font-weight: 700; }
+  .priority-low    { color: var(--muted); }
+
+  /* ── SEGMENT CARDS ── */
+  .segments-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;
+    margin-bottom: 3rem;
+  }
+  @media (max-width: 800px) { .segments-grid { grid-template-columns: 1fr; } }
+
+  .seg-card {
+    background: var(--white);
+    border: 1px solid var(--parchment);
+    border-radius: 12px; overflow: hidden;
+    transition: transform .2s, box-shadow .2s;
+  }
+  .seg-card:hover { transform: translateY(-3px); box-shadow: 0 8px 32px rgba(24,18,8,0.10); }
+
+  .seg-card-header {
+    padding: 1.5rem 1.75rem 1.2rem;
+    border-bottom: 1px solid var(--parchment);
+  }
+  .seg-card-top {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 1rem; margin-bottom: 0.5rem;
+  }
+  .seg-code {
+    font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--white);
+    background: var(--ink); padding: 0.25rem 0.6rem; border-radius: 4px;
+    white-space: nowrap; margin-top: 0.1rem;
+  }
+  .seg-age {
+    font-size: 0.78rem; color: var(--muted); font-weight: 500;
+    background: var(--paper); padding: 0.2rem 0.7rem; border-radius: 20px;
+  }
+  .seg-card-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.25rem; font-weight: 700; color: var(--ink);
+  }
+  .seg-card-lead {
+    font-size: 0.85rem; color: var(--muted); margin-top: 0.3rem;
+  }
+
+  .seg-card-body { padding: 1.5rem 1.75rem; }
+
+  .seg-section-label {
+    font-size: 0.65rem; font-weight: 700; letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--gold);
+    margin-bottom: 0.5rem; margin-top: 1.2rem;
+  }
+  .seg-section-label:first-child { margin-top: 0; }
+
+  .pain-list, .trigger-list {
+    list-style: none; display: flex; flex-direction: column; gap: 0.35rem;
+  }
+  .pain-list li, .trigger-list li {
+    font-size: 0.85rem; padding-left: 1.2rem; position: relative; color: var(--brown);
+  }
+  .pain-list li::before {
+    content: '✕'; position: absolute; left: 0;
+    font-size: 0.65rem; color: #c0392b; top: 0.15rem; font-weight: 700;
+  }
+  .trigger-list li::before {
+    content: '→'; position: absolute; left: 0;
+    font-size: 0.8rem; color: var(--gold); top: 0.05rem;
+  }
+
+  .jtbd-box {
+    background: var(--paper); border-left: 3px solid var(--gold);
+    border-radius: 0 8px 8px 0; padding: 1rem 1.2rem;
+    margin-top: 1.2rem; font-size: 0.88rem;
+    font-style: italic; color: var(--brown); line-height: 1.6;
+  }
+
+  /* ── PRIORITY MATRIX ── */
+  .priority-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;
+    margin-bottom: 3rem;
+  }
+  @media (max-width: 700px) { .priority-grid { grid-template-columns: 1fr; } }
+
+  .prio-card {
+    border-radius: 10px; padding: 1.4rem 1.5rem;
+    border: 1px solid var(--parchment);
+  }
+  .prio-card.high   { background: #fff8f8; border-color: #e8c0c0; }
+  .prio-card.medium { background: #fffaf5; border-color: #e8d8c0; }
+  .prio-card.normal { background: var(--paper); }
+  .prio-label {
+    font-size: 0.65rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase;
+    margin-bottom: 0.75rem;
+  }
+  .prio-card.high   .prio-label { color: #c0392b; }
+  .prio-card.medium .prio-label { color: #e67e22; }
+  .prio-card.normal .prio-label { color: var(--muted); }
+  .prio-item {
+    display: flex; align-items: center; gap: 0.6rem;
+    margin-bottom: 0.5rem; font-size: 0.88rem;
+  }
+  .prio-item:last-child { margin-bottom: 0; }
+
+  /* ── METHODOLOGY ── */
+  .method-grid {
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem;
+    margin-bottom: 3rem;
+  }
+  @media (max-width: 750px) { .method-grid { grid-template-columns: 1fr; } }
+
+  .method-card {
+    background: var(--white); border: 1px solid var(--parchment);
+    border-radius: 10px; padding: 1.5rem;
+  }
+  .method-num {
+    font-size: 2rem; font-family: 'Playfair Display', serif;
+    font-weight: 700; color: var(--parchment); line-height: 1;
+    margin-bottom: 0.5rem;
+  }
+  .method-card h4 {
+    font-size: 0.95rem; font-weight: 700; color: var(--ink);
+    margin-bottom: 0.4rem;
+  }
+  .method-card p {
+    font-size: 0.82rem; color: var(--muted); line-height: 1.6;
+  }
+  .method-card .time-badge {
+    display: inline-block; margin-top: 0.6rem;
+    background: var(--paper); padding: 0.15rem 0.6rem;
+    border-radius: 20px; font-size: 0.72rem; color: var(--muted);
+    font-weight: 600;
+  }
+
+  /* ── SESSION BLOCKS ── */
+  .session-table {
+    width: 100%; border-collapse: collapse; font-size: 0.88rem;
+    margin-bottom: 2rem;
+  }
+  .session-table th {
+    background: var(--paper); font-weight: 700;
+    font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--muted); padding: 0.7rem 1rem; text-align: left;
+    border-bottom: 2px solid var(--parchment);
+  }
+  .session-table td {
+    padding: 0.9rem 1rem; border-bottom: 1px solid var(--parchment);
+    vertical-align: top;
+  }
+  .session-table tr:last-child td { border-bottom: none; }
+  .session-table .block-num {
+    font-weight: 700; color: var(--gold); font-size: 0.8rem;
+  }
+  .session-table .block-time {
+    color: var(--muted); font-size: 0.8rem; white-space: nowrap;
+  }
+
+  /* ── GUIDE ACCORDION ── */
+  .guide-block {
+    border: 1px solid var(--parchment); border-radius: 10px;
+    overflow: hidden; margin-bottom: 1rem;
+  }
+  .guide-block-header {
+    background: var(--paper); padding: 1rem 1.25rem;
+    display: flex; align-items: center; gap: 1rem; cursor: pointer;
+    user-select: none;
+  }
+  .guide-block-header:hover { background: var(--parchment); }
+  .guide-block-num {
+    background: var(--ink); color: var(--cream); border-radius: 50%;
+    width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+    font-size: 0.75rem; font-weight: 700; flex-shrink: 0;
+  }
+  .guide-block-title { font-weight: 700; font-size: 0.95rem; flex: 1; }
+  .guide-block-time { font-size: 0.75rem; color: var(--muted); }
+  .guide-block-toggle {
+    width: 20px; height: 20px; border-radius: 50%;
+    border: 1.5px solid var(--muted); display: flex; align-items: center; justify-content: center;
+    font-size: 0.9rem; color: var(--muted); transition: transform .2s;
+  }
+  .guide-block-body {
+    padding: 1.25rem 1.5rem; display: none;
+    border-top: 1px solid var(--parchment);
+  }
+  .guide-block-body.open { display: block; }
+  .guide-block-toggle.open { transform: rotate(45deg); }
+
+  .guide-question {
+    background: var(--cream); border-radius: 8px;
+    padding: 0.8rem 1rem 0.8rem 1rem;
+    margin-bottom: 0.6rem; font-size: 0.88rem;
+    border-left: 3px solid var(--gold);
+    font-style: italic; color: var(--brown);
+  }
+  .guide-hint {
+    font-size: 0.8rem; color: var(--muted); margin-top: 0.8rem;
+    padding-left: 0.5rem;
+  }
+  .guide-hint li { margin-bottom: 0.3rem; padding-left: 0.8rem; position: relative; }
+  .guide-hint li::before { content: '—'; position: absolute; left: 0; }
+
+  /* ── SPRINT TIMELINE ── */
+  .sprint-grid {
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem;
+    margin-bottom: 3rem;
+  }
+  @media (max-width: 750px) { .sprint-grid { grid-template-columns: 1fr; } }
+
+  .sprint-card {
+    background: var(--white); border: 1px solid var(--parchment);
+    border-radius: 10px; overflow: hidden;
+  }
+  .sprint-card-header {
+    background: var(--ink); color: var(--cream);
+    padding: 1rem 1.25rem;
+  }
+  .sprint-card-header .sprint-num {
+    font-size: 0.65rem; font-weight: 700; letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--gold-light); margin-bottom: 0.2rem;
+  }
+  .sprint-card-header h4 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem; font-weight: 700;
+  }
+  .sprint-card-body { padding: 1.2rem 1.25rem; }
+  .sprint-item {
+    display: flex; align-items: flex-start; gap: 0.7rem;
+    margin-bottom: 0.75rem; font-size: 0.85rem;
+  }
+  .sprint-item:last-child { margin-bottom: 0; }
+  .sprint-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--gold); flex-shrink: 0; margin-top: 0.4rem;
+  }
+
+  /* ── DELIVERABLES ── */
+  .deliverables-grid {
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem;
+    margin-top: 3rem;
+  }
+  @media (max-width: 750px) { .deliverables-grid { grid-template-columns: 1fr; } }
+
+  .deliv-card {
+    background: var(--white); border: 1px solid var(--parchment);
+    border-radius: 10px; padding: 1.5rem;
+  }
+  .deliv-card .deliv-icon {
+    font-size: 1.6rem; margin-bottom: 0.7rem;
+  }
+  .deliv-card h4 {
+    font-weight: 700; font-size: 0.95rem; color: var(--ink); margin-bottom: 0.5rem;
+  }
+  .deliv-card p {
+    font-size: 0.82rem; color: var(--muted); line-height: 1.6;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    background: var(--ink); color: rgba(249,247,242,0.5);
+    text-align: center; padding: 2.5rem;
+    font-size: 0.8rem; letter-spacing: 0.05em;
+  }
+  footer strong { color: var(--gold); }
+
+  /* ── DIVIDER ── */
+  .divider {
+    border: none; border-top: 1px solid var(--parchment);
+    margin: 3rem 0;
+  }
+
+  /* ── UTILS ── */
+  .text-gold  { color: var(--gold); }
+  .text-muted { color: var(--muted); }
+  .mono { font-family: 'Courier New', monospace; font-size: 0.82rem; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">ГЛАВА<span>.</span></div>
+  <ul class="nav-links">
+    <li><a href="#segments">Сегменты</a></li>
+    <li><a href="#priority">Приоритеты</a></li>
+    <li><a href="#methodology">Методика</a></li>
+    <li><a href="#guide">Гайд</a></li>
+    <li><a href="#design">Дизайн ФГ</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-eyebrow">Исследование аудитории</div>
+  <h1>Кто покупает<br><em>«Главу»</em></h1>
+  <p class="hero-sub">Сегментация · Фокус-группы · JTBD · Методика исследования</p>
+  <div class="hero-meta">
+    <span>Версия 1.0</span>
+    <span>Апрель 2026</span>
+    <span>7 сегментов</span>
+    <span>7 фокус-групп</span>
+  </div>
+</div>
+
+
+<!-- PART I HEADER -->
+<div class="part-header" id="segments">
+  <div class="part-num">Часть I</div>
+  <h2>Сегменты аудитории</h2>
+  <p>Семь различных портретов покупателя — с разными триггерами, болями и работами, которые они хотят выполнить</p>
+</div>
+
+<!-- OVERVIEW TABLE -->
+<section>
+  <h2 class="section-title">Карта сегментов</h2>
+  <table class="overview-table">
+    <thead>
+      <tr>
+        <th>Код</th>
+        <th>Сегмент</th>
+        <th>Возраст</th>
+        <th>Связь с продуктом</th>
+        <th>Urgency</th>
+        <th>Цена</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="seg-badge" style="background:#7c5c3e">S1</span></td>
+        <td><strong>Дочь/сын — откладывающие</strong></td>
+        <td>38–55</td>
+        <td>Хочет сохранить историю родителей</td>
+        <td>Средний</td>
+        <td class="text-muted">Низкая</td>
+      </tr>
+      <tr>
+        <td><span class="seg-badge" style="background:#3e6b7c">S2</span></td>
+        <td><strong>Внук/внучка в тревоге</strong></td>
+        <td>22–32</td>
+        <td>Боится не успеть</td>
+        <td class="priority-high">Высокий</td>
+        <td>Средняя</td>
+      </tr>
+      <tr>
+        <td><span class="seg-badge" style="background:#6b7c3e">S3</span></td>
+        <td><strong>Организатор юбилея</strong></td>
+        <td>35–55</td>
+        <td>Ищет уникальный подарок</td>
+        <td class="priority-high">Высокий (дедлайн)</td>
+        <td class="text-muted">Низкая</td>
+      </tr>
+      <tr>
+        <td><span class="seg-badge" style="background:#7c3e6b">S4</span></td>
+        <td><strong>Семейный хранитель памяти</strong></td>
+        <td>40–60</td>
+        <td>Уже работает с архивом</td>
+        <td>Низкий</td>
+        <td>Средняя</td>
+      </tr>
+      <tr>
+        <td><span class="seg-badge" style="background:#5c3e7c">S5</span></td>
+        <td><strong>Переживающий утрату</strong></td>
+        <td>30–60</td>
+        <td>Горе + желание сохранить память</td>
+        <td class="priority-high">Очень высокий</td>
+        <td class="text-muted">Низкая</td>
+      </tr>
+      <tr>
+        <td><span class="seg-badge" style="background:#3e5c7c">S6</span></td>
+        <td><strong>HR / Корпоративный дарящий</strong></td>
+        <td>35–55</td>
+        <td>Подарок ветерану или основателю</td>
+        <td>Средний</td>
+        <td class="text-muted">Низкая</td>
+      </tr>
+      <tr>
+        <td><span class="seg-badge" style="background:#7c6b3e">S7</span></td>
+        <td><strong>Пожилой человек для себя</strong></td>
+        <td>65–80</td>
+        <td>Хочет передать историю</td>
+        <td>Средний</td>
+        <td class="priority-high">Высокая</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- SEGMENT CARDS -->
+  <div class="segments-grid">
+
+    <!-- S1 -->
+    <div class="seg-card">
+      <div class="seg-card-header">
+        <div class="seg-card-top">
+          <span class="seg-code" style="background:#7c5c3e">S1</span>
+          <span class="seg-age">38–55 лет</span>
+        </div>
+        <div class="seg-card-title">Дочь/сын — откладывающие</div>
+        <div class="seg-card-lead">Давно думает, но никак не начнёт</div>
+      </div>
+      <div class="seg-card-body">
+        <div class="seg-section-label">Триггеры входа</div>
+        <ul class="trigger-list">
+          <li>Болезнь или госпитализация родителя</li>
+          <li>Ребёнок спросил про прабабушку</li>
+          <li>Смерть чужого родственника в круге общения</li>
+          <li>Юбилей родителя — круглая дата</li>
+        </ul>
+        <div class="seg-section-label">Боли</div>
+        <ul class="pain-list">
+          <li>Фоновая вина — знает, что надо, но откладывает годами</li>
+          <li>Родитель отмахивается: «да что там рассказывать»</li>
+          <li>Нет структуры — не знает с чего начать</li>
+          <li>Страх потратить деньги и не разобраться</li>
+          <li>Логистика: мама живёт в другом городе</li>
+        </ul>
+        <div class="jtbd-box">
+          «Когда мама уйдёт — чтобы у моих детей осталось что-то настоящее от неё. Не фото в телефоне, а живая история»
+        </div>
+      </div>
+    </div>
+
+    <!-- S2 -->
+    <div class="seg-card">
+      <div class="seg-card-header">
+        <div class="seg-card-top">
+          <span class="seg-code" style="background:#3e6b7c">S2</span>
+          <span class="seg-age">22–32 лет</span>
+        </div>
+        <div class="seg-card-title">Внук / внучка в тревоге</div>
+        <div class="seg-card-lead">Острое ощущение «не успею»</div>
+      </div>
+      <div class="seg-card-body">
+        <div class="seg-section-label">Триггеры входа</div>
+        <ul class="trigger-list">
+          <li>Смерть другой бабушки/дедушки — сожаление</li>
+          <li>Бабушка вдруг рассказала что-то невероятное</li>
+          <li>Дед начал хуже помнить</li>
+          <li>Рилс или пост про семейную память</li>
+        </ul>
+        <div class="seg-section-label">Боли</div>
+        <ul class="pain-list">
+          <li>«Не успею» — почти паника, urgency максимальный</li>
+          <li>Не понимает как организовать интервью технически</li>
+          <li>Бабушка говорит: «незачем, кому это нужно»</li>
+          <li>6 900 ₽ ощутимы — нужна рационализация</li>
+          <li>Страх плохого качества результата</li>
+        </ul>
+        <div class="jtbd-box">
+          «Я хочу успеть, пока дедушка ещё здоров и помнит. Записать прямо сейчас, пока не стало поздно»
+        </div>
+      </div>
+    </div>
+
+    <!-- S3 -->
+    <div class="seg-card">
+      <div class="seg-card-header">
+        <div class="seg-card-top">
+          <span class="seg-code" style="background:#6b7c3e">S3</span>
+          <span class="seg-age">35–55 лет</span>
+        </div>
+        <div class="seg-card-title">Организатор юбилея</div>
+        <div class="seg-card-lead">Ищет подарок, которого нет в магазине</div>
+      </div>
+      <div class="seg-card-body">
+        <div class="seg-section-label">Триггеры входа</div>
+        <ul class="trigger-list">
+          <li>Юбилей 60/70/75/80 лет через 1–3 месяца</li>
+          <li>Усталость от шаблонных подарков</li>
+          <li>Идея в семейном чате «сделаем книгу»</li>
+          <li>Видел похожее у знакомых</li>
+        </ul>
+        <div class="seg-section-label">Боли</div>
+        <ul class="pain-list">
+          <li>Шаблонность — цветы, сертификат, посуда надоели</li>
+          <li>«Как это вручить?» — нужен красивый формат</li>
+          <li>Сложно координировать родственников</li>
+          <li>Жёсткий дедлайн — надо успеть к дате</li>
+          <li>Страх, что юбиляр откажется («мам, не надо»)</li>
+        </ul>
+        <div class="jtbd-box">
+          «Подарить маме на юбилей то, чего нет в магазине — что она будет перечитывать и что останется у детей навсегда»
+        </div>
+      </div>
+    </div>
+
+    <!-- S4 -->
+    <div class="seg-card">
+      <div class="seg-card-header">
+        <div class="seg-card-top">
+          <span class="seg-code" style="background:#7c3e6b">S4</span>
+          <span class="seg-age">40–60 лет</span>
+        </div>
+        <div class="seg-card-title">Хранитель семейной памяти</div>
+        <div class="seg-card-lead">Уже собирает архив, ищет финальный результат</div>
+      </div>
+      <div class="seg-card-body">
+        <div class="seg-section-label">Триггеры входа</div>
+        <ul class="trigger-list">
+          <li>Накопилось много материала, нет нарратива</li>
+          <li>Хочет передать детям в красивом виде</li>
+          <li>Статья про семейные архивы или генеалогию</li>
+        </ul>
+        <div class="seg-section-label">Боли</div>
+        <ul class="pain-list">
+          <li>«Это будет поверхностно» — скептичен к AI</li>
+          <li>Хочет использовать свои материалы, а не начинать заново</li>
+          <li>Нужен контроль: кто редактирует, как править</li>
+          <li>Структура: как будет организован текст</li>
+          <li>Конфиденциальность — материалы очень личные</li>
+        </ul>
+        <div class="jtbd-box">
+          «Превратить всё что я собрал в настоящую книгу, которую не стыдно показать и передать детям»
+        </div>
+      </div>
+    </div>
+
+    <!-- S5 -->
+    <div class="seg-card">
+      <div class="seg-card-header">
+        <div class="seg-card-top">
+          <span class="seg-code" style="background:#5c3e7c">S5</span>
+          <span class="seg-age">30–60 лет</span>
+        </div>
+        <div class="seg-card-title">Переживающий утрату</div>
+        <div class="seg-card-lead">Горе трансформируется в желание сохранить</div>
+      </div>
+      <div class="seg-card-body">
+        <div class="seg-section-label">Триггеры входа</div>
+        <ul class="trigger-list">
+          <li>Смерть близкого (через месяцы — деятельная реакция)</li>
+          <li>Разбирает вещи, находит старые записи и фото</li>
+          <li>Живой родственник 80+ тяжело заболел</li>
+        </ul>
+        <div class="seg-section-label">Боли</div>
+        <ul class="pain-list">
+          <li>«Мало материала» — несколько минут записи, мало фото</li>
+          <li>Работа с материалами будет эмоционально тяжёлой</li>
+          <li>«Вдруг напишут что-то не то» — страх ошибки</li>
+          <li>Конфиденциальность — это очень личное</li>
+        </ul>
+        <div class="jtbd-box">
+          «Чтобы дети знали кем был этот человек. Чтобы его история не ушла вместе с ним»
+        </div>
+      </div>
+    </div>
+
+    <!-- S6 -->
+    <div class="seg-card">
+      <div class="seg-card-header">
+        <div class="seg-card-top">
+          <span class="seg-code" style="background:#3e5c7c">S6</span>
+          <span class="seg-age">35–55 лет</span>
+        </div>
+        <div class="seg-card-title">HR / Корпоративный дарящий</div>
+        <div class="seg-card-lead">Награждает ветерана или основателя</div>
+      </div>
+      <div class="seg-card-body">
+        <div class="seg-section-label">Триггеры входа</div>
+        <ul class="trigger-list">
+          <li>Сотрудник уходит на пенсию через месяц</li>
+          <li>Юбилей основателя компании</li>
+          <li>Коллега посоветовал, нужна нестандартная идея</li>
+        </ul>
+        <div class="seg-section-label">Боли</div>
+        <ul class="pain-list">
+          <li>«Слишком сложно» — Telegram-бот для нетехничного юбиляра</li>
+          <li>Кто проводит интервью? Нужна чёткая логистика</li>
+          <li>Как красиво вручить? Нужен «подарочный» формат</li>
+          <li>Масштабирование: нужны 3–5 книг одновременно</li>
+        </ul>
+        <div class="jtbd-box">
+          «Подарить ветерану что-то по-настоящему значимое и достойное — то, что останется у него дома»
+        </div>
+      </div>
+    </div>
+
+    <!-- S7 -->
+    <div class="seg-card" style="grid-column: 1 / -1; max-width: 540px;">
+      <div class="seg-card-header">
+        <div class="seg-card-top">
+          <span class="seg-code" style="background:#7c6b3e">S7</span>
+          <span class="seg-age">65–80 лет</span>
+        </div>
+        <div class="seg-card-title">Пожилой человек для себя</div>
+        <div class="seg-card-lead">Хочет передать историю и мудрость следующим поколениям</div>
+      </div>
+      <div class="seg-card-body">
+        <div class="seg-section-label">Триггеры входа</div>
+        <ul class="trigger-list">
+          <li>Внук/ребёнок предложил и убедил</li>
+          <li>«Надо пока помню» — ощущение времени</li>
+          <li>Смерть ровесника, который «не успел»</li>
+        </ul>
+        <div class="seg-section-label">Боли</div>
+        <ul class="pain-list">
+          <li>«Кому это нужно, кто будет читать» — стесняется своей истории</li>
+          <li>Технические сложности с ботом — нужна помощь близкого</li>
+          <li>«Я плохо рассказываю» — боится говорить неправильно</li>
+          <li>6 900 ₽ — значимая сумма на пенсии</li>
+        </ul>
+        <div class="jtbd-box">
+          «Оставить след. Чтобы внуки знали кем я был, чем жил, что думал о жизни — и помнили меня»
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+
+<!-- PRIORITY -->
+<div class="part-header" id="priority" style="margin-top: 2rem;">
+  <div class="part-num">Приоритизация</div>
+  <h2>С кого начинаем</h2>
+  <p>Матрица по трём осям: размер аудитории · готовность платить · ценность для роста</p>
+</div>
+
+<section>
+  <div class="priority-grid">
+    <div class="prio-card high">
+      <div class="prio-label">🔴 Высший приоритет</div>
+      <div class="prio-item">
+        <span class="seg-badge" style="background:#7c5c3e">S1</span>
+        <span>Дочь/сын откладывающие</span>
+      </div>
+      <div class="prio-item">
+        <span class="seg-badge" style="background:#6b7c3e">S3</span>
+        <span>Организатор юбилея</span>
+      </div>
+      <p style="margin-top:1rem; font-size:0.8rem; color:var(--muted)">Самая широкая аудитория, высокая готовность платить, понятный путь к покупке</p>
+    </div>
+    <div class="prio-card medium">
+      <div class="prio-label">🟡 Высокий приоритет</div>
+      <div class="prio-item">
+        <span class="seg-badge" style="background:#3e6b7c">S2</span>
+        <span>Внук/внучка в тревоге</span>
+      </div>
+      <div class="prio-item">
+        <span class="seg-badge" style="background:#5c3e7c">S5</span>
+        <span>Переживающий утрату</span>
+      </div>
+      <p style="margin-top:1rem; font-size:0.8rem; color:var(--muted)">Максимальный urgency — покупают быстро. Нужен правильный тон и messaging</p>
+    </div>
+    <div class="prio-card normal">
+      <div class="prio-label">🟢 Средний приоритет</div>
+      <div class="prio-item">
+        <span class="seg-badge" style="background:#7c3e6b">S4</span>
+        <span>Хранитель памяти</span>
+      </div>
+      <div class="prio-item">
+        <span class="seg-badge" style="background:#3e5c7c">S6</span>
+        <span>HR / Корпоративный</span>
+      </div>
+      <div class="prio-item">
+        <span class="seg-badge" style="background:#7c6b3e">S7</span>
+        <span>Пожилой для себя</span>
+      </div>
+      <p style="margin-top:1rem; font-size:0.8rem; color:var(--muted)">Требуют доработки продукта или отдельных тарифов. Перспективны в среднесрочной работе</p>
+    </div>
+  </div>
+</section>
+
+
+<!-- PART II HEADER -->
+<div class="part-header" id="methodology">
+  <div class="part-num">Часть II</div>
+  <h2>Методика фокус-групп</h2>
+  <p>Симулированные сессии: модератор — реальный человек, участники — AI-персонажи на основе портрета сегмента</p>
+</div>
+
+<section>
+  <h2 class="section-title">Что такое симулированная ФГ</h2>
+  <div class="method-grid">
+    <div class="method-card">
+      <div class="method-num">01</div>
+      <h4>Быстро и гибко</h4>
+      <p>Не нужен рекрутинг. Итерация гайда между сессиями за минуты. Можно тестировать формулировки немедленно.</p>
+      <span class="time-badge">~40 мин / сессия</span>
+    </div>
+    <div class="method-card">
+      <div class="method-num">02</div>
+      <h4>Гипотезы, не ответы</h4>
+      <p>Симуляция даёт гипотезы для проверки, а не окончательные данные. Это стартовая точка, не финальный вывод.</p>
+    </div>
+    <div class="method-card">
+      <div class="method-num">03</div>
+      <h4>4–5 персонажей</h4>
+      <p>В каждой группе — несколько AI-участников одного сегмента. Модератор задаёт вопросы, не продаёт.</p>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <h2 class="section-title">Структура одной сессии</h2>
+  <table class="session-table">
+    <thead>
+      <tr>
+        <th>Блок</th>
+        <th>Название</th>
+        <th>Время</th>
+        <th>Цель</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="block-num">1</td>
+        <td><strong>Разогрев</strong></td>
+        <td class="block-time">5 мин</td>
+        <td>Установить контакт, дать участникам представиться</td>
+      </tr>
+      <tr>
+        <td class="block-num">2</td>
+        <td><strong>Контекст жизни</strong></td>
+        <td class="block-time">10 мин</td>
+        <td>Понять ситуацию до продукта — семья, общение, отношение к памяти</td>
+      </tr>
+      <tr>
+        <td class="block-num">3</td>
+        <td><strong>Проблема и боль</strong></td>
+        <td class="block-time">10 мин</td>
+        <td>Выявить актуальные боли — что мешает, что уже пробовали</td>
+      </tr>
+      <tr>
+        <td class="block-num">4</td>
+        <td><strong>Реакция на продукт</strong></td>
+        <td class="block-time">10 мин</td>
+        <td>Первая реакция на описание ГЛАВА — что зацепило, что настораживает</td>
+      </tr>
+      <tr>
+        <td class="block-num">5</td>
+        <td><strong>Барьеры и возражения</strong></td>
+        <td class="block-time">5 мин</td>
+        <td>Что мешает купить прямо сейчас; как изменить чтобы сказали «да»</td>
+      </tr>
+      <tr>
+        <td class="block-num">6</td>
+        <td><strong>Закрытие</strong></td>
+        <td class="block-time">5 мин</td>
+        <td>«Объясните другу за 30 секунд» — проверка восприятия ценности</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+
+<!-- GUIDE -->
+<div class="part-header" id="guide">
+  <div class="part-num">Часть II — продолжение</div>
+  <h2>Гайд модератора</h2>
+  <p>Конкретные вопросы по каждому блоку. Раскройте нужный блок — и начинайте сессию</p>
+</div>
+
+<section>
+  <div class="guide-block">
+    <div class="guide-block-header" onclick="toggleGuide(this)">
+      <div class="guide-block-num">1</div>
+      <div class="guide-block-title">Разогрев</div>
+      <div class="guide-block-time">5 мин</div>
+      <div class="guide-block-toggle">+</div>
+    </div>
+    <div class="guide-block-body">
+      <div class="guide-question">«Начнём не с продукта, а с вас. Расскажите коротко: кто вы, что делаете, какое место занимает семья в вашей жизни?»</div>
+      <ul class="guide-hint">
+        <li>Дайте каждому сказать 2–3 предложения, не перебивайте</li>
+        <li>Цель: участники почувствуют себя слышимыми</li>
+        <li>Не оценивайте и не направляйте ответы</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="guide-block">
+    <div class="guide-block-header" onclick="toggleGuide(this)">
+      <div class="guide-block-num">2</div>
+      <div class="guide-block-title">Контекст жизни</div>
+      <div class="guide-block-time">10 мин</div>
+      <div class="guide-block-toggle">+</div>
+    </div>
+    <div class="guide-block-body">
+      <div class="guide-question">«Есть ли в вашей семье пожилой человек — бабушка, дедушка, родитель? Как вы с ними общаетесь?»</div>
+      <div class="guide-question">«Приходила ли вам мысль: "надо бы записать их историю"? Если да — что происходило дальше?»</div>
+      <div class="guide-question">«Как вы думаете — что из истории вашей семьи рискует быть потеряно?»</div>
+      <ul class="guide-hint">
+        <li>Слушайте не только содержание, но и эмоцию</li>
+        <li>Отмечайте: говорят ли о вине, тревоге, сожалении</li>
+        <li>Не называйте ГЛАВА пока сами не спросят</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="guide-block">
+    <div class="guide-block-header" onclick="toggleGuide(this)">
+      <div class="guide-block-num">3</div>
+      <div class="guide-block-title">Проблема и боль</div>
+      <div class="guide-block-time">10 мин</div>
+      <div class="guide-block-toggle">+</div>
+    </div>
+    <div class="guide-block-body">
+      <div class="guide-question">«Представьте: вы решили записать историю близкого. С чего вы начнёте? Что самое сложное?»</div>
+      <div class="guide-question">«Что мешало вам сделать это раньше — если вы об этом думали?»</div>
+      <div class="guide-question">«Как бы вы описали идеальный результат? Что именно вы хотели бы получить?»</div>
+      <ul class="guide-hint">
+        <li>Не предлагайте решения — только задавайте вопросы</li>
+        <li>Уточняйте: «что именно» и «почему это важно»</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="guide-block">
+    <div class="guide-block-header" onclick="toggleGuide(this)">
+      <div class="guide-block-num">4</div>
+      <div class="guide-block-title">Реакция на продукт</div>
+      <div class="guide-block-time">10 мин</div>
+      <div class="guide-block-toggle">+</div>
+    </div>
+    <div class="guide-block-body">
+      <p style="font-size:0.85rem; color:var(--muted); margin-bottom:1rem"><em>Прочитайте описание:</em></p>
+      <div class="guide-question" style="background:var(--paper); border-color:var(--parchment); font-style:normal; color:var(--ink)">
+        «Есть сервис: вы записываете разговор с близким через Telegram-бот — голосом или текстом. Бот задаёт вопросы-подсказки, помогает провести интервью. Через 3–5 дней получаете PDF-биографию: 10–25 страниц с фотографиями, литературно обработанную. Стоимость — 6 900 ₽.»
+      </div>
+      <div class="guide-question">«Что вы почувствовали, когда услышали это? Что зацепило?»</div>
+      <div class="guide-question">«Что вас настораживает или кажется непонятным?»</div>
+      <div class="guide-question">«Кому бы вы это порекомендовали в первую очередь?»</div>
+    </div>
+  </div>
+
+  <div class="guide-block">
+    <div class="guide-block-header" onclick="toggleGuide(this)">
+      <div class="guide-block-num">5</div>
+      <div class="guide-block-title">Барьеры и возражения</div>
+      <div class="guide-block-time">5 мин</div>
+      <div class="guide-block-toggle">+</div>
+    </div>
+    <div class="guide-block-body">
+      <div class="guide-question">«Что могло бы помешать вам это заказать?»</div>
+      <div class="guide-question">«Что нужно изменить или добавить, чтобы вы сказали "да" без колебаний?»</div>
+      <div class="guide-question">«Цена 6 900 ₽ — как вы её воспринимаете?»</div>
+      <ul class="guide-hint">
+        <li>Важно: не спорьте с возражениями, принимайте их</li>
+        <li>Уточняйте: «что именно вас останавливает» — ищите конкретику</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="guide-block">
+    <div class="guide-block-header" onclick="toggleGuide(this)">
+      <div class="guide-block-num">6</div>
+      <div class="guide-block-title">Закрытие</div>
+      <div class="guide-block-time">5 мин</div>
+      <div class="guide-block-toggle">+</div>
+    </div>
+    <div class="guide-block-body">
+      <div class="guide-question">«Если бы вы объясняли этот сервис другу за 30 секунд — что бы сказали?»</div>
+      <div class="guide-question">«Есть что-то важное, о чём я не спросил, но вы хотели бы сказать?»</div>
+      <ul class="guide-hint">
+        <li>Первый вопрос — ключевой тест воспринятой ценности</li>
+        <li>Запишите дословно — это лучший материал для messaging</li>
+      </ul>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <h3 class="sub-title">Протокол анализа после сессии</h3>
+  <div class="method-grid">
+    <div class="method-card">
+      <div class="method-num">A</div>
+      <h4>Ключевые цитаты</h4>
+      <p>Прямые фразы, которые ярко выражают боль, формулируют JTBD или описывают барьер. Цитировать дословно.</p>
+    </div>
+    <div class="method-card">
+      <div class="method-num">B</div>
+      <h4>Инсайт-карточки</h4>
+      <p>Формат: <span class="mono">[Сегмент] [Тема] → [Инсайт]</span>. Например: <em>«[S1] [Барьер] → Неловкость не перед продуктом, а перед родителем»</em></p>
+    </div>
+    <div class="method-card">
+      <div class="method-num">C</div>
+      <h4>Уточнённый JTBD</h4>
+      <p>Формат: <em>«Когда [ситуация] — я хочу [действие] — чтобы [результат]»</em>. Переписать после сессии.</p>
+    </div>
+  </div>
+</section>
+
+
+<!-- PART III HEADER -->
+<div class="part-header" id="design" style="margin-top:2rem">
+  <div class="part-num">Часть III</div>
+  <h2>Дизайн исследования</h2>
+  <p>Расписание спринтов, что делаем с результатами, финальные артефакты</p>
+</div>
+
+<section>
+  <h2 class="section-title">Расписание спринтов</h2>
+  <div class="sprint-grid">
+    <div class="sprint-card">
+      <div class="sprint-card-header">
+        <div class="sprint-num">Спринт 1 · Неделя 1</div>
+        <h4>Приоритетные сегменты</h4>
+      </div>
+      <div class="sprint-card-body">
+        <div class="sprint-item">
+          <div class="sprint-dot"></div>
+          <div><strong>ФГ-1:</strong> S1 — Дочь/сын откладывающие</div>
+        </div>
+        <div class="sprint-item">
+          <div class="sprint-dot"></div>
+          <div><strong>ФГ-2:</strong> S3 — Организатор юбилея</div>
+        </div>
+        <div class="sprint-item" style="color:var(--muted); font-size:0.8rem">
+          <div class="sprint-dot" style="background:var(--parchment)"></div>
+          <div>Анализ: пересечения, уточнение гипотез</div>
+        </div>
+      </div>
+    </div>
+    <div class="sprint-card">
+      <div class="sprint-card-header">
+        <div class="sprint-num">Спринт 2 · Неделя 2</div>
+        <h4>Urgency-сегменты</h4>
+      </div>
+      <div class="sprint-card-body">
+        <div class="sprint-item">
+          <div class="sprint-dot"></div>
+          <div><strong>ФГ-3:</strong> S2 — Внук/внучка в тревоге</div>
+        </div>
+        <div class="sprint-item">
+          <div class="sprint-dot"></div>
+          <div><strong>ФГ-4:</strong> S5 — Переживающий утрату</div>
+        </div>
+        <div class="sprint-item" style="color:var(--muted); font-size:0.8rem">
+          <div class="sprint-dot" style="background:var(--parchment)"></div>
+          <div>Анализ: urgency-паттерны, тональность</div>
+        </div>
+      </div>
+    </div>
+    <div class="sprint-card">
+      <div class="sprint-card-header">
+        <div class="sprint-num">Спринт 3 · Неделя 3</div>
+        <h4>Остальные сегменты</h4>
+      </div>
+      <div class="sprint-card-body">
+        <div class="sprint-item">
+          <div class="sprint-dot"></div>
+          <div><strong>ФГ-5:</strong> S4 — Хранитель памяти</div>
+        </div>
+        <div class="sprint-item">
+          <div class="sprint-dot"></div>
+          <div><strong>ФГ-6:</strong> S6 — HR/Корпоративный</div>
+        </div>
+        <div class="sprint-item">
+          <div class="sprint-dot"></div>
+          <div><strong>ФГ-7:</strong> S7 — Пожилой для себя</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <h2 class="section-title">Что делаем с результатами</h2>
+  <div class="deliverables-grid">
+    <div class="deliv-card">
+      <div class="deliv-icon">🛠</div>
+      <h4>Продуктовые решения</h4>
+      <p>Доработка онбординга в боте под каждый сегмент. Уточнение вопросов-подсказок. Формат «подарочного режима» для S3. Упрощённый вход для S7.</p>
+    </div>
+    <div class="deliv-card">
+      <div class="deliv-icon">📢</div>
+      <h4>Коммуникации</h4>
+      <p>Уточнение слогана и tagline лендинга. Разные месседжи под разные сегменты. Главный триггер для рекламных креативов.</p>
+    </div>
+    <div class="deliv-card">
+      <div class="deliv-icon">💡</div>
+      <h4>Новые гипотезы</h4>
+      <p>Нужен ли корпоративный тариф для S6? Подарочный сертификат для S3? Список гипотез для A/B тестирования.</p>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <h2 class="section-title">Финальный артефакт — Audience Playbook</h2>
+  <div class="method-grid">
+    <div class="method-card">
+      <div class="method-num">①</div>
+      <h4>Уточнённые портреты</h4>
+      <p>7 сегментов с верифицированными болями, триггерами и JTBD — проверенными через симуляцию.</p>
+    </div>
+    <div class="method-card">
+      <div class="method-num">②</div>
+      <h4>Messaging Guide</h4>
+      <p>Что говорить каждому сегменту: ключевые фразы, акценты, tone of voice, чего избегать.</p>
+    </div>
+    <div class="method-card">
+      <div class="method-num">③</div>
+      <h4>Гипотезы для тестов</h4>
+      <p>Приоритетный список продуктовых и маркетинговых гипотез для A/B тестирования и проверки на реальных пользователях.</p>
+    </div>
+  </div>
+
+  <div style="background:var(--paper); border:1px solid var(--parchment); border-radius:10px; padding:1.5rem 2rem; margin-top:2rem;">
+    <div style="font-size:0.65rem; font-weight:700; letter-spacing:0.15em; text-transform:uppercase; color:var(--gold); margin-bottom:0.5rem">Структура документации</div>
+    <div style="font-family:'Courier New', monospace; font-size:0.82rem; color:var(--brown); line-height:2">
+      tasks/audience-research/<br>
+      &nbsp;&nbsp;docs/<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;AUDIENCE_RESEARCH.md&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--muted)">← основной документ</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;AUDIENCE_RESEARCH.html&nbsp;&nbsp;&nbsp;<span style="color:var(--gold)">← эта презентация</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;fg-s1-results.md&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--muted)">← результаты ФГ-1</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;fg-s2-results.md<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;...<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;AUDIENCE_PLAYBOOK.md&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--muted)">← финальный артефакт</span><br>
+      &nbsp;&nbsp;status.md<br>
+      &nbsp;&nbsp;plan.md
+    </div>
+  </div>
+</section>
+
+
+<!-- FOOTER -->
+<footer>
+  <strong>ГЛАВА</strong> · Исследование аудитории · Версия 1.0 · Апрель 2026<br>
+  <span style="font-size:0.72rem; margin-top:0.3rem; display:block">glava.family · @glava_voice_bot</span>
+</footer>
+
+<script>
+  function toggleGuide(header) {
+    const body = header.nextElementSibling;
+    const toggle = header.querySelector('.guide-block-toggle');
+    const isOpen = body.classList.contains('open');
+    // close all
+    document.querySelectorAll('.guide-block-body').forEach(b => b.classList.remove('open'));
+    document.querySelectorAll('.guide-block-toggle').forEach(t => { t.classList.remove('open'); t.textContent = '+'; });
+    if (!isOpen) {
+      body.classList.add('open');
+      toggle.classList.add('open');
+      toggle.textContent = '×';
+    }
+  }
+
+  // smooth scroll for nav links
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      const target = document.querySelector(a.getAttribute('href'));
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% block title %}Промпты пайплайна — GLAVA Admin{% endblock %}
+{% block content %}
+
+<div class="flex items-center justify-between mb-6">
+  <div>
+    <h1 class="text-2xl font-bold text-gray-900">📄 Промпты пайплайна</h1>
+    <p class="text-sm text-gray-500 mt-1">
+      Просмотр и скачивание активных промптов.
+    </p>
+  </div>
+</div>
+
+<div id="upload-toast" class="fixed top-4 right-4 z-50 hidden px-5 py-3 rounded-xl shadow-lg text-sm font-medium transition-all"></div>
+
+{% if not agents %}
+  <p class="text-gray-400">pipeline_config.json не найден или пуст.</p>
+{% endif %}
+
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+{% for a in agents %}
+<div class="bg-white rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow" id="card-{{ a.key }}">
+
+  <div class="flex items-start justify-between mb-2">
+    <div>
+      <div class="font-semibold text-gray-800">{{ a.display_name }}</div>
+      <div class="text-xs text-gray-400 mt-0.5 flex items-center gap-2">
+        <span class="font-mono {% if not a.exists %}text-red-500{% else %}text-gray-400{% endif %}">
+          {{ a.prompt_file }}
+        </span>
+        {% if not a.exists %}
+          <span class="text-red-400 font-normal">файл не найден</span>
+        {% endif %}
+      </div>
+    </div>
+    {% if a.last_uploaded != '—' %}
+      <span class="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 font-medium whitespace-nowrap">↑ загружен</span>
+    {% endif %}
+  </div>
+
+  <div class="flex flex-wrap gap-3 text-xs text-gray-400 mb-3">
+    <span title="Модель">🤖 {{ a.model }}</span>
+    <span title="Температура">🌡 {{ a.temperature }}</span>
+    {% if a.exists %}
+      <span title="Размер">📏 {{ a.size_kb }} КБ</span>
+      <span title="Изменён">🕐 {{ a.modified }}</span>
+    {% endif %}
+  </div>
+
+  {% if a.last_uploaded != '—' %}
+  <div class="text-xs text-gray-400 mb-3">
+    Загружен: <strong class="text-gray-700">{{ a.last_uploaded }}</strong>
+    {% if a.uploaded_filename %}
+      (<code class="text-gray-500">{{ a.uploaded_filename }}</code>)
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% if a.notes %}
+  <div class="text-xs text-gray-400 mb-3 truncate" title="{{ a.notes }}">
+    💬 {{ a.notes }}
+  </div>
+  {% endif %}
+
+  <div class="flex items-center gap-2 flex-wrap">
+    {% if a.exists %}
+    <button onclick="viewPrompt('{{ a.key }}', '{{ a.display_name }}')"
+            class="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors">
+      👁 Просмотр
+    </button>
+    <a href="{{ url_for('dasha.pipeline_prompt_download', key=a.key) }}"
+       class="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors">
+      ⬇ Скачать
+    </a>
+    {% endif %}
+    <label class="cursor-pointer text-xs px-3 py-1.5 rounded-lg border border-green-200 text-green-700 hover:bg-green-50 transition-colors">
+      🔼 Загрузить
+      <input type="file" accept=".md" class="hidden" onchange="uploadPrompt('{{ a.key }}', this)">
+    </label>
+  </div>
+
+</div>
+{% endfor %}
+</div>
+
+<!-- Модальное окно просмотра промпта -->
+<div id="modal-prompt" class="fixed inset-0 z-50 hidden bg-black/50 flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+      <div>
+        <h2 class="text-lg font-semibold text-gray-900" id="modal-title">Промпт</h2>
+        <p class="text-xs text-gray-400 font-mono mt-0.5" id="modal-filename"></p>
+      </div>
+      <div class="flex items-center gap-2">
+        <a id="modal-download-link" href="#"
+           class="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors">
+          ⬇ Скачать
+        </a>
+        <button onclick="closeModal()"
+                class="text-gray-400 hover:text-gray-600 text-xl leading-none px-2">×</button>
+      </div>
+    </div>
+    <div class="overflow-auto flex-1 p-6">
+      <pre id="modal-content" class="text-sm text-gray-800 whitespace-pre-wrap font-mono leading-relaxed"></pre>
+    </div>
+  </div>
+</div>
+
+<script>
+const VIEW_BASE = '/dasha/pipeline_prompts/';
+const UPLOAD_URL = '/dasha/pipeline_prompts/upload';
+
+function showToast(msg, ok) {
+  const t = document.getElementById('upload-toast');
+  t.textContent = msg;
+  t.className = 'fixed top-4 right-4 z-50 px-5 py-3 rounded-xl shadow-lg text-sm font-medium transition-all '
+    + (ok ? 'bg-green-100 text-green-800 border border-green-200' : 'bg-red-100 text-red-800 border border-red-200');
+  t.classList.remove('hidden');
+  setTimeout(() => t.classList.add('hidden'), 4000);
+}
+
+async function uploadPrompt(key, input) {
+  const file = input.files[0];
+  if (!file) return;
+  const card = document.getElementById('card-' + key);
+  const label = card.querySelector('label');
+  const origText = label.childNodes[0].textContent;
+  label.childNodes[0].textContent = '⏳ Загружаю…';
+
+  const fd = new FormData();
+  fd.append('agent_key', key);
+  fd.append('file', file);
+
+  try {
+    const res  = await fetch(UPLOAD_URL, { method: 'POST', body: fd });
+    const data = await res.json();
+    if (data.ok) {
+      showToast('✅ Загружен: ' + data.uploaded + ' (' + data.size_kb + ' КБ)', true);
+      setTimeout(() => location.reload(), 1200);
+    } else {
+      showToast('❌ ' + (data.error || 'Ошибка'), false);
+    }
+  } catch (e) {
+    showToast('❌ Ошибка сети: ' + e.message, false);
+  } finally {
+    label.childNodes[0].textContent = origText;
+    input.value = '';
+  }
+}
+
+async function viewPrompt(key, displayName) {
+  const modal   = document.getElementById('modal-prompt');
+  const title   = document.getElementById('modal-title');
+  const fname   = document.getElementById('modal-filename');
+  const content = document.getElementById('modal-content');
+  const dlLink  = document.getElementById('modal-download-link');
+
+  title.textContent   = displayName;
+  content.textContent = 'Загружаю…';
+  fname.textContent   = '';
+  modal.classList.remove('hidden');
+
+  try {
+    const res  = await fetch(VIEW_BASE + key + '/view');
+    const data = await res.json();
+    if (data.ok) {
+      content.textContent  = data.text;
+      fname.textContent    = data.filename;
+      dlLink.href          = VIEW_BASE + key + '/download';
+    } else {
+      content.textContent = '⚠️ ' + data.error;
+    }
+  } catch (e) {
+    content.textContent = '⚠️ Ошибка загрузки: ' + e.message;
+  }
+}
+
+function closeModal() {
+  document.getElementById('modal-prompt').classList.add('hidden');
+}
+
+document.getElementById('modal-prompt').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeModal();
+});
+</script>
+{% endblock %}

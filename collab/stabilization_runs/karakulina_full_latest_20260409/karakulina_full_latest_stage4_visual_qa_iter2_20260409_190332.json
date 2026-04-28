@@ -1,0 +1,101 @@
+{
+  "project_id": "karakulina_stage4",
+  "iteration": 2,
+  "verdict": "fail",
+  "issues": [
+    {
+      "id": "issue_001",
+      "category": "integrity",
+      "severity": "critical",
+      "page": null,
+      "description": "PDF файл недоступен для визуальной проверки. Путь /opt/glava/exports/karakulina_full_latest_stage4_pdf_iter2_20260409_190332.pdf не может быть открыт. Без доступа к PDF невозможно выполнить основную задачу Layout QA - проверку визуального качества макета.",
+      "fix_suggestion": "Убедиться, что PDF файл корректно сгенерирован и доступен по указанному пути. Проверить права доступа к файлу и его целостность. Без визуального доступа к PDF проверка качества макета невозможна."
+    },
+    {
+      "id": "issue_002",
+      "category": "integrity",
+      "severity": "critical",
+      "page": null,
+      "description": "Structural layout guard не пройден согласно previous_qa_issues. Это указывает на критические структурные проблемы в макете, которые блокируют дальнейшую обработку.",
+      "fix_suggestion": "Исправить структурные проблемы макета, выявленные structural_layout_guard. Убедиться, что все элементы page_plan корректно реализованы в page_map."
+    }
+  ],
+  "checklist": {
+    "pagination": {
+      "status": "fail",
+      "details": "Невозможно проверить пагинацию без визуального доступа к PDF. Требуется проверка единой системы: cover/blank без номеров, TOC (physical 3) с visible номером 1, далее visible_page = physical_page - 2."
+    },
+    "toc": {
+      "status": "fail",
+      "details": "Невозможно проверить соответствие номеров страниц в оглавлении реальному размещению глав без визуального доступа к PDF."
+    },
+    "orphan_widow": {
+      "status": "fail",
+      "details": "Невозможно проверить висячие строки, вдовы и сироты без визуального анализа текстовых блоков в PDF."
+    },
+    "photos": {
+      "status": "fail",
+      "total_expected": 22,
+      "total_found": 22,
+      "details": "Page_map показывает все 22 фото размещены, но невозможно проверить качество размещения, обрезку, подписи без визуального доступа к PDF."
+    },
+    "callouts": {
+      "status": "fail",
+      "total_expected": 7,
+      "total_found": 7,
+      "details": "Page_map показывает все 7 callouts размещены согласно page_plan, но невозможно проверить визуальное оформление без доступа к PDF."
+    },
+    "headers_footers": {
+      "status": "fail",
+      "details": "Невозможно проверить колонтитулы без визуального доступа к PDF."
+    },
+    "margins": {
+      "status": "fail",
+      "details": "Невозможно проверить поля страницы (top 20mm, bottom 20mm, inner 20mm, outer 15mm) без визуального анализа PDF."
+    },
+    "typography": {
+      "status": "fail",
+      "details": "Невозможно проверить встроенность шрифтов PT Serif/PT Sans, отсутствие символов-заменителей, читаемость текста без визуального доступа к PDF."
+    },
+    "integrity": {
+      "status": "fail",
+      "details": "Критические проблемы: PDF недоступен, structural_layout_guard не пройден. Невозможно проверить общую целостность макета."
+    }
+  },
+  "regression_check": {
+    "performed": true,
+    "previous_issues_resolved": [
+      {
+        "issue_id": "issue_001",
+        "status": "persists"
+      },
+      {
+        "issue_id": "issue_002",
+        "status": "persists"
+      },
+      {
+        "issue_id": "issue_003",
+        "status": "persists"
+      },
+      {
+        "issue_id": "issue_004",
+        "status": "persists"
+      },
+      {
+        "issue_id": "issue_005",
+        "status": "persists"
+      },
+      {
+        "issue_id": "issue_006",
+        "status": "persists"
+      }
+    ]
+  },
+  "summary": {
+    "critical_issues": 2,
+    "major_issues": 0,
+    "minor_issues": 0,
+    "total_pages_checked": 0,
+    "overall_assessment": "Макет не может быть проверен из-за недоступности PDF файла и критических структурных проблем. Все предыдущие проблемы остаются нерешёнными. Требуется исправление технических проблем генерации PDF перед повторной проверкой."
+  }
+}

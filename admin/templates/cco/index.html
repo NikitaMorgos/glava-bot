@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}CCO — GLAVA Admin{% endblock %}
+{% block content %}
+
+<div class="flex items-center gap-3 mb-6">
+  <h1 class="text-2xl font-bold text-gray-900">🎯 {{ role_name }}</h1>
+  {% if current %}
+    <span class="text-xs bg-gray-100 text-gray-500 px-2 py-1 rounded">v{{ current.version }}</span>
+  {% endif %}
+</div>
+
+<p class="text-sm text-gray-500 mb-6">
+  Системный промпт AI-агента CCO. Используется ботом <code>@glava_cco_bot</code> для
+  еженедельных дайджестов, алертов и ответов на вопросы команды.
+  Изменения применяются немедленно.
+</p>
+
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+  <div class="xl:col-span-2">
+    <form method="POST" action="{{ url_for('cco.save') }}" class="bg-white rounded-xl shadow-sm p-5">
+      <label class="block text-sm font-medium text-gray-700 mb-2">Промпт CCO-агента</label>
+      <textarea name="prompt_text" rows="28"
+        class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-gray-900 resize-y"
+        placeholder="Введите системный промпт для CCO...">{{ current.prompt_text if current else '' }}</textarea>
+      <div class="flex gap-3 mt-4">
+        <button type="submit"
+          class="px-5 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-700 transition-colors">
+          Сохранить
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <div>
+    <div class="bg-white rounded-xl shadow-sm p-5">
+      <div class="font-semibold text-gray-700 mb-3">История версий</div>
+      {% if history %}
+        <div class="space-y-3">
+          {% for h in history %}
+          <div class="border-b border-gray-100 pb-3">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-xs font-medium text-gray-500">v{{ h.version }}</span>
+              <span class="text-xs text-gray-400">{{ h.updated_by }}</span>
+            </div>
+            <div class="text-xs text-gray-400 mb-1">{{ h.updated_at.strftime('%d.%m.%Y %H:%M') if h.updated_at else '—' }}</div>
+            <div class="text-xs text-gray-500 font-mono bg-gray-50 p-1.5 rounded line-clamp-2">{{ h.preview }}…</div>
+          </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="text-sm text-gray-400">Нет истории</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,89 @@
+{
+  "project_id": "karakulina_stage4",
+  "iteration": 3,
+  "verdict": "fail",
+  "issues": [
+    {
+      "id": "issue_001",
+      "category": "integrity",
+      "severity": "critical",
+      "page": null,
+      "description": "PDF файл недоступен для визуальной проверки. Путь /opt/glava/exports/karakulina_stage4_hardening_20260409_r3_stage4_pdf_iter3_20260409_081836.pdf не может быть открыт для анализа содержимого.",
+      "fix_suggestion": "Убедиться, что PDF файл корректно сгенерирован и доступен по указанному пути. Проверить права доступа к файлу и его целостность."
+    },
+    {
+      "id": "issue_002",
+      "category": "callout",
+      "severity": "major",
+      "page": null,
+      "description": "Отсутствует callout_03 из expected_content.callout_ids. В page_map присутствуют только callout_01, callout_02, callout_04, callout_05, callout_06, но нет callout_03.",
+      "fix_suggestion": "Добавить callout_03 в соответствующую главу согласно исходному контенту или обновить expected_content.callout_ids, если callout_03 был удален намеренно."
+    },
+    {
+      "id": "issue_003",
+      "category": "integrity",
+      "severity": "major",
+      "page": null,
+      "description": "Несоответствие между page_plan и page_map: в page_plan на страницах 19-20 не указаны callouts, но в page_map они присутствуют. Аналогично для страниц 21-24.",
+      "fix_suggestion": "Привести page_plan в соответствие с фактическим размещением callouts в page_map или исправить размещение callouts согласно page_plan."
+    }
+  ],
+  "checklist": {
+    "pagination": {
+      "status": "warning",
+      "details": "Невозможно проверить визуальную нумерацию страниц без доступа к PDF файлу. По page_map структура выглядит корректной: 33 страницы с логичной последовательностью."
+    },
+    "toc": {
+      "status": "warning",
+      "details": "Невозможно проверить соответствие оглавления реальным страницам без визуального доступа к PDF. Структура глав в page_map соответствует expected_content."
+    },
+    "orphan_widow": {
+      "status": "warning",
+      "details": "Невозможно проверить висячие строки без визуального анализа PDF файла."
+    },
+    "photos": {
+      "status": "pass",
+      "total_expected": 22,
+      "total_found": 22,
+      "details": "Все 22 фотографии из expected_content.photo_ids присутствуют в page_map на соответствующих страницах."
+    },
+    "callouts": {
+      "status": "fail",
+      "total_expected": 6,
+      "total_found": 5,
+      "details": "Отсутствует callout_03. Найдены только callout_01, callout_02, callout_04, callout_05, callout_06."
+    },
+    "headers_footers": {
+      "status": "warning",
+      "details": "Невозможно проверить колонтитулы без визуального доступа к PDF файлу."
+    },
+    "margins": {
+      "status": "warning",
+      "details": "Невозможно проверить поля и отступы без визуального анализа PDF файла."
+    },
+    "typography": {
+      "status": "warning",
+      "details": "Невозможно проверить шрифты и читаемость без визуального доступа к PDF файлу."
+    },
+    "integrity": {
+      "status": "fail",
+      "details": "Критическая проблема: PDF файл недоступен для проверки. Также обнаружены несоответствия между page_plan и page_map в размещении callouts."
+    }
+  },
+  "regression_check": {
+    "performed": true,
+    "previous_issues_resolved": [
+      {
+        "issue_id": "structural_guard_failed",
+        "status": "persists"
+      }
+    ]
+  },
+  "summary": {
+    "critical_issues": 1,
+    "major_issues": 2,
+    "minor_issues": 0,
+    "total_pages_checked": 0,
+    "overall_assessment": "ЭСКАЛАЦИЯ: после 3 итераций критические проблемы макета не устранены. PDF файл недоступен для визуальной проверки, что делает невозможным выполнение основной задачи QA. Требуется вмешательство Продюсера для решения технических проблем с генерацией или доступом к PDF файлу."
+  }
+}

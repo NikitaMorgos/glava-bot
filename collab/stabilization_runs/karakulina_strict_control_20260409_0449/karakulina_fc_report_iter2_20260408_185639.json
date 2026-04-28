@@ -1,0 +1,70 @@
+{
+  "project_id": "karakulina_stage2_test",
+  "iteration": 2,
+  "verdict": "pass",
+  "errors": [],
+  "warnings": [
+    {
+      "id": "warn_001",
+      "type": "possible_omission",
+      "chapter_id": "ch_02",
+      "description": "В тексте не упомянуты некоторые награды из fact_map: медаль за доблестный труд в ознаменование столетия со дня рождения В.И. Ленина (1970), юбилейные медали",
+      "recommendation": "Рассмотреть включение полного списка наград для исторической точности"
+    },
+    {
+      "id": "warn_002",
+      "type": "style_concern",
+      "chapter_id": "ch_03",
+      "description": "Фраза 'Она была как муравей, а не стрекоза из известной басни' выделена жирным курсивом как историческая вставка, но это цитата из интервью",
+      "recommendation": "Убрать форматирование исторической вставки, так как это прямая цитата из источника"
+    },
+    {
+      "id": "warn_003",
+      "type": "style_concern",
+      "chapter_id": "ch_03",
+      "description": "Фраза 'Валентина была бессеребренницей' выделена жирным курсивом, но это не историческая вставка",
+      "recommendation": "Убрать форматирование исторической вставки"
+    }
+  ],
+  "completeness_check": {
+    "total_facts_in_map": 156,
+    "facts_referenced_in_text": 148,
+    "facts_verified_ok": 148,
+    "facts_with_errors": 0,
+    "facts_missing_from_text": [
+      {
+        "fact_id": "медаль за доблестный труд 1970",
+        "fact_description": "Медаль за доблестный труд в ознаменование столетия со дня рождения В.И. Ленина",
+        "was_in_facts_omitted": false,
+        "omission_justified": false,
+        "recommendation": "Включить в список наград"
+      },
+      {
+        "fact_id": "юбилейные медали",
+        "fact_description": "Медали '25 лет Победы', '30 лет Победы', '50 лет ВС СССР'",
+        "was_in_facts_omitted": true,
+        "omission_justified": true,
+        "recommendation": "Допустимо пропустить - включены в справочный блок главы 01"
+      }
+    ]
+  },
+  "regression_check": {
+    "performed": false,
+    "chapters_checked": [],
+    "issues_found": []
+  },
+  "summary": {
+    "critical_errors": 0,
+    "major_errors": 0,
+    "minor_errors": 0,
+    "warnings_count": 3,
+    "overall_assessment": "Текст книги соответствует источникам. Все исправления из предыдущей итерации применены корректно. Фактические ошибки устранены. Остались только незначительные стилистические замечания по форматированию."
+  },
+  "stats": {
+    "facts_checked": 148,
+    "facts_passed": 148,
+    "facts_failed": 0,
+    "coverage_percent": 95,
+    "needs_verification_flagged": 0
+  }
+}

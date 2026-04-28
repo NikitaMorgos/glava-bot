@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ГЛАВА — Семейная биография. Запишите историю близкого.</title>
+<meta name="description" content="Сервис семейных биографий. Мы задаём вопросы — вам нужно только разговаривать. Через 3–5 дней получаете красивую книгу PDF. 6 900 ₽.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --cream:#f9f7f2; --paper:#f0ead9; --parchment:#dfd5c2;
+  --ink:#181208; --brown:#44311f; --muted:#72614e;
+  --gold:#a8823c; --gold-light:#c9a05e; --gold-pale:#e8d5b0;
+  --white:#ffffff; --dark:#100e08;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Manrope',sans-serif;background:var(--cream);color:var(--ink);font-size:16px;line-height:1.7;-webkit-font-smoothing:antialiased}
+img{max-width:100%}
+a{color:inherit;text-decoration:none}
+
+/* ── NAV ── */
+header{position:fixed;top:0;left:0;right:0;z-index:100;transition:all .3s}
+header.scrolled{background:rgba(249,247,242,.96);backdrop-filter:blur(14px);box-shadow:0 1px 0 var(--parchment)}
+.nav-inner{max-width:1200px;margin:0 auto;padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:64px}
+.logo{font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:700;color:var(--cream);transition:color .3s}
+header.scrolled .logo{color:var(--ink)}
+.logo span{color:var(--gold)}
+.nav-links{display:flex;gap:2rem;list-style:none;align-items:center}
+.nav-links a{font-size:.82rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:rgba(249,247,242,.6);transition:color .2s}
+header.scrolled .nav-links a{color:var(--muted)}
+.nav-links a:hover{color:var(--gold)}
+.nav-cta{background:var(--gold);color:#fff !important;padding:.55rem 1.4rem;border-radius:6px;font-weight:700 !important;transition:background .2s !important}
+.nav-cta:hover{background:var(--gold-light) !important}
+.burger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:4px}
+.burger span{display:block;width:22px;height:2px;background:var(--cream);border-radius:2px;transition:all .3s}
+header.scrolled .burger span{background:var(--ink)}
+@media(max-width:768px){
+  .nav-links{display:none;position:fixed;top:64px;left:0;right:0;background:rgba(249,247,242,.98);backdrop-filter:blur(20px);flex-direction:column;padding:1.5rem 2rem;gap:1rem;border-bottom:1px solid var(--parchment)}
+  .nav-links.open{display:flex}
+  .nav-links a{color:var(--muted) !important;font-size:.9rem}
+  .burger{display:flex}
+}
+
+/* ── HERO ── */
+.hero{min-height:100vh;background:var(--ink);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;padding:7rem 2rem 5rem}
+.hero-bg{position:absolute;inset:0;background:radial-gradient(ellipse 100% 70% at 60% 30%,rgba(168,130,60,.12) 0%,transparent 60%),radial-gradient(ellipse 50% 50% at 0% 100%,rgba(168,130,60,.06) 0%,transparent 60%)}
+.hero-inner{max-width:1200px;width:100%;margin:0 auto;display:grid;grid-template-columns:1fr 420px;gap:5rem;align-items:center;position:relative;z-index:1}
+@media(max-width:1024px){.hero-inner{grid-template-columns:1fr;gap:3rem;text-align:center}}
+.hero-eyebrow{font-size:.7rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:1.25rem}
+.hero h1{font-family:'Playfair Display',serif;font-size:clamp(2.6rem,5.5vw,4rem);font-weight:700;color:var(--cream);line-height:1.08;margin-bottom:1.5rem}
+.hero h1 em{font-style:italic;color:var(--gold-light)}
+.hero-lead{font-size:1.05rem;color:rgba(249,247,242,.55);max-width:520px;margin-bottom:2.5rem;line-height:1.75}
+@media(max-width:1024px){.hero-lead{margin-left:auto;margin-right:auto}}
+.hero-actions{display:flex;gap:1rem;flex-wrap:wrap}
+@media(max-width:1024px){.hero-actions{justify-content:center}}
+.btn-primary{display:inline-flex;align-items:center;gap:.5rem;background:var(--gold);color:#fff;font-size:.95rem;font-weight:700;padding:.85rem 2rem;border-radius:8px;border:none;cursor:pointer;transition:background .2s,transform .15s}
+.btn-primary:hover{background:var(--gold-light);transform:translateY(-1px)}
+.btn-secondary{display:inline-flex;align-items:center;gap:.5rem;background:transparent;color:rgba(249,247,242,.7);font-size:.9rem;font-weight:600;padding:.85rem 1.75rem;border-radius:8px;border:1px solid rgba(249,247,242,.18);cursor:pointer;transition:all .2s}
+.btn-secondary:hover{border-color:rgba(249,247,242,.4);color:var(--cream)}
+.hero-trust{display:flex;gap:1.75rem;margin-top:2.5rem;flex-wrap:wrap}
+@media(max-width:1024px){.hero-trust{justify-content:center}}
+.trust-item{display:flex;align-items:center;gap:.5rem;font-size:.78rem;color:rgba(249,247,242,.4);font-weight:500}
+.trust-dot{width:6px;height:6px;border-radius:50%;background:var(--gold);flex-shrink:0}
+
+/* BOOK VISUAL */
+.hero-book{position:relative;perspective:1200px}
+@media(max-width:1024px){.hero-book{max-width:320px;margin:0 auto}}
+.book-card{background:var(--paper);border-radius:4px 12px 12px 4px;padding:2.5rem 2rem;box-shadow:-8px 8px 40px rgba(0,0,0,.5),0 0 0 1px rgba(223,213,194,.3);transform:rotateY(-8deg) rotateX(3deg);transform-style:preserve-3d;transition:transform .4s}
+.book-card:hover{transform:rotateY(-4deg) rotateX(1deg)}
+.book-spine{position:absolute;left:-18px;top:0;bottom:0;width:18px;background:var(--parchment);border-radius:4px 0 0 4px;box-shadow:-4px 4px 12px rgba(0,0,0,.3)}
+.book-cover-label{font-size:.62rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:1rem}
+.book-title{font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:700;color:var(--brown);line-height:1.2;margin-bottom:.4rem}
+.book-subtitle{font-size:.82rem;color:var(--muted);font-style:italic;margin-bottom:1.5rem}
+.book-divider{border:none;border-top:1px solid var(--parchment);margin:1.25rem 0}
+.book-preview-line{height:8px;background:var(--parchment);border-radius:4px;margin-bottom:.5rem;opacity:.7}
+.book-preview-line.w80{width:80%}
+.book-preview-line.w60{width:60%}
+.book-preview-line.w90{width:90%}
+.book-preview-line.w70{width:70%}
+.book-photo{width:100%;aspect-ratio:16/9;background:linear-gradient(135deg,var(--parchment) 0%,var(--gold-pale) 100%);border-radius:6px;margin:1.25rem 0;display:flex;align-items:center;justify-content:center;font-size:.72rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase}
+.book-pages{position:absolute;right:-12px;top:6px;bottom:6px;width:12px;background:linear-gradient(to right,var(--parchment),#e8dcc8);border-radius:0 4px 4px 0;box-shadow:2px 2px 8px rgba(0,0,0,.2)}
+.book-badge{position:absolute;top:-12px;right:-12px;background:var(--gold);color:#fff;font-size:.62rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:.35rem .75rem;border-radius:20px;box-shadow:0 4px 12px rgba(168,130,60,.4)}
+
+/* ── TRUST BAR ── */
+.trust-bar{background:var(--paper);border-top:1px solid var(--parchment);border-bottom:1px solid var(--parchment);padding:1.25rem 2rem}
+.trust-bar-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:center;gap:3rem;flex-wrap:wrap}
+.trust-stat{text-align:center;display:flex;align-items:center;gap:.75rem}
+.trust-stat-val{font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:700;color:var(--ink)}
+.trust-stat-lab{font-size:.75rem;color:var(--muted);font-weight:500;max-width:110px;line-height:1.3;text-align:left}
+.trust-bar-divider{width:1px;height:40px;background:var(--parchment)}
+@media(max-width:600px){.trust-bar-divider{display:none}.trust-bar-inner{gap:1.5rem}}
+
+/* ── SECTIONS ── */
+.section{padding:6rem 2rem}
+.section.alt{background:var(--paper)}
+.section-inner{max-width:1200px;margin:0 auto}
+.section-header{text-align:center;margin-bottom:4rem}
+.section-eyebrow{font-size:.68rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:.75rem}
+.section-title{font-family:'Playfair Display',serif;font-size:clamp(1.8rem,3.5vw,2.8rem);font-weight:700;color:var(--ink)}
+.section-sub{margin-top:.75rem;font-size:1rem;color:var(--muted);max-width:560px;margin-left:auto;margin-right:auto}
+
+/* ── HOW IT WORKS ── */
+.steps{display:grid;grid-template-columns:1fr 1fr 1fr;gap:2rem;position:relative}
+@media(max-width:768px){.steps{grid-template-columns:1fr}}
+.steps::before{content:'';position:absolute;top:28px;left:16.67%;right:16.67%;height:1px;background:linear-gradient(to right,transparent,var(--parchment),transparent);pointer-events:none}
+@media(max-width:768px){.steps::before{display:none}}
+.step{text-align:center;padding:2rem 1.5rem}
+.step-num{width:56px;height:56px;border-radius:50%;background:var(--ink);color:var(--gold);font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:700;display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;position:relative;z-index:1}
+.step h3{font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:700;color:var(--ink);margin-bottom:.6rem}
+.step p{font-size:.9rem;color:var(--muted);line-height:1.7}
+.step-detail{display:flex;flex-direction:column;gap:.35rem;margin-top:1rem}
+.step-item{font-size:.8rem;color:var(--brown);padding:.3rem .6rem;background:var(--paper);border-radius:4px;display:inline-block}
+
+/* ── FOR WHOM ── */
+.segments{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
+@media(max-width:768px){.segments{grid-template-columns:1fr}}
+.seg-card{background:var(--white);border:1px solid var(--parchment);border-radius:14px;padding:2rem;transition:transform .2s,box-shadow .2s;cursor:default}
+.seg-card:hover{transform:translateY(-3px);box-shadow:0 12px 40px rgba(24,18,8,.08)}
+.seg-emoji{font-size:2rem;margin-bottom:1rem}
+.seg-card h3{font-family:'Playfair Display',serif;font-size:1.15rem;font-weight:700;color:var(--ink);margin-bottom:.5rem}
+.seg-card .seg-who{font-size:.78rem;font-weight:600;color:var(--gold);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.75rem}
+.seg-card p{font-size:.88rem;color:var(--muted);line-height:1.65}
+.seg-card .seg-jtbd{margin-top:1rem;padding:.75rem 1rem;background:var(--paper);border-radius:8px;font-size:.83rem;font-style:italic;color:var(--brown);border-left:3px solid var(--gold)}
+
+/* ── RESULT / BOOK ── */
+.result-inner{display:grid;grid-template-columns:1fr 1fr;gap:5rem;align-items:center}
+@media(max-width:900px){.result-inner{grid-template-columns:1fr;gap:3rem}}
+.result-book{background:var(--paper);border-radius:6px 16px 16px 6px;padding:3rem 2.5rem;position:relative;box-shadow:0 24px 60px rgba(24,18,8,.12),-6px 0 0 var(--parchment);max-width:420px}
+@media(max-width:900px){.result-book{max-width:100%}}
+.result-book-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem}
+.result-book-title{font-family:'Playfair Display',serif;font-size:1.35rem;font-weight:700;color:var(--brown)}
+.result-book-pages{font-size:.72rem;color:var(--muted);background:var(--parchment);padding:.2rem .6rem;border-radius:4px}
+.result-book-photo{width:100%;aspect-ratio:3/2;background:linear-gradient(135deg,#dfd5c2,#c9a05e30);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.72rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:1.25rem;position:relative;overflow:hidden}
+.result-book-photo::after{content:'фотография';position:absolute;font-size:.65rem;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
+.result-book-text p{font-size:.85rem;color:var(--brown);line-height:1.8;font-style:italic}
+.result-book-text p::first-letter{font-family:'Playfair Display',serif;font-size:2.5rem;font-weight:700;float:left;line-height:.8;margin-right:.15em;color:var(--gold)}
+.result-features{display:flex;flex-direction:column;gap:1.25rem}
+.result-feat{display:flex;gap:1rem;align-items:flex-start}
+.feat-icon{width:44px;height:44px;border-radius:10px;background:var(--paper);display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0}
+.feat-body h4{font-weight:700;font-size:.95rem;color:var(--ink);margin-bottom:.2rem}
+.feat-body p{font-size:.85rem;color:var(--muted);line-height:1.6}
+
+/* ── REASSURANCE ── */
+.reassure-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem}
+@media(max-width:900px){.reassure-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){.reassure-grid{grid-template-columns:1fr}}
+.reassure-card{background:var(--white);border:1px solid var(--parchment);border-radius:12px;padding:1.75rem}
+.reassure-icon{font-size:1.75rem;margin-bottom:1rem}
+.reassure-card h4{font-weight:700;font-size:.95rem;color:var(--ink);margin-bottom:.4rem}
+.reassure-card p{font-size:.855rem;color:var(--muted);line-height:1.65}
+.reassure-card .reassure-source{font-size:.72rem;color:var(--gold);font-weight:600;margin-top:.6rem;font-style:italic}
+
+/* ── REVIEWS ── */
+.reviews-track{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.5rem}
+@media(max-width:900px){.reviews-track{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){.reviews-track{grid-template-columns:1fr}}
+.review-card{background:var(--white);border:1px solid var(--parchment);border-radius:14px;padding:1.75rem}
+.review-stars{color:var(--gold);font-size:.9rem;letter-spacing:.15em;margin-bottom:1rem}
+.review-text{font-size:.88rem;color:var(--brown);font-style:italic;line-height:1.7;margin-bottom:1.25rem}
+.review-author{display:flex;align-items:center;gap:.75rem}
+.review-avatar{width:40px;height:40px;border-radius:50%;background:var(--paper);border:2px solid var(--parchment);display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:var(--brown)}
+.review-name{font-size:.83rem;font-weight:700;color:var(--ink)}
+.review-role{font-size:.75rem;color:var(--muted)}
+
+/* ── SAMPLE CTA ── */
+.sample-cta{background:var(--ink);border-radius:20px;padding:4rem 3rem;text-align:center;position:relative;overflow:hidden}
+.sample-cta::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% -10%,rgba(168,130,60,.18) 0%,transparent 65%)}
+.sample-cta h2{font-family:'Playfair Display',serif;font-size:clamp(1.6rem,3.5vw,2.5rem);font-weight:700;color:var(--cream);margin-bottom:.75rem;position:relative}
+.sample-cta p{font-size:.95rem;color:rgba(249,247,242,.5);max-width:480px;margin:0 auto 2.5rem;position:relative}
+.sample-actions{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;position:relative}
+
+/* ── PRICING ── */
+.pricing-card{background:var(--white);border:2px solid var(--gold);border-radius:20px;padding:3rem;max-width:600px;margin:0 auto;position:relative}
+.pricing-badge{position:absolute;top:-14px;left:50%;transform:translateX(-50%);background:var(--gold);color:#fff;font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:.3rem 1.2rem;border-radius:20px;white-space:nowrap}
+.pricing-price{text-align:center;margin-bottom:2rem}
+.price-main{font-family:'Playfair Display',serif;font-size:3.5rem;font-weight:700;color:var(--ink);line-height:1}
+.price-period{font-size:.9rem;color:var(--muted);margin-top:.25rem}
+.pricing-includes{display:flex;flex-direction:column;gap:.6rem;margin-bottom:2rem}
+.pricing-item{display:flex;gap:.75rem;align-items:flex-start;font-size:.9rem;color:var(--brown)}
+.pricing-item::before{content:'✓';color:var(--gold);font-weight:700;flex-shrink:0;margin-top:.05rem}
+.pricing-note{text-align:center;font-size:.8rem;color:var(--muted);margin-top:1.25rem;line-height:1.55}
+
+/* ── FAQ ── */
+.faq{display:flex;flex-direction:column;gap:.75rem;max-width:800px;margin:0 auto}
+.faq-item{background:var(--white);border:1px solid var(--parchment);border-radius:12px;overflow:hidden}
+.faq-q{padding:1.25rem 1.5rem;display:flex;align-items:center;justify-content:space-between;cursor:pointer;gap:1rem;user-select:none;transition:background .2s}
+.faq-q:hover{background:var(--paper)}
+.faq-q-text{font-weight:700;font-size:.95rem;color:var(--ink)}
+.faq-icon{width:24px;height:24px;border-radius:50%;border:1.5px solid var(--parchment);display:flex;align-items:center;justify-content:center;font-size:1rem;color:var(--muted);flex-shrink:0;transition:transform .25s}
+.faq-icon.open{transform:rotate(45deg)}
+.faq-a{display:none;padding:0 1.5rem 1.25rem;font-size:.9rem;color:var(--muted);line-height:1.75;border-top:1px solid var(--parchment)}
+.faq-a.open{display:block}
+.faq-a strong{color:var(--brown)}
+
+/* ── FINAL CTA ── */
+.final-cta{background:var(--ink);padding:7rem 2rem;text-align:center;position:relative;overflow:hidden}
+.final-cta::before{content:'ГЛАВА';position:absolute;bottom:-80px;left:50%;transform:translateX(-50%);font-family:'Playfair Display',serif;font-size:20rem;font-weight:700;color:rgba(255,255,255,.025);white-space:nowrap;pointer-events:none;line-height:1}
+.final-cta h2{font-family:'Playfair Display',serif;font-size:clamp(2rem,5vw,3.5rem);font-weight:700;color:var(--cream);line-height:1.1;margin-bottom:1.25rem;position:relative}
+.final-cta h2 em{font-style:italic;color:var(--gold-light)}
+.final-cta p{font-size:1rem;color:rgba(249,247,242,.5);max-width:500px;margin:0 auto 3rem;line-height:1.75;position:relative}
+.final-actions{display:flex;flex-direction:column;align-items:center;gap:.75rem;position:relative}
+.final-hint{font-size:.8rem;color:rgba(249,247,242,.3)}
+
+/* ── FOOTER ── */
+footer{background:var(--dark);padding:3rem 2rem;border-top:1px solid rgba(255,255,255,.06)}
+.footer-inner{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:3rem}
+@media(max-width:768px){.footer-inner{grid-template-columns:1fr;gap:2rem}}
+.footer-brand .logo{color:var(--cream)}
+.footer-brand p{font-size:.83rem;color:rgba(249,247,242,.35);margin-top:.75rem;line-height:1.7;max-width:280px}
+.footer-col h5{font-size:.68rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:rgba(249,247,242,.3);margin-bottom:.75rem}
+.footer-col ul{list-style:none;display:flex;flex-direction:column;gap:.4rem}
+.footer-col ul li a{font-size:.83rem;color:rgba(249,247,242,.4);transition:color .2s}
+.footer-col ul li a:hover{color:var(--gold)}
+.footer-bottom{max-width:1200px;margin:2.5rem auto 0;padding-top:1.5rem;border-top:1px solid rgba(255,255,255,.06);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.75rem}
+.footer-bottom p{font-size:.75rem;color:rgba(249,247,242,.2)}
+
+/* ── ANIMATIONS ── */
+.fade-up{opacity:0;transform:translateY(24px);transition:opacity .6s,transform .6s}
+.fade-up.visible{opacity:1;transform:none}
+
+/* ── UTILS ── */
+.container{max-width:1200px;margin:0 auto}
+hr.ornament{border:none;text-align:center;margin:3rem 0;color:var(--parchment);font-size:1.2rem;letter-spacing:.5rem}
+hr.ornament::before{content:'· · ·'}
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<header id="header">
+  <div class="nav-inner">
+    <a href="#" class="logo">ГЛАВА<span>.</span></a>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="#how">Как это работает</a></li>
+      <li><a href="#result">Результат</a></li>
+      <li><a href="#reviews">Отзывы</a></li>
+      <li><a href="#faq">Вопросы</a></li>
+      <li><a href="#pricing">Цена</a></li>
+      <li><a href="https://t.me/glava_voice_bot" class="nav-cta">Начать →</a></li>
+    </ul>
+    <div class="burger" id="burger" onclick="toggleMenu()">
+      <span></span><span></span><span></span>
+    </div>
+  </div>
+</header>
+
+
+<!-- ── HERO ── -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-inner">
+    <div>
+      <div class="hero-eyebrow">Семейная биография</div>
+      <h1>Мы задаём вопросы —<br>вам нужно только<br><em>разговаривать</em></h1>
+      <p class="hero-lead">
+        Запишите историю близкого человека. Через 3–5 дней получите красивую книгу-биографию в PDF — с фотографиями, литературно обработанную, готовую к печати.
+      </p>
+      <div class="hero-actions">
+        <a href="https://t.me/glava_voice_bot" class="btn-primary">
+          Начать в Telegram
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+        <a href="#sample" class="btn-secondary">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Скачать пример
+        </a>
+      </div>
+      <div class="hero-trust">
+        <div class="trust-item"><div class="trust-dot"></div> Работает из любого города</div>
+        <div class="trust-item"><div class="trust-dot"></div> 3–5 дней после записи</div>
+        <div class="trust-item"><div class="trust-dot"></div> 6 900 ₽ — полная цена</div>
+      </div>
+    </div>
+
+    <div class="hero-book">
+      <div class="book-spine"></div>
+      <div class="book-card">
+        <div class="book-cover-label">Семейная биография</div>
+        <div class="book-title">Нина Васильевна<br>Орлова</div>
+        <div class="book-subtitle">1941 — наши дни</div>
+        <div class="book-photo">семейное фото</div>
+        <div class="book-preview-line"></div>
+        <div class="book-preview-line w80"></div>
+        <div class="book-preview-line w90"></div>
+        <div class="book-preview-line w60"></div>
+        <div class="book-divider"></div>
+        <div class="book-preview-line w70"></div>
+        <div class="book-preview-line"></div>
+        <div class="book-preview-line w80"></div>
+      </div>
+      <div class="book-pages"></div>
+      <div class="book-badge">PDF · 18 стр.</div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ── TRUST BAR ── -->
+<div class="trust-bar">
+  <div class="trust-bar-inner">
+    <div class="trust-stat">
+      <div class="trust-stat-val">10–25</div>
+      <div class="trust-stat-lab">страниц в готовой биографии</div>
+    </div>
+    <div class="trust-bar-divider"></div>
+    <div class="trust-stat">
+      <div class="trust-stat-val">3–5</div>
+      <div class="trust-stat-lab">рабочих дней на создание</div>
+    </div>
+    <div class="trust-bar-divider"></div>
+    <div class="trust-stat">
+      <div class="trust-stat-val">3</div>
+      <div class="trust-stat-lab">круга бесплатных правок</div>
+    </div>
+    <div class="trust-bar-divider"></div>
+    <div class="trust-stat">
+      <div class="trust-stat-val">30 мин</div>
+      <div class="trust-stat-lab">записи достаточно для книги</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ── HOW IT WORKS ── -->
+<section class="section" id="how">
+  <div class="section-inner">
+    <div class="section-header fade-up">
+      <div class="section-eyebrow">Как это работает</div>
+      <h2 class="section-title">Всё проще, чем кажется</h2>
+      <p class="section-sub">Не нужно готовиться, не нужно знать что спрашивать. Мы ведём разговор сами.</p>
+    </div>
+    <div class="steps fade-up">
+      <div class="step">
+        <div class="step-num">1</div>
+        <h3>Поговорите с близким</h3>
+        <p>Позвоните маме, сядьте рядом с дедушкой, устройте онлайн-встречу. Мы заранее дадим список вопросов-подсказок — вам нужно только нажать запись.</p>
+        <div class="step-detail">
+          <span class="step-item">📱 Голосовое в Telegram</span>
+          <span class="step-item">🎤 Аудиофайл до 500 МБ</span>
+          <span class="step-item">💻 Онлайн-встреча (Zoom, Meet)</span>
+          <span class="step-item">✍️ Текст или письма</span>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <h3>Отправьте запись и фото</h3>
+        <p>Загрузите аудио и несколько фотографий через Telegram-бот или личный кабинет. Добавьте короткие подписи — и всё.</p>
+        <div class="step-detail">
+          <span class="step-item">🔒 Всё конфиденциально</span>
+          <span class="step-item">🖼 Подходят обычные фото</span>
+          <span class="step-item">📂 Документы и грамоты тоже</span>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <h3>Получите готовую книгу</h3>
+        <p>Через 3–5 дней в боте появится красивый PDF. Скачайте, распечатайте в типографии, отправьте родственникам.</p>
+        <div class="step-detail">
+          <span class="step-item">📖 10–25 страниц</span>
+          <span class="step-item">🎨 С дизайном и фото</span>
+          <span class="step-item">✏️ 3 круга правок бесплатно</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ── FOR WHOM ── -->
+<section class="section alt" id="forwhom">
+  <div class="section-inner">
+    <div class="section-header fade-up">
+      <div class="section-eyebrow">Для кого</div>
+      <h2 class="section-title">Узнаёте себя?</h2>
+      <p class="section-sub">Разные причины — один результат: история близкого, сохранённая навсегда</p>
+    </div>
+    <div class="segments fade-up">
+      <div class="seg-card">
+        <div class="seg-emoji">👨‍👩‍👧</div>
+        <div class="seg-who">Дочь или сын</div>
+        <h3>«Надо бы записать историю мамы...»</h3>
+        <p>Вы давно об этом думаете, но всё некогда. Мама живёт в другом городе. Или говорит «да что там рассказывать, обычная жизнь». Мы поможем начать — дадим вопросы, которые раскроют самое важное.</p>
+        <div class="seg-jtbd">«Хочу чтобы мои дети знали какой была бабушка — не из фотографий, а из живой истории»</div>
+      </div>
+      <div class="seg-card">
+        <div class="seg-emoji">🎁</div>
+        <div class="seg-who">Подарок на юбилей</div>
+        <h3>«Хочу подарить что-то настоящее»</h3>
+        <p>Маме или папе скоро 70. Цветы и конфеты — это не то. Биография — это подарок, которого нет в магазине. Вы заказываете сертификат, вручаете на празднике, а запись делаете потом — в спокойной обстановке.</p>
+        <div class="seg-jtbd">«Хочу чтобы мама была звездой этой истории, а вся семья хранила книгу вечно»</div>
+      </div>
+      <div class="seg-card">
+        <div class="seg-emoji">⏳</div>
+        <div class="seg-who">Внук или внучка</div>
+        <h3>«Хочу успеть, пока не поздно»</h3>
+        <p>Бабушка рассказывает такие вещи — про войну, про целину, про то как встретила дедушку. Это история страны, а не только семьи. Вы организуете, настроите бот — бабушке нужно просто разговаривать.</p>
+        <div class="seg-jtbd">«Это повод задать те вопросы, которые давно хочу задать — пока есть возможность»</div>
+      </div>
+      <div class="seg-card">
+        <div class="seg-emoji">🕯️</div>
+        <div class="seg-who">Когда хочется сохранить</div>
+        <h3>«У меня осталось немного записей...»</h3>
+        <p>Старые голосовые сообщения. Несколько писем. Фотографии. Даже 30 минут аудио — это целая жизнь, если уметь её раскрыть. Мы работаем с любым объёмом материала.</p>
+        <div class="seg-jtbd">«Хочу чтобы дети знали кем был этот человек — чтобы его история не ушла вместе с ним»</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ── RESULT ── -->
+<section class="section" id="result">
+  <div class="section-inner">
+    <div class="section-header fade-up">
+      <div class="section-eyebrow">Что вы получите</div>
+      <h2 class="section-title">Биография, а не расшифровка</h2>
+      <p class="section-sub">Живой текст с характером человека — не сухой пересказ фактов</p>
+    </div>
+    <div class="result-inner fade-up">
+      <div>
+        <div class="result-book">
+          <div class="result-book-header">
+            <div class="result-book-title">Евгения Петровна<br>Соколова</div>
+            <div class="result-book-pages">24 стр.</div>
+          </div>
+          <div class="result-book-photo"></div>
+          <div class="result-book-text">
+            <p>Женя, как все звали её в семье, родилась в маленьком городке на Урале в год, когда страна ещё не успела отдышаться от войны. Её мать шила рубашки на заводе, отец работал в шахте. Дома всегда пахло хлебом и машинным маслом — этот запах она помнит до сих пор.</p>
+          </div>
+        </div>
+      </div>
+      <div class="result-features">
+        <div class="result-feat">
+          <div class="feat-icon">📖</div>
+          <div class="feat-body">
+            <h4>Литературная обработка, не расшифровка</h4>
+            <p>Редактор превращает живую речь в читаемый текст с сохранением голоса и характера человека. Никакой «машинности».</p>
+          </div>
+        </div>
+        <div class="result-feat">
+          <div class="feat-icon">🖼</div>
+          <div class="feat-body">
+            <h4>Ваши фотографии — в книге</h4>
+            <p>Семейные снимки, старые документы, грамоты. Вёрстка адаптирует их под формат книги. Можно добавить подписи.</p>
+          </div>
+        </div>
+        <div class="result-feat">
+          <div class="feat-icon">🎨</div>
+          <div class="feat-body">
+            <h4>Дизайн обложки</h4>
+            <p>Каждая книга получает уникальную обложку с именем героя. PDF готов к печати в любой типографии.</p>
+          </div>
+        </div>
+        <div class="result-feat">
+          <div class="feat-icon">✏️</div>
+          <div class="feat-body">
+            <h4>Три круга бесплатных правок</h4>
+            <p>Хотите что-то изменить — факты, стиль, структуру или фото. Скажите что не нравится — через 1–2 дня будет новая версия.</p>
+          </div>
+        </div>
+        <div class="result-feat">
+          <div class="feat-icon">🔒</div>
+          <div class="feat-body">
+            <h4>Всё конфиденциально</h4>
+            <p>Ваши аудиозаписи и фотографии используются только для работы над заказом. Удаляем по запросу. Не передаём третьим лицам.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ── REASSURANCE ── -->
+<section class="section alt">
+  <div class="section-inner">
+    <div class="section-header fade-up">
+      <div class="section-eyebrow">Часто беспокоятся</div>
+      <h2 class="section-title">Мы это предусмотрели</h2>
+    </div>
+    <div class="reassure-grid fade-up">
+      <div class="reassure-card">
+        <div class="reassure-icon">😶</div>
+        <h4>«Бабушка говорит: кому это нужно»</h4>
+        <p>Это стеснение, не отказ. Скажите ей: «Мы хотим сохранить это для детей и внуков — чтобы они знали твою историю». Обычно этого достаточно.</p>
+        <div class="reassure-source">Инсайт из исследования аудитории</div>
+      </div>
+      <div class="reassure-card">
+        <div class="reassure-icon">🗺</div>
+        <h4>«Мама живёт в другом городе»</h4>
+        <p>Расстояние не имеет значения. Позвоните по телефону или видеосвязи, запишите разговор на телефон и загрузите файл через кабинет. Работает из любой точки страны.</p>
+      </div>
+      <div class="reassure-card">
+        <div class="reassure-icon">⏱</div>
+        <h4>«У меня мало записей — только 30 минут»</h4>
+        <p>Достаточно. Из 30 минут живого разговора получается 8–12 страниц настоящей биографии. Глубина важнее хронометража.</p>
+      </div>
+      <div class="reassure-card">
+        <div class="reassure-icon">🎙</div>
+        <h4>«Дед говорит неправильно, делает паузы»</h4>
+        <p>Именно так и должно быть. Мы сохраняем характер речи, интонации и истории — а не исправляем их. Текст будет живым потому что таким был разговор.</p>
+      </div>
+      <div class="reassure-card">
+        <div class="reassure-icon">🤖</div>
+        <h4>«AI напишет шаблонно и бездушно»</h4>
+        <p>Каждая биография проходит литературную обработку. Мы не делаем «расшифровку плюс форматирование» — мы пишем историю. Скачайте пример и убедитесь сами.</p>
+      </div>
+      <div class="reassure-card">
+        <div class="reassure-icon">📋</div>
+        <h4>«Не знаю что спрашивать»</h4>
+        <p>Не нужно. После оплаты вы получаете готовый список вопросов-подсказок: про детство, работу, любовь, трудности, чем гордится, что хочет передать. Вам нужно только нажать запись.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ── SAMPLE ── -->
+<section class="section" id="sample">
+  <div class="section-inner">
+    <div class="sample-cta fade-up">
+      <h2>Посмотрите, как выглядит готовая биография</h2>
+      <p>Реальный пример PDF — чтобы вы сами увидели качество перед покупкой</p>
+      <div class="sample-actions">
+        <a href="#" class="btn-primary">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Скачать пример биографии
+        </a>
+        <a href="https://t.me/glava_voice_bot" class="btn-secondary" style="border-color:rgba(249,247,242,.25)">Начать свою →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ── REVIEWS ── -->
+<section class="section alt" id="reviews">
+  <div class="section-inner">
+    <div class="section-header fade-up">
+      <div class="section-eyebrow">Отзывы</div>
+      <h2 class="section-title">Что говорят клиенты</h2>
+    </div>
+    <div class="reviews-track fade-up">
+      <div class="review-card">
+        <div class="review-stars">★★★★★</div>
+        <div class="review-text">«Заказала маме на 70-летие. Вручила конверт с сертификатом на юбилее — она расплакалась. Потом записали три разговора по 40 минут. Книга получилась такой живой, что я сама перечитывала несколько раз. Дети просят свои экземпляры.»</div>
+        <div class="review-author">
+          <div class="review-avatar">И</div>
+          <div>
+            <div class="review-name">Ирина К.</div>
+            <div class="review-role">Заказала для мамы на юбилей</div>
+          </div>
+        </div>
+      </div>
+      <div class="review-card">
+        <div class="review-stars">★★★★★</div>
+        <div class="review-text">«Боялся что получится "машинный" текст. Открыл PDF и понял — нет. Там дедушка. Его интонации, его юмор, его способ видеть жизнь. Я позвонил дочке и сказал: распечатай, мы будем хранить это вечно.»</div>
+        <div class="review-author">
+          <div class="review-avatar">А</div>
+          <div>
+            <div class="review-name">Андрей М.</div>
+            <div class="review-role">Записал историю деда, 83 года</div>
+          </div>
+        </div>
+      </div>
+      <div class="review-card">
+        <div class="review-stars">★★★★★</div>
+        <div class="review-text">«Нашла у мамы старые голосовые — 40 минут. Думала не хватит. Получила 14 страниц живой истории. Читаю и слышу её голос. Теперь дочка знает кем была её бабушка.»</div>
+        <div class="review-author">
+          <div class="review-avatar">Т</div>
+          <div>
+            <div class="review-name">Татьяна Р.</div>
+            <div class="review-role">Сделала по записям мамы</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ── PRICING ── -->
+<section class="section" id="pricing">
+  <div class="section-inner">
+    <div class="section-header fade-up">
+      <div class="section-eyebrow">Стоимость</div>
+      <h2 class="section-title">Прозрачная цена</h2>
+      <p class="section-sub">Никаких скрытых доплат. Всё включено с первого заказа.</p>
+    </div>
+    <div class="fade-up">
+      <div class="pricing-card">
+        <div class="pricing-badge">Полная биография</div>
+        <div class="pricing-price">
+          <div class="price-main">6 900 ₽</div>
+          <div class="price-period">за одного персонажа</div>
+        </div>
+        <div class="pricing-includes">
+          <div class="pricing-item">Подробное руководство по проведению интервью</div>
+          <div class="pricing-item">Готовый список вопросов-подсказок по темам жизни</div>
+          <div class="pricing-item">Транскрипция и литературная обработка записи</div>
+          <div class="pricing-item">Биография 10–25 страниц с вашими фотографиями</div>
+          <div class="pricing-item">Дизайн обложки и профессиональная вёрстка</div>
+          <div class="pricing-item">3 круга бесплатных правок — факты, стиль, фото</div>
+          <div class="pricing-item">PDF готов к печати в любой типографии</div>
+        </div>
+        <a href="https://t.me/glava_voice_bot" class="btn-primary" style="width:100%;justify-content:center;font-size:1rem;padding:1rem">
+          Начать в Telegram
+        </a>
+        <p class="pricing-note">
+          Оплата через ЮKassa: карта, СБП, другие способы.<br>
+          Если результат не понравится — вернём деньги в течение 24 часов.<br>
+          Хотите подарить? <strong>Купите подарочный сертификат</strong> — вручите на празднике, запишите потом.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ── FAQ ── -->
+<section class="section alt" id="faq">
+  <div class="section-inner">
+    <div class="section-header fade-up">
+      <div class="section-eyebrow">Вопросы и ответы</div>
+      <h2 class="section-title">Разберём все сомнения</h2>
+    </div>
+    <div class="faq fade-up">
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">
+          <span class="faq-q-text">Что именно я получу в итоге?</span>
+          <div class="faq-icon">+</div>
+        </div>
+        <div class="faq-a">
+          Вы получите PDF-файл: литературно обработанная биография на <strong>10–25 страниц</strong>, с вашими фотографиями, с дизайном обложки. Текст написан как настоящая история — живым языком, с характером человека, не как сухая анкета. Файл готов к печати в типографии или дома.
+        </div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">
+          <span class="faq-q-text">Нужно ли готовиться к интервью? Что спрашивать?</span>
+          <div class="faq-icon">+</div>
+        </div>
+        <div class="faq-a">
+          <strong>Ничего готовить не нужно.</strong> После оплаты вы получите готовый список вопросов-подсказок — по темам детства, юности, работы, семьи, трудностей и ценностей. Просто включите запись и следуйте вопросам. Ваш близкий просто разговаривает — никакой подготовки с его стороны тоже не нужно.
+        </div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">
+          <span class="faq-q-text">Мама живёт в другом городе. Как записать?</span>
+          <div class="faq-icon">+</div>
+        </div>
+        <div class="faq-a">
+          Без проблем. <strong>Позвоните по телефону или видеосвязи</strong>, включите запись на телефоне (стандартная функция диктофона) и просто разговаривайте по вопросам-подсказкам. Потом загрузите аудиофайл через личный кабинет — принимаем файлы до 500 МБ. Продукт работает из любого города и любой страны.
+        </div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">
+          <span class="faq-q-text">У меня есть только 30–40 минут записи. Хватит?</span>
+          <div class="faq-icon">+</div>
+        </div>
+        <div class="faq-a">
+          <strong>Да, хватит.</strong> 30–40 минут живого разговора — это 8–12 страниц биографии. Важна не длина, а глубина. Один хороший разговор с правильными вопросами даёт больше, чем три часа поверхностной беседы. Если материала меньше — напишите нам, обсудим что можно сделать.
+        </div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">
+          <span class="faq-q-text">А если у меня только фотографии и письма, без аудио?</span>
+          <div class="faq-icon">+</div>
+        </div>
+        <div class="faq-a">
+          Мы принимаем <strong>любые материалы</strong>: аудиозаписи, голосовые сообщения, текстовые воспоминания, сканы писем, фотографии с описаниями. Биографию можно создать по любым источникам — напишите нам через бот и расскажите что у вас есть.
+        </div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">
+          <span class="faq-q-text">Текст будет «машинным», безликим?</span>
+          <div class="faq-icon">+</div>
+        </div>
+        <div class="faq-a">
+          Нет. Каждая биография проходит <strong>литературную обработку</strong>: мы сохраняем характер речи, интонации и истории человека. Цель — не пересказ, а живой текст, в котором вы узнаёте своего близкого. <strong>Скачайте пример</strong> — убедитесь сами прежде чем платить.
+        </div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">
+          <span class="faq-q-text">Как подарить биографию на юбилей? Есть сертификат?</span>
+          <div class="faq-icon">+</div>
+        </div>
+        <div class="faq-a">
+          Да. При оформлении выберите <strong>«Подарок»</strong> — вы получите красивую PDF-карточку с именем юбиляра, которую можно распечатать или показать на планшете в момент вручения. Запись делается потом, в удобное время — без спешки. Это работает и как коллективный подарок от всей семьи.
+        </div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">
+          <span class="faq-q-text">Мои данные в безопасности?</span>
+          <div class="faq-icon">+</div>
+        </div>
+        <div class="faq-a">
+          <strong>Да.</strong> Ваши аудиозаписи и фотографии используются исключительно для работы над вашим заказом. Мы не передаём их третьим лицам, не используем в рекламе и не показываем в портфолио без вашего явного разрешения. Удалим всё по вашему запросу. Оплата через сертифицированную платформу ЮKassa — данные карты мы не храним.
+        </div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">
+          <span class="faq-q-text">Что если результат не понравится?</span>
+          <div class="faq-icon">+</div>
+        </div>
+        <div class="faq-a">
+          Включены <strong>три круга бесплатных правок</strong> — факты, стиль, структура, фото, обложка. Если после всех правок результат всё равно не устраивает — напишите нам, опишите что не так. Заявка на возврат рассматривается в течение 24 часов.
+        </div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">
+          <span class="faq-q-text">Можно ли заказать печатную книгу, а не только PDF?</span>
+          <div class="faq-icon">+</div>
+        </div>
+        <div class="faq-a">
+          PDF адаптирован для печати — отнесите в любую типографию. Мы также можем рекомендовать партнёрские типографии. Услуга заказа печати напрямую через нас сейчас в разработке — напишите нам, если это важно для вас, мы сообщим когда будет готово.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ── FINAL CTA ── -->
+<section class="final-cta" id="start">
+  <h2>Не откладывайте<br>самый важный<br><em>разговор в жизни</em></h2>
+  <p>Пока есть кому рассказать — у вас есть время. Один разговор сегодня станет историей, которую семья будет хранить вечно.</p>
+  <div class="final-actions">
+    <a href="https://t.me/glava_voice_bot" class="btn-primary" style="font-size:1.05rem;padding:1rem 2.5rem">
+      Начать в Telegram — @glava_voice_bot
+    </a>
+    <div class="final-hint">Или напишите «Хочу главу» — и мы начнём</div>
+  </div>
+</section>
+
+
+<!-- ── FOOTER ── -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <div class="logo">ГЛАВА<span style="color:var(--gold)">.</span></div>
+      <p>Сервис семейных биографий. Помогаем сохранить живую историю близких, пока её можно услышать из первых уст.</p>
+    </div>
+    <div class="footer-col">
+      <h5>Навигация</h5>
+      <ul>
+        <li><a href="#how">Как это работает</a></li>
+        <li><a href="#result">Что вы получите</a></li>
+        <li><a href="#sample">Пример биографии</a></li>
+        <li><a href="#reviews">Отзывы</a></li>
+        <li><a href="#pricing">Стоимость</a></li>
+        <li><a href="#faq">Вопросы и ответы</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h5>Контакты</h5>
+      <ul>
+        <li><a href="https://t.me/glava_voice_bot">@glava_voice_bot</a></li>
+        <li><a href="https://t.me/glava_book">Telegram-канал</a></li>
+        <li><a href="https://cabinet.glava.family">Личный кабинет</a></li>
+        <li><a href="mailto:hello@glava.family">hello@glava.family</a></li>
+        <li><a href="#">Политика конфиденциальности</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>© 2026 ГЛАВА · glava.family</p>
+    <p>Оплата через ЮKassa · Данные защищены</p>
+  </div>
+</footer>
+
+
+<script>
+// ── SCROLL HEADER ──
+const header=document.getElementById('header');
+window.addEventListener('scroll',()=>{
+  header.classList.toggle('scrolled',window.scrollY>60);
+});
+
+// ── BURGER ──
+function toggleMenu(){
+  document.getElementById('navLinks').classList.toggle('open');
+}
+
+// ── FAQ ──
+function toggleFaq(el){
+  const a=el.nextElementSibling;
+  const icon=el.querySelector('.faq-icon');
+  const open=a.classList.contains('open');
+  // close all
+  document.querySelectorAll('.faq-a').forEach(i=>i.classList.remove('open'));
+  document.querySelectorAll('.faq-icon').forEach(i=>{i.classList.remove('open');i.textContent='+'});
+  if(!open){
+    a.classList.add('open');
+    icon.classList.add('open');
+    icon.textContent='×';
+  }
+}
+
+// ── SCROLL ANIMATIONS ──
+const observer=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting)e.target.classList.add('visible');
+  });
+},{threshold:.12});
+document.querySelectorAll('.fade-up').forEach(el=>observer.observe(el));
+
+// ── CLOSE NAV ON LINK CLICK (mobile) ──
+document.querySelectorAll('#navLinks a').forEach(a=>{
+  a.addEventListener('click',()=>document.getElementById('navLinks').classList.remove('open'));
+});
+</script>
+</body>
+</html>

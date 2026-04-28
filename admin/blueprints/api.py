@@ -1,17 +1,33 @@
 """
 Внутренний API для n8n — без UI-авторизации.
 Доступен только с localhost ИЛИ с правильным X-Api-Key заголовком.
-Маршруты: /api/prompts/<role>    GET
-          /api/jobs/update       POST
-          /api/send-book-pdf     POST  — генерация PDF и отправка в Telegram
+Маршруты: /api/prompts/<role>           GET
+          /api/prompts/<role>/upload     POST  — загрузка .md промпта
+          /api/jobs/update               POST
+          /api/send-book-pdf             POST  — генерация PDF и отправка в Telegram
 """
+import json
 import logging
 import os
+import shutil
+from datetime import datetime
+from pathlib import Path
 
 import requests as _requests
 from flask import Blueprint, abort, jsonify, request
 
 from admin import db_admin as dba
+
+_ROOT_DIR = Path(__file__).resolve().parent.parent.parent
+_PROMPTS_DIR = _ROOT_DIR / "prompts"
+_PROMPTS_BACKUP_DIR = _PROMPTS_DIR / "backups"
+_PIPELINE_CONFIG_PATH = _PROMPTS_DIR / "pipeline_config.json"
+
+_VALID_AGENT_KEYS = {
+    "cleaner", "fact_extractor", "historian", "ghostwriter", "fact_checker",
+    "literary_editor", "proofreader", "photo_editor", "layout_designer",
+    "qa_layout", "cover_designer", "layout_art_director", "interview_architect",
+}
 
 bp = Blueprint("api", __name__, url_prefix="/api")
 logger = logging.getLogger(__name__)
@@ -47,6 +63,78 @@ def get_prompt(role: str):
         "version": row.get("version", 0),
         "found": True,
     }), 200
+
+
+# ── POST /api/prompts/<role>/upload ───────────────────────────────
+
+@bp.post("/prompts/<role>/upload")
+def upload_prompt(role: str):
+    """Загрузка .md-файла промпта через API.
+
+    Multipart form-data:
+      file      — .md файл с содержимым промпта (обязательно)
+      filename  — имя для сохранения, например 11_interview_architect_v4.2.md
+                  (опционально; если не указано — перезаписывает текущий активный файл)
+
+    Авторизация: X-Api-Key header.
+
+    Возвращает:
+      {"ok": true, "saved_as": "...", "size_kb": "..."}
+    """
+    _check_access()
+
+    if role not in _VALID_AGENT_KEYS:
+        return jsonify({"ok": False, "error": f"Unknown agent: {role}"}), 400
+
+    f = request.files.get("file")
+    if not f or not f.filename:
+        return jsonify({"ok": False, "error": "file required"}), 400
+    if not f.filename.lower().endswith(".md"):
+        return jsonify({"ok": False, "error": "only .md files accepted"}), 400
+
+    # Загружаем конфиг
+    if not _PIPELINE_CONFIG_PATH.exists():
+        return jsonify({"ok": False, "error": "pipeline_config.json not found"}), 500
+    with open(_PIPELINE_CONFIG_PATH, encoding="utf-8") as fp:
+        cfg = json.load(fp)
+
+    # Имя целевого файла: из параметра или из конфига
+    custom_filename = (request.form.get("filename") or "").strip()
+    if custom_filename:
+        if not custom_filename.endswith(".md"):
+            return jsonify({"ok": False, "error": "filename must end with .md"}), 400
+        target_name = custom_filename
+        # Обновляем prompt_file в конфиге на новое имя
+        if role not in cfg:
+            cfg[role] = {}
+        cfg[role]["prompt_file"] = target_name
+    else:
+        target_name = cfg.get(role, {}).get("prompt_file") or f"{role}_v1.md"
+
+    target_path = _PROMPTS_DIR / target_name
+
+    # Бэкап старого файла
+    if target_path.exists():
+        _PROMPTS_BACKUP_DIR.mkdir(parents=True, exist_ok=True)
+        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        backup_name = f"{target_path.stem}_{ts}{target_path.suffix}"
+        shutil.copy2(target_path, _PROMPTS_BACKUP_DIR / backup_name)
+
+    # Сохраняем новый файл
+    _PROMPTS_DIR.mkdir(parents=True, exist_ok=True)
+    f.save(str(target_path))
+    size_kb = f"{target_path.stat().st_size / 1024:.1f}"
+
+    # Обновляем метаданные в конфиге
+    if role not in cfg:
+        cfg[role] = {}
+    cfg[role]["_last_uploaded"] = datetime.now().strftime("%d.%m.%Y %H:%M")
+    cfg[role]["_uploaded_filename"] = f.filename
+    with open(_PIPELINE_CONFIG_PATH, "w", encoding="utf-8") as fp:
+        json.dump(cfg, fp, ensure_ascii=False, indent=2)
+
+    logger.info("api: prompt uploaded role=%s file=%s size=%s KB", role, target_name, size_kb)
+    return jsonify({"ok": True, "saved_as": target_name, "size_kb": size_kb}), 200
 
 
 # ── POST /api/jobs/update ─────────────────────────────────────────
@@ -206,8 +294,22 @@ def send_book_pdf():
     safe_name = "".join(c for c in character_name if c.isalnum() or c in " _-")[:40].strip()
     filename = f"Glava_{safe_name or 'kniga'}.pdf"
 
+    # Сохраняем версию книги ДО отправки в Telegram (не зависит от успеха доставки)
+    saved_version = None
+    try:
+        saved_version = dba.save_book_version(
+            int(telegram_id),
+            bio_text=bio_text,
+            character_name=character_name,
+            pdf_filename=filename,
+        )
+        logger.info("send_book_pdf: book_version сохранена для telegram_id=%s", telegram_id)
+    except Exception as e:
+        logger.warning("send_book_pdf: не удалось сохранить book_version: %s", e)
+
     # Отправляем через Telegram Bot API sendDocument
     tg_url = f"https://api.telegram.org/bot{bot_token}/sendDocument"
+    tg_error = None
     try:
         resp = _requests.post(
             tg_url,
@@ -219,27 +321,24 @@ def send_book_pdf():
         tg_result = resp.json()
         if not tg_result.get("ok"):
             logger.error("send_book_pdf: Telegram вернул ошибку: %s", tg_result)
-            return jsonify({"error": "telegram send failed", "detail": tg_result}), 502
+            tg_error = tg_result
+        else:
+            logger.info(
+                "send_book_pdf: PDF '%s' (%d байт) отправлен telegram_id=%s",
+                filename, len(pdf_bytes), telegram_id,
+            )
     except Exception as e:
-        logger.exception("send_book_pdf: ошибка отправки в Telegram: %s", e)
-        return jsonify({"error": f"telegram send failed: {e}"}), 502
+        logger.warning("send_book_pdf: ошибка отправки в Telegram (книга сохранена в БД): %s", e)
+        tg_error = str(e)
 
-    # Сохраняем версию книги для Phase B
-    try:
-        dba.save_book_version(
-            int(telegram_id),
-            bio_text=bio_text,
-            character_name=character_name,
-            pdf_filename=filename,
-        )
-    except Exception as e:
-        logger.warning("send_book_pdf: не удалось сохранить book_version: %s", e)
-
-    logger.info(
-        "send_book_pdf: PDF '%s' (%d байт) отправлен telegram_id=%s",
-        filename, len(pdf_bytes), telegram_id,
-    )
-    return jsonify({"ok": True, "filename": filename, "size": len(pdf_bytes)}), 200
+    return jsonify({
+        "ok": True,
+        "filename": filename,
+        "size": len(pdf_bytes),
+        "telegram_sent": tg_error is None,
+        "telegram_error": tg_error,
+        "version": saved_version,
+    }), 200
 
 
 # ── POST /api/orchestrate/fact-check ─────────────────────────────

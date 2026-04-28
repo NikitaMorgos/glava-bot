@@ -1,0 +1,108 @@
+{
+  "project_id": "karakulina_stage4",
+  "iteration": 1,
+  "verdict": "fail",
+  "issues": [
+    {
+      "id": "issue_001",
+      "category": "callout",
+      "severity": "critical",
+      "page": 17,
+      "description": "Callout_01 отсутствует на странице 17. Согласно page_plan, на странице 17 должен быть только текст (paragraphs p_ch03_004-006), но page_map указывает наличие callout_01.",
+      "fix_suggestion": "Разместить callout_01 на странице 17 согласно page_map или исправить page_map, если callout был перемещён на другую страницу с обоснованием в technical_notes."
+    },
+    {
+      "id": "issue_002",
+      "category": "callout",
+      "severity": "critical",
+      "page": 18,
+      "description": "Callout_02 и callout_03 отсутствуют на странице 18. Согласно page_plan, на странице 18 должен быть только текст (paragraphs p_ch03_007-009), но page_map указывает наличие обеих выносок.",
+      "fix_suggestion": "Разместить callout_02 и callout_03 на странице 18 согласно page_map или исправить page_map с обоснованием перемещения в technical_notes."
+    },
+    {
+      "id": "issue_003",
+      "category": "callout",
+      "severity": "critical",
+      "page": 19,
+      "description": "Callout_04 отсутствует на странице 19. Page_map указывает наличие callout_04 на странице начала главы ch_04, но page_plan не предусматривает выноски на этой странице.",
+      "fix_suggestion": "Разместить callout_04 на странице 19 согласно page_map или предоставить обоснование в technical_notes для изменения размещения."
+    },
+    {
+      "id": "issue_004",
+      "category": "callout",
+      "severity": "critical",
+      "page": 20,
+      "description": "Callout_05 отсутствует на странице 20. Page_map указывает наличие callout_05, но page_plan предусматривает только текст.",
+      "fix_suggestion": "Разместить callout_05 на странице 20 согласно page_map или исправить несоответствие между page_plan и page_map."
+    },
+    {
+      "id": "issue_005",
+      "category": "callout",
+      "severity": "critical",
+      "page": 22,
+      "description": "Callout_06 отсутствует на странице 22. Page_map указывает наличие callout_06 в эпилоге, но page_plan не предусматривает выноски на этой странице.",
+      "fix_suggestion": "Разместить callout_06 на странице 22 согласно page_map или предоставить обоснование изменения размещения."
+    },
+    {
+      "id": "issue_006",
+      "category": "integrity",
+      "severity": "critical",
+      "page": null,
+      "description": "Критическое несоответствие между page_plan (контракт) и page_map (отчёт исполнения). Page_plan не содержит callout-ы на страницах 17-22, но page_map указывает их размещение на этих страницах.",
+      "fix_suggestion": "Привести page_map в соответствие с page_plan или предоставить technical_notes с обоснованием всех отклонений от контракта."
+    }
+  ],
+  "checklist": {
+    "pagination": {
+      "status": "pass",
+      "details": "Пагинация соответствует стандарту: обложка (стр.1) и blank (стр.2) без номеров, TOC начинается с visible номера 1 на physical странице 3. Всего 33 страницы."
+    },
+    "toc": {
+      "status": "warning",
+      "details": "Невозможно проверить соответствие оглавления без доступа к PDF. Требуется визуальная проверка номеров страниц для 5 глав."
+    },
+    "orphan_widow": {
+      "status": "warning",
+      "details": "Невозможно проверить висячие строки без визуального доступа к PDF. Требуется проверка всех текстовых страниц."
+    },
+    "photos": {
+      "status": "pass",
+      "total_expected": 22,
+      "total_found": 22,
+      "details": "Все 22 фотографии присутствуют в page_map согласно expected_content. Размещение соответствует page_plan."
+    },
+    "callouts": {
+      "status": "fail",
+      "total_expected": 6,
+      "total_found": 6,
+      "details": "Все 6 callout-ов присутствуют в page_map, но их размещение не соответствует page_plan. Критическое нарушение контракта Stage4."
+    },
+    "headers_footers": {
+      "status": "warning",
+      "details": "Невозможно проверить колонтитулы без визуального доступа к PDF."
+    },
+    "margins": {
+      "status": "warning",
+      "details": "Невозможно проверить поля без визуального доступа к PDF. Style_guide указывает margins: top/bottom 20mm, inner 20mm, outer 15mm."
+    },
+    "typography": {
+      "status": "warning",
+      "details": "Невозможно проверить шрифты и читаемость без визуального доступа к PDF."
+    },
+    "integrity": {
+      "status": "fail",
+      "details": "Критическое нарушение целостности: page_plan и page_map не соответствуют друг другу по размещению callout-ов."
+    }
+  },
+  "regression_check": {
+    "performed": false,
+    "previous_issues_resolved": []
+  },
+  "summary": {
+    "critical_issues": 6,
+    "major_issues": 0,
+    "minor_issues": 0,
+    "total_pages_checked": 33,
+    "overall_assessment": "Макет содержит критические нарушения контракта Stage4: все 6 callout-ов размещены не согласно page_plan без обоснования в technical_notes. Это нарушает основное правило соответствия контракта и отчёта исполнения 1:1. Требуется исправление размещения callout-ов или предоставление обоснований отклонений."
+  }
+}

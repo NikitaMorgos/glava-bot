@@ -1,0 +1,114 @@
+# StoryWorth question bank (raw)
+
+Source: user export from StoryWorth `Browse questions`.
+Status: raw, contains duplicates and near-duplicates.
+
+## childhood (excerpt)
+
+How did you overcome a difficult experience in your childhood?
+Did you have any nicknames when you were a child? How did you feel about them?
+How did you get to school as a child?
+Did you ever move as a child? What was that experience like?
+Did you ever get in trouble in school?
+What is one of your fondest childhood memories?
+What were your favorite books or stories when you were a child?
+What games or toys did you enjoy most when you were young?
+What was your mom like when you were a child?
+How would you describe your behavior as a child?
+What are some of your childhood accomplishments?
+What was your dad like when you were a child?
+How did your parents pick your name?
+How did you rebel as a child?
+What did you wear when younger that mortifies you now?
+Are you still friends with any of your classmates from grade school?
+If you could change something about your childhood, what would it be?
+What were you like as a teenager?
+How would you describe the neighborhood where you grew up?
+Was there anything unusual about your birth?
+What was your favorite candy as a child?
+What is one of your earliest childhood memories?
+What were memorable vacations from childhood?
+Who had the most positive influence on you as a child?
+Did you have enough money growing up?
+Did you ever get lost as a child?
+How would you describe your childhood bedroom?
+What do you miss about being a child?
+What fascinated you as a child?
+
+## education (excerpt)
+
+What were your friends like in college?
+Are you still friends with anyone from high school?
+What motivated you to go to graduate school?
+Did you have a job while you were in graduate school?
+Did you have a car in high school or college?
+Did you work while you were in college?
+How did you choose where to go to college?
+Outside of classes, what activities did you do in college?
+What were your favorite courses in college?
+What were your favorite subjects in high school?
+Who were your favorite professors in college?
+What advice would you give someone who's about to go to college?
+Did you write a thesis or complete a major project in school?
+Did you pull all-nighters when you were in college?
+What's one thing you wish you'd known before going to college?
+
+## family & home (excerpt)
+
+How far back can you trace your family ancestry?
+Who are the funniest people in your family?
+Do you have any notable ancestors?
+How would you describe your parents' relationship?
+How are you more like your mother/father?
+What are your favorite family traditions?
+What are the most important lessons you learned from your parents?
+Do you have any family secrets?
+What keepsakes or family heirlooms do you treasure most?
+What is your immigration story?
+What is your perspective on owning vs renting a home?
+When you think of the word “home,” which place comes to mind?
+
+## love & friendships (excerpt)
+
+What qualities do you most value in your friends?
+How did you meet your spouse? When did you know you wanted to marry them?
+What was one of the most difficult times in your relationship? How did you get through it?
+How did you decide to get married?
+What was your proposal like?
+What was one of the best dates you've ever been on?
+Do you believe in love at first sight?
+How do you define love?
+What was your first impression of your spouse or partner?
+What was your first date like with your spouse or partner?
+Have you ever lost a friendship that meant a lot to you?
+How did you recover from a significant breakup or divorce?
+
+## work life (excerpt)
+
+How did you decide when to change jobs?
+Did you consider any careers other than the one where you landed?
+What was your first boss like?
+What was your best boss like? What did you learn from them?
+What was your worst boss like? How did you deal with them?
+Have you ever been fired or laid off?
+What is the best job you've ever had?
+What stands out as one of your most meaningful projects?
+What is your best advice about work or career?
+
+## challenges / thought provokers (excerpt)
+
+Have you ever had to stand up for your principles or personal values?
+Have you ever feared for your life?
+Have you ever had to make a tough moral decision?
+What is one of your greatest fears?
+Do you have any regrets?
+How do you want to be remembered?
+What do you think is the meaning of life?
+What advice would you give your 20-year-old self?
+If this was the last thing you wrote, what words of wisdom would you share?
+If you had the chance to do it all over, what would you do differently?
+
+## Note
+
+This is a working raw file for CCO analysis from folder.
+If needed, append more exported questions below preserving one-question-per-line format.

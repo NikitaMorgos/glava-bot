@@ -1,0 +1,121 @@
+{
+  "project_id": "karakulina_stage4",
+  "iteration": 3,
+  "verdict": "fail",
+  "issues": [
+    {
+      "id": "issue_001",
+      "category": "integrity",
+      "severity": "critical",
+      "page": null,
+      "description": "ЭСКАЛАЦИЯ: Критическое структурное несоответствие между page_map и page_plan сохраняется после 3 итераций. Page_map показывает 33 страницы, но структура глав не соответствует page_plan. В page_map отсутствуют callouts на многих страницах, где они должны быть согласно page_plan.",
+      "fix_suggestion": "Требуется полная синхронизация page_map с page_plan: добавить все недостающие callouts (callout_02, callout_03 на стр. 17; callout_04 на стр. 19; callout_05 на стр. 20; callout_06 на стр. 22), обеспечить точное соответствие элементов на каждой странице."
+    },
+    {
+      "id": "issue_002",
+      "category": "callout",
+      "severity": "critical",
+      "page": null,
+      "description": "Критическая нехватка callouts: page_map показывает только 1 callout (callout_01 на стр. 8), но expected_content требует 6 callouts. Отсутствуют: callout_02, callout_03, callout_04, callout_05, callout_06.",
+      "fix_suggestion": "Добавить все недостающие callouts согласно page_plan: callout_02 и callout_03 на стр. 17 (глава ch_03), callout_04 на стр. 19 (глава ch_04), callout_05 на стр. 20 (глава ch_04), callout_06 на стр. 22 (epilogue)."
+    },
+    {
+      "id": "issue_003",
+      "category": "toc",
+      "severity": "critical",
+      "page": 3,
+      "description": "Оглавление требует пересчёта номеров страниц. При текущей структуре главы начинаются: ch_01 на стр. 4, ch_02 на стр. 6, ch_03 на стр. 16, ch_04 на стр. 19, epilogue на стр. 21. Оглавление должно отражать эти номера.",
+      "fix_suggestion": "Обновить оглавление с корректными номерами страниц: 'Основные даты жизни' → стр. 4, 'История жизни' → стр. 6, 'Портрет человека' → стр. 16, 'Интересные факты и жизненные истории' → стр. 19, 'Путь длиною в жизнь' → стр. 21."
+    },
+    {
+      "id": "issue_004",
+      "category": "pagination",
+      "severity": "major",
+      "page": null,
+      "description": "Нумерация страниц начинается некорректно: обложка (стр. 1) и пустая страница (стр. 2) не должны иметь видимых номеров. Нумерация должна начинаться с оглавления как стр. 1.",
+      "fix_suggestion": "Скрыть номера страниц на обложке (стр. 1) и пустой странице (стр. 2). Оглавление (стр. 3) должно отображаться как стр. 1, далее последовательная нумерация."
+    },
+    {
+      "id": "issue_005",
+      "category": "integrity",
+      "severity": "major",
+      "page": null,
+      "description": "Регрессия: проблемы из предыдущих итераций не полностью устранены. Structural_layout_guard по-прежнему не пройден, что указывает на системные проблемы в структуре макета.",
+      "fix_suggestion": "Провести полную проверку соответствия всех элементов между page_map, page_plan и expected_content. Убедиться, что каждый элемент размещён на правильной странице согласно page_plan."
+    }
+  ],
+  "checklist": {
+    "pagination": {
+      "status": "fail",
+      "details": "Нумерация начинается с обложки, что некорректно. Обложка и пустая страница должны быть без номеров."
+    },
+    "toc": {
+      "status": "fail",
+      "details": "Оглавление требует обновления номеров страниц после исправления структуры."
+    },
+    "orphan_widow": {
+      "status": "warning",
+      "details": "Невозможно проверить без визуального PDF в режиме structural_qa."
+    },
+    "photos": {
+      "status": "pass",
+      "total_expected": 22,
+      "total_found": 22,
+      "details": "Все 22 фотографии присутствуют в page_map согласно expected_content."
+    },
+    "callouts": {
+      "status": "fail",
+      "total_expected": 6,
+      "total_found": 1,
+      "details": "Критическая нехватка: найден только callout_01, отсутствуют callout_02, callout_03, callout_04, callout_05, callout_06."
+    },
+    "headers_footers": {
+      "status": "warning",
+      "details": "Невозможно проверить без визуального PDF в режиме structural_qa."
+    },
+    "margins": {
+      "status": "warning",
+      "details": "Style_guide определяет поля, но визуальная проверка невозможна в structural_qa режиме."
+    },
+    "typography": {
+      "status": "warning",
+      "details": "Style_guide определяет типографику, но визуальная проверка невозможна в structural_qa режиме."
+    },
+    "integrity": {
+      "status": "fail",
+      "details": "Критические структурные несоответствия между page_map и page_plan. Structural_layout_guard не пройден."
+    }
+  },
+  "regression_check": {
+    "performed": true,
+    "previous_issues_resolved": [
+      {
+        "issue_id": "issue_001",
+        "status": "partially_resolved"
+      },
+      {
+        "issue_id": "issue_002",
+        "status": "partially_resolved"
+      },
+      {
+        "issue_id": "issue_003",
+        "status": "persists"
+      },
+      {
+        "issue_id": "issue_004",
+        "status": "persists"
+      },
+      {
+        "issue_id": "issue_005",
+        "status": "resolved"
+      }
+    ]
+  },
+  "summary": {
+    "critical_issues": 3,
+    "major_issues": 2,
+    "minor_issues": 0,
+    "total_pages_checked": 33,
+    "overall_assessment": "ЭСКАЛАЦИЯ: после 3 итераций критические проблемы макета не устранены. Основные проблемы: отсутствие 5 из 6 callouts, некорректная нумерация страниц, неточное оглавление. Требуется вмешательство Продюсера для решения системных проблем соответствия между page_map и page_plan."
+  }
+}

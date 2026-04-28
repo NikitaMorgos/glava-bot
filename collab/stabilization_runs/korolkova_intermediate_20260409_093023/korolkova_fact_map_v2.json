@@ -1,0 +1,804 @@
+{
+  "project_id": "korolkova_v2_test",
+  "version": 1,
+  "updated_at": "2024-12-19T10:30:00Z",
+  "subject": {
+    "name": "Королькова Елена Андреевна",
+    "birth_year": 1932,
+    "birth_place": "деревня Русино, Ромешковский район, Калининская область",
+    "death_year": null,
+    "death_place": null
+  },
+  "persons": [
+    {
+      "id": "person_001",
+      "name": "Соловьёв Андрей",
+      "aliases": [],
+      "birth_year": null,
+      "death_year": 1942,
+      "relation_to_subject": "отец",
+      "description": "Мельник, богач в округе, высокий, толстенький, подполный. Погиб на войне под Курском в 1941-42 году",
+      "genealogy_note": null,
+      "source_interview_id": "int_001",
+      "is_new": true,
+      "needs_verification": false
+    },
+    {
+      "id": "person_002",
+      "name": "Соловьёва (мать Елены)",
+      "aliases": [],
+      "birth_year": null,
+      "death_year": null,
+      "relation_to_subject": "мать",
+      "description": "Работала в колхозе. Позже переехала в Екатеринбург к дочери Тоне",
+      "genealogy_note": null,
+      "source_interview_id": "int_001",
+      "is_new": true,
+      "needs_verification": false
+    },
+    {
+      "id": "person_003",
+      "name": "Шура (Александра)",
+      "aliases": [
+        "Александра"
+      ],
+      "birth_year": null,
+      "death_year": null,
+      "relation_to_subject": "сестра",
+      "description": "Средняя сестра. Окончила 10 классов, поступила на агронома в Сахаровский сельскохозяйственный институт. Считалась жадноватой",
+      "genealogy_note": null,
+      "source_interview_id": "int_001",
+      "is_new": true,
+      "needs_verification": true
+    },
+    {
+      "id": "person_004",
+      "name": "Тоня (Антонина)",
+      "aliases": [
+        "Антонина"
+      ],
+      "birth_year": null,
+      "death_year": null,
+      "relation_to_subject": "сестра",
+      "description": "Младшая сестра. Не училась после школы, работала в няньках. Переехала в Екатеринбург, работала на кирпичном заводе",
+      "genealogy_note": null,
+      "source_interview_id": "int_001",
+      "is_new": true,
+      "needs_verification": false
+    },
+    {
+      "id": "person_005",
+      "name": "Люда",
+      "aliases": [],
+      "birth_year": 1970,
+      "death_year": null,
+      "relation_to_subject": "племянница",
+      "description": "Дочь Тони, живёт в Екатеринбурге",
+      "genealogy_note": "дочь сестры Тони",
+      "source_interview_id": "int_001",
+      "is_new": true,
+      "needs_verification": false
+    },
+    {
+      "id": "person_006",
+      "name": "Королькова Люся",
+      "aliases": [],
+      "birth_year": 1961,
+      "death_year": null,
+      "relation_to_subject": "дочь",
+      "description": "Дочь Елены Андреевны",
+      "genealogy_note": null,
+      "source_interview_id": "int_001",
+      "is_new": true,
+      "needs_verification": false
+    },
+    {
+      "id": "person_007",
+      "name": "Дядя Лёша",
+      "aliases": [],
+      "birth_year": null,
+      "death_year": null,
+      "relation_to_subject": "деверь",
+      "description": "Брат мужа, жил на Васильском мхе",
+      "genealogy_note": "брат мужа Елены",
+      "source_interview_id": "int_001",
+      "is_new": true,
+      "needs_verification": false
+    },
+    {
+      "id": "person_008",
+      "name": "Тётя Маруся",
+      "aliases": [],
+      "birth_year": null,
+      "death_year": null,
+      "relation_to_subject": "золовка",
+      "description": "Жена дяди Лёши. Хорошо солила грибы. Имела сына не от дяди Лёши",
+      "genealogy_note": "жена брата мужа, сын не от дяди Лёши",
+      "source_interview_id": "int_001",
+      "is_new": true,
+      "needs_verification": false
+    }
+  ],
+  "timeline": [
+    {
+      "id": "event_001",
+      "date": {
+        "year": 1932,
+        "month": 4,
+        "day": 1,
+        "precision": "exact"
+      },
+      "title": "Рождение Елены Андреевны",
+      "description": "Родилась 1 апреля 1932 года в деревне Русино, Ромешковский район, Калининская область",
+      "location": "деревня Русино, Ромешковский район, Калининская область",
+      "participants": [
+        "person_001",
+        "person_002"
+      ],
+      "life_period": "childhood",
+      "emotional_tone": "neutral",
+      "source_interview_id": "int_001",
+      "source_quote": "1 апреля 1932 года",
+      "confidence": "high",
+      "needs_verification": false,
+      "is_new": true
+    },
+    {
+      "id": "event_002",
+      "date": {
+        "year": 1941,
+        "month": null,
+        "day": null,
+        "precision": "approximate"
+      },
+      "title": "Начало войны, голодное детство",
+      "description": "Когда началась война, Елене было 9 лет. Ходили собирали стопки (ёлочки) и ели их, собирали лебеду с гнилой картошкой на поле",
+      "location": "деревня Русино",
+      "participants": [],
+      "life_period": "childhood",
+      "emotional_tone": "negative",
+      "source_interview_id": "int_001",
+      "source_quote": "Девять лет было, когда война началась. А у меня война началась, что они там ходили эти, собирали стопки и ели",
+      "confidence": "high",
+      "needs_verification": false,
+      "is_new": true
+    },
+    {
+      "id": "event_003",
+      "date": {
+        "year": 1942,
+        "month": null,
+        "day": null,
+        "precision": "approximate"
+      },
+      "title": "Гибель отца на войне",
+      "description": "Отец погиб на войне под Курском, буквально в 41-42 году, почти сразу после призыва",
+      "location": "Курская область",
+      "participants": [
+        "person_001"
+      ],
+      "life_period": "childhood",
+      "emotional_tone": "negative",
+      "source_interview_id": "int_001",
+      "source_quote": "Подкорсаком погиб. Там буквально в 41-42, почти сразу. Сразу забрали туда",
+      "confidence": "medium",
+      "needs_verification": true,
+      "is_new": true
+    },
+    {
+      "id": "event_004",
+      "date": {
+        "year": 1941,
+        "month": null,
+        "day": null,
+        "precision": "decade"
+      },
+      "title": "Работа во время войны",
+      "description": "Во время войны работала разнорабочей, на скотном дворе и в поле. Стала тружеником тыла",
+      "location": "деревня Русино",
+      "participants": [],
+      "life_period": "youth",
+      "emotional_tone": "neutral",
+      "source_interview_id": "int_001",
+      "source_quote": "Войной она работала, не знаю, как разнорабочая, наверное, на скотном дворе она там работала, и в поле работала",
+      "confidence": "medium",
+      "needs_verification": false,
+      "is_new": true
+    },
+    {
+      "id": "event_005",
+      "date": {
+        "year": 1947,
+        "month": null,
+        "day": null,
+        "precision": "approximate"
+      },
+      "title": "Поездки в Калинин торговать мясом",
+      "description": "В 15 лет ездила в Калинин (Тверь) на лошади торговать мясом из деревни. Ехать полдня, ездила одна",
+      "location": "Калинин (Тверь)",
+      "participants": [],
+      "life_period": "youth",
+      "emotional_tone": "neutral",
+      "source_interview_id": "int_001",
+      "source_quote": "Я знаю, что в 15 лет она ездила в Калинин, раньше Калинин называлось, мясом торговать",
+      "confidence": "high",
+      "needs_verification": false,
+      "is_new": true
+    },
+    {
+      "id": "event_006",
+      "date": {
+        "year": 1949,
+        "month": null,
+        "day": null,
+        "precision": "approximate"
+      },
+      "title": "Обучение на ветеринара",
+      "description": "После войны отправили учиться на ветеринара в Кунчево. Сразу доверили всех животных",
+      "location": "Кунчево",
+      "participants": [],
+      "life_period": "education",
+      "emotional_tone": "positive",
+      "source_interview_id": "int_001",
+      "source_quote": "Отправили учиться на ветеринара в Кунчево. Приехала, стала работать. Ещё она говорила, что ей сразу доверили всех этих животных",
+      "confidence": "high",
+      "needs_verification": true,
+      "is_new": true
+    },
+    {
+      "id": "event_007",
+      "date": {
+        "year": 1956,
+        "month": 10,
+        "day": 14,
+        "precision": "exact"
+      },
+      "title": "Свадьба с дедом",
+      "description": "Свадьба была на Покров, 14 октября 1956 года. До этого встречались, один раз с подругой шли из клуба под дождём, дед привёл их домой переночевать",
+      "location": null,
+      "participants": [],
+      "life_period": "family",
+      "emotional_tone": "positive",
+      "source_interview_id": "int_001",
+      "source_quote": "Дед, я очень помню, на Покров 14 октября, 16 октября свадьба была",
+      "confidence": "high",
+      "needs_verification": false,
+      "is_new": true
+    },
+    {
+      "id": "event_008",
+      "date": {
+        "year": 1957,
+        "month": null,
+        "day": null,
+        "precision": "exact"
+      },
+      "title": "Рождение дочери",
+      "description": "Родилась дочь (рассказчик интервью)",
+      "location": "Трубичиха",
+      "participants": [],
+      "life_period": "family",
+      "emotional_tone": "positive",
+      "source_interview_id": "int_001",
+      "source_quote": "Ты в 57-м родилась",
+      "confidence": "high",
+      "needs_verification": false,
+      "is_new": true
+    },
+    {
+      "id": "event_009",
+      "date": {
+        "year": 1958,
+        "month": null,
+        "day": null,
+        "precision": "approximate"
+      },
+      "title": "Переезд в Пасынково",
+      "description": "Переехали из Трубичихи в деревню Пасынково, когда дочери было полтора года. Переехали из-за школы - нужно было где-то поближе к городу учить ребёнка",
+      "location": "деревня Пасынково",
+      "participants": [],
+      "life_period": "family",
+      "emotional_tone": "neutral",
+      "source_interview_id": "int_001",
+      "source_quote": "Тебе полтора года они говорили, что я родилась",
+      "confidence": "high",
+      "needs_verification": false,
+      "is_new": true
+    },
+    {
+      "id": "event_010",
+      "date": {
+        "year": 1958,
+        "month": null,
+        "day": null,
+        "precision": "approximate"
+      },
+      "title": "Работа в колхозе дояркой и бригадиром",
+      "description": "В Пасынково сначала работала дояркой на скотном дворе, потом стала бригадиром. Совмещала несколько должностей, работала и ветеринаром",
+      "location": "деревня Пасынково",
+      "participants": [],
+      "life_period": "career",
+      "emotional_tone": "neutral",
+      "source_interview_id": "int_001",
+      "source_quote": "сначала она, по-моему, у нас был скотный двор, вроде как она сначала дояркой была, да. Не ветеринаром, не по специальности",
+      "confidence": "medium",
+      "needs_verification": false,
+      "is_new": true
+    },
+    {
+      "id": "event_011",
+      "date": {
+        "year": 1961,
+        "month": null,
+        "day": null,
+        "precision": "exact"
+      },
+      "title": "Рождение дочери Люси",
+      "description": "Родилась дочь Люся",
+      "location": null,
+      "participants": [
+        "person_006"
+      ],
+      "life_period": "family",
+      "emotional_tone": "positive",
+      "source_interview_id": "int_001",
+      "source_quote": "Тётя Люся 61-го",
+      "confidence": "high",
+      "needs_verification": false,
+      "is_new": true
+    },
+    {
+      "id": "event_012",
+      "date": {
+        "year": 1970,
+        "month": null,
+        "day": null,
+        "precision": "approximate"
+      },
+      "title": "Переезд матери в Екатеринбург",
+      "description": "Мать Елены переехала в Екатеринбург к дочери Тоне, чтобы помочь с новорождённой Людой. Примерно 70-й год",
+      "location": "Екатеринбург",
+      "participants": [
+        "person_002",
+        "person_004",
+        "person_005"
+      ],
+      "life_period": "family",
+      "emotional_tone": "neutral",
+      "source_interview_id": "int_001",
+      "source_quote": "А потом, когда Тоня родила Люду, она её забрала в Екатеринбург, чтобы в ней посидеть. Где-то 70-й год примерно, да?",
+      "confidence": "medium",
+      "needs_verification": false,
+      "is_new": true
+    },
+    {
+      "id": "event_013",
+      "date": {
+        "year": 1980,
+        "month": null,
+        "day": null,
+        "precision": "approximate"
+      },
+      "title": "Работа на химическом заводе",
+      "description": "Работала на заводе в цехе, где лили каблуки из пластмассы. Из-за вредности заболела печень, врач посоветовал уйти",
+      "location": "химический завод",
+      "participants": [],
+      "life_period": "career",
+      "emotional_tone": "negative",
+      "source_interview_id": "int_001",
+      "source_quote": "это вредность очень была, и у неё печёнка стала приболевать. Она, ну, к врачу пошла, и ей сказали, что из-за вредности она сразу же оттуда ушла",
+      "confidence": "high",
+      "needs_verification": false,
+      "is_new": true
+    },
+    {
+      "id": "event_014",
+      "date": {
+        "year": 1980,
+        "month": null,
+        "day": null,
+        "precision": "approximate"
+      },
+      "title": "Работа хозлаборантом",
+      "description": "Перешла работать хозлаборантом в химический институт. Получала заявки на лабораторное оборудование, ходила по складам",
+      "location": "химический институт",
+      "participants": [],
+      "life_period": "career",
+      "emotional_tone": "neutral",
+      "source_interview_id": "int_001",
+      "source_quote": "перешла в эту, вот, хозлаборантку",
+      "confidence": "high",
+      "needs_verification": false,
+      "is_new": true
+    },
+    {
+      "id": "event_015",
+      "date": {
+        "year": 1984,
+        "month": null,
+        "day": null,
+        "precision": "exact"
+      },
+      "title": "Работа на телятнике перед пенсией",
+      "description": "В 52 года пошла работать на телятник, чтобы заработать нормальную пенсию. Пенсию считали за последние три года работы",
+      "location": "телятник",
+      "participants": [],
+      "life_period": "career",
+      "emotional_tone": "neutral",
+      "source_interview_id": "int_001",
+      "source_quote": "52 года, она пошла работать на телятник, чтобы заработать пенсию нормальную",
+      "confidence": "high",
+      "needs_verification": false,
+      "is_new": true
+    }
+  ],
+  "relationships": [
+    {
+      "person_a": "person_001",
+      "person_b": "subject",
+      "relation_type": "отец-дочь",
+      "details": "Мельник, богач в округе",
+      "source_interview_id": "int_001"
+    },
+    {
+      "person_a": "person_002",
+      "person_b": "subject",
+      "relation_type": "мать-дочь",
+      "details": "Работала в колхозе",
+      "source_interview_id": "int_001"
+    },
+    {
+      "person_a": "person_003",
+      "person_b": "subject",
+      "relation_type": "сестра",
+      "details": "Средняя сестра, агроном",
+      "source_interview_id": "int_001"
+    },
+    {
+      "person_a": "person_004",
+      "person_b": "subject",
+      "relation_type": "сестра",
+      "details": "Младшая сестра",
+      "source_interview_id": "int_001"
+    },
+    {
+      "person_a": "person_005",
+      "person_b": "subject",
+      "relation_type": "племянница",
+      "details": "Дочь Тони",
+      "source_interview_id": "int_001"
+    },
+    {
+      "person_a": "person_006",
+      "person_b": "subject",
+      "relation_type": "дочь",
+      "details": "Родилась в 1961 году",
+      "source_interview_id": "int_001"
+    }
+  ],
+  "locations": [
+    {
+      "id": "loc_001",
+      "name": "деревня Русино, Ромешковский район, Калининская область",
+      "type": "village",
+      "location_role": "origin",
+      "context": "Место рождения и детства. Деревня исчезла, сейчас там лес",
+      "period": "1932-1956",
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "id": "loc_002",
+      "name": "Кунчево",
+      "type": "city",
+      "location_role": "education",
+      "context": "Место обучения на ветеринара после войны",
+      "period": "1949",
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "id": "loc_003",
+      "name": "Калинин (Тверь)",
+      "type": "city",
+      "location_role": "work",
+      "context": "Ездила торговать мясом в 15 лет",
+      "period": "1947",
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "id": "loc_004",
+      "name": "Трубичиха",
+      "type": "village",
+      "location_role": "residence",
+      "context": "Место жительства после свадьбы до переезда в Пасынково",
+      "period": "1956-1958",
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "id": "loc_005",
+      "name": "деревня Пасынково",
+      "type": "village",
+      "location_role": "residence",
+      "context": "Основное место жительства, работы в колхозе и на заводе",
+      "period": "1958-1987",
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "id": "loc_006",
+      "name": "Екатеринбург (Свердловск)",
+      "type": "city",
+      "location_role": "travel",
+      "context": "Город, где жила сестра Тоня, куда переехала мать Елены",
+      "period": "1970-е",
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "id": "loc_007",
+      "name": "Васильский мох",
+      "type": "village",
+      "location_role": "travel",
+      "context": "Место, где жили братья мужа, ездили в гости на праздники",
+      "period": "1960-1980-е",
+      "source_interview_id": "int_001",
+      "is_new": true
+    }
+  ],
+  "character_traits": [
+    {
+      "trait": "строгая, но справедливая",
+      "category": "character",
+      "evidence": "даже когда за мной скрапил, было такое ощущение, что она не была... Какое-то зло было такое, да, такое, что... Ну, хулиганина, значит, надо наказать, и всё",
+      "described_by": "narrator_001",
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "trait": "терпеливая",
+      "category": "character",
+      "evidence": "Терпеливая. Ну, терпеливая, да. Сколько можно было терпеть такого?",
+      "described_by": "narrator_001",
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "trait": "командовала, раздавала указания",
+      "category": "character",
+      "evidence": "Она указания раздавала, мне кажется, постоянно. Дед говорил, вот сейчас пророк пришел, сейчас это командовать будет",
+      "described_by": "narrator_001",
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "trait": "не любила рассказывать о прошлом",
+      "category": "character",
+      "evidence": "Вообще ничего не любила рассказывать",
+      "described_by": "narrator_001",
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "trait": "всё время работала",
+      "category": "habit",
+      "evidence": "Такая она всё время работала",
+      "described_by": "narrator_001",
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "trait": "хорошо готовила, разнообразно",
+      "category": "skill",
+      "evidence": "они всегда восхищались бабушкой, что она готовит хорошо. Ну, как бы разнообразно",
+      "described_by": "narrator_001",
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "trait": "пекла пирожки, пироги",
+      "category": "skill",
+      "evidence": "Пекла она всё время патрушки, пироги",
+      "described_by": "narrator_001",
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "trait": "вязала крючком подзоры",
+      "category": "hobby",
+      "evidence": "Она вязала крючком. Кружево, которое пришивалось к тряпке, к белой ткани. И вешалось, знаете, на краях кровати. Называлось «подзор»",
+      "described_by": "narrator_001",
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "trait": "сажала цветы на продажу",
+      "category": "habit",
+      "evidence": "цветы там перед домом сажала? Да. На продажу-то сажала? Была из диких там тюльпана. Да. Нарциссы",
+      "described_by": "narrator_001",
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "trait": "не доверяла мошенникам",
+      "category": "character",
+      "evidence": "Дед всегда им выпускал, а бабушка всех выгоняла, по крайней мере. Ничего ей там не втюхали, что-то купить надо",
+      "described_by": "narrator_001",
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "trait": "ровно относилась ко всем",
+      "category": "character",
+      "evidence": "у бабушки вообще, по-моему, никого любимых-то не было. А я как же. Она ровно к нам всем относилась",
+      "described_by": "narrator_001",
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "trait": "привыкла всё на себе вести",
+      "category": "character",
+      "evidence": "мне кажется, привыкла всё на себе вести, никого не рассчитывала. И как-то ни от кого ничего не ждала",
+      "described_by": "narrator_001",
+      "source_interview_id": "int_001",
+      "is_new": true
+    }
+  ],
+  "quotes": [
+    {
+      "id": "quote_001",
+      "text": "всё дорого, всё дорого",
+      "type": "direct",
+      "speaker": "subject",
+      "context": "Характерное выражение Елены о ценах",
+      "emotional_value": "medium",
+      "usable_in_book": true,
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "id": "quote_002",
+      "text": "вот сейчас пророк пришел, сейчас это командовать будет",
+      "type": "direct",
+      "speaker": "дед",
+      "context": "Дед о том, как Елена начинала командовать",
+      "emotional_value": "medium",
+      "usable_in_book": true,
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "id": "quote_003",
+      "text": "слава богу, что она отвлекла ружье",
+      "type": "direct",
+      "speaker": "subject",
+      "context": "О бывшем женихе, который бегал с ружьём за женой",
+      "emotional_value": "high",
+      "usable_in_book": true,
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "id": "quote_004",
+      "text": "Слава тебе, Господи",
+      "type": "direct",
+      "speaker": "subject",
+      "context": "Радовалась урожаю, когда картошку убрали",
+      "emotional_value": "medium",
+      "usable_in_book": true,
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "id": "quote_005",
+      "text": "ей бы в другое время родиться",
+      "type": "indirect",
+      "speaker": "narrator_001",
+      "context": "О предпринимательских способностях матери",
+      "emotional_value": "medium",
+      "usable_in_book": false,
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "id": "quote_006",
+      "text": "вот здесь наш Уралмаш",
+      "type": "direct",
+      "speaker": "person_005",
+      "context": "Люда показывала район в Екатеринбурге",
+      "emotional_value": "low",
+      "usable_in_book": false,
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "id": "quote_007",
+      "text": "Вообще ничего не любила рассказывать",
+      "type": "indirect",
+      "speaker": "narrator_001",
+      "context": "О нежелании матери рассказывать о прошлом",
+      "emotional_value": "medium",
+      "usable_in_book": true,
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "id": "quote_008",
+      "text": "ей сразу доверили всех этих животных",
+      "type": "indirect",
+      "speaker": "subject",
+      "context": "О работе ветеринаром после обучения",
+      "emotional_value": "medium",
+      "usable_in_book": true,
+      "source_interview_id": "int_001",
+      "is_new": true
+    }
+  ],
+  "conflicts": [],
+  "gaps": [
+    {
+      "period": "1932-1941",
+      "description": "Раннее детство до войны практически не освещено",
+      "trigger": "Я только знаю её военное детство",
+      "suggested_questions": [
+        "Какие воспоминания о раннем детстве до войны?",
+        "Как жила семья до войны, когда отец был мельником?",
+        "Какие были отношения с братьями, которые умерли в младенчестве?"
+      ]
+    },
+    {
+      "period": "1949-1956",
+      "description": "Период после обучения на ветеринара до замужества",
+      "trigger": "После войны отправили учиться на ветеринара в Кунчево",
+      "suggested_questions": [
+        "Где работала ветеринаром после обучения в Кунчево?",
+        "Как проходило обучение на ветеринара?",
+        "Были ли другие кавалеры до знакомства с дедом?"
+      ]
+    },
+    {
+      "period": "1960-1980",
+      "description": "Частная ветеринарная практика упомянута вскользь",
+      "trigger": "как ветеринар она работала частным образом, со всей округи к ней приезжали постоянно",
+      "suggested_questions": [
+        "Как развивалась частная ветеринарная практика?",
+        "Какие были самые интересные случаи в ветеринарной работе?",
+        "Как совмещала работу в колхозе с частной практикой?"
+      ]
+    },
+    {
+      "period": "1970-1987",
+      "description": "Отношения с матерью после её переезда в Екатеринбург",
+      "trigger": "А потом, когда Тоня родила Люду, она её забрала в Екатеринбург",
+      "suggested_questions": [
+        "Как часто виделись с матерью после её переезда в Екатеринбург?",
+        "Поддерживала ли связь с сестрой Тоней?",
+        "Как переживала разлуку с матерью?"
+      ]
+    },
+    {
+      "period": "1987-смерть",
+      "description": "Пенсионный период жизни не освещён",
+      "trigger": "130 была пенсия самая большая",
+      "suggested_questions": [
+        "Чем занималась на пенсии?",
+        "Продолжала ли заниматься огородом и хозяйством?",
+        "Как проводила время в последние годы жизни?"
+      ]
+    }
+  ],
+  "processing_notes": {
+    "total_facts_extracted": 47,
+    "new_facts_count": 47,
+    "conflicts_found": 0,
+    "gaps_identified": 5,
+    "interviews_processed": [
+      "int_001"
+    ],
+    "confidence_summary": "Высокая достоверность для основных биографических фактов, средняя для дат и имён собственных из устной речи",
+    "needs_verification_count": 3,
+    "conflicts_check": "passed"
+  }
+}

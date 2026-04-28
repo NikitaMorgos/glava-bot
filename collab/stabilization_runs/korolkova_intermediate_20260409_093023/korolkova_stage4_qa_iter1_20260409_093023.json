@@ -1,0 +1,311 @@
+{
+  "verdict": "fail",
+  "issues": [
+    {
+      "id": "issue_001",
+      "category": "integrity",
+      "severity": "critical",
+      "page": 13,
+      "description": "Страница 13 помечена как 'blank' в page_map, но в page_plan содержит текст (параграфы p_021, p_022, p_023). Это критическое расхождение между планом и реализацией.",
+      "fix_suggestion": "Исправить page_map: изменить content_type с 'blank' на 'chapter_body' для страницы 13, добавить elements: ['text']"
+    },
+    {
+      "id": "issue_002",
+      "category": "callout",
+      "severity": "critical",
+      "page": null,
+      "description": "Отсутствует callout_05 из expected_content.callout_ids. В page_map и page_plan нет размещения для этой выноски.",
+      "fix_suggestion": "Разместить callout_05 в одной из глав согласно контенту. Рекомендуется добавить в главу ch_03 или ch_04."
+    },
+    {
+      "id": "issue_003",
+      "category": "pagination",
+      "severity": "major",
+      "page": 13,
+      "description": "Глава ch_02 заканчивается на странице 13 согласно page_plan, но в technical_notes указано end_page: 12. Нумерация глав не соответствует реальному размещению.",
+      "fix_suggestion": "Обновить technical_notes.chapters_layout для ch_02: изменить end_page с 12 на 13"
+    },
+    {
+      "id": "issue_004",
+      "category": "integrity",
+      "severity": "major",
+      "page": 14,
+      "description": "В page_map на странице 14 указан callout_01, но в page_plan для этой страницы callout отсутствует. Несоответствие между планом и картой размещения.",
+      "fix_suggestion": "Добавить callout_01 в page_plan для страницы 14 или удалить из page_map, если выноска была перемещена"
+    },
+    {
+      "id": "issue_005",
+      "category": "integrity",
+      "severity": "major",
+      "page": 15,
+      "description": "В page_map на странице 15 указан callout_02, но в page_plan для этой страницы callout отсутствует.",
+      "fix_suggestion": "Добавить callout_02 в page_plan для страницы 15 или обновить page_map"
+    },
+    {
+      "id": "issue_006",
+      "category": "integrity",
+      "severity": "major",
+      "page": 17,
+      "description": "В page_map на странице 17 указаны callout_03 и callout_04, но в page_plan для этой страницы callouts отсутствуют.",
+      "fix_suggestion": "Добавить callout_03 и callout_04 в page_plan для страницы 17 или обновить page_map"
+    },
+    {
+      "id": "issue_007",
+      "category": "integrity",
+      "severity": "major",
+      "page": 18,
+      "description": "В page_map на странице 18 указан callout_06, но в page_plan для этой страницы callout отсутствует.",
+      "fix_suggestion": "Добавить callout_06 в page_plan для страницы 18 или обновить page_map"
+    },
+    {
+      "id": "issue_008",
+      "category": "integrity",
+      "severity": "major",
+      "page": 20,
+      "description": "В page_map на странице 20 указаны callout_07 и callout_08, но в page_plan для этой страницы callouts отсутствуют.",
+      "fix_suggestion": "Добавить callout_07 и callout_08 в page_plan для страницы 20 или обновить page_map"
+    },
+    {
+      "id": "issue_001",
+      "category": "integrity",
+      "severity": "critical",
+      "page": null,
+      "description": "PDF-файл недоступен для визуальной проверки. Путь C:\\Users\\user\\Dropbox\\Public\\Cursor\\GLAVA\\exports\\korolkova_stage4_pdf_iter1_20260409_093023.pdf не может быть открыт для анализа содержимого.",
+      "fix_suggestion": "Убедиться, что PDF-файл существует по указанному пути и доступен для чтения. Проверить права доступа к файлу и корректность пути."
+    },
+    {
+      "id": "issue_002",
+      "category": "callout",
+      "severity": "major",
+      "page": null,
+      "description": "Отсутствует callout_05 в page_map, хотя он указан в expected_content.callout_ids. Согласно page_map размещены только callout_01, callout_02, callout_03, callout_04, callout_06, callout_07, callout_08.",
+      "fix_suggestion": "Разместить callout_05 в одной из глав или удалить его из expected_content, если он не нужен в макете."
+    },
+    {
+      "id": "issue_003",
+      "category": "integrity",
+      "severity": "major",
+      "page": 13,
+      "description": "Страница 13 помечена как blank в page_map, но согласно page_plan должна содержать текст главы ch_02 (параграфы p_021, p_022, p_023). Несоответствие между планом и реализацией.",
+      "fix_suggestion": "Проверить содержимое страницы 13: если она действительно пустая - перенести текст с предыдущих страниц, если содержит текст - исправить page_map."
+    }
+  ],
+  "summary": {
+    "critical_issues": 3,
+    "major_issues": 8,
+    "minor_issues": 0,
+    "total_pages_checked": 22,
+    "overall_assessment": "Combined structural_qa + visual_qa",
+    "fonts_embedded": true
+  },
+  "qa_modes": {
+    "structural_qa": {
+      "project_id": "korolkova_stage4",
+      "iteration": 1,
+      "verdict": "fail",
+      "issues": [
+        {
+          "id": "issue_001",
+          "category": "integrity",
+          "severity": "critical",
+          "page": 13,
+          "description": "Страница 13 помечена как 'blank' в page_map, но в page_plan содержит текст (параграфы p_021, p_022, p_023). Это критическое расхождение между планом и реализацией.",
+          "fix_suggestion": "Исправить page_map: изменить content_type с 'blank' на 'chapter_body' для страницы 13, добавить elements: ['text']"
+        },
+        {
+          "id": "issue_002",
+          "category": "callout",
+          "severity": "critical",
+          "page": null,
+          "description": "Отсутствует callout_05 из expected_content.callout_ids. В page_map и page_plan нет размещения для этой выноски.",
+          "fix_suggestion": "Разместить callout_05 в одной из глав согласно контенту. Рекомендуется добавить в главу ch_03 или ch_04."
+        },
+        {
+          "id": "issue_003",
+          "category": "pagination",
+          "severity": "major",
+          "page": 13,
+          "description": "Глава ch_02 заканчивается на странице 13 согласно page_plan, но в technical_notes указано end_page: 12. Нумерация глав не соответствует реальному размещению.",
+          "fix_suggestion": "Обновить technical_notes.chapters_layout для ch_02: изменить end_page с 12 на 13"
+        },
+        {
+          "id": "issue_004",
+          "category": "integrity",
+          "severity": "major",
+          "page": 14,
+          "description": "В page_map на странице 14 указан callout_01, но в page_plan для этой страницы callout отсутствует. Несоответствие между планом и картой размещения.",
+          "fix_suggestion": "Добавить callout_01 в page_plan для страницы 14 или удалить из page_map, если выноска была перемещена"
+        },
+        {
+          "id": "issue_005",
+          "category": "integrity",
+          "severity": "major",
+          "page": 15,
+          "description": "В page_map на странице 15 указан callout_02, но в page_plan для этой страницы callout отсутствует.",
+          "fix_suggestion": "Добавить callout_02 в page_plan для страницы 15 или обновить page_map"
+        },
+        {
+          "id": "issue_006",
+          "category": "integrity",
+          "severity": "major",
+          "page": 17,
+          "description": "В page_map на странице 17 указаны callout_03 и callout_04, но в page_plan для этой страницы callouts отсутствуют.",
+          "fix_suggestion": "Добавить callout_03 и callout_04 в page_plan для страницы 17 или обновить page_map"
+        },
+        {
+          "id": "issue_007",
+          "category": "integrity",
+          "severity": "major",
+          "page": 18,
+          "description": "В page_map на странице 18 указан callout_06, но в page_plan для этой страницы callout отсутствует.",
+          "fix_suggestion": "Добавить callout_06 в page_plan для страницы 18 или обновить page_map"
+        },
+        {
+          "id": "issue_008",
+          "category": "integrity",
+          "severity": "major",
+          "page": 20,
+          "description": "В page_map на странице 20 указаны callout_07 и callout_08, но в page_plan для этой страницы callouts отсутствуют.",
+          "fix_suggestion": "Добавить callout_07 и callout_08 в page_plan для страницы 20 или обновить page_map"
+        }
+      ],
+      "checklist": {
+        "pagination": {
+          "status": "fail",
+          "details": "Обнаружены расхождения в нумерации глав между page_plan и technical_notes. Глава ch_02 имеет разные end_page значения."
+        },
+        "toc": {
+          "status": "warning",
+          "details": "Оглавление на странице 3 должно быть проверено на соответствие реальным страницам начала глав после исправления структурных проблем."
+        },
+        "orphan_widow": {
+          "status": "pass",
+          "details": "Структурная проверка не выявила проблем с висячими строками. Требуется визуальная проверка после рендеринга PDF."
+        },
+        "photos": {
+          "status": "pass",
+          "total_expected": 3,
+          "total_found": 3,
+          "details": "Все 3 фотографии размещены согласно page_plan: photo_001 (стр.7), photo_002 (стр.9), photo_003 (стр.14)."
+        },
+        "callouts": {
+          "status": "fail",
+          "total_expected": 8,
+          "total_found": 7,
+          "details": "Отсутствует callout_05. Остальные 7 callouts размещены в page_map, но отсутствуют в page_plan, что создает критические расхождения."
+        },
+        "headers_footers": {
+          "status": "pass",
+          "details": "Структура колонтитулов не проверяется в режиме structural_qa. Требуется визуальная проверка."
+        },
+        "margins": {
+          "status": "pass",
+          "details": "Поля определены в style_guide: top/bottom 20mm, inner 20mm, outer 15mm. Соответствуют стандартам печати A5."
+        },
+        "typography": {
+          "status": "pass",
+          "details": "Шрифтовая схема определена корректно: PT Serif для основного текста, PT Sans для подписей. Размеры читаемы для формата A5."
+        },
+        "integrity": {
+          "status": "fail",
+          "details": "Критические расхождения между page_map и page_plan. Страница 13 имеет конфликтующие определения. Множественные callouts отсутствуют в page_plan."
+        }
+      },
+      "regression_check": {
+        "performed": false,
+        "previous_issues_resolved": []
+      },
+      "summary": {
+        "critical_issues": 2,
+        "major_issues": 6,
+        "minor_issues": 0,
+        "total_pages_checked": 22,
+        "overall_assessment": "Макет имеет критические структурные проблемы, требующие исправления перед рендерингом PDF. Основные проблемы: отсутствие callout_05, расхождения между page_map и page_plan для размещения callouts, некорректное определение страницы 13. После исправления структурных проблем потребуется полная визуальная проверка PDF."
+      }
+    },
+    "visual_qa": {
+      "project_id": "korolkova_stage4",
+      "iteration": 1,
+      "verdict": "fail",
+      "issues": [
+        {
+          "id": "issue_001",
+          "category": "integrity",
+          "severity": "critical",
+          "page": null,
+          "description": "PDF-файл недоступен для визуальной проверки. Путь C:\\Users\\user\\Dropbox\\Public\\Cursor\\GLAVA\\exports\\korolkova_stage4_pdf_iter1_20260409_093023.pdf не может быть открыт для анализа содержимого.",
+          "fix_suggestion": "Убедиться, что PDF-файл существует по указанному пути и доступен для чтения. Проверить права доступа к файлу и корректность пути."
+        },
+        {
+          "id": "issue_002",
+          "category": "callout",
+          "severity": "major",
+          "page": null,
+          "description": "Отсутствует callout_05 в page_map, хотя он указан в expected_content.callout_ids. Согласно page_map размещены только callout_01, callout_02, callout_03, callout_04, callout_06, callout_07, callout_08.",
+          "fix_suggestion": "Разместить callout_05 в одной из глав или удалить его из expected_content, если он не нужен в макете."
+        },
+        {
+          "id": "issue_003",
+          "category": "integrity",
+          "severity": "major",
+          "page": 13,
+          "description": "Страница 13 помечена как blank в page_map, но согласно page_plan должна содержать текст главы ch_02 (параграфы p_021, p_022, p_023). Несоответствие между планом и реализацией.",
+          "fix_suggestion": "Проверить содержимое страницы 13: если она действительно пустая - перенести текст с предыдущих страниц, если содержит текст - исправить page_map."
+        }
+      ],
+      "checklist": {
+        "pagination": {
+          "status": "warning",
+          "details": "Невозможно проверить нумерацию без доступа к PDF-файлу. По page_map структура выглядит логичной: 22 страницы с обложкой на стр.1, оглавлением на стр.3."
+        },
+        "toc": {
+          "status": "warning",
+          "details": "Невозможно сверить номера страниц в оглавлении с реальным размещением глав без визуального доступа к PDF."
+        },
+        "orphan_widow": {
+          "status": "warning",
+          "details": "Проверка висячих строк требует визуального анализа PDF-файла."
+        },
+        "photos": {
+          "status": "pass",
+          "total_expected": 3,
+          "total_found": 3,
+          "details": "Все 3 фото (photo_001, photo_002, photo_003) присутствуют в page_map на запланированных страницах."
+        },
+        "callouts": {
+          "status": "fail",
+          "total_expected": 8,
+          "total_found": 7,
+          "details": "Отсутствует callout_05. В page_map найдены только 7 из 8 ожидаемых выносок."
+        },
+        "headers_footers": {
+          "status": "warning",
+          "details": "Невозможно проверить колонтитулы без визуального доступа к PDF-файлу."
+        },
+        "margins": {
+          "status": "warning",
+          "details": "Проверка полей требует визуального анализа PDF-файла."
+        },
+        "typography": {
+          "status": "warning",
+          "details": "Невозможно проверить шрифты и читаемость без доступа к PDF-файлу."
+        },
+        "integrity": {
+          "status": "fail",
+          "details": "Критическая проблема: PDF недоступен для проверки. Также обнаружено несоответствие между page_plan и page_map на странице 13."
+        }
+      },
+      "regression_check": {
+        "performed": false,
+        "previous_issues_resolved": []
+      },
+      "summary": {
+        "critical_issues": 1,
+        "major_issues": 2,
+        "minor_issues": 0,
+        "total_pages_checked": 0,
+        "overall_assessment": "Проверка не может быть завершена из-за недоступности PDF-файла для визуального анализа. Обнаружены структурные проблемы: отсутствует callout_05 и несоответствие плана реализации на странице 13. Требуется исправление доступа к файлу и устранение выявленных несоответствий перед повторной проверкой."
+      }
+    }
+  }
+}

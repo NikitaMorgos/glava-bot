@@ -1,0 +1,41 @@
+{
+  "timestamp": "2026-04-21T13:35:58Z",
+  "run_version": "v32",
+  "config_sha256": "4e266ea1fa0f97d641e2e4b9dcb83b69c7d9b1ed6cf1ddb74bfc54340333052e",
+  "git_sha": "c288e1c",
+  "prompt_versions": {
+    "cleaner":          "01_cleaner_v1.md",
+    "fact_extractor":   "02_fact_extractor_v3.3.md",
+    "historian":        "12_historian_v3.md",
+    "ghostwriter":      "03_ghostwriter_v2.6.md (v2.11 АБСОЛЮТНЫЕ ЗАПРЕТЫ)",
+    "fact_checker":     "04_fact_checker_v2.md (v2.4 framing_distortion)",
+    "literary_editor":  "05_literary_editor_v3.md",
+    "proofreader":      "06_proofreader_v1.md"
+  },
+  "temperatures": {
+    "cleaner":          0.1,
+    "fact_extractor":   0.15,
+    "historian":        0.3,
+    "ghostwriter":      0.4,
+    "fact_checker":     0.1,
+    "literary_editor":  0.5,
+    "proofreader":      0.0
+  },
+  "transcripts": {
+    "TR1": "karakulina_valentina_interview_assemblyai.txt (20675 bytes)",
+    "TR2": "karakulina_meeting_transcript_20260403.txt (48601 bytes)"
+  },
+  "stage_status": {
+    "stage1": "PASS",
+    "stage2": "PASS (FC iter3)",
+    "stage3": "PASS (Proofreader epilogue fallback)",
+    "phase_b": "PASS (FC iter2)"
+  },
+  "fc_stage2_verdict": "pass",
+  "fc_stage2_iterations": 3,
+  "fc_phase_b_verdict": "pass",
+  "fc_phase_b_iterations": 2,
+  "ghostwriter_temperature_actual": 0.4,
+  "ghostwriter_temp_confirmed_from_manifest": true,
+  "status": "COMPLETE — готово к Gate 1"
+}

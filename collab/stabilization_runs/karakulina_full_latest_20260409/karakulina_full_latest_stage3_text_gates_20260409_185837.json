@@ -1,0 +1,68 @@
+{
+  "stage": "stage3",
+  "passed": true,
+  "gates": [
+    {
+      "gate": "non_empty_book",
+      "passed": true,
+      "issues": [],
+      "min_chapter_chars": 120
+    },
+    {
+      "gate": "required_entities",
+      "passed": true,
+      "required_total": 16,
+      "critical_total": 6,
+      "critical_matched_total": 6,
+      "critical_missing_total": 0,
+      "critical_missing": [],
+      "optional_total": 10,
+      "optional_matched_total": 5,
+      "optional_missing_total": 5,
+      "optional_missing": [
+        {
+          "type": "person",
+          "label": "Даша",
+          "variants": [
+            "даша"
+          ]
+        },
+        {
+          "type": "person",
+          "label": "Амельченко",
+          "variants": [
+            "амельченко"
+          ]
+        },
+        {
+          "type": "person",
+          "label": "Толя",
+          "variants": [
+            "толя"
+          ]
+        },
+        {
+          "type": "person",
+          "label": "Коля",
+          "variants": [
+            "коля"
+          ]
+        },
+        {
+          "type": "person",
+          "label": "Витя",
+          "variants": [
+            "витя"
+          ]
+        }
+      ]
+    },
+    {
+      "gate": "cross_chapter_repetition",
+      "passed": true,
+      "ngram_size": 5,
+      "threshold": 0.22,
+      "violations": []
+    }
+  ]
+}
