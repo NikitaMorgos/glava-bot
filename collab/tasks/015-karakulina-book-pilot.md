@@ -20,22 +20,11 @@
 
 ## Текущий статус (обновляется)
 
-**Дата обновления:** 2026-04-28 (после Stage 2 прогона v36, FIX-A + FIX-B выполнены)
+**Дата обновления:** 2026-04-28 (gate1 ✅ PASS)
 
-**Текущий этап:** Stage 2 ✅ FC PASS → gate1 required_entities FAIL (quality gates конфиг)
+**Текущий этап:** Stage 2 ✅ → gate1 ✅ → **следующий: Stage 3 (Literary Editor + Proofreader)**
 
-**Блокеры до следующего gate (gate1):**
-
-1. ✅ **FIX-A закрыт** — `force_phase="A"` добавлен в `run_ghostwriter()`, historian-интеграция работает корректно
-2. ✅ **FIX-B закрыт** — historian-dict корректно распаковывается, `Ист.вставок: 4` в Stage 2 v36
-3. ⏳ **GATE-1 remaining:** `gate_required_entities` падает на 6 периферийных родственниках (Мария, Римма, Зина, Толя, Коля, Витя). **Верифицировано Claude (2026-04-28):** все 6 присутствуют в `chapters[0].bio_data.family[]` (структурный блок), в нарратив не включены намеренно (видно в `writing_notes.facts_omitted`). Реальной потери информации нет — это false positive quality gate.
-   - **Решение Даши:** фиксить quality gate (~30 мин), не обходить флагом
-   - Что фиксить в `pipeline_quality_gates.py`:
-     - Substring-match «дочь» в `relation_to_subject` племянников → false positive critical
-     - Расширить scan на `chapters[].bio_data.family[]` и sidebars (не только нарратив)
-     - Различать в отчёте «упомянуто в bio_data» vs «упомянуто в нарративе»
-   - После фикса: перепрогон gate1 на текущем `book_FINAL_stage2.json` (Stage 2 не перезапускать)
-   - **Статус:** передано Cursor, ожидаем фикс + перепрогон gate1
+**Блокеры:** нет. gate1 пройден. Движемся к Stage 3.
 
 ---
 
@@ -44,7 +33,7 @@
 | Этап | Что делает | Статус Каракулиной | Последний прогон |
 |---|---|---|---|
 | **Stage 1** | Cleaner + FE + Completeness Auditor + Name Normalizer → fact_map | ✅ **готов** | v36 (2026-04-28), 95% stability |
-| **Stage 2** | Historian + Ghostwriter + Fact Checker → текст книги | ✅ **FC PASS**, gate1 quality-gate ⚠️ | v36 (2026-04-28), 4 ист.вставки, FC PASS iter 2 |
+| **Stage 2** | Historian + Ghostwriter + Fact Checker → текст книги | ✅ **готов** | v36 (2026-04-28), 4 ист.вставки, FC PASS iter 2 |
 | **Stage 3** | Literary Editor + Proofreader → отполированный текст | ⚠️ не запускали с актуальным fact_map | — |
 | **Phase B** | Инкрементная экстракция новых интервью | ⚠️ архитектурно заблокирован | — |
 | **Stage 4** | Photo Editor + Layout Designer + QA + Cover → PDF | ✅ один раз проходили в v_stable | 04-09 |
@@ -55,7 +44,7 @@
 
 | Gate | Что проверяет | Статус | Когда проходили |
 |---|---|---|---|
-| **Gate 1** | Текст книги: 10-пунктовый чек-лист (timeline, historical_notes, ключевые факты, объём 15-17K) | ⚠️ quality-gate config fail | v36 (2026-04-28): FC PASS, bio_struct PASS, ист.вставки PASS; FAIL на required_entities (quality gates конфиг) |
+| **Gate 1** | Текст книги: 10-пунктовый чек-лист (timeline, historical_notes, ключевые факты, объём 15-17K) | ✅ **PASS** | v36 (2026-04-28): 10/10 critical, FC PASS, bio_struct PASS, 4 ист.вставки |
 | **Gate 2a** | Текст-only PDF (без фото и обогащений) | ✅ проходили | 04-14 |
 | **Gate 2b** | + bio_data | ✅ проходили | v28 04-18 |
 | **Gate 2c** | + callouts / историч. справки / плейсхолдеры фото | ✅ проходили (но потом откат) | v28 04-18 |
@@ -81,7 +70,7 @@
 | 2026-04-21 | v32 | 🔴 gate1 FAIL |
 | 2026-04-22 | v34 | 🔴 gate1 FAIL → анализ → v35 |
 | 2026-04-23 | v35 | 🔴 gate1 FAIL: 3 критич. проблемы (timeline=None, Историк не мержится, факты TR2 потеряны) |
-| 2026-04-28 | v36 Stage 2 | ✅ FIX-A + FIX-B → Stage 2 FC PASS (iter 2), 4 ист.вставки | quality gate required_entities FAIL на периферийных родственниках (конфиг) |
+| 2026-04-28 | v36 gate1 | ✅ **gate1 PASS** | Quality gates фикс: indirect relations, bio_data scan; 10/10 critical, 3 found_in bio_data |
 
 ---
 
@@ -135,6 +124,25 @@ Cover Designer + финальная сборка. ETA: ~0.5 дня после ga
 ---
 
 ## Лог обновлений
+
+### 2026-04-28 (ночь) — gate1 PASS ✅
+
+**Quality gates фикс** (`pipeline_quality_gates.py`, commit 960f7d2):
+- `_split_critical_optional_entities`: заменён substring-match на token-level + добавлены `INDIRECT_RELATION_MARKERS` (тёт/дяд/племянник/внук/двоюродн). Теперь "дочь тёти Поли" не помечает племянников как critical.
+- `gate_required_entities`: расширен scan на `bio_data` (все sections) и `sidebars`. Отчёт теперь содержит `found_in: "narrative" | "bio_data" | "sidebars"` для каждой matched сущности.
+- Добавлены хелперы `_bio_data_text()` и `_sidebars_text()`.
+
+**Повторный прогон gate1** на `book_FINAL_stage2.json` (без перезапуска Stage 2):
+- `passed: True`
+- `critical_total: 10`, `critical_matched_total: 10`, `critical_missing: []`
+- 3 персоны найдены в `bio_data` (а не в нарративе): Мария, Поля, Шура — периферийные родственники
+- `optional_missing: []`
+
+**Артефакт:** `collab/runs/karakulina_v36_20260428/gate1_recheck.json`
+
+**gate1 PASS подтверждён без перезапуска Stage 2.** Следующий: Stage 3.
+
+---
 
 ### 2026-04-28 (поздно вечером) — Stage 2 прогон v36 выполнен, FIX-A + FIX-B закрыты
 
