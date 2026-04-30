@@ -267,6 +267,36 @@ def regen_image(post_id: int):
     return redirect(url_for("smm.post_detail", post_id=post_id))
 
 
+@bp.route("/post/<int:post_id>/regen-image-2", methods=["POST"])
+@role_required("dev", "lena", "dasha")
+def regen_image_2(post_id: int):
+    post = db_smm.get_post(post_id)
+    if not post:
+        flash("Пост не найден", "error")
+        return redirect(url_for("smm.index"))
+    job_key = f"regen2_{post_id}"
+    _jobs[job_key] = "running"
+
+    def _run():
+        try:
+            from smm.editor import _illustrator_prompts, _generate_image
+            _, inline_prompt = _illustrator_prompts(post)
+            if not inline_prompt:
+                inline_prompt = (post.get("image_prompt") or "warm family memoir illustration, inline")
+            url = _generate_image(post_id, inline_prompt, suffix="_2")
+            if url:
+                db_smm.update_post(post_id, image_url_2=url)
+            _jobs[job_key] = "done"
+        except Exception as e:
+            logger.error("Regen image-2 ошибка пост_ид=%d: %s", post_id, e)
+            db_smm.update_post(post_id, last_error=f"regen_image_2: {e}"[:2000])
+            _jobs[job_key] = f"error: {e}"
+
+    threading.Thread(target=_run, daemon=True).start()
+    flash("Регенерация иллюстрации запущена.", "success")
+    return redirect(url_for("smm.post_detail", post_id=post_id))
+
+
 @bp.route("/post/<int:post_id>/publish", methods=["POST"])
 @role_required("dev", "lena", "dasha")
 def publish_post(post_id: int):
@@ -324,7 +354,9 @@ def settings():
     # Журналисты
     journalists = db_smm.get_all_journalists()
     for j in journalists:
-        j["prompt"] = dba.get_prompt(f"smm_journalist_{j['slug']}")
+        prompt_key = f"smm_journalist_{j['slug']}"
+        j["prompt"] = dba.get_prompt(prompt_key)
+        j["prompt_history"] = dba.get_prompt_full_history(prompt_key, 10)
         j["assignments"] = db_smm.get_journalist_assignments(j["id"])
 
     # Служебные роли
@@ -334,7 +366,7 @@ def settings():
             "key":     role_key,
             "name":    role_name,
             "current": dba.get_prompt(role_key),
-            "history": dba.get_prompt_history(role_key, 4),
+            "history": dba.get_prompt_full_history(role_key, 10),
         })
 
     return render_template(
@@ -471,6 +503,27 @@ def save_role_prompt():
     dba.save_prompt(role, text, session.get("username", "dev"))
     flash(f"Промпт «{dict(SMM_ROLES).get(role, role)}» сохранён", "success")
     return redirect(url_for("smm.settings", tab="roles"))
+
+
+# ── Восстановление версии промта ──────────────────────────────────────────────
+
+@bp.route("/settings/prompt/restore", methods=["POST"])
+@role_required("dev", "lena", "dasha")
+def restore_prompt():
+    role    = request.form.get("role", "").strip()
+    version = request.form.get("version", "").strip()
+    tab     = request.form.get("tab", "roles")
+
+    if not role or not version or not version.isdigit():
+        flash("Неверные параметры восстановления", "error")
+        return redirect(url_for("smm.settings", tab=tab))
+
+    ok = dba.restore_prompt_version(role, int(version), session.get("username", "dev"))
+    if ok:
+        flash(f"Промпт «{role}» восстановлен до версии v{version}", "success")
+    else:
+        flash(f"Версия v{version} для «{role}» не найдена", "error")
+    return redirect(url_for("smm.settings", tab=tab))
 
 
 # ── Обратная совместимость ─────────────────────────────────────────────────────

@@ -9,12 +9,27 @@ from typing import Any
 
 import psycopg2
 import psycopg2.extras
+import psycopg2.pool
+
+
+_pool: psycopg2.pool.ThreadedConnectionPool | None = None
+
+
+def _get_pool() -> psycopg2.pool.ThreadedConnectionPool:
+    global _pool
+    if _pool is None:
+        db_url = os.environ.get("DATABASE_URL", "")
+        _pool = psycopg2.pool.ThreadedConnectionPool(
+            2, 10, db_url,
+            cursor_factory=psycopg2.extras.RealDictCursor,
+        )
+    return _pool
 
 
 @contextmanager
 def _conn():
-    db_url = os.environ.get("DATABASE_URL", "")
-    conn = psycopg2.connect(db_url, cursor_factory=psycopg2.extras.RealDictCursor)
+    pool = _get_pool()
+    conn = pool.getconn()
     try:
         yield conn
         conn.commit()
@@ -22,7 +37,28 @@ def _conn():
         conn.rollback()
         raise
     finally:
-        conn.close()
+        pool.putconn(conn)
+
+
+# ── Таблицы создаются один раз при старте через init_db() ─────────
+_ensured: set[str] = set()
+
+
+def _ensure_once(tag: str, ddl: str) -> None:
+    """Выполняет DDL только если ещё не выполнялся в этом процессе."""
+    if tag in _ensured:
+        return
+    with _conn() as conn:
+        conn.cursor().execute(ddl)
+    _ensured.add(tag)
+
+
+def init_db() -> None:
+    """Инициализирует все таблицы. Вызывать один раз при старте Flask-приложения."""
+    ensure_flow_suggestions_table()
+    ensure_project_states_table()
+    ensure_book_versions_table()
+    ensure_test_runs_table()
 
 
 # ── Промпты агентов ───────────────────────────────────────────────
@@ -60,6 +96,43 @@ def get_prompt_history(role: str, limit: int = 10) -> list[dict]:
             ORDER BY version DESC LIMIT %s
         """, (role, limit))
         return [dict(r) for r in cur.fetchall()]
+
+
+def get_prompt_full_history(role: str, limit: int = 20) -> list[dict]:
+    """Полная история версий промта с полным текстом для восстановления."""
+    with _conn() as conn:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT version, prompt_text, updated_at, updated_by
+            FROM prompts WHERE role = %s
+            ORDER BY version DESC LIMIT %s
+        """, (role, limit))
+        return [dict(r) for r in cur.fetchall()]
+
+
+def restore_prompt_version(role: str, version: int, author: str) -> bool:
+    """Восстанавливает указанную версию промта, создавая новую запись с её текстом.
+    Возвращает True если версия найдена и восстановлена."""
+    with _conn() as conn:
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT prompt_text FROM prompts WHERE role = %s AND version = %s",
+            (role, version),
+        )
+        row = cur.fetchone()
+        if not row:
+            return False
+        text = row["prompt_text"]
+        cur.execute(
+            "SELECT COALESCE(MAX(version), 0) AS max_ver FROM prompts WHERE role = %s",
+            (role,),
+        )
+        max_ver = cur.fetchone()["max_ver"]
+        cur.execute("""
+            INSERT INTO prompts (role, version, prompt_text, is_active, updated_at, updated_by)
+            VALUES (%s, %s, %s, TRUE, NOW(), %s)
+        """, (role, max_ver + 1, text, author))
+        return True
 
 
 def get_bot_messages() -> list[dict]:
@@ -270,21 +343,19 @@ def toggle_trigger(trigger_id: int) -> None:
 
 def ensure_flow_suggestions_table() -> None:
     """Создаёт таблицу flow_suggestions если её нет."""
-    with _conn() as conn:
-        cur = conn.cursor()
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS flow_suggestions (
-                id          SERIAL PRIMARY KEY,
-                screen_id   TEXT NOT NULL,
-                screen_title TEXT,
-                suggestion  TEXT NOT NULL,
-                author      TEXT NOT NULL DEFAULT 'dasha',
-                status      TEXT NOT NULL DEFAULT 'new',
-                dev_comment TEXT,
-                created_at  TIMESTAMP DEFAULT NOW(),
-                updated_at  TIMESTAMP DEFAULT NOW()
-            )
-        """)
+    _ensure_once("flow_suggestions", """
+        CREATE TABLE IF NOT EXISTS flow_suggestions (
+            id          SERIAL PRIMARY KEY,
+            screen_id   TEXT NOT NULL,
+            screen_title TEXT,
+            suggestion  TEXT NOT NULL,
+            author      TEXT NOT NULL DEFAULT 'dasha',
+            status      TEXT NOT NULL DEFAULT 'new',
+            dev_comment TEXT,
+            created_at  TIMESTAMP DEFAULT NOW(),
+            updated_at  TIMESTAMP DEFAULT NOW()
+        )
+    """)
 
 
 def add_flow_suggestion(screen_id: str, screen_title: str,
@@ -416,27 +487,25 @@ STATE_COLORS = {
 
 
 def ensure_project_states_table() -> None:
-    with _conn() as conn:
-        cur = conn.cursor()
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS project_states (
-                id             SERIAL PRIMARY KEY,
-                telegram_id    BIGINT NOT NULL UNIQUE,
-                draft_id       INTEGER,
-                character_name VARCHAR(200),
-                state          VARCHAR(50) NOT NULL DEFAULT 'created',
-                previous_state VARCHAR(50),
-                phase          VARCHAR(10) DEFAULT 'A',
-                metadata       JSONB DEFAULT '{}',
-                notes          TEXT DEFAULT '',
-                created_at     TIMESTAMPTZ DEFAULT NOW(),
-                updated_at     TIMESTAMPTZ DEFAULT NOW()
-            );
-            CREATE INDEX IF NOT EXISTS idx_proj_states_tgid
-                ON project_states(telegram_id);
-            CREATE INDEX IF NOT EXISTS idx_proj_states_state
-                ON project_states(state);
-        """)
+    _ensure_once("project_states", """
+        CREATE TABLE IF NOT EXISTS project_states (
+            id             SERIAL PRIMARY KEY,
+            telegram_id    BIGINT NOT NULL UNIQUE,
+            draft_id       INTEGER,
+            character_name VARCHAR(200),
+            state          VARCHAR(50) NOT NULL DEFAULT 'created',
+            previous_state VARCHAR(50),
+            phase          VARCHAR(10) DEFAULT 'A',
+            metadata       JSONB DEFAULT '{}',
+            notes          TEXT DEFAULT '',
+            created_at     TIMESTAMPTZ DEFAULT NOW(),
+            updated_at     TIMESTAMPTZ DEFAULT NOW()
+        );
+        CREATE INDEX IF NOT EXISTS idx_proj_states_tgid
+            ON project_states(telegram_id);
+        CREATE INDEX IF NOT EXISTS idx_proj_states_state
+            ON project_states(state);
+    """)
 
 
 def get_project_state(telegram_id: int) -> dict | None:
@@ -522,21 +591,19 @@ def get_project_states_summary() -> dict:
 # ── Версии книг (Phase B context) ────────────────────────────────
 
 def ensure_book_versions_table() -> None:
-    with _conn() as conn:
-        cur = conn.cursor()
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS book_versions (
-                id             SERIAL PRIMARY KEY,
-                telegram_id    BIGINT NOT NULL,
-                version        INTEGER NOT NULL DEFAULT 1,
-                bio_text       TEXT NOT NULL,
-                character_name VARCHAR(200) DEFAULT '',
-                pdf_filename   VARCHAR(200) DEFAULT '',
-                created_at     TIMESTAMPTZ DEFAULT NOW()
-            );
-            CREATE INDEX IF NOT EXISTS idx_book_versions_tgid
-                ON book_versions(telegram_id);
-        """)
+    _ensure_once("book_versions", """
+        CREATE TABLE IF NOT EXISTS book_versions (
+            id             SERIAL PRIMARY KEY,
+            telegram_id    BIGINT NOT NULL,
+            version        INTEGER NOT NULL DEFAULT 1,
+            bio_text       TEXT NOT NULL,
+            character_name VARCHAR(200) DEFAULT '',
+            pdf_filename   VARCHAR(200) DEFAULT '',
+            created_at     TIMESTAMPTZ DEFAULT NOW()
+        );
+        CREATE INDEX IF NOT EXISTS idx_book_versions_tgid
+            ON book_versions(telegram_id);
+    """)
 
 
 def save_book_version(
@@ -606,20 +673,18 @@ import json as _json
 
 
 def ensure_test_runs_table() -> None:
-    with _conn() as conn:
-        cur = conn.cursor()
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS test_runs (
-                id          SERIAL PRIMARY KEY,
-                ran_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-                duration_s  FLOAT NOT NULL DEFAULT 0,
-                total       INTEGER NOT NULL DEFAULT 0,
-                passed      INTEGER NOT NULL DEFAULT 0,
-                failed      INTEGER NOT NULL DEFAULT 0,
-                results     JSONB NOT NULL DEFAULT '[]',
-                summary     TEXT
-            )
-        """)
+    _ensure_once("test_runs", """
+        CREATE TABLE IF NOT EXISTS test_runs (
+            id          SERIAL PRIMARY KEY,
+            ran_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            duration_s  FLOAT NOT NULL DEFAULT 0,
+            total       INTEGER NOT NULL DEFAULT 0,
+            passed      INTEGER NOT NULL DEFAULT 0,
+            failed      INTEGER NOT NULL DEFAULT 0,
+            results     JSONB NOT NULL DEFAULT '[]',
+            summary     TEXT
+        )
+    """)
 
 
 def save_test_run(

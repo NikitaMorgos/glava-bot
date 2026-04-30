@@ -304,6 +304,41 @@
         placeholder="Промпт журналиста {{ j.name }}: стиль, лицо, тон, специфика..."
         class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-gray-900 resize-y mb-2">{{ j.prompt.prompt_text if j.prompt else '' }}</textarea>
 
+      <!-- История версий промта журналиста -->
+      {% if j.prompt_history and j.prompt_history|length > 1 %}
+      <div class="mb-3">
+        <a href="#" onclick="event.preventDefault(); this.nextElementSibling.classList.toggle('hidden')"
+          class="text-xs text-gray-400 hover:text-gray-600">История версий промта ↕</a>
+        <div class="hidden mt-2 space-y-2 border-l-2 border-gray-100 pl-3">
+          {% for h in j.prompt_history %}
+          <div class="text-xs">
+            <div class="flex items-center gap-2 mb-0.5">
+              <span class="font-medium text-gray-500">v{{ h.version }}</span>
+              <span class="text-gray-400">{{ h.updated_at.strftime('%d.%m.%Y %H:%M') if h.updated_at else '—' }}</span>
+              <span class="text-gray-400">{{ h.updated_by or '' }}</span>
+              {% if loop.first %}
+              <span class="text-emerald-600 font-medium">● текущая</span>
+              {% endif %}
+            </div>
+            <div class="text-gray-500 font-mono bg-gray-50 p-1.5 rounded line-clamp-1 mb-1">{{ (h.prompt_text or '')[:80] }}…</div>
+            {% if not loop.first %}
+            <form method="POST" action="/smm/settings/prompt/restore">
+              <input type="hidden" name="role" value="smm_journalist_{{ j.slug }}">
+              <input type="hidden" name="version" value="{{ h.version }}">
+              <input type="hidden" name="tab" value="journalists">
+              <button type="submit"
+                onclick="return confirm('Восстановить промпт журналиста {{ j.name }} до v{{ h.version }} от {{ h.updated_at.strftime('%d.%m.%Y %H:%M') if h.updated_at else '' }}?')"
+                class="text-xs text-indigo-600 hover:text-indigo-800 border border-indigo-200 px-2 py-0.5 rounded">
+                ↩ Восстановить
+              </button>
+            </form>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
       <!-- Назначения (скрываемый блок) -->
       <div data-assign class="bg-gray-50 rounded-lg p-4 mb-3">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -470,8 +505,22 @@
               <span class="text-xs font-medium text-gray-500">v{{ h.version }}</span>
               <span class="text-xs text-gray-400">{{ h.updated_by or '—' }}</span>
             </div>
-            <div class="text-xs text-gray-400 mb-0.5">{{ h.updated_at.strftime('%d.%m %H:%M') if h.updated_at else '—' }}</div>
-            <div class="text-xs text-gray-500 font-mono bg-gray-50 p-1.5 rounded line-clamp-2">{{ h.preview }}…</div>
+            <div class="text-xs text-gray-400 mb-1">{{ h.updated_at.strftime('%d.%m.%Y %H:%M') if h.updated_at else '—' }}</div>
+            <div class="text-xs text-gray-500 font-mono bg-gray-50 p-1.5 rounded line-clamp-2 mb-1">{{ (h.prompt_text or '')[:100] }}…</div>
+            {% if not loop.first %}
+            <form method="POST" action="/smm/settings/prompt/restore">
+              <input type="hidden" name="role" value="{{ role.key }}">
+              <input type="hidden" name="version" value="{{ h.version }}">
+              <input type="hidden" name="tab" value="roles">
+              <button type="submit"
+                onclick="return confirm('Восстановить промпт «{{ role.name }}» до v{{ h.version }} от {{ h.updated_at.strftime('%d.%m.%Y %H:%M') if h.updated_at else '' }}?')"
+                class="text-xs text-indigo-600 hover:text-indigo-800 border border-indigo-200 hover:border-indigo-400 px-2 py-0.5 rounded transition-colors">
+                ↩ Восстановить
+              </button>
+            </form>
+            {% else %}
+            <span class="text-xs text-emerald-600 font-medium">● текущая</span>
+            {% endif %}
           </div>
           {% endfor %}
         </div>

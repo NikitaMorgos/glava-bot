@@ -180,12 +180,18 @@
       <div class="font-semibold text-gray-700 mb-1">🖼 Иллюстрация в тексте</div>
       <div class="text-xs text-gray-400 mb-3">Вставляется в место маркера <code class="bg-gray-100 px-1 rounded">[ИЛЛЮСТРАЦИЯ]</code> в статье</div>
       {% if post.image_url_2 %}
-      <img src="{{ post.image_url_2 }}" alt="Иллюстрация в тексте" class="w-full rounded-lg object-cover" style="max-height: 200px">
+      <img src="{{ post.image_url_2 }}" alt="Иллюстрация в тексте" class="w-full rounded-lg object-cover mb-3" style="max-height: 200px">
       {% else %}
-      <div class="w-full h-24 bg-sky-50 rounded-lg flex items-center justify-center text-sky-400 text-xs">
-        Будет сгенерирована при следующей генерации поста
+      <div class="w-full h-24 bg-sky-50 rounded-lg flex items-center justify-center text-sky-400 text-xs mb-3">
+        Не сгенерирована
       </div>
       {% endif %}
+      <form method="POST" action="/smm/post/{{ post.id }}/regen-image-2">
+        <button type="submit"
+          class="w-full px-3 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 transition-colors">
+          🎨 Регенерировать иллюстрацию
+        </button>
+      </form>
     </div>
     {% endif %}
 
@@ -220,7 +226,7 @@
           </dd>
         </div>
         <div class="flex justify-between items-center gap-3">
-          <dt class="text-gray-400">Модель</dt>
+          <dt class="text-gray-400">Модель журналиста</dt>
           <dd>
             {% set mp = post.journalist_model_provider or 'openai' %}
             {% if mp == 'openai' %}
@@ -234,9 +240,20 @@
             {% endif %}
           </dd>
         </div>
+        <div class="flex justify-between items-center gap-3">
+          <dt class="text-gray-400">Редактор</dt>
+          <dd><span class="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded">Claude · промпт: <code>smm_editor</code></span></dd>
+        </div>
+        {% if post.rubric_name %}
+        <div class="flex justify-between items-center gap-3">
+          <dt class="text-gray-400">Редактор видит</dt>
+          <dd><span class="text-xs text-gray-500">промпт рубрики «{{ post.rubric_name }}»</span></dd>
+        </div>
+        {% endif %}
       </dl>
       <div class="mt-2 text-xs text-gray-400">
-        Источник выбора: назначения журналиста (рубрика + площадка/формат) в настройках SMM.
+        Журналист подбирается по рубрике + площадке/формату поста. Если назначений нет — берётся первый активный.
+        Редактор работает по промпту <code>smm_editor</code> — вкладка «Служебные роли» в настройках SMM.
       </div>
     </div>
 
