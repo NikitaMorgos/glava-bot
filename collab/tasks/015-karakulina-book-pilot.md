@@ -20,11 +20,13 @@
 
 ## Текущий статус (обновляется)
 
-**Дата обновления:** 2026-04-28 (Stage 3 PASS, gate1 after stage3 PASS ✅)
+**Дата обновления:** 2026-04-30 (v37 — полный перепрогон Stage 1→4, все фиксы 016/017/018 верифицированы)
 
-**Текущий этап:** Stage 3 ✅ → gate1 (after stage3) ✅ → **следующий: Stage 4 (вёрстка)**
+**Текущий этап:** v37 gate2c PASS ✅ — пилот готов к gate3 (нужны фотографии Каракулиной)
 
-**Блокеры:** нет. Двигаемся к Stage 4.
+**Блокеры:** нет. Ожидаем фотографии для gate3.
+
+**Принцип:** пилот = диагностический инструмент, не объект ручных правок. Все фиксы — системные (промпты, код, новые агенты), потом полный перепрогон пилота для верификации.
 
 ---
 
@@ -32,11 +34,11 @@
 
 | Этап | Что делает | Статус Каракулиной | Последний прогон |
 |---|---|---|---|
-| **Stage 1** | Cleaner + FE + Completeness Auditor + Name Normalizer → fact_map | ✅ **готов** | v36 (2026-04-28), 95% stability |
-| **Stage 2** | Historian + Ghostwriter + Fact Checker → текст книги | ✅ **готов** | v36 (2026-04-28), 4 ист.вставки, FC PASS iter 2 |
-| **Stage 3** | Literary Editor + Proofreader → отполированный текст | ✅ **готов** | v36 (2026-04-28), LE PASS, PR 6 правок, готово к вёрстке |
+| **Stage 1** | Cleaner + FE + Completeness Auditor + Name Normalizer → fact_map | ✅ **готов** | v37 (2026-04-30), 82% stability (semantic: ~94%) |
+| **Stage 2** | Historian + Ghostwriter + Fact Checker → текст книги | ✅ **готов** | v37 (2026-04-30), FC PASS iter 3 |
+| **Stage 3** | Literary Editor + Proofreader → отполированный текст | ✅ **готов** | v37 (2026-04-30), PR 6 правок, gate1 PASS |
 | **Phase B** | Инкрементная экстракция новых интервью | ⚠️ архитектурно заблокирован | — |
-| **Stage 4** | Photo Editor + Layout Designer + QA + Cover → PDF | ✅ один раз проходили в v_stable | 04-09 |
+| **Stage 4** | Photo Editor + Layout Designer + QA + Cover → PDF | ✅ gate2c PASS на v37 | 2026-04-30 |
 
 ---
 
@@ -44,12 +46,12 @@
 
 | Gate | Что проверяет | Статус | Когда проходили |
 |---|---|---|---|
-| **Gate 1** | Текст книги: 10-пунктовый чек-лист (timeline, historical_notes, ключевые факты, объём 15-17K) | ✅ **PASS** | v36 (2026-04-28): 10/10 critical, FC PASS, bio_struct PASS, 4 ист.вставки |
-| **Gate 2a** | Текст-only PDF (без фото и обогащений) | ✅ проходили | 04-14 |
-| **Gate 2b** | + bio_data | ✅ проходили | v28 04-18 |
-| **Gate 2c** | + callouts / историч. справки / плейсхолдеры фото | ✅ проходили (но потом откат) | v28 04-18 |
-| **Gate 3** | Реальные фото вместо плейсхолдеров | ❌ не доходили | — |
-| **Gate 4** | Финальная обложка + полный PDF | ❌ не доходили (был coverfix в 04-09, не gate4) | — |
+| **Gate 1** | Текст книги: 10-пунктовый чек-лист (timeline, historical_notes, ключевые факты, объём 15-17K) | ✅ **PASS** | v37 (2026-04-30): все гейты PASS на Stage 3 |
+| **Gate 2a** | Текст-only PDF (без фото и обогащений) | ✅ **PASS** на v37 | 2026-04-30 — FIDELITY 58 абзацев OK |
+| **Gate 2b** | + bio_data | ✅ **PASS** на v37 | 2026-04-30 |
+| **Gate 2c** | + callouts / историч. справки / плейсхолдеры фото | ✅ **PASS** на v37 | 2026-04-30 — нет фото-секции (task 018 работает) |
+| **Gate 3** | Реальные фото вместо плейсхолдеров | ❌ ожидаем фото | — |
+| **Gate 4** | Финальная обложка + полный PDF | ❌ не доходили | — |
 
 ---
 
@@ -71,6 +73,7 @@
 | 2026-04-22 | v34 | 🔴 gate1 FAIL → анализ → v35 |
 | 2026-04-23 | v35 | 🔴 gate1 FAIL: 3 критич. проблемы (timeline=None, Историк не мержится, факты TR2 потеряны) |
 | 2026-04-28 | v36 Stage 3 | ✅ LE PASS + PR 6 правок, gate1 after stage3 PASS | 12716→13216 симв, 6 callouts, 6 hist.notes, style_passport 11 имён |
+| 2026-04-29 | v36 Stage 4 | ✅ gate2a/2b/2c PASS | 37 стр., 6 callouts, 6 hist.notes, 16 записей семьи в bio_data, плейсхолдеры фото |
 
 ---
 
@@ -79,13 +82,18 @@
 | № | Название | Статус | Что даёт пилоту |
 |---|---|---|---|
 | 007 | Архитектурные улучшения пайплайна (Proofreader, Phase B FC, Incremental FE) | dasha-review | Phase B архитектура |
-| 008 | Потеря текста в Layout Designer: ссылочная архитектура | new | Защита текста на Stage 4 |
+| 008 | Потеря текста в Layout Designer (исходная задача) | superseded by 017 (2026-04-29) | — |
+| **016** | **Name Normalizer — учёт relation_to_subject (bug #8)** | ✅ **done** (2026-04-30) | RELATION_GROUPS + semantic guard, заблокированные пары логируются |
+| **017** | **Layout Designer — ссылочная архитектура (bugs #1, #2)** | ✅ **done** (2026-04-30) | LD v3.20, paragraph_ref + chapter_id, validate_layout_fidelity, legacy fallback |
+| **018** | **Stage 4 — границы между gate2c (text-only) и gate3 (с фото) (bug #6)** | ✅ **done** (2026-04-30) | photos_mode в manifest, guards в обоих flow |
+| **019** | **Полный перепрогон v37 — верификация фиксов 016/017/018 + промпт-патчей** | new (передаём Cursor) | Проверка что все 9 багов закрыты на реальном прогоне, не только статически |
 | 009 | Протокол ворот приёмки | dasha-review | Сами gate'ы |
 | 010 | Очистка промптов от привязки к Каракулиной | ✅ done (2026-04-28) | Готовность к тиражированию на следующих клиентов |
 | 011 | FE completeness regression | closed-superseded by 014 | — |
 | 014 | Completeness Auditor + Name Normalizer | ✅ done | Стабилизация Stage 1 (вход в этот пилот) |
 | FIX-A (внутри 015) | timeline=None — фикс `phase` логики в `pipeline_utils.py:738` | ✅ **закрыт** | `force_phase="A"` в run_ghostwriter + Stage 2 v36 |
 | FIX-B (внутри 015) | Историк-dict обёртка в `pipeline_utils.py:757-759` | ✅ **закрыт** | Корректная распаковка, 4 ист.вставки в Stage 2 v36 |
+| 016 (TBD) | Narrative Auditor — зеркало Completeness Auditor для нарратива GW | new (отложено до конца пилота) | Ловит семантические галлюцинации (приписанные даты/факты в нарративе) |
 
 ---
 
@@ -104,7 +112,7 @@
 
 ### До gate2a/2b/2c (вёрстка)
 
-После gate1 — прогнать Stage 4 без фото и без обложки. У нас уже проходили в апреле, должно сработать. Но fact_map изменился — могут вылезти новые edge-cases. ETA: ~1 день после gate1.
+✅ **Выполнено 2026-04-29.** gate2a/2b/2c PASS на v36. PDF: `collab/runs/karakulina_v36_gate2c_20260429.pdf`
 
 ### До gate3 (фото)
 
@@ -116,14 +124,202 @@ Cover Designer + финальная сборка. ETA: ~0.5 дня после ga
 
 ---
 
+## Баги пилота → системные задачи (2026-04-29, ручная проверка PDF)
+
+После gate2c PASS Даша вручную просмотрела `karakulina_v36_gate2c_20260429.pdf`. Gates прошли формально, но визуально и содержательно — 9 багов. Подтверждено что **gate2c проверяет структуру, не содержание**.
+
+### 9 багов (диагностика)
+
+| # | Слой | Что | Доказательство |
+|---|------|-----|----------------|
+| 1 | Layout / pdf_renderer | Дубль 5 подглав ch_02 в PDF | стр 5/11, 7/12, 8/13, 9/14, 10/15 — текст один в book_FINAL, два раза в PDF |
+| 2 | Layout / pdf_renderer | Перетасовка подглав ch_03 + пропуск «Порядок и красота» | book_FINAL имеет 7 подглав в порядке X, PDF — 6 подглав в другом порядке |
+| 3 | Layout / Art Director | Текст на chapter_start страницах | стр 3 «Глава 02» + плейсхолдер фото + сразу нарратив (правило: только фото) |
+| 4 | Layout / Art Director | Дыры между подглавами | большие пустые пространства до конца страницы |
+| 5 | Photo Editor / Layout | Подписи фото = filename, не caption | стр 32-53: «ты его в чате упомяни...» вместо «Поликлиника Химинститут» из manifest |
+| 6 | Pipeline orchestration | Photo Editor запустился в Часть 1, не в Часть 2 | gate2c должен быть text-only с плейсхолдерами; в PDF все 23 фото отдельной секцией |
+| 7 | Ghostwriter | bio_data.family пропускает persons (Поля) | person_004 «Полина Амельченко» в fact_map есть, в `chapters[0].bio_data.family[]` нет |
+| 8 | FE / Name Normalizer | Cross-person aliases pollution: 3 женщины склеены в 1 | aliases person_004 = ['тётя Поля', 'Рудая Пелагея Алексеевна', 'Марфа', 'Дуня'] — это сестра + мать + прабабушка |
+| 9 | Ghostwriter | Семантические галлюцинации датировки | «90-е годы была история с огурцами» — в fact_map character_trait без timeline |
+
+### 8 системных задач
+
+**Архитектурные (код / pipeline):**
+
+| Задача | Что делать | Багов покрывает | Приоритет |
+|--------|-----------|-----------------|-----------|
+| **008 escalation: Layout reference architecture** (production-confirmed) | Переход Layout Designer на ссылочную архитектуру: LD возвращает структуру из `paragraph_id`, `pdf_renderer` тянет текст из book_FINAL. Эмиссия текста в LD исчезает → дубли становятся структурно невозможны. | #1 | **critical** |
+| **Layout fidelity preservation** | Структурный инвариант: порядок и состав `chapters[].paragraphs[]` в layout = порядок и состав в book_FINAL. Реализуется как валидация после LD: «множество paragraph_id на выходе == множество на входе, в том же порядке». При нарушении — fail (не auto-patch, который маскирует баг). | #2 | **critical** |
+| **Stage 4 phase boundaries** | Формализовать gate2c (text-only с плейсхолдерами) vs gate3 (с фото) в `test_stage4_*.py`. Photo Editor не должен запускаться до gate3. Сейчас он работает всегда — gate2c в текущем виде включает все 23 фото отдельной секцией. | #6 | high |
+
+**Правила промптов:**
+
+| Задача | Что делать | Багов покрывает | Приоритет |
+|--------|-----------|-----------------|-----------|
+| **Chapter_start layout rule** | Правило в `15_layout_art_director` / `08_layout_designer`: страница типа `chapter_start` содержит только заголовок + фото/плейсхолдер. Без нарратива. | #3 | medium |
+| **Subheading pagination flow** | Правило: подзаголовки внутри главы идут потоком без принудительного разрыва страницы. Разрыв страницы — только перед новым chapter или при заполнении ёмкости страницы. Сейчас LD/AD создаёт пустоты. | #4 | medium |
+| **Photo captions priority rule** | Правило в промптах Photo Editor + Layout Designer: подпись = `manifest.caption` если есть, filename — только fallback. | #5 | high |
+| **Bio_data completeness rule** | Правило в GW промпте + структурная проверка: все `persons[]` с семейным `relation_to_subject` обязаны попадать в `bio_data.family[]`. Аналог Completeness Auditor (014), но на стыке FE→GW. | #7 | high |
+
+**Алгоритмический:**
+
+| Задача | Что делать | Багов покрывает | Приоритет |
+|--------|-----------|-----------------|-----------|
+| **Name Normalizer: semantic context** | Текущий алгоритм сливает по positional windows ±300 chars + общему имени. Должен учитывать `relation_to_subject` и контекст событий — иначе склеивает разных людей с близкими упоминаниями (сестра + мать + прабабушка → одна запись). | #8 | **critical** (загрязняет fact_map → весь downstream) |
+
+### Архитектурный принцип (выявлен в этом разборе)
+
+**Каждая граница между агентами должна иметь проверочный фильтр** (deterministic или LLM-аудит). Текущая картина:
+
+| Граница | Аудитор | Покрывает |
+|---------|---------|-----------|
+| Transcript → FE | ✅ Completeness Auditor (014) | Пропуски (TR упоминает → FE не извлёк) |
+| FE → Name Normalizer | ⚠️ есть алгоритм, но недостаточен (#8) | Должен ловить cross-person aliases |
+| FE → GW | ❌ нет (#7) | Должен ловить пропуски в bio_data, обязательные секции |
+| GW → Layout | ❌ нет (#1, #2) | Должен ловить дубли, пропуски, перетасовку |
+| Нарратив GW → fact_map | ❌ нет (планируется task 016 Narrative Auditor) | Семантические галлюцинации |
+| Photo Editor → Layout | ❌ нет (#5, #6) | Корректность caption mapping, фаза |
+
+**Будущие агенты проектировать сразу с парным аудитором** — не как nice-to-have, а как обязательный элемент.
+
+### Прогресс по потокам (2026-04-29)
+
+**Поток A** (Name Normalizer #8) — передан Cursor, в работе.
+
+**Поток B** (Bio_data completeness #7) — ✅ **сделан Claude в in-place патче** `03_ghostwriter_v2.14.md`. Расширен список ключевых слов родства, матчинг по подстроке, явная проверка полноты с подсчётом N=N. Верификация — на ближайшем перепрогоне Stage 2.
+
+**Поток D** (Chapter_start #3 + Subheading pagination #4) — ✅ **сделан Claude в in-place патчах** `08_layout_designer_v3.19.md` + `15_layout_art_director_v1.8.md`. Найден конфликт правил между AD и LD (AD требовал «без текста на chapter_start», LD требовал «2 абзаца») — синхронизировано в пользу AD. Запрет page_break перед каждым подзаголовком явно прописан в обоих промптах.
+
+**Поток E (часть)** — Photo captions priority (#5) — ✅ **сделан Claude в in-place патчах** `07_photo_editor_v1.md` + `08_layout_designer_v3.19.md`. Запрет filename как подписи, детектор filename в LD, fallback к visual_analysis с low confidence. Phase boundaries (#6) — остаётся для Cursor (код).
+
+**Поток C** (008 escalation #1, #2) — для Cursor, требует Dev Review.
+
+**Поток E (вторая часть)** — Stage 4 phase boundaries (#6) — для Cursor, код.
+
+**Поток F** (Narrative Auditor task 016) — отложен до конца пилота.
+
+CHANGELOG обновлён: запись `[2026-04-29]` в `prompts/CHANGELOG.md`.
+
+### Порядок фиксов (общий план)
+
+1. **Поток A (critical, Stage 1 layer):** Name Normalizer semantic context (#8) → перепрогон Stage 1, новый чистый fact_map без cross-person aliases
+2. **Поток B (parallel, Stage 2 layer):** Bio_data completeness rule (#7) → правка GW промпта; проверится на перепрогоне Stage 2
+3. **Поток C (critical, Stage 4 layer):** 008 escalation — Layout reference architecture (#1) + Layout fidelity preservation (#2). Делать вместе, единая архитектурная переработка LD/pdf_renderer.
+4. **Поток D (Stage 4 promo rules):** Chapter_start rule (#3) + Subheading pagination flow (#4) — правки промптов Art Director/Layout Designer. Можно делать параллельно с C, но проверять после C (на новой архитектуре).
+5. **Поток E (Stage 4 photo layer):** Photo captions priority (#5) + Stage 4 phase boundaries (#6).
+6. **Поток F (отложен):** Task 016 Narrative Auditor — после пилота, закрывает #9.
+
+После A+B+C+D+E — **полный перепрогон пилота** Stage 1 → 2 → 3 → 4 → визуальная проверка PDF. Это верификация системы, не «починка книги».
+
+---
+
 ## Решения, которые нужно принять
 
 - [ ] **Phase B архитектура** — после Completeness Auditor нужен ли вообще явный Phase B для нашего сценария двух транскриптов? Решить после Stage 2 прогона.
 - [ ] **Уровень эскалации completeness gaps в проде** (PRODUCT-3 из task 011) — отложено до task 013 (CJM).
+- [ ] **Семантические галлюцинации GW (task 016 — Narrative Auditor)** — диагностика 2026-04-28 показала что GW переаттрибутирует существующие годы из fact_map к фактам без даты (пример: эпизод с огурцами привязан к «90-м», хотя в fact_map это character_trait без timeline-даты). Регулярка не ловит — нужен LLM-based аудитор как зеркало 014. **Решение по пилоту:** известный артефакт, для Каракулиной не правим (системная задача), фикс архитектурно в 016. Отложено до завершения пилота.
 
 ---
 
 ## Лог обновлений
+
+### 2026-04-29 — Stage 4 Часть 1 — gate2a ✅ gate2b ✅ gate2c ✅
+
+**Вход:**
+- `book_final`: `karakulina/proofreader` checkpoint v12 → из `exports/stage3_v36/karakulina_proofreader_report_20260428_154932.json`
+- `fact_map`: `karakulina/fact_map` checkpoint v27 → из `exports/v36a/karakulina_fact_map_full_20260428_060949_v2.json`
+
+**Команды:**
+```bash
+# Подготовка (обновление checkpoints, approve gate1)
+python3 prep_stage4_v36.py   # на сервере
+
+# gate 2a
+python scripts/test_stage4_karakulina.py --acceptance-gate 2a --prefix karakulina_v36 --approve-gate
+
+# gate 2b
+python scripts/test_stage4_karakulina.py --acceptance-gate 2b --prefix karakulina_v36 \
+  --existing-layout /opt/glava/exports/karakulina_v36_stage4_layout_iter1_20260429_044447.json --approve-gate
+
+# gate 2c
+python scripts/test_stage4_karakulina.py --acceptance-gate 2c --prefix karakulina_v36 \
+  --existing-layout /opt/glava/exports/karakulina_v36_stage4_layout_iter1_20260429_044447.json --approve-gate
+```
+
+**Артефакты на сервере** (`/opt/glava/exports/`):
+- `karakulina_v36_stage4_page_plan_20260429_044447.json` (12K)
+- `karakulina_v36_stage4_layout_iter1_20260429_044447.json` (56K)
+- `karakulina_v36_stage4_pdf_iter1_20260429_044447.pdf` ← **gate 2a** (159K)
+- `karakulina_v36_stage4_gate_2b_20260429_045009.pdf` ← **gate 2b** (166K)
+- `karakulina_v36_stage4_gate_2c_20260429_045045.pdf` ← **gate 2c** (223K)
+- `karakulina_v36_stage4_ai_questions_20260429_044447.json` (14 вопросов, 8 групп)
+
+**Локально:** `collab/runs/karakulina_v36_gate2c_20260429.pdf` ← **финальный PDF для просмотра**
+
+**Стоимость и время (gate 2a — единственный LLM-прогон):**
+
+| Агент | Время | In / Out токены | Стоимость ≈ |
+|---|---|---|---|
+| Арт-директор (15, Sonnet) | 35.4с | 21617 / 3374 | $0.12 |
+| Верстальщик (08, Sonnet) | 182.2с | 25952 / 12042 | $0.26 |
+| Интервьюер (11, Sonnet) | 53.2с | 26741 / 3872 | $0.14 |
+| PDF render 3× | <5с каждый | — | — |
+| **Итого Stage 4 Часть 1** | **~5 мин** | **~74K / ~19K** | **~$0.52** |
+
+QA: пропущен для gate 2a/2b/2c (режим `--skip-qa` при text-only).
+
+**Результаты gate по контенту:**
+
+| Проверка | gate 2a | gate 2b | gate 2c |
+|---|---|---|---|
+| Страниц | 37 | 37 | 37 |
+| PDF размер | 159K | 166K | 223K |
+| bio_data блок | нет | ✅ 5 секций | ✅ 5 секций |
+| Семья в bio_data | нет | ✅ 16 записей | ✅ 16 записей |
+| Callouts | нет | нет | ✅ 6 callouts |
+| Исторические справки | нет | нет | ✅ 6 hist_notes |
+| Фото плейсхолдеры | нет | нет | ✅ на chapter_start |
+
+**Детали bio_data (gate 2b/2c — из book_index напрямую, не из layout JSON):**
+- Личные данные: 3 записи (имя, дата/место рождения)
+- Образование: 1 запись (Кировоградская фельдшерско-акушерская школа)
+- Военная служба: 4 записи (годы, звание, должность, фронты)
+- Награды: 4 записи (медали, орден)
+- Семья: **16 записей** (Отец, Мать, Маня, Муж, Валерий, Татьяна, Владимир Маргось, Олег Кужба, Никита, Даша, тётя Шура, **Толя, Коля, Витя, Римма, Зина**)
+
+**Детали callouts/historical_notes (gate 2c):**
+- 6 callout elements: страницы 21, 22, 23, 24, 31, 36
+- 6 historical_note elements: страницы 8, 9, 10, 13, 14, 18
+
+**Известная проблема — Task 008 (text loss в Layout Designer):**
+- `[LAYOUT-VERIFY] ⚠️ Пропущено 69 из 69 абзацев` — Layout Designer v3.19 не включает `paragraph_id` ссылки в elements
+- Авто-патч `verify_and_patch_layout_completeness` добавил все 69 абзацев
+- **Текст не потерян** — патч восстановил все параграфы
+- Task 008 остаётся в `new`; ссылочная архитектура не реализована
+- Фиксировать где: все 5 глав (ch_01 p1, ch_02 p1–p29, ch_03 p1–p22, ch_04 p1–p14, epilogue p1–p3)
+
+**Дельта vs v28 04-18 (последний gate2c до v36):**
+
+| Метрика | v28 (04-18) | v36 (04-29) | Дельта |
+|---|---|---|---|
+| Страниц | 31 | 37 | +6 стр. |
+| PDF gate2c размер | 236K | 223K | -13K (разн. рендеринг) |
+| Callouts | 6 | 6 | = |
+| Историч. справки | 0 (не было) | 6 | **+6 справок** |
+| bio_data секций | 4 (нет семьи) | 5 (+ семья 16) | **+семья** |
+| Историк интегрирован | ❌ | ✅ | FIX-B |
+| timeline в ch_01 | ❌ None | ✅ 44 событий | FIX-A |
+
+Ключевое улучшение v36 vs v28: **Историк интегрирован** (6 справок), **семья в bio_data**, **timeline ch_01 восстановлен**. Текст богаче (+300 символов нарратива), факты TR2 (Сахалин, пианино) включены.
+
+**Gate checkpoints на сервере** (`/opt/glava/checkpoints/karakulina/`):
+- `layout_text_approved.json` ✅ approved (gate 2a)
+- `layout_bio_approved.json` ✅ approved (gate 2b)
+- `layout_full_approved.json` ✅ approved (gate 2c)
+
+**Следующий шаг:** gate3 (фото). Блокирован до получения фотографий Каракулиной от Даши.
+
+---
 
 ### 2026-04-28 (поздний вечер) — Stage 3 PASS ✅, gate1 после Stage 3 PASS ✅
 
