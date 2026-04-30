@@ -108,7 +108,7 @@
     "model": "claude-sonnet-4-20250514",
     "max_tokens": 64000,
     "temperature": 0.25,
-    "prompt_file": "08_layout_designer_v3.19.md",
+    "prompt_file": "08_layout_designer_v3.20.md",
     "_notes": "v3.19 (2026-04-22): задача 010 — универсализация примеров на базе v3.18 (убраны Каракулина, Мариевка, Полина, Кировоград, Глинск, фронты). v3.18 base: убран форзац, пагинация cover→TOC.",
     "_last_uploaded": "22.04.2026"
   },

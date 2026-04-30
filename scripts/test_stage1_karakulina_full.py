@@ -137,13 +137,23 @@ def main():
 
     # Name Normalizer (детерминированный скрипт)
     print(f"\n>>> ШАГ 4: NAME NORMALIZER")
-    fact_map, merged_pairs = normalize_named_entities(fact_map, cleaned)
+    fact_map, nn_log = normalize_named_entities(fact_map, cleaned)
+    merged_pairs = [e for e in nn_log if e.get("status") == "merged"]
+    rejected_pairs = [e for e in nn_log if e.get("status") == "rejected"]
     normalization_stats = {
         "merged_pairs": merged_pairs,
+        "rejected_pairs": rejected_pairs,
         "normalized_count": len(merged_pairs),
     }
+    if rejected_pairs:
+        print(f"[NAME NORMALIZER] ⛔ заблокировано слияний: {len(rejected_pairs)}")
     fm_path.write_text(json.dumps(fact_map, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"[SAVED] {fm_path.name} (обновлён после Name Normalizer)")
+
+    # Сохраняем полный NN-лог (merged + rejected) — для верификации semantic guard
+    nn_log_path = out_dir / f"karakulina_normalization_log_{ts}.json"
+    nn_log_path.write_text(json.dumps(nn_log, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"[SAVED] {nn_log_path.name} (merged={len(merged_pairs)}, rejected={len(rejected_pairs)})")
 
     # Очищенная копия для Stage 2 (без asr_variants/reasoning/confidence)
     fact_map_clean = clean_fact_map_for_downstream(fact_map)
@@ -186,6 +196,7 @@ def main():
             "fact_map_full": str(fm_path),
             "fact_map_clean": str(fm_clean_path),
             "completeness_audit": str(audit_path),
+            "normalization_log": str(nn_log_path),
         },
         notes={
             "completeness_audit": enrichment_stats,

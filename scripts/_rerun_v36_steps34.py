@@ -46,8 +46,12 @@ print(f"[SAVED] {pre_nn_path} (CA-enriched, перед NN)")
 
 # Step 4: Name Normalizer (fixed: STOP_TOKENS + transitivity)
 print("\n>>> STEP 4: NAME NORMALIZER")
-fact_map, merged_pairs = normalize_named_entities(fact_map, cleaned)
-normalization_stats = {"merged_pairs": merged_pairs, "normalized_count": len(merged_pairs)}
+fact_map, nn_log = normalize_named_entities(fact_map, cleaned)
+normalization_stats = {
+    "merged_pairs": [e for e in nn_log if e.get("status") == "merged"],
+    "rejected_pairs": [e for e in nn_log if e.get("status") == "rejected"],
+    "normalized_count": len([e for e in nn_log if e.get("status") == "merged"]),
+}
 
 fm_path = f"{V36A}/karakulina_fact_map_full_{TS}_v2.json"
 with open(fm_path, "w", encoding="utf-8") as f:

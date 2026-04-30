@@ -44,6 +44,76 @@ STOP_TOKENS = {
     "район", "область", "край", "страна", "переулок", "проспект",
 }
 
+# Семантические группы родства — слияние разрешено только внутри одной группы.
+# compound/unknown relation → не сливать.
+RELATION_GROUPS: dict[str, str] = {
+    # parent
+    "мать": "parent", "мама": "parent", "матери": "parent",
+    "отец": "parent", "папа": "parent", "отца": "parent",
+    "mother": "parent", "father": "parent",
+    # sibling
+    "брат": "sibling", "сестра": "sibling",
+    "brother": "sibling", "sister": "sibling",
+    # spouse
+    "муж": "spouse", "жена": "spouse", "супруг": "spouse", "супруга": "spouse",
+    "husband": "spouse", "wife": "spouse",
+    # child
+    "сын": "child", "дочь": "child", "son": "child", "daughter": "child",
+    # in_law_spouse
+    "зять": "in_law_spouse", "невестка": "in_law_spouse", "сноха": "in_law_spouse",
+    "свекровь": "in_law_spouse", "свёкор": "in_law_spouse", "свекор": "in_law_spouse",
+    "тёща": "in_law_spouse", "теща": "in_law_spouse", "тесть": "in_law_spouse",
+    "золовка": "in_law_spouse", "деверь": "in_law_spouse", "шурин": "in_law_spouse",
+    "своячениц": "in_law_spouse",
+    # grandparent
+    "бабушка": "grandparent", "дедушка": "grandparent",
+    "баба": "grandparent", "дед": "grandparent",
+    "прабабушка": "grandparent", "прадедушка": "grandparent", "прадед": "grandparent",
+    "grandmother": "grandparent", "grandfather": "grandparent",
+    # grandchild
+    "внук": "grandchild", "внучка": "grandchild",
+    "правнук": "grandchild", "правнучка": "grandchild",
+    "grandson": "grandchild", "granddaughter": "grandchild",
+    # extended — тёти/дяди/племянники/двоюродные/крёстные — никогда не сливать с другими группами
+    "тётя": "extended", "тёт": "extended", "тетя": "extended", "тет": "extended",
+    "дядя": "extended", "дяд": "extended",
+    "племянник": "extended", "племянниц": "extended",
+    "двоюродн": "extended", "троюродн": "extended",
+    "крёстн": "extended", "крестн": "extended",
+    "кум": "extended", "кума": "extended",
+    # non_family
+    "коллега": "non_family", "сотрудник": "non_family", "сотрудниц": "non_family",
+    "друг": "non_family", "подруга": "non_family",
+    "сосед": "non_family", "соседка": "non_family",
+    "врач": "non_family", "учитель": "non_family", "учительниц": "non_family",
+    "начальник": "non_family",
+}
+
+
+def _get_relation_group(relation: str | None) -> str:
+    """
+    Определяет семантическую группу родства по relation_to_subject.
+
+    Возвращает:
+    - Название группы (parent/sibling/child/...) если найден ровно один тип
+    - "ambiguous" если найдено ≥2 разных групп (compound: "дочь тёти Шуры")
+    - "unknown" если ни одного совпадения или relation пустой/None
+    """
+    if not relation or not relation.strip():
+        return "unknown"
+    rel_lower = relation.lower()
+    found_groups: set[str] = set()
+    for keyword, group in RELATION_GROUPS.items():
+        if keyword in rel_lower:
+            found_groups.add(group)
+    if not found_groups:
+        return "unknown"
+    if len(found_groups) == 1:
+        return next(iter(found_groups))
+    # ≥2 групп → compound relation (например "дочь тёти Шуры" → child+extended)
+    return "ambiguous"
+
+
 # Исторические и политические деятели — не добавляем в persons как персонажей биографии
 HISTORICAL_BLOCKLIST = {
     "сталин", "горбачёв", "горбачев", "ленин", "хрущёв", "хрущев", "брежнев",
@@ -376,15 +446,18 @@ def normalize_named_entities(fact_map: dict, transcript: str) -> tuple[dict, lis
       1. Для каждой записи генерирует варианты написания
       2. Находит позиции в транскрипте
       3. Ищет пары с пересечением ≥ MERGE_THRESHOLD
-      4. Сливает пары, обновляет ID-ссылки
-      5. Валидирует целостность
+      4. Semantic guard: не сливать persons из разных групп родства
+      5. Сливает разрешённые пары, обновляет ID-ссылки
+      6. Валидирует целостность
 
     Возвращает:
-      (normalized_fact_map, merged_pairs_log)
-        merged_pairs_log — список {"canonical": str, "merged": str, "overlap": float, "field": str}
+      (normalized_fact_map, log)
+        log — список записей двух типов:
+          {"status": "merged", "canonical": str, "merged": str, "overlap": float, "field": str, ...}
+          {"status": "rejected", "candidate_a": str, "candidate_b": str, "blocked_reason": str, "field": str}
     """
     fm = copy.deepcopy(fact_map)
-    merged_pairs_log: list[dict] = []
+    log: list[dict] = []
 
     # ── Шаг 0: удаляем исторических деятелей из persons[] ──────────────────────
     # Защита от LLM-ошибок: Auditor иногда добавляет исторических фигур в auto_enrich.
@@ -473,6 +546,51 @@ def normalize_named_entities(fact_map: dict, transcript: str) -> tuple[dict, lis
                 if len(significant_common) < 2:
                     continue
 
+                # SEMANTIC GUARD (только для persons): не сливать записи из разных групп родства.
+                # Причина: DIMINUTIVES могут давать ≥2 общих токена у разных людей
+                # (напр. Полина-сестра и Пелагея-мать через {поля, полина, пелагея}).
+                # relation_to_subject является единственным надёжным различителем.
+                if field == "persons":
+                    entity_a_tmp = id_to_entity[id_a]
+                    entity_b_tmp = id_to_entity[id_b]
+                    group_a = _get_relation_group(entity_a_tmp.get("relation_to_subject"))
+                    group_b = _get_relation_group(entity_b_tmp.get("relation_to_subject"))
+
+                    blocked_reason: str | None = None
+                    if group_a == "unknown" or group_b == "unknown":
+                        blocked_reason = (
+                            f"unknown_relation ({entity_a_tmp.get('relation_to_subject')!r}"
+                            f" vs {entity_b_tmp.get('relation_to_subject')!r})"
+                        )
+                    elif group_a == "ambiguous" or group_b == "ambiguous":
+                        blocked_reason = (
+                            f"ambiguous_relation ({entity_a_tmp.get('relation_to_subject')!r}"
+                            f" vs {entity_b_tmp.get('relation_to_subject')!r})"
+                        )
+                    elif group_a != group_b:
+                        blocked_reason = (
+                            f"relation_group_mismatch ({group_a}:{entity_a_tmp.get('relation_to_subject')!r}"
+                            f" vs {group_b}:{entity_b_tmp.get('relation_to_subject')!r})"
+                        )
+
+                    if blocked_reason:
+                        log.append({
+                            "status": "rejected",
+                            "field": field,
+                            "candidate_a": entity_a_tmp.get("name", id_a),
+                            "candidate_id_a": id_a,
+                            "candidate_b": entity_b_tmp.get("name", id_b),
+                            "candidate_id_b": id_b,
+                            "shared_variants": sorted(significant_common)[:3],
+                            "blocked_reason": blocked_reason,
+                        })
+                        print(
+                            f"[NAME NORMALIZER] ⛔ blocked merge: "
+                            f"'{entity_a_tmp.get('name', id_a)}' ↔ '{entity_b_tmp.get('name', id_b)}' "
+                            f"— {blocked_reason}"
+                        )
+                        continue
+
                 # Записи без позиций в транскрипте — не сливаем
                 if not pos_a or not pos_b:
                     continue
@@ -488,7 +606,8 @@ def normalize_named_entities(fact_map: dict, transcript: str) -> tuple[dict, lis
                 canonical_id = canonical.get("id") or canonical.get("name", "")
                 duplicate_id = duplicate.get("id") or duplicate.get("name", "")
 
-                merged_pairs_log.append({
+                log.append({
+                    "status": "merged",
                     "field": field,
                     "canonical": canonical.get("name", ""),
                     "canonical_id": canonical_id,
@@ -534,7 +653,7 @@ def normalize_named_entities(fact_map: dict, transcript: str) -> tuple[dict, lis
     else:
         print("[NAME NORMALIZER] ✅ Целостность fact_map подтверждена")
 
-    return fm, merged_pairs_log
+    return fm, log
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -578,15 +697,24 @@ def main():
     output_path.write_text(json.dumps(normalized, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"[SAVED] {output_path}")
 
+    merged = [e for e in log if e.get("status") == "merged"]
+    rejected = [e for e in log if e.get("status") == "rejected"]
+
     if log_path and log:
         log_path.write_text(json.dumps(log, ensure_ascii=False, indent=2), encoding="utf-8")
-        print(f"[SAVED] {log_path} ({len(log)} пар слито)")
+        print(f"[SAVED] {log_path} ({len(merged)} слито, {len(rejected)} заблокировано)")
 
-    if log:
+    if merged:
         print("\nСлитые пары:")
-        for pair in log:
+        for pair in merged:
             print(f"  [{pair['field']}] '{pair['merged']}' → '{pair['canonical']}' "
                   f"(overlap={pair['overlap']})")
+
+    if rejected:
+        print("\nЗаблокированные слияния (semantic guard):")
+        for r in rejected:
+            print(f"  [{r['field']}] '{r['candidate_a']}' ↔ '{r['candidate_b']}' "
+                  f"— {r['blocked_reason']}")
 
 
 if __name__ == "__main__":

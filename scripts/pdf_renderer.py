@@ -286,14 +286,19 @@ class PhotoManager:
 
 # ── Book index (paragraph lookup) ─────────────────────────────────────────────
 class BookIndex:
-    """Индекс абзацев книги для lookup по chapter_id + paragraph_id.
+    """Индекс абзацев книги для lookup по chapter_id + paragraph_ref/paragraph_id.
 
-    Layout Designer v3.19+ возвращает ссылки вида:
-      {"type": "paragraph", "chapter_id": "ch_02", "paragraph_id": "p3"}
+    Layout Designer v3.20+ возвращает ссылки вида:
+      {"type": "paragraph", "chapter_id": "ch_02", "paragraph_ref": "p3"}
     Этот класс восстанавливает текст из book_FINAL.json по этим ключам.
 
-    Fallback: если paragraph_id не найден — возвращает None,
-    _render_paragraph использует elem.get("text") как запасной вариант.
+    Обратная совместимость (legacy v3.19):
+      {"type": "paragraph", "chapter_id": "ch_02", "paragraph_id": "p3"}
+    Тоже поддерживается через тот же .get() вызов.
+
+    Fallback: если ref не найден — поведение зависит от strict_refs:
+    - strict_refs=False: возвращает None (_render_paragraph переходит к legacy text или пропуску)
+    - strict_refs=True:  raises ValueError (ошибка пайплайна)
     """
 
     def __init__(self, book: dict | None):
@@ -354,11 +359,15 @@ class RenderOptions:
         with_bio_block: bool = False,
         no_photos: bool = False,
         with_cover: bool = False,
+        strict_refs: bool = False,
+        allow_missing_refs: bool = False,
     ):
         self.text_only = text_only
         self.with_bio_block = with_bio_block
         self.no_photos = no_photos
         self.with_cover = with_cover
+        self.strict_refs = strict_refs
+        self.allow_missing_refs = allow_missing_refs
 
     def mode_label(self) -> str:
         if self.text_only and self.with_bio_block:
@@ -1301,12 +1310,24 @@ class PdfRenderer:
         )
 
     def _elem_para_text(self, elem: dict) -> str:
-        """Возвращает текст абзаца (новый или legacy формат)."""
-        ch_id  = elem.get("chapter_id", "")
-        par_id = elem.get("paragraph_id", "")
+        """Возвращает текст абзаца (новый ref-формат, legacy paragraph_id, или legacy text)."""
+        ch_id = elem.get("chapter_id", "")
+        # v3.20+: paragraph_ref — новый канонический формат
+        par_ref = elem.get("paragraph_ref", "")
+        # v3.19 legacy: paragraph_id — обратная совместимость
+        par_id = elem.get("paragraph_id", "") or par_ref
         if ch_id and par_id:
-            return self.book_index.get(ch_id, par_id) or ""
-        return elem.get("text", "")
+            text = self.book_index.get(ch_id, par_id)
+            if text is not None:
+                return text
+            # ref не найден в book_index
+            if self.options.strict_refs and not self.options.allow_missing_refs:
+                raise ValueError(f"[RENDERER] strict_refs: paragraph_ref '{ch_id}/{par_id}' not found in book_FINAL")
+        # Legacy fallback: inline text (deprecated)
+        legacy_text = elem.get("text", "")
+        if legacy_text and (ch_id or par_id):
+            print(f"[RENDERER] ⚠️  legacy text fallback: {ch_id}/{par_id} — используется inline text")
+        return legacy_text
 
     def _paragraph_count(self, page: dict) -> int:
         return sum(
@@ -2006,17 +2027,25 @@ class PdfRenderer:
 
     def _render_paragraph(self, c, elem: dict, y: float) -> float:
         import re as _re
-        # Новый формат v3.19: ссылка по chapter_id + paragraph_id
-        ch_id  = elem.get("chapter_id", "")
-        par_id = elem.get("paragraph_id", "")
+        # v3.20+: paragraph_ref — новый канонический формат
+        # v3.19 legacy: paragraph_id — обратная совместимость
+        ch_id   = elem.get("chapter_id", "")
+        par_ref = elem.get("paragraph_ref", "")
+        par_id  = elem.get("paragraph_id", "") or par_ref
         if ch_id and par_id:
             text = self.book_index.get(ch_id, par_id)
             if text is None:
+                if self.options.strict_refs and not self.options.allow_missing_refs:
+                    raise ValueError(
+                        f"[RENDERER] strict_refs: paragraph_ref '{ch_id}/{par_id}' not found in book_FINAL"
+                    )
                 print(f"[RENDERER] ⚠️  paragraph не найден: {ch_id}/{par_id} — пропускаем")
                 return y
         else:
             # Legacy-формат: текст прямо в элементе
             text = elem.get("text", "")
+            if text:
+                print(f"[RENDERER] ⚠️  legacy text fallback на странице без chapter/para ref")
         if not text:
             return y
         # ## Подзаголовок — рендерим как section_header (PT Sans Bold 16pt)
@@ -2654,6 +2683,10 @@ def main():
                         help="Скрыть реальные фото, оставить текст/callout/ист.справки и плейсхолдеры chapter_start")
     parser.add_argument("--with-cover", action="store_true",
                         help="Включить страницу обложки")
+    parser.add_argument("--strict-refs", action="store_true",
+                        help="Ошибка если paragraph_ref не найден в book_FINAL (production mode)")
+    parser.add_argument("--allow-missing-refs", action="store_true",
+                        help="Разрешить пропуск ненайденных refs (отменяет --strict-refs для данного запуска)")
     args = parser.parse_args()
 
     layout_path = Path(args.layout)
@@ -2696,7 +2729,7 @@ def main():
     print(f"[RENDERER] Фото:     {photos_dir or 'нет'}")
     print(f"[RENDERER] Портрет:  {portrait.name if portrait else 'нет'}")
     print(f"[RENDERER] Флаги:    text_only={args.text_only} with_bio_block={args.with_bio_block} "
-          f"no_photos={args.no_photos} with_cover={args.with_cover}")
+          f"no_photos={args.no_photos} with_cover={args.with_cover} strict_refs={getattr(args,'strict_refs',False)}")
     print(f"[RENDERER] Выход:    {output}")
 
     photos   = PhotoManager(photos_dir)
@@ -2705,6 +2738,8 @@ def main():
         with_bio_block=args.with_bio_block,
         no_photos=args.no_photos,
         with_cover=args.with_cover,
+        strict_refs=getattr(args, "strict_refs", False),
+        allow_missing_refs=getattr(args, "allow_missing_refs", False),
     )
     renderer = PdfRenderer(layout, photos, portrait, output, book_index, options)
     renderer.render()

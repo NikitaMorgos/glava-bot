@@ -1295,11 +1295,13 @@ def verify_and_patch_layout_completeness(layout_result: dict, book_final: dict) 
     }
 
     # Собираем все (chapter_id, paragraph_id) которые уже есть в layout
+    # Поддерживаем оба поля: paragraph_ref (v3.20+) и paragraph_id (v3.19 legacy)
     layout_tuples: set[tuple[str, str]] = set()
     for page in pages:
         page_ch_id = page.get("chapter_id", "")
         for el in page.get("elements", []):
-            pid    = el.get("paragraph_id", "")
+            # paragraph_ref — новый формат (v3.20+)
+            pid    = el.get("paragraph_ref", "") or el.get("paragraph_id", "")
             el_ch  = el.get("chapter_id", "") or page_ch_id
             if pid and el_ch:
                 layout_tuples.add((el_ch, pid))
@@ -1358,7 +1360,7 @@ def verify_and_patch_layout_completeness(layout_result: dict, book_final: dict) 
             target_page.setdefault("elements", []).append({
                 "type": "paragraph",
                 "chapter_id": ch_id,
-                "paragraph_id": pid,
+                "paragraph_ref": pid,
             })
 
     # Обновляем pages в layout_result
@@ -1598,6 +1600,16 @@ async def main():
         # Проверяем полноту layout и патчим пропущенные абзацы (с учётом chapter_id)
         layout_result = verify_and_patch_layout_completeness(layout_result, book_final)
 
+        # Валидация соответствия layout ↔ book_FINAL (задача 017)
+        try:
+            from validate_layout_fidelity import validate_fidelity as _vf
+            _allow_mm = getattr(args, "allow_fc_fail", False)
+            _passed, _ferrors = _vf(layout_result, book_final, allow_mismatch=True)
+            if _ferrors:
+                print(f"[FIDELITY] ⚠️  {len(_ferrors)} нарушений (существующий layout — fidelity-предупреждения)")
+        except ImportError:
+            pass
+
         code_path = save_code_file(layout_result, f"{args.prefix}_reuse", ts)
         if not code_path:
             raise RuntimeError("Не удалось извлечь pages/layout_code из --existing-layout")
@@ -1613,9 +1625,10 @@ async def main():
             render_cmd.append("--no-photos")
         if args.with_cover:
             render_cmd.append("--with-cover")
-        # Auto-detect photos_dir если не передан явно (для gate 2c/3/4 с плейсхолдерами)
+        # Auto-detect photos_dir если не передан явно (для gate 3/4 с реальными фото).
+        # gate 2a/2b/2c — text-only, авто-детект не применяется.
         photos_dir_effective = args.photos_dir
-        if not photos_dir_effective and args.acceptance_gate in {"2c", "3", "4"}:
+        if not photos_dir_effective and args.acceptance_gate in {"3", "4"}:
             # Пробуем strip _stageN suffix из PROJECT_ID: "karakulina_stage4" → "karakulina"
             _proj_base = PROJECT_ID.split("_stage")[0]
             for _candidate in [
@@ -1627,6 +1640,13 @@ async def main():
                     photos_dir_effective = str(_candidate)
                     print(f"[REUSE] Auto photos_dir: {_candidate}")
                     break
+        # Явный guard: на gate 2a/2b/2c игнорируем photos_dir (даже если передан явно)
+        if args.acceptance_gate in {"2a", "2b", "2c"} and photos_dir_effective:
+            print(
+                f"[WARN] gate {args.acceptance_gate}: photos_dir проигнорирован "
+                f"(text-only режим). Фото: {photos_dir_effective}"
+            )
+            photos_dir_effective = None
         if photos_dir_effective:
             render_cmd += ["--photos-dir", str(Path(photos_dir_effective).resolve())]
         if args.existing_portrait and Path(args.existing_portrait).exists():
@@ -1688,6 +1708,10 @@ async def main():
                 "no_photos": args.no_photos,
                 "with_cover": args.with_cover,
                 "existing_layout": str(existing_layout_path),
+                "photos_mode": (
+                    "none" if args.acceptance_gate in {"2a", "2b", "2c"}
+                    else ("real" if photos_dir_effective else "placeholders")
+                ),
             },
             outputs={
                 "page_plan_path": None,
@@ -1936,7 +1960,7 @@ async def main():
             iteration=qa_iteration,
             cfg=cfg,
             book_json_path=str(proofreader_input_path.resolve()),
-            photos_dir_path=str(Path(args.photos_dir).resolve()) if args.photos_dir else None,
+            photos_dir_path=str(Path(args.photos_dir).resolve()) if args.photos_dir and args.acceptance_gate not in {"2a", "2b", "2c"} else None,
             pdf_output_path=str(pdf_output_path),
         )
 
@@ -1957,8 +1981,17 @@ async def main():
 
         print_layout_designer_results(layout_result)
 
-        # ─── Верификация полноты layout (все paragraph_id должны быть в layout) ───
+        # ─── Верификация полноты layout (все paragraph_refs должны быть в layout) ───
         layout_result = verify_and_patch_layout_completeness(layout_result, book_final)
+
+        # Валидация соответствия layout ↔ book_FINAL: completeness, order, uniqueness (задача 017)
+        try:
+            from validate_layout_fidelity import validate_fidelity as _vf
+            _passed_fid, _ferrors = _vf(layout_result, book_final, allow_mismatch=False)
+            if not _passed_fid:
+                print(f"[FIDELITY] ❌ Нарушения fidelity. Используй --allow-mismatch для обхода.")
+        except ImportError:
+            pass
 
         # Перезаписываем layout_path с патчем (если были пропуски)
         with open(layout_path, "w", encoding="utf-8") as f:
@@ -2357,6 +2390,10 @@ async def main():
             "with_bio_block": args.with_bio_block,
             "no_photos": args.no_photos,
             "with_cover": args.with_cover,
+            "photos_mode": (
+                "none" if args.acceptance_gate in {"2a", "2b", "2c"}
+                else ("real" if args.photos_dir and args.acceptance_gate not in {"2a", "2b", "2c"} else "placeholders")
+            ),
         },
         outputs={
             "page_plan_path": str(art_path) if "art_path" in locals() else None,
