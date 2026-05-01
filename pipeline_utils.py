@@ -60,14 +60,33 @@ def prepare_book_for_layout(book: dict) -> dict:
     по страницам и последующего lookup по paragraph_id в pdf_renderer.
 
     Присваивает id p1, p2, p3...
+
+    Подзаголовки в legacy format (## Текст, ### Текст) автоматически нормализуются
+    в структурный тип `subheading`. Лог-предупреждение: GW должен генерировать
+    {"type": "subheading"} напрямую, не markdown-маркеры.
     """
     import copy
+    import re as _re
     book = copy.deepcopy(book)
     for ch in book.get("chapters", []):
         content = ch.get("content") or ""
         paras = [p.strip() for p in content.split("\n\n") if p.strip()]
         if paras:
-            ch["paragraphs"] = [{"id": f"p{i + 1}", "text": p} for i, p in enumerate(paras)]
+            items = []
+            for i, p in enumerate(paras):
+                pid = f"p{i + 1}"
+                m = _re.match(r'^#{2,3}\s+(.+)$', p.strip())
+                if m:
+                    heading_text = m.group(1).strip()
+                    print(
+                        f"[BOOK-NORMALIZE] auto-detected subheading in {ch.get('id','?')}/{pid}: "
+                        f'"{heading_text[:60]}" (legacy ## / ### → subheading). '
+                        f"GW должен эмитировать {{\"type\": \"subheading\"}} явно."
+                    )
+                    items.append({"id": pid, "type": "subheading", "text": heading_text})
+                else:
+                    items.append({"id": pid, "text": p})
+            ch["paragraphs"] = items
         elif not ch.get("paragraphs"):
             ch["paragraphs"] = []
     return book
@@ -480,12 +499,17 @@ def run_completeness_auditor(
     narrator_name: str,
     narrator_relation: str,
     project_id: str,
+    pin_list_fact_map: dict | None = None,
     cfg: dict | None = None,
 ) -> dict:
     """
     Запускает Completeness Auditor (агент 16).
 
     Принимает очищенный транскрипт и уже готовый fact_map от FE.
+    Опционально принимает fact_map предыдущего прогона (pin_list_fact_map) как
+    контрольный список: персоны из него считаются «закреплёнными» — если они
+    были в предыдущем прогоне, но не найдены в текущем, Аудитор обязан перепроверить.
+
     Возвращает audit_result:
       {
         "auto_enrich":    частичный fact_map (persons/timeline/etc.) → мержится в основной
@@ -524,6 +548,32 @@ def run_completeness_auditor(
             "fact_map": fact_map,
         },
     }
+
+    # Pin-list: добавляем персон из предыдущего прогона если передан
+    if pin_list_fact_map:
+        prev_persons = pin_list_fact_map.get("persons", [])
+        if prev_persons:
+            pin_list = [
+                {
+                    "id": p.get("id", ""),
+                    "name": p.get("name", ""),
+                    "aliases": p.get("aliases", []),
+                    "relation_to_subject": p.get("relation_to_subject", "unknown"),
+                }
+                for p in prev_persons
+                if p.get("name")
+            ]
+            user_message["pin_list"] = {
+                "source": "previous_run_fact_map",
+                "description": (
+                    "Персоны из предыдущего прогона Stage 1. "
+                    "Это контрольный список: если персона была в предыдущем прогоне, "
+                    "но отсутствует в текущем fact_map — обязательно проверить транскрипт. "
+                    "Если найдена → auto_enrich; если нет → log_only_gaps с пометкой 'was_in_pin_list'."
+                ),
+                "persons": pin_list,
+            }
+            print(f"[COMPLETENESS AUDITOR] Pin-list: {len(pin_list)} персон из предыдущего прогона")
 
     raw_chunks = []
     with client.messages.stream(

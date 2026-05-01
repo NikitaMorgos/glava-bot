@@ -37,11 +37,31 @@ def main():
         help="Второй транскрипт (опционально). Если не указан — Stage1 работает только с TR1.")
     parser.add_argument("--output-dir", default="/opt/glava/exports")
     parser.add_argument("--skip-cleaner", action="store_true")
+    parser.add_argument(
+        "--prev-fact-map",
+        default=None,
+        help="Путь к fact_map предыдущего прогона Stage 1 (JSON). "
+             "Используется Completeness Auditor как pin-list: "
+             "персоны из предыдущего прогона — контрольный список; "
+             "если кто-то был раньше и не найден сейчас — flag для re-extraction.",
+    )
     args = parser.parse_args()
 
     api_key = os.getenv("ANTHROPIC_API_KEY", "")
     if not api_key:
         print("[ERROR] ANTHROPIC_API_KEY не задан"); sys.exit(1)
+
+    prev_fact_map: dict | None = None
+    if args.prev_fact_map:
+        prev_path = Path(args.prev_fact_map)
+        if not prev_path.exists():
+            print(f"[WARN] --prev-fact-map: файл не найден: {prev_path} — pin-list отключён")
+        else:
+            with open(prev_path, encoding="utf-8") as _f:
+                _prev = json.load(_f)
+            prev_fact_map = _prev.get("fact_map") if "fact_map" in _prev else _prev
+            prev_persons = len(prev_fact_map.get("persons", []))
+            print(f"[STAGE1] Pin-list из {prev_path.name}: {prev_persons} персон")
 
     tr1 = Path(args.transcript1)
     if not tr1.exists():
@@ -122,6 +142,7 @@ def main():
         narrator_name=NARRATOR_NAME,
         narrator_relation=NARRATOR_RELATION,
         project_id=PROJECT_ID,
+        pin_list_fact_map=prev_fact_map,
         cfg=cfg,
     )
     fact_map, enrichment_stats = apply_completeness_enrichment(fact_map, audit_result)

@@ -115,29 +115,31 @@ def _config_check() -> list[dict]:
 @bp.route("/")
 @role_required("dev", "dasha", "lena")
 def dashboard():
+    config = _config_check()
+    return render_template(
+        "dev/dashboard.html",
+        config=config,
+        now=datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC"),
+    )
+
+
+@bp.route("/metrics")
+@role_required("dev", "dasha", "lena")
+def metrics():
+    """Возвращает медленные метрики дашборда (S3, systemctl, journalctl) как JSON."""
     services = [
         _service_status("glava"),
         _service_status("glava-cabinet"),
         _service_status("glava-admin"),
     ]
-    db_metrics = _db_metrics()
-    s3_metrics = _s3_metrics()
-    errors = _error_log()
-    git = _git_info()
-    n8n_ok = _n8n_status()
-    config = _config_check()
-
-    return render_template(
-        "dev/dashboard.html",
-        services=services,
-        db_metrics=db_metrics,
-        s3_metrics=s3_metrics,
-        errors=errors,
-        git=git,
-        n8n_ok=n8n_ok,
-        config=config,
-        now=datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC"),
-    )
+    return jsonify({
+        "services":   services,
+        "db_metrics": _db_metrics(),
+        "s3_metrics": _s3_metrics(),
+        "errors":     _error_log(),
+        "git":        _git_info(),
+        "n8n_ok":     _n8n_status(),
+    })
 
 
 # ── Предложения по флоу ──────────────────────────────────────────

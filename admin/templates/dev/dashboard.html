@@ -4,7 +4,7 @@
 
 <div class="flex items-center justify-between mb-6">
   <h1 class="text-2xl font-bold text-gray-900">Дашборд разработчика</h1>
-  <span class="text-sm text-gray-400">{{ now }}</span>
+  <span class="text-sm text-gray-400" id="dash-ts">{{ now }}</span>
 </div>
 
 <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -12,93 +12,53 @@
   <!-- Сервисы -->
   <div class="bg-white rounded-xl shadow-sm p-5 col-span-1">
     <div class="font-semibold text-gray-700 mb-3">⚙️ Сервисы</div>
-    <div class="space-y-2">
-      {% for svc in services %}
+    <div id="svc-list" class="space-y-2">
+      {% for name in ['glava', 'glava-cabinet', 'glava-admin', 'n8n (docker)'] %}
       <div class="flex items-center justify-between">
-        <span class="text-sm text-gray-600 font-mono">{{ svc.name }}</span>
-        <div class="flex items-center gap-2">
-          <span class="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full
-            {{ 'bg-green-100 text-green-700' if svc.active else 'bg-red-100 text-red-700' }}">
-            <span class="w-1.5 h-1.5 rounded-full {{ 'bg-green-500' if svc.active else 'bg-red-500' }}"></span>
-            {{ 'active' if svc.active else 'inactive' }}
-          </span>
-          <button onclick="restartService('{{ svc.name }}')"
-            class="text-xs text-gray-400 hover:text-gray-700 px-2 py-0.5 border border-gray-200 rounded hover:border-gray-400 transition-colors">
-            restart
-          </button>
-        </div>
+        <span class="text-sm text-gray-600 font-mono">{{ name }}</span>
+        <span class="inline-block w-20 h-5 bg-gray-100 rounded animate-pulse"></span>
       </div>
       {% endfor %}
-      <!-- n8n -->
-      <div class="flex items-center justify-between">
-        <span class="text-sm text-gray-600 font-mono">n8n (docker)</span>
-        <div class="flex items-center gap-2">
-          <span class="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full
-            {{ 'bg-green-100 text-green-700' if n8n_ok else 'bg-red-100 text-red-700' }}">
-            <span class="w-1.5 h-1.5 rounded-full {{ 'bg-green-500' if n8n_ok else 'bg-red-500' }}"></span>
-            {{ 'running' if n8n_ok else 'down' }}
-          </span>
-          <button onclick="restartService('glava-n8n')"
-            class="text-xs text-gray-400 hover:text-gray-700 px-2 py-0.5 border border-gray-200 rounded hover:border-gray-400 transition-colors">
-            restart
-          </button>
-        </div>
-      </div>
     </div>
   </div>
 
   <!-- БД метрики -->
   <div class="bg-white rounded-xl shadow-sm p-5">
     <div class="font-semibold text-gray-700 mb-3">🗄️ База данных</div>
-    {% if db_metrics.get('error') %}
-      <div class="text-sm text-red-600">{{ db_metrics.error }}</div>
-    {% else %}
-      <div class="grid grid-cols-2 gap-3">
-        {% for key, val in db_metrics.items() %}
-        <div class="bg-gray-50 rounded-lg p-3 text-center">
-          <div class="text-2xl font-bold text-gray-800">{{ val }}</div>
-          <div class="text-xs text-gray-500 mt-1">{{ key }}</div>
-        </div>
-        {% endfor %}
+    <div id="db-metrics" class="grid grid-cols-2 gap-3">
+      {% for _ in range(4) %}
+      <div class="bg-gray-50 rounded-lg p-3 text-center">
+        <div class="h-8 bg-gray-200 rounded animate-pulse mb-1"></div>
+        <div class="h-3 bg-gray-100 rounded animate-pulse w-3/4 mx-auto"></div>
       </div>
-    {% endif %}
+      {% endfor %}
+    </div>
   </div>
 
   <!-- S3 -->
   <div class="bg-white rounded-xl shadow-sm p-5">
     <div class="font-semibold text-gray-700 mb-3">☁️ Хранилище S3</div>
-    {% if s3_metrics.get('error') %}
-      <div class="text-sm text-red-600">{{ s3_metrics.error }}</div>
-    {% else %}
-      <div class="grid grid-cols-2 gap-3">
-        <div class="bg-gray-50 rounded-lg p-3 text-center">
-          <div class="text-2xl font-bold text-gray-800">{{ s3_metrics.count }}</div>
-          <div class="text-xs text-gray-500 mt-1">объектов</div>
-        </div>
-        <div class="bg-gray-50 rounded-lg p-3 text-center">
-          <div class="text-2xl font-bold text-gray-800">{{ s3_metrics.size_mb }}</div>
-          <div class="text-xs text-gray-500 mt-1">МБ</div>
-        </div>
+    <div id="s3-metrics" class="grid grid-cols-2 gap-3">
+      {% for _ in range(2) %}
+      <div class="bg-gray-50 rounded-lg p-3 text-center">
+        <div class="h-8 bg-gray-200 rounded animate-pulse mb-1"></div>
+        <div class="h-3 bg-gray-100 rounded animate-pulse w-3/4 mx-auto"></div>
       </div>
-      {% if s3_metrics.get('note') %}
-        <div class="text-xs text-amber-700 mt-2">{{ s3_metrics.note }}</div>
-      {% endif %}
-    {% endif %}
+      {% endfor %}
+    </div>
+    <div id="s3-note" class="hidden text-xs text-amber-700 mt-2"></div>
   </div>
 
   <!-- Git -->
   <div class="bg-white rounded-xl shadow-sm p-5">
     <div class="font-semibold text-gray-700 mb-3">🔧 Деплой</div>
-    <div class="space-y-2">
-      <div class="flex gap-2 text-sm">
-        <span class="font-mono bg-gray-100 px-2 py-0.5 rounded text-gray-700">{{ git.hash }}</span>
-        <span class="text-gray-600 truncate">{{ git.message }}</span>
-      </div>
-      <div class="text-xs text-gray-400">{{ git.date }}</div>
+    <div id="git-info" class="space-y-2">
+      <div class="h-5 bg-gray-100 rounded animate-pulse"></div>
+      <div class="h-3 bg-gray-100 rounded animate-pulse w-1/2"></div>
     </div>
   </div>
 
-  <!-- Конфиг -->
+  <!-- Конфиг (статичный — грузится сразу) -->
   <div class="bg-white rounded-xl shadow-sm p-5">
     <div class="font-semibold text-gray-700 mb-3">🔑 Конфиг-ключи</div>
     <div class="space-y-1.5 max-h-48 overflow-y-auto">
@@ -116,15 +76,9 @@
   <!-- Ошибки -->
   <div class="bg-white rounded-xl shadow-sm p-5 col-span-1 lg:col-span-2 xl:col-span-3">
     <div class="font-semibold text-gray-700 mb-3">🚨 Последние ошибки (journalctl)</div>
-    {% if errors %}
-      <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto max-h-64">
-        {% for line in errors %}
-          <div class="text-xs font-mono text-red-300 whitespace-nowrap">{{ line }}</div>
-        {% endfor %}
-      </div>
-    {% else %}
-      <div class="text-sm text-gray-400">Ошибок нет 🎉</div>
-    {% endif %}
+    <div id="error-log">
+      <div class="h-16 bg-gray-100 rounded-lg animate-pulse"></div>
+    </div>
   </div>
 
 </div>
@@ -145,5 +99,104 @@ async function restartService(name) {
     btn.disabled = false;
   }
 }
+
+function svcBadge(active) {
+  const color = active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700';
+  const dot   = active ? 'bg-green-500' : 'bg-red-500';
+  const label = active ? 'active' : 'inactive';
+  return `<span class="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${color}">
+    <span class="w-1.5 h-1.5 rounded-full ${dot}"></span>${label}</span>`;
+}
+
+function restartBtn(name) {
+  return `<button onclick="restartService('${name}')"
+    class="text-xs text-gray-400 hover:text-gray-700 px-2 py-0.5 border border-gray-200 rounded hover:border-gray-400 transition-colors">
+    restart</button>`;
+}
+
+async function loadMetrics() {
+  let data;
+  try {
+    const r = await fetch('/dev/metrics');
+    data = await r.json();
+  } catch(e) {
+    document.getElementById('svc-list').innerHTML =
+      '<div class="text-sm text-red-500">Ошибка загрузки метрик</div>';
+    return;
+  }
+
+  // Сервисы
+  const svcHtml = data.services.map(s =>
+    `<div class="flex items-center justify-between">
+      <span class="text-sm text-gray-600 font-mono">${s.name}</span>
+      <div class="flex items-center gap-2">${svcBadge(s.active)}${restartBtn(s.name)}</div>
+    </div>`
+  ).join('') +
+  `<div class="flex items-center justify-between">
+    <span class="text-sm text-gray-600 font-mono">n8n (docker)</span>
+    <div class="flex items-center gap-2">${svcBadge(data.n8n_ok).replace('active','running').replace('inactive','down')}${restartBtn('glava-n8n')}</div>
+  </div>`;
+  document.getElementById('svc-list').innerHTML = svcHtml;
+
+  // БД
+  const db = data.db_metrics;
+  if (db.error) {
+    document.getElementById('db-metrics').innerHTML =
+      `<div class="text-sm text-red-600 col-span-2">${db.error}</div>`;
+  } else {
+    document.getElementById('db-metrics').innerHTML =
+      Object.entries(db).map(([k,v]) =>
+        `<div class="bg-gray-50 rounded-lg p-3 text-center">
+          <div class="text-2xl font-bold text-gray-800">${v}</div>
+          <div class="text-xs text-gray-500 mt-1">${k}</div>
+        </div>`
+      ).join('');
+  }
+
+  // S3
+  const s3 = data.s3_metrics;
+  if (s3.error) {
+    document.getElementById('s3-metrics').innerHTML =
+      `<div class="text-sm text-red-600 col-span-2">${s3.error}</div>`;
+  } else {
+    document.getElementById('s3-metrics').innerHTML =
+      `<div class="bg-gray-50 rounded-lg p-3 text-center">
+        <div class="text-2xl font-bold text-gray-800">${s3.count}</div>
+        <div class="text-xs text-gray-500 mt-1">объектов</div>
+      </div>
+      <div class="bg-gray-50 rounded-lg p-3 text-center">
+        <div class="text-2xl font-bold text-gray-800">${s3.size_mb}</div>
+        <div class="text-xs text-gray-500 mt-1">МБ</div>
+      </div>`;
+    if (s3.note) {
+      const el = document.getElementById('s3-note');
+      el.textContent = s3.note;
+      el.classList.remove('hidden');
+    }
+  }
+
+  // Git
+  const g = data.git;
+  document.getElementById('git-info').innerHTML =
+    `<div class="flex gap-2 text-sm">
+      <span class="font-mono bg-gray-100 px-2 py-0.5 rounded text-gray-700">${g.hash}</span>
+      <span class="text-gray-600 truncate">${g.message}</span>
+    </div>
+    <div class="text-xs text-gray-400">${g.date}</div>`;
+
+  // Ошибки
+  const errs = data.errors;
+  if (errs && errs.length) {
+    document.getElementById('error-log').innerHTML =
+      `<div class="bg-gray-900 rounded-lg p-4 overflow-x-auto max-h-64">` +
+      errs.map(l => `<div class="text-xs font-mono text-red-300 whitespace-nowrap">${l}</div>`).join('') +
+      `</div>`;
+  } else {
+    document.getElementById('error-log').innerHTML =
+      '<div class="text-sm text-gray-400">Ошибок нет 🎉</div>';
+  }
+}
+
+loadMetrics();
 </script>
 {% endblock %}

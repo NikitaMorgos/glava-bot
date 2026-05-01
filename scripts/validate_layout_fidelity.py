@@ -28,8 +28,12 @@ ROOT = Path(__file__).parent.parent
 
 
 def _get_para_ref(elem: dict) -> str:
-    """Возвращает paragraph_ref из элемента (v3.20+) или paragraph_id (v3.19 legacy)."""
-    return elem.get("paragraph_ref", "") or elem.get("paragraph_id", "")
+    """Возвращает ref из элемента (paragraph_ref, subheading_ref, или paragraph_id legacy)."""
+    return (
+        elem.get("paragraph_ref", "")
+        or elem.get("subheading_ref", "")
+        or elem.get("paragraph_id", "")
+    )
 
 
 def _collect_book_refs(book: dict) -> dict[str, list[str]]:
@@ -59,7 +63,7 @@ def _collect_layout_refs(layout: dict) -> dict[str, list[tuple[int, str]]]:
         page_num = page.get("page_number", 0)
         page_ch  = page.get("chapter_id", "")
         for elem in page.get("elements", []):
-            if elem.get("type") != "paragraph":
+            if elem.get("type") not in ("paragraph", "subheading", "section_header"):
                 continue
             ref   = _get_para_ref(elem)
             el_ch = elem.get("chapter_id", "") or page_ch

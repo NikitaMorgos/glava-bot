@@ -22,7 +22,12 @@
       "Bash(python tmp_timeline_preview.py)",
       "Bash(python tmp_timeline_v2.py)",
       "Bash(python tmp_callout_ref.py)",
-      "Bash(python -c ' *)"
+      "Bash(python -c ' *)",
+      "Bash(python3 -c ' *)",
+      "Bash(xargs grep *)",
+      "Bash(\"/c/Program Files/Google/Chrome/Application/chrome.exe\" --headless --disable-gpu --no-pdf-header-footer --print-to-pdf=\"C:\\\\Users\\\\user\\\\Downloads\\\\Результаты 1Q 2026 \\(2\\).pdf\" \"file:///C:/Users/user/Downloads/Результаты 1Q 2026 \\(2\\).html\")",
+      "Bash(rm \"C:\\\\Users\\\\user\\\\Downloads\\\\Результаты 1Q 2026 \\(2\\)_converted.pdf\")",
+      "Read(//c/Users/user/Downloads/**)"
     ]
   }
 }

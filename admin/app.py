@@ -51,6 +51,15 @@ app.register_blueprint(finance_bp)
 app.register_blueprint(cco_bp)
 app.register_blueprint(smm_bp)
 
+# ── Инициализация таблиц БД (один раз при старте) ─────────────────
+with app.app_context():
+    try:
+        from admin import db_admin as _dba
+        _dba.init_db()
+    except Exception as _e:
+        import logging as _log
+        _log.getLogger(__name__).warning("admin init_db failed: %s", _e)
+
 # ── Auth ──────────────────────────────────────────────────────────
 @app.route("/")
 def index():

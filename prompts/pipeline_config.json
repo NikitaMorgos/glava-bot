@@ -108,7 +108,7 @@
     "model": "claude-sonnet-4-20250514",
     "max_tokens": 64000,
     "temperature": 0.25,
-    "prompt_file": "08_layout_designer_v3.20.md",
+    "prompt_file": "08_layout_designer_v3.21.md",
     "_notes": "v3.19 (2026-04-22): задача 010 — универсализация примеров на базе v3.18 (убраны Каракулина, Мариевка, Полина, Кировоград, Глинск, фронты). v3.18 base: убран форзац, пагинация cover→TOC.",
     "_last_uploaded": "22.04.2026"
   },
@@ -155,7 +155,7 @@
     "model": "claude-haiku-4-5-20251001",
     "max_tokens": 32000,
     "temperature": 0.1,
-    "prompt_file": "16_completeness_auditor_v1.md",
+    "prompt_file": "16_completeness_auditor_v1.1.md",
     "_notes": "v1.0 (2026-04-27): новый агент, задача 014. Аудит полноты после FE: ищет пропущенные persons/events/locations/traits. Возвращает auto_enrich (мержится в fact_map) + log_only_gaps (только warning). Модель Haiku — задача паттерн-матчинга, Sonnet не нужен. v1.0.1 (2026-04-28): max_tokens 8000→32000 после truncation в прогонах v36a/b."
   }
 }

@@ -1262,7 +1262,103 @@ def print_qa_results(result: dict, iteration: int, mode: str = "combined"):
     print("=" * 60)
 
 
-def verify_and_patch_layout_completeness(layout_result: dict, book_final: dict) -> dict:
+def enforce_chapter_start_purity(
+    layout_result: dict,
+    strict: bool = False,
+    allow_chapter_start_text: bool = False,
+) -> dict:
+    """Обеспечивает чистоту chapter_start страниц: только заголовок + фото/плейсхолдер.
+
+    Находит все страницы с type == "chapter_start" и проверяет их элементы.
+    Нелегальные элементы (paragraph, callout, historical_note, subheading, heading)
+    переносятся на следующую страницу (auto-clean по умолчанию).
+
+    Флаги:
+    - strict=True            → hard fail при обнаружении вместо переноса
+    - allow_chapter_start_text=True → enforcement отключён полностью (debug)
+
+    Возвращает (возможно изменённый) layout_result.
+    """
+    if allow_chapter_start_text:
+        print("[CHAPTER-START] Enforcement отключён (--allow-chapter-start-text)")
+        return layout_result
+
+    if layout_result.get("_layout_format") != "pages_json":
+        return layout_result
+
+    pages = layout_result.get("pages") or layout_result.get("layout_instructions", {}).get("pages", [])
+    if not pages:
+        return layout_result
+
+    ILLEGAL_TYPES = {"paragraph", "callout", "historical_note", "subheading", "heading"}
+    total_moved = 0
+
+    for i, page in enumerate(pages):
+        ptype = (page.get("type") or "").strip()
+        if ptype != "chapter_start":
+            continue
+
+        elements = page.get("elements", [])
+        illegal = [el for el in elements if el.get("type", "") in ILLEGAL_TYPES]
+        if not illegal:
+            continue
+
+        page_num = page.get("page_number", i + 1)
+        ch_id = page.get("chapter_id", "")
+
+        if strict:
+            print(
+                f"[CHAPTER-START] ❌ HARD FAIL: страница {page_num} (chapter_start {ch_id}) "
+                f"содержит {len(illegal)} нелегальных элементов: "
+                + ", ".join(f"{el.get('type')}:{el.get('paragraph_ref','')}" for el in illegal[:5])
+            )
+            print("[CHAPTER-START]   Используй --allow-chapter-start-text для обхода.")
+            sys.exit(1)
+
+        # Auto-clean: переместить нелегальные элементы на следующую страницу
+        # Найти или создать следующую страницу для этой главы
+        if i + 1 < len(pages):
+            next_page = pages[i + 1]
+        else:
+            next_page = None
+
+        # Если следующей страницы нет или она принадлежит другой главе — создаём новую
+        if next_page is None or next_page.get("chapter_id", "") != ch_id:
+            new_page = {
+                "page_number": page_num + 1,
+                "type": "chapter_body",
+                "chapter_id": ch_id,
+                "elements": [],
+            }
+            pages.insert(i + 1, new_page)
+            next_page = new_page
+            # Перенумеровать последующие страницы
+            for j in range(i + 2, len(pages)):
+                pn = pages[j].get("page_number")
+                if isinstance(pn, int):
+                    pages[j]["page_number"] = pn + 1
+
+        # Перемещаем: нелегальные уходят в начало следующей страницы
+        next_page.setdefault("elements", [])
+        next_page["elements"] = illegal + next_page["elements"]
+        page["elements"] = [el for el in elements if el.get("type", "") not in ILLEGAL_TYPES]
+
+        total_moved += len(illegal)
+        print(
+            f"[CHAPTER-START] ⚠️  страница {page_num} ({ch_id}): "
+            f"перенесено {len(illegal)} элементов на страницу {next_page.get('page_number', '?')}"
+        )
+
+    if total_moved == 0:
+        print("[CHAPTER-START] ✅ Все chapter_start страницы чисты")
+    else:
+        print(f"[CHAPTER-START] Итого перенесено элементов: {total_moved}")
+
+    return layout_result
+
+
+def verify_and_patch_layout_completeness(layout_result: dict, book_final: dict,
+                                          allow_hybrid: bool = False) -> dict:
     """Проверяет полноту layout: все paragraph_id из книги должны быть в layout.
 
     Если пропущены — автоматически добавляет их на последнюю текстовую страницу
@@ -1278,12 +1374,18 @@ def verify_and_patch_layout_completeness(layout_result: dict, book_final: dict) 
         return layout_result
 
     # Собираем все paragraph_id из книги, сгруппированные по главе
+    # Также сохраняем тип (paragraph / subheading) для корректного патча
     book_para_ids: dict[str, list[str]] = {}  # chapter_id -> [ordered paragraph_ids]
+    book_para_types: dict[str, dict[str, str]] = {}  # chapter_id -> {pid: type}
     for ch in book_final.get("chapters", []):
         ch_id = ch.get("id", "")
         pars = ch.get("paragraphs", [])
         if ch_id and pars:
             book_para_ids[ch_id] = [p["id"] for p in pars if p.get("id")]
+            book_para_types[ch_id] = {
+                p["id"]: p.get("type", "paragraph")
+                for p in pars if p.get("id")
+            }
 
     # Используем (chapter_id, paragraph_id) туплы чтобы избежать коллизий:
     # prepare_book_for_layout даёт каждой главе p1, p2, ... с одинаковыми именами!
@@ -1295,16 +1397,47 @@ def verify_and_patch_layout_completeness(layout_result: dict, book_final: dict) 
     }
 
     # Собираем все (chapter_id, paragraph_id) которые уже есть в layout
-    # Поддерживаем оба поля: paragraph_ref (v3.20+) и paragraph_id (v3.19 legacy)
+    # Поддерживаем: paragraph_ref (v3.20+), subheading_ref (v3.21+), paragraph_id (v3.19 legacy)
     layout_tuples: set[tuple[str, str]] = set()
+    hybrid_elements: list[str] = []  # описания hybrid элементов для диагностики
     for page in pages:
         page_ch_id = page.get("chapter_id", "")
         for el in page.get("elements", []):
-            # paragraph_ref — новый формат (v3.20+)
-            pid    = el.get("paragraph_ref", "") or el.get("paragraph_id", "")
+            etype = el.get("type", "")
+            if etype not in ("paragraph", "subheading", "section_header"):
+                continue
+            # paragraph_ref / subheading_ref — новые форматы
+            pid    = (
+                el.get("paragraph_ref", "")
+                or el.get("subheading_ref", "")
+                or el.get("paragraph_id", "")
+            )
             el_ch  = el.get("chapter_id", "") or page_ch_id
             if pid and el_ch:
                 layout_tuples.add((el_ch, pid))
+            elif el.get("text") and not pid:
+                # Hybrid-элемент: есть inline text, но нет paragraph_ref/paragraph_id.
+                # Это означает регрессию LD — модель не перешла на v3.20 ссылочную архитектуру.
+                # Auto-patch не добавит ref для такого элемента, но может добавить дубль.
+                hybrid_elements.append(
+                    f"{el_ch or '(no chapter_id)'}: text='{el.get('text','')[:60]}...'"
+                )
+
+    if hybrid_elements:
+        msg = (
+            f"[LAYOUT-VERIFY] ❌ Обнаружены hybrid элементы (inline text без paragraph_ref): "
+            f"{len(hybrid_elements)} шт.\n"
+            + "\n".join(f"  {d}" for d in hybrid_elements[:5])
+        )
+        if allow_hybrid:
+            print(msg.replace("❌", "⚠️ "))
+            print("[LAYOUT-VERIFY]   --allow-hybrid задан — продолжаем (дубли возможны)")
+        else:
+            print(msg)
+            print("[LAYOUT-VERIFY]   LD выдал hybrid элементы — Layout Designer регрессировал "
+                  "и не следует ссылочной архитектуре v3.20.")
+            print("[LAYOUT-VERIFY]   Используй --allow-hybrid для обхода (debug режим).")
+            sys.exit(1)
 
     missing_tuples = all_book_tuples - layout_tuples
     if not missing_tuples:
@@ -1357,11 +1490,19 @@ def verify_and_patch_layout_completeness(layout_result: dict, book_final: dict) 
             print(f"[LAYOUT-VERIFY]   {ch_id}: добавляю {len(missing_for_chapter)} абзацев → стр.{target_page.get('page_number','?')} ({target_page.get('type')})")
 
         for pid in missing_for_chapter:
-            target_page.setdefault("elements", []).append({
-                "type": "paragraph",
-                "chapter_id": ch_id,
-                "paragraph_ref": pid,
-            })
+            elem_type = book_para_types.get(ch_id, {}).get(pid, "paragraph")
+            if elem_type == "subheading":
+                target_page.setdefault("elements", []).append({
+                    "type": "subheading",
+                    "chapter_id": ch_id,
+                    "subheading_ref": pid,
+                })
+            else:
+                target_page.setdefault("elements", []).append({
+                    "type": "paragraph",
+                    "chapter_id": ch_id,
+                    "paragraph_ref": pid,
+                })
 
     # Обновляем pages в layout_result
     if "pages" in layout_result:
@@ -1370,10 +1511,10 @@ def verify_and_patch_layout_completeness(layout_result: dict, book_final: dict) 
         layout_result["layout_instructions"]["pages"] = pages
 
     total_after = len({
-        (page.get("chapter_id", "") or el.get("chapter_id", ""), el["paragraph_id"])
+        (page.get("chapter_id", "") or el.get("chapter_id", ""), el.get("paragraph_ref") or el.get("paragraph_id"))
         for page in pages
         for el in page.get("elements", [])
-        if el.get("paragraph_id")
+        if el.get("paragraph_ref") or el.get("paragraph_id")
     })
     print(f"[LAYOUT-VERIFY] ✅ После патча: {total_after}/{len(all_book_tuples)} абзацев в layout")
     return layout_result
@@ -1436,6 +1577,14 @@ async def main():
                         help="Путь к готовому layout JSON (переиспользование без повторных LLM вызовов)")
     parser.add_argument("--allow-legacy-input", action="store_true",
                         help="Разрешить legacy-входы из exports вместо approved checkpoints")
+    parser.add_argument("--allow-mismatch", action="store_true",
+                        help="Fidelity ошибки — предупреждение вместо hard fail (debug режим)")
+    parser.add_argument("--allow-hybrid", action="store_true",
+                        help="Hybrid элементы (без ref/id, с inline text) — warn вместо hard fail (debug режим)")
+    parser.add_argument("--strict-chapter-start", action="store_true",
+                        help="Hard fail если найден текст на chapter_start странице (prod режим)")
+    parser.add_argument("--allow-chapter-start-text", action="store_true",
+                        help="Отключить chapter_start enforcement полностью (debug режим)")
     parser.add_argument(
         "--subject-profile",
         default=None,
@@ -1598,7 +1747,15 @@ async def main():
             raise RuntimeError(f"Файл --existing-layout невалиден: {existing_layout_path}")
 
         # Проверяем полноту layout и патчим пропущенные абзацы (с учётом chapter_id)
-        layout_result = verify_and_patch_layout_completeness(layout_result, book_final)
+        layout_result = verify_and_patch_layout_completeness(layout_result, book_final,
+                                                               allow_hybrid=args.allow_hybrid)
+
+        # chapter_start enforcement: нелегальные элементы переносятся на следующую страницу
+        layout_result = enforce_chapter_start_purity(
+            layout_result,
+            strict=getattr(args, "strict_chapter_start", False),
+            allow_chapter_start_text=getattr(args, "allow_chapter_start_text", False),
+        )
 
         # Валидация соответствия layout ↔ book_FINAL (задача 017)
         try:
@@ -1982,16 +2139,35 @@ async def main():
         print_layout_designer_results(layout_result)
 
         # ─── Верификация полноты layout (все paragraph_refs должны быть в layout) ───
-        layout_result = verify_and_patch_layout_completeness(layout_result, book_final)
+        layout_result = verify_and_patch_layout_completeness(layout_result, book_final,
+                                                               allow_hybrid=args.allow_hybrid)
+
+        # chapter_start enforcement: нелегальные элементы переносятся на следующую страницу
+        layout_result = enforce_chapter_start_purity(
+            layout_result,
+            strict=getattr(args, "strict_chapter_start", False),
+            allow_chapter_start_text=getattr(args, "allow_chapter_start_text", False),
+        )
 
         # Валидация соответствия layout ↔ book_FINAL: completeness, order, uniqueness (задача 017)
         try:
             from validate_layout_fidelity import validate_fidelity as _vf
             _passed_fid, _ferrors = _vf(layout_result, book_final, allow_mismatch=False)
             if not _passed_fid:
-                print(f"[FIDELITY] ❌ Нарушения fidelity. Используй --allow-mismatch для обхода.")
+                if args.allow_mismatch:
+                    print(f"[FIDELITY] ⚠️  Нарушения fidelity (--allow-mismatch задан, продолжаем):")
+                    for _fe in _ferrors:
+                        print(f"           {_fe}")
+                else:
+                    print(f"[FIDELITY] ❌ Нарушения fidelity — прогон остановлен:")
+                    for _fe in _ferrors:
+                        print(f"           {_fe}")
+                    print("[FIDELITY] ℹ️  Используй --allow-mismatch для обхода (debug режим)")
+                    sys.exit(1)
+            else:
+                print(f"[FIDELITY] ✅ Все проверки прошли")
         except ImportError:
-            pass
+            print("[FIDELITY] ⚠️  validate_layout_fidelity.py не найден — валидация пропущена")
 
         # Перезаписываем layout_path с патчем (если были пропуски)
         with open(layout_path, "w", encoding="utf-8") as f:
@@ -2023,8 +2199,12 @@ async def main():
                     render_cmd.append("--no-photos")
                 if args.with_cover:
                     render_cmd.append("--with-cover")
+                # Guard: gate 2a/2b/2c — не передаём photos_dir в рендерер (симметрично 1644-1649)
                 if args.photos_dir:
-                    render_cmd += ["--photos-dir", str(Path(args.photos_dir).resolve())]
+                    if args.acceptance_gate in {"2a", "2b", "2c"}:
+                        print(f"[WARN] gate {args.acceptance_gate}: --photos-dir игнорируется для pdf_renderer (text-only mode)")
+                    else:
+                        render_cmd += ["--photos-dir", str(Path(args.photos_dir).resolve())]
                 # Используем cover_portrait_path (сгенерированный или переданный)
                 effective_portrait = cover_portrait_path or (Path(args.existing_portrait) if args.existing_portrait else None)
                 if effective_portrait and Path(effective_portrait).exists():

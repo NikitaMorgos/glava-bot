@@ -302,7 +302,7 @@ class BookIndex:
     """
 
     def __init__(self, book: dict | None):
-        self._index: dict[str, dict[str, str]] = {}
+        self._index: dict[str, dict[str, dict]] = {}  # ch_id -> {para_id -> {"text": ..., "type": ...}}
         self._bio_data: dict[str, dict] = {}
         self._raw_chapters: list[dict] = []
         if not book:
@@ -318,17 +318,36 @@ class BookIndex:
             # Используем paragraphs[] если есть, иначе разбиваем content
             paras = ch.get("paragraphs")
             if paras:
-                self._index[ch_id] = {p["id"]: p["text"] for p in paras if p.get("id") and p.get("text")}
+                self._index[ch_id] = {
+                    p["id"]: {"text": p.get("text", ""), "type": p.get("type", "paragraph")}
+                    for p in paras if p.get("id") and p.get("text")
+                }
             else:
                 content = ch.get("content") or ""
                 parts = [p.strip() for p in content.split("\n\n") if p.strip()]
-                self._index[ch_id] = {f"p{i + 1}": t for i, t in enumerate(parts)}
+                self._index[ch_id] = {
+                    f"p{i + 1}": {"text": t, "type": "paragraph"}
+                    for i, t in enumerate(parts)
+                }
 
     def get(self, chapter_id: str, paragraph_id: str) -> str | None:
         ch = self._index.get(chapter_id)
         if ch is None:
             return None
-        return ch.get(paragraph_id)
+        entry = ch.get(paragraph_id)
+        if entry is None:
+            return None
+        return entry["text"] if isinstance(entry, dict) else entry
+
+    def get_type(self, chapter_id: str, paragraph_id: str) -> str:
+        """Возвращает тип элемента: 'paragraph', 'subheading' и т.д."""
+        ch = self._index.get(chapter_id)
+        if ch is None:
+            return "paragraph"
+        entry = ch.get(paragraph_id)
+        if entry is None:
+            return "paragraph"
+        return entry.get("type", "paragraph") if isinstance(entry, dict) else "paragraph"
 
     def chapter_paragraphs(self, chapter_id: str) -> list[tuple[str, str]]:
         """Возвращает [(paragraph_id, text), ...] в порядке главы."""
@@ -339,7 +358,10 @@ class BookIndex:
                 return int(pid.lstrip("p"))
             except ValueError:
                 return 0
-        return sorted(ch.items(), key=lambda kv: _sort_key(kv[0]))
+        return sorted(
+            [(pid, (e["text"] if isinstance(e, dict) else e)) for pid, e in ch.items()],
+            key=lambda kv: _sort_key(kv[0])
+        )
 
     def chapter_bio_data(self, chapter_id: str) -> dict | None:
         """Возвращает структурированный bio_data для главы (personal/education/military/awards/family)."""
@@ -542,6 +564,10 @@ class PdfRenderer:
         self.output = output
         self.book_index = book_index or BookIndex(None)
         self.pages = self._filter_pages_for_mode(self.pages)
+        self._inject_page_chapter_ids()
+        # Счётчики резолвинга paragraph_ref (для post-render аудита)
+        self._ref_resolved: int = 0
+        self._ref_missing: int = 0
 
         # ── Page geometry (A5)
         self.W, self.H = A5  # 419.5 × 595.3 pt
@@ -601,14 +627,50 @@ class PdfRenderer:
         if not self.options.story_mode_applicable():
             self._rebalance_text_pages()
 
+    def _inject_page_chapter_ids(self):
+        """Проставляет chapter_id из страницы в элементы, у которых его нет.
+
+        Layout Designer v3.20 иногда ставит chapter_id только на уровне страницы,
+        опуская его в элементах-абзацах. Fidelity validator и verify_and_patch
+        корректно обрабатывают этот случай через fallback на page.chapter_id,
+        но _elem_para_text и _render_paragraph смотрят только на elem.chapter_id.
+        Этот метод устраняет расхождение, внося chapter_id напрямую в элементы.
+        """
+        for page in self.pages:
+            page_ch = page.get("chapter_id", "")
+            if not page_ch:
+                continue
+            for elem in page.get("elements", []):
+                if elem.get("type") == "paragraph" and not elem.get("chapter_id"):
+                    elem["chapter_id"] = page_ch
+
     # ── Entry point ──────────────────────────────────────────────────────────
 
     def render(self):
         _log_fonts()
         print(f"[RENDERER] Режим: {self.options.mode_label()}")
         if self.options.story_mode_applicable():
-            return self._render_as_story()
-        return self._render_as_canvas()
+            result = self._render_as_story()
+        else:
+            result = self._render_as_canvas()
+        self._report_ref_resolution()
+        return result
+
+    def _report_ref_resolution(self):
+        """Выводит итог резолвинга paragraph_ref и падает если потеряно слишком много."""
+        total = self._ref_resolved + self._ref_missing
+        if total == 0:
+            return
+        pct = self._ref_resolved / total * 100
+        print(f"[RENDERER] Refs: {self._ref_resolved}/{total} резолвилось ({pct:.0f}%)")
+        if self._ref_missing > 0:
+            print(f"[RENDERER] ⚠️  {self._ref_missing} paragraph_ref не найдено в book_FINAL "
+                  f"— текст этих абзацев отсутствует в PDF")
+        if total >= 5 and pct < 50:
+            print(f"[RENDERER] ❌ КРИТИЧНО: резолвинг {pct:.0f}% < 50% — PDF потерял большую "
+                  f"часть контента. Проверьте совпадение chapter_id и paragraph IDs "
+                  f"между layout и book_FINAL.")
+            sys.exit(1)
 
     def _story_bio_data_block(self, elem: dict, body_style, accent_color) -> list:
         """Возвращает список Platypus-flowables для bio_data_block (ch_01)."""
@@ -1319,8 +1381,10 @@ class PdfRenderer:
         if ch_id and par_id:
             text = self.book_index.get(ch_id, par_id)
             if text is not None:
+                self._ref_resolved += 1
                 return text
             # ref не найден в book_index
+            self._ref_missing += 1
             if self.options.strict_refs and not self.options.allow_missing_refs:
                 raise ValueError(f"[RENDERER] strict_refs: paragraph_ref '{ch_id}/{par_id}' not found in book_FINAL")
         # Legacy fallback: inline text (deprecated)
@@ -1981,8 +2045,8 @@ class PdfRenderer:
             etype = elem.get("type", "")
             if etype == "paragraph":
                 y = self._render_paragraph(c, elem, y)
-            elif etype == "section_header":
-                y = self._render_section_header(c, elem, y)
+            elif etype in ("subheading", "section_header"):
+                y = self._render_subheading(c, elem, y)
             elif etype == "photo":
                 y = self._render_photo_elem(c, elem, y)
             elif etype == "photo_pair":
@@ -2039,8 +2103,15 @@ class PdfRenderer:
                     raise ValueError(
                         f"[RENDERER] strict_refs: paragraph_ref '{ch_id}/{par_id}' not found in book_FINAL"
                     )
+                self._ref_missing += 1
                 print(f"[RENDERER] ⚠️  paragraph не найден: {ch_id}/{par_id} — пропускаем")
                 return y
+            # Если элемент хранится как subheading в book_index — рендерим как подзаголовок
+            elem_type = self.book_index.get_type(ch_id, par_id)
+            if elem_type == "subheading":
+                self._ref_resolved += 1
+                return self._render_subheading(c, {"text": text}, y)
+            self._ref_resolved += 1
         else:
             # Legacy-формат: текст прямо в элементе
             text = elem.get("text", "")
@@ -2048,13 +2119,14 @@ class PdfRenderer:
                 print(f"[RENDERER] ⚠️  legacy text fallback на странице без chapter/para ref")
         if not text:
             return y
-        # ## Подзаголовок — рендерим как section_header (PT Sans Bold 16pt)
-        if text.strip().startswith("## "):
-            return self._render_section_header(c, {"text": text.strip()[3:].strip()}, y)
-        # Если весь текст — это markdown-заголовок (**Текст**) — рендерим как section_header
+        # ## / ### Подзаголовок — legacy handling для книг без prepare_book_for_layout
+        if text.strip().startswith("## ") or text.strip().startswith("### "):
+            prefix_len = 3 if text.strip().startswith("## ") else 4
+            return self._render_subheading(c, {"text": text.strip()[prefix_len:].strip()}, y)
+        # Если весь текст — это markdown-заголовок (**Текст**) — рендерим как subheading
         m = _re.match(r'^\*{1,3}(.+?)\*{1,3}$', text.strip())
         if m:
-            return self._render_section_header(c, {"text": m.group(1).strip()}, y)
+            return self._render_subheading(c, {"text": m.group(1).strip()}, y)
         # Стриппинг inline **bold** и *italic* маркеров
         text = _re.sub(r'\*{1,3}(.+?)\*{1,3}', r'\1', text)
         para = make_para(text, BODY_FONT, self.body_size, self.body_color,
@@ -2115,6 +2187,39 @@ class PdfRenderer:
 
         cap_h = self.caption_size + 10 if any(captions) else 0
         return y - pair_h - cap_h - self.photo_margin
+
+    def _render_subheading(self, c, elem: dict, y: float) -> float:
+        """Рендерит структурный подзаголовок (subheading) — PT Sans Bold, кегль между body и chapter_title.
+
+        Поддерживает два источника текста:
+        1. subheading_ref + chapter_id → lookup через book_index (новая ссылочная архитектура)
+        2. paragraph_ref / paragraph_id + chapter_id → тот же lookup
+        3. inline text → legacy fallback
+        """
+        ch_id = elem.get("chapter_id", "")
+        # Приоритет: subheading_ref > paragraph_ref > paragraph_id > text
+        ref = (
+            elem.get("subheading_ref", "")
+            or elem.get("paragraph_ref", "")
+            or elem.get("paragraph_id", "")
+        )
+        if ch_id and ref:
+            text = self.book_index.get(ch_id, ref)
+            if text is None:
+                self._ref_missing += 1
+                print(f"[RENDERER] ⚠️  subheading не найден: {ch_id}/{ref} — пропускаем")
+                return y
+            self._ref_resolved += 1
+        else:
+            text = elem.get("text", "")
+        if not text:
+            return y
+        font, fsize = _elem_font(elem, SANS_BOLD_FONT, self.section_size)
+        color = elem.get("color", self.heading_color)
+        para = make_para(text, font, fsize, color, fsize * 1.3, TA_LEFT)
+        y -= self.para_space * 0.5
+        h = draw_para(c, para, self.TX, y, self.TW, y - self.MB)
+        return y - h - self.para_space
 
     def _render_section_header(self, c, elem: dict, y: float) -> float:
         """Рендерит подзаголовок раздела (section_header) — PT Sans, кегль 13–14."""
@@ -2704,6 +2809,11 @@ def main():
         book_path = Path(args.book)
         if book_path.exists():
             book_data = json.loads(book_path.read_text(encoding="utf-8"))
+            # Unwrap checkpoint wrapper: { "book_final": {...} } → {...}
+            # test_stage4 передаёт proofreader_checkpoint напрямую; в нём book под ключом "book_final"
+            if "book_final" in book_data and isinstance(book_data["book_final"], dict):
+                book_data = book_data["book_final"]
+                print("[RENDERER] book_final unwrapped из checkpoint")
             # Нормализуем paragraph IDs через ту же функцию, что получил Layout Designer.
             # Это гарантирует совпадение ID: p1, p2, ... из content.split("\n\n")
             try:
