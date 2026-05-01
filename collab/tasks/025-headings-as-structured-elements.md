@@ -1,6 +1,6 @@
 # Задача: Подзаголовки `## / ###` как структурный элемент, а не markdown-строка
 
-**Статус:** `pending-run-verification` (реализация готова, ждёт прогон для PDF-верификации)
+**Статус:** `dasha-review`
 **Номер:** 025
 **Автор:** Даша / Claude
 **Дата создания:** 2026-04-30
@@ -185,9 +185,13 @@ Layout Designer (после 017) формирует `paragraph_ref`. pdf_rendere
 
 ### Verified-on-run
 
-⏳ Требует прогона Stage 4 (gate 2a/2b/2c) с book_FINAL содержащим legacy `##`/`###`.
-Команда: прогон Stage 4 с текущим v37 или новым v40 book_FINAL.
-Ожидаемый результат: `[BOOK-NORMALIZE]` в логе, PDF без символов `##`/`###`.
+✅ Прогон v40 gate2a (2026-05-01):
+- 38 `[BOOK-NORMALIZE] auto-detected subheading` сообщений в логе (например: `[BOOK-NORMALIZE] auto-detected subheading in ch_05/p21: "Строгость как проявление любви" (legacy ## / ### → subheading)`)
+- `pdftotext` на `karakulina_v40_gate2c_20260501.pdf`: символы `##`/`###` не найдены
+- `_check_layout_subheadings.py`: 38 `subheading`-элементов в layout JSON
+- `[FIDELITY] ✅ Проверки пройдены: 134 абзацев, порядок OK, нет дублей.`
+
+PDF-артефакт: `collab/runs/karakulina_v40_gate2c_20260501.pdf`
 
 ---
 
@@ -196,4 +200,4 @@ Layout Designer (после 017) формирует `paragraph_ref`. pdf_rendere
 | Дата | Статус | Кто |
 |------|--------|-----|
 | 2026-04-30 | `new` | Даша / Claude (новый bug найден визуально на v38) |
-| 2026-05-01 | `in-progress` → `pending-run-verification` | Cursor |
+| 2026-05-01 | `in-progress` → `dasha-review` | Cursor |

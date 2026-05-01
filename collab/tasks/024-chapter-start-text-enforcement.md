@@ -1,6 +1,6 @@
 # Задача: chapter_start страницы без текста — code-level enforcement (промпт-правило не работает)
 
-**Статус:** `pending-run-verification` (реализация готова, ждёт прогон на v38/v39 layout)
+**Статус:** `dasha-review`
 **Номер:** 024
 **Автор:** Даша / Claude
 **Дата создания:** 2026-04-30
@@ -124,13 +124,14 @@ Cursor рекомендует выбрать на основе ситуации:
 
 ### Verified-on-run
 
-⏳ Требует прогона с v38 layout на сервере. Команда:
+✅ Прогон v40 gate2a (2026-05-01):
 ```
-python scripts/test_stage4_karakulina.py \
-  --existing-layout /opt/glava/exports/karakulina_v38_gate2c_layout.json \
-  --acceptance-gate 2c
+[CHAPTER-START] ⚠️  страница 4 (ch_01): перенесено 8 элементов на страницу 5
+[CHAPTER-START] Итого перенесено элементов: 8
 ```
-Ожидаемый результат: `[CHAPTER-START] ⚠️ страница 3 (ch_02): перенесено N элементов` — стр. 3, 9, 14 чисты.
+LD v3.21 создал chapter_start с нарушениями (8 элементов), `enforce_chapter_start_purity` автоматически перенесла их. PDF: gate2c `karakulina_v40_gate2c_20260501.pdf` в `collab/runs/`.
+
+Fidelity pass: `[FIDELITY] ✅ Проверки пройдены: 134 абзацев, порядок OK, нет дублей.`
 
 ---
 
@@ -139,4 +140,4 @@ python scripts/test_stage4_karakulina.py \
 | Дата | Статус | Кто |
 |------|--------|-----|
 | 2026-04-30 | `new` | Даша / Claude (после визуального ревью v38 PDF) |
-| 2026-05-01 | `in-progress` → `pending-run-verification` | Cursor |
+| 2026-05-01 | `in-progress` → `dasha-review` | Cursor |

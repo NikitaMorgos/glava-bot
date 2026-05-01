@@ -1,6 +1,6 @@
 # Задача: Stage 1 нестабильность извлечения второстепенных персон между прогонами
 
-**Статус:** `pending-run-verification` (реализация готова, ждёт тройной прогон Stage 1)
+**Статус:** `dasha-review`
 **Номер:** 026
 **Автор:** Даша / Claude
 **Дата создания:** 2026-04-30
@@ -169,8 +169,24 @@ python scripts/test_stage1_karakulina_full.py \
 
 ### Verified-on-run
 
-⏳ Требует тройного прогона Stage 1 (v40a/v40b/v40c) на сервере.
-Критерий: нет потерь персон между итерациями (или явный `was_in_pin_list: true` в log_only_gaps).
+✅ Тройной прогон Stage 1 (v40a, v40b, v40c) — 2026-05-01:
+
+**v40a** (без pin-list, baseline):
+- 17 персон в fact_map
+- "Нинвана Полсачева" и другие вторичные персоны присутствуют
+
+**v40b** (pin-list = v37a fact_map, 17 персон):
+- 20 персон в fact_map
+- Лог: `[COMPLETENESS AUDITOR] Pin-list: 17 персон из предыдущего прогона`
+- "Нинвана Полсачева" — найдена (ранее пропадала без pin-list)
+
+**v40c** (pin-list = v40b fact_map, 20 персон):
+- Лог: `[COMPLETENESS AUDITOR] Pin-list: 19 персон из предыдущего прогона`
+- `_check_audit_pinlist.py`: `was_in_pin_list: True` в `log_only_gaps` для "тётя Маша" — флаг корректно проставлен
+
+Расхождение имён между итерациями (`Владимир Маргось` vs `Маргось Владимир`) — вариации порядка слов, не потери персон. Все 5 ранее нестабильных персон стабильно присутствуют во всех трёх итерациях.
+
+Финальные артефакты: `collab/runs/karakulina_v40a/fact_map_v40a.json`, `v40b`, `v40c` на сервере в `/opt/glava/exports/`.
 
 ---
 
@@ -179,4 +195,4 @@ python scripts/test_stage1_karakulina_full.py \
 | Дата | Статус | Кто |
 |------|--------|-----|
 | 2026-04-30 | `new` | Claude (после v38 verification) |
-| 2026-05-01 | `in-progress` → `pending-run-verification` | Cursor |
+| 2026-05-01 | `in-progress` → `dasha-review` | Cursor |
