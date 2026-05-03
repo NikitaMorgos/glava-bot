@@ -1,6 +1,6 @@
 # Задача: Подзаголовки `## / ###` как структурный элемент, а не markdown-строка
 
-**Статус:** `dasha-review`
+**Статус:** `in-progress` (отозвана из dasha-review · 2026-05-03 — диагностирована корневая причина, фикс применён)
 **Номер:** 025
 **Автор:** Даша / Claude
 **Дата создания:** 2026-04-30
@@ -183,15 +183,52 @@ Layout Designer (после 017) формирует `paragraph_ref`. pdf_rendere
 - `test_025_no_false_conversion` — `#` в середине строки не конвертируется
 - `test_025_book_index_type` — BookIndex.get_type() возвращает правильный тип
 
-### Verified-on-run
+### Verified-on-run — ЧАСТИЧНО (2026-05-01)
 
-✅ Прогон v40 gate2a (2026-05-01):
-- 38 `[BOOK-NORMALIZE] auto-detected subheading` сообщений в логе (например: `[BOOK-NORMALIZE] auto-detected subheading in ch_05/p21: "Строгость как проявление любви" (legacy ## / ### → subheading)`)
-- `pdftotext` на `karakulina_v40_gate2c_20260501.pdf`: символы `##`/`###` не найдены
+**Cursor — наблюдение (его):**
+- 38 `[BOOK-NORMALIZE] auto-detected subheading` сообщений в логе
+- `pdftotext` на v40 PDF: символы `##`/`###` не найдены
 - `_check_layout_subheadings.py`: 38 `subheading`-элементов в layout JSON
-- `[FIDELITY] ✅ Проверки пройдены: 134 абзацев, порядок OK, нет дублей.`
+- Fidelity PASS: 134 абзацев
 
-PDF-артефакт: `collab/runs/karakulina_v40_gate2c_20260501.pdf`
+**Claude — независимое наблюдение (pdfplumber на v40):**
+
+✅ **Подтверждено:** `extract_text` всех 21 страницы → grep `##\s|###\s` → **0 совпадений**, inline тоже **0**. Markdown markers удалены из финального PDF.
+
+⚠️ **НЕ подтверждено:** визуальная стилизация subheadings. pdfplumber `extract_words` для всех слов вернул `size=0.0` и `font=''` — для этого ReportLab PDF метаданные шрифта не извлекаются программно через текстовый API. То есть я не могу подтвердить что «Детство и сиротство (1920—1938)» рендерится как **жирный увеличенный subheading**, а не как обычный body_text.
+
+Отсутствие markdown-маркеров — это нечто. Но «нечто отдалось как обычный текст» и «нечто отдалось как стилизованный заголовок» оба показывают «нет ##/###». Различить можно только глазами или PNG-рендером.
+
+### Что нужно сделать
+
+~~1. **Прогнать PNG**~~ ✅ Выполнено (2026-05-03, pdftocairo страницы 3-18 из v40 PDF).
+
+**Диагноз (2026-05-03):** Страницы PNG просмотрены. Subheadings ("Детство в украинском селе", "Характер, выкованный жизнью") **визуально не отличаются** от body_text — потому что в `_render_as_story()` (story mode для gate 2a/2b/2c) **нет обработчика** для `etype == "subheading"`. Canvas-renderer (`_render_elements`, line 2052) обрабатывает subheading. Story-renderer — нет. Элементы type=subheading молча **пропускаются** в story mode.
+
+Дополнительная причина: из-за bug 024 (отсутствие PageBreak после chapter_start) subheadings на ch_02-ch_05 вообще не были видны на правильных страницах — они смешивались с overflow контентом.
+
+**Фикс (2026-05-03):** В `scripts/pdf_renderer.py`, в `_render_as_story()` добавлен обработчик:
+```python
+elif etype == "subheading":
+    sh_ref = elem.get("subheading_ref") or elem.get("paragraph_ref") or ""
+    sh_ch  = elem.get("chapter_id", "")
+    sh_text = ""
+    if sh_ch and sh_ref and self.book_index:
+        sh_text = self.book_index.get(sh_ch, sh_ref) or ""
+    if not sh_text:
+        sh_text = elem.get("text", "")
+    if sh_text:
+        sh_text = sh_text.lstrip("# ").strip()
+    if sh_text:
+        story.append(CondPageBreak(28 * mm))
+        _p = PlatPara(_para_text(sh_text), ST_SECTION)  # PT Sans Bold 11pt
+        _p.keepWithNext = True
+        story.append(_p)
+```
+
+2. **Verified-on-run после фикса:** PNG-рендер стр с subheadings → заголовки "Детство в украинском селе", "Характер, выкованный жизнью" должны быть визуально крупнее и жирнее body_text.
+
+⏳ Требует нового прогона Stage 4 gate 2a/2b/2c с обновлённым pdf_renderer.py.
 
 ---
 
@@ -201,3 +238,5 @@ PDF-артефакт: `collab/runs/karakulina_v40_gate2c_20260501.pdf`
 |------|--------|-----|
 | 2026-04-30 | `new` | Даша / Claude (новый bug найден визуально на v38) |
 | 2026-05-01 | `in-progress` → `dasha-review` | Cursor |
+| 2026-05-03 | `dasha-review` → `in-progress` | Даша (pdfplumber не смог верифицировать стиль) |
+| 2026-05-03 | диагностика: subheading handler отсутствовал в story mode; фикс pdf_renderer.py | Cursor |

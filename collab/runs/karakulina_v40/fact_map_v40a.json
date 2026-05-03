@@ -1,0 +1,1993 @@
+{
+  "project_id": "karakulina",
+  "version": 1,
+  "updated_at": "2026-04-15T10:30:00Z",
+  "subject": {
+    "name": "Каракулина Валентина Ивановна",
+    "birth_year": 1920,
+    "birth_place": "село Мариевка, Новомиргородский район, Кировоградская область",
+    "death_year": null,
+    "death_place": null,
+    "death_year_unconfirmed": true
+  },
+  "persons": [
+    {
+      "id": "person_001",
+      "name": "Рудай Иван Андреевич",
+      "aliases": [
+        "Рудой"
+      ],
+      "birth_year": null,
+      "death_year": null,
+      "relation_to_subject": "отец",
+      "description": "плотник",
+      "genealogy_note": "разные отцы у Валентины и её сестёр",
+      "access_status": "deceased",
+      "contact_notes": null,
+      "source_interview_id": "int_001",
+      "is_new": true,
+      "needs_verification": false
+    },
+    {
+      "id": "person_002",
+      "name": "Рудая Пелагея Алексеевна",
+      "aliases": [
+        "Марфа",
+        "Дуня"
+      ],
+      "birth_year": null,
+      "death_year": 1933,
+      "relation_to_subject": "мать",
+      "description": "работница колхоза",
+      "genealogy_note": "умерла во время голода 1933 года",
+      "access_status": "deceased",
+      "contact_notes": null,
+      "source_interview_id": "int_001",
+      "is_new": true,
+      "needs_verification": true
+    },
+    {
+      "id": "person_003",
+      "name": "младший брат",
+      "aliases": [],
+      "birth_year": null,
+      "death_year": null,
+      "relation_to_subject": "младший брат",
+      "description": "умер в детстве",
+      "genealogy_note": null,
+      "access_status": "deceased",
+      "contact_notes": null,
+      "source_interview_id": "int_001",
+      "is_new": true,
+      "needs_verification": false
+    },
+    {
+      "id": "person_004",
+      "name": "Полина Амельченко",
+      "aliases": [
+        "тётя Поля"
+      ],
+      "birth_year": null,
+      "death_year": null,
+      "relation_to_subject": "старшая сестра",
+      "description": "забрала Валентину из детдома",
+      "genealogy_note": "разные отцы с Валентиной, жила в Старобельске",
+      "access_status": "deceased",
+      "contact_notes": null,
+      "source_interview_id": "int_001",
+      "is_new": true,
+      "needs_verification": false
+    },
+    {
+      "id": "person_005",
+      "name": "Мария",
+      "aliases": [
+        "тётя Маня",
+        "тётя Маша"
+      ],
+      "birth_year": null,
+      "death_year": null,
+      "relation_to_subject": "старшая сестра",
+      "description": "самая старшая сестра, любила ходить по грибы и ягоды",
+      "genealogy_note": "разные отцы с Валентиной",
+      "access_status": "unknown",
+      "contact_notes": null,
+      "source_interview_id": "int_001",
+      "is_new": true,
+      "needs_verification": true
+    },
+    {
+      "id": "person_006",
+      "name": "Каракулин Дмитрий",
+      "aliases": [
+        "дед Митя"
+      ],
+      "birth_year": null,
+      "death_year": 1978,
+      "relation_to_subject": "муж",
+      "description": "военный, трудолюбивый и рукастый",
+      "genealogy_note": null,
+      "access_status": "deceased",
+      "contact_notes": null,
+      "source_interview_id": "int_001",
+      "is_new": true,
+      "needs_verification": false
+    },
+    {
+      "id": "person_007",
+      "name": "Каракулин Валерий",
+      "aliases": [
+        "Валерик"
+      ],
+      "birth_year": 1948,
+      "death_year": null,
+      "relation_to_subject": "сын",
+      "description": "учился в интернате в Венгрии, остался у тёти Шуры в Кирсанове",
+      "genealogy_note": null,
+      "access_status": "available",
+      "contact_notes": "живёт в Сафроново",
+      "source_interview_id": "int_001",
+      "is_new": true,
+      "needs_verification": false
+    },
+    {
+      "id": "person_008",
+      "name": "Владимир Маргось",
+      "aliases": [],
+      "birth_year": null,
+      "death_year": null,
+      "relation_to_subject": "зять",
+      "description": "муж Татьяны с 1977 года, не любил непрошенных советов",
+      "genealogy_note": null,
+      "access_status": "available",
+      "contact_notes": null,
+      "source_interview_id": "int_001",
+      "is_new": true,
+      "needs_verification": true
+    },
+    {
+      "id": "person_009",
+      "name": "Олег Кужба",
+      "aliases": [],
+      "birth_year": null,
+      "death_year": null,
+      "relation_to_subject": "зять",
+      "description": "второй муж Татьяны с 1996 года",
+      "genealogy_note": null,
+      "access_status": "available",
+      "contact_notes": null,
+      "source_interview_id": "int_001",
+      "is_new": true,
+      "needs_verification": true
+    },
+    {
+      "id": "person_010",
+      "name": "Никита",
+      "aliases": [],
+      "birth_year": null,
+      "death_year": null,
+      "relation_to_subject": "внук",
+      "description": "сын Татьяны, почерк с отрицательным наклоном как у бабушки",
+      "genealogy_note": null,
+      "access_status": "available",
+      "contact_notes": null,
+      "source_interview_id": "int_001",
+      "is_new": true,
+      "needs_verification": false
+    },
+    {
+      "id": "person_011",
+      "name": "Даша",
+      "aliases": [
+        "Дашка"
+      ],
+      "birth_year": null,
+      "death_year": null,
+      "relation_to_subject": "внучка",
+      "description": "дочь Татьяны",
+      "genealogy_note": null,
+      "access_status": "available",
+      "contact_notes": null,
+      "source_interview_id": "int_001",
+      "is_new": true,
+      "needs_verification": false
+    },
+    {
+      "id": "person_012",
+      "name": "тётя Шура",
+      "aliases": [],
+      "birth_year": null,
+      "death_year": null,
+      "relation_to_subject": "золовка",
+      "description": "сестра Дмитрия Каракулина, жила в Кирсанове",
+      "genealogy_note": null,
+      "access_status": "deceased",
+      "contact_notes": null,
+      "source_interview_id": "int_001",
+      "is_new": true,
+      "needs_verification": false
+    },
+    {
+      "id": "person_013",
+      "name": "Толя",
+      "aliases": [],
+      "birth_year": null,
+      "death_year": null,
+      "relation_to_subject": "племянник",
+      "description": "сын Полины Амельченко, из Белгорода, дружил с Валентиной",
+      "genealogy_note": null,
+      "access_status": "unknown",
+      "contact_notes": "живёт в Белгороде",
+      "source_interview_id": "int_001",
+      "is_new": true,
+      "needs_verification": false
+    },
+    {
+      "id": "person_014",
+      "name": "Коля",
+      "aliases": [],
+      "birth_year": null,
+      "death_year": null,
+      "relation_to_subject": "племянник",
+      "description": "сын Полины Амельченко, лётчик",
+      "genealogy_note": null,
+      "access_status": "unknown",
+      "contact_notes": null,
+      "source_interview_id": "int_001",
+      "is_new": true,
+      "needs_verification": false
+    },
+    {
+      "id": "person_015",
+      "name": "Витя",
+      "aliases": [],
+      "birth_year": null,
+      "death_year": null,
+      "relation_to_subject": "племянник",
+      "description": "сын Полины Амельченко, из Энгельса",
+      "genealogy_note": null,
+      "access_status": "unknown",
+      "contact_notes": "живёт в Энгельсе",
+      "source_interview_id": "int_001",
+      "is_new": true,
+      "needs_verification": false
+    },
+    {
+      "id": "person_016",
+      "name": "Нинвана",
+      "aliases": [
+        "врач Нинвана",
+        "Полсачева"
+      ],
+      "birth_year": null,
+      "death_year": null,
+      "relation_to_subject": "врач, авторитет",
+      "description": "врач, на которого Валентина постоянно ссылалась",
+      "genealogy_note": null,
+      "access_status": "unknown",
+      "contact_notes": null,
+      "source_interview_id": "int_001",
+      "is_new": true,
+      "needs_verification": true
+    },
+    {
+      "id": "person_auto_001",
+      "name": "Татьяна Каракулина",
+      "aliases": [],
+      "birth_year": 1956,
+      "death_year": null,
+      "relation_to_subject": "дочь",
+      "description": "Дочь Валентины, родилась в 1956 году в Твери, вышла замуж за Владимира Маргося в 1977 году, затем за Олега Кужбу в 1996 году",
+      "genealogy_note": null,
+      "access_status": "available",
+      "contact_notes": "Рассказчик интервью",
+      "source_interview_id": "int_001",
+      "is_new": true,
+      "needs_verification": false,
+      "source_quote": "В 1956 году в Твери родилась Татьяна Каракулина, её дочь"
+    },
+    {
+      "id": "person_auto_002",
+      "name": "Римма",
+      "aliases": [],
+      "birth_year": null,
+      "death_year": null,
+      "relation_to_subject": "племянница мужа",
+      "description": "Дочь тёти Шуры, часто бывала в доме Валентины, училась в Калинине",
+      "genealogy_note": null,
+      "access_status": "unknown",
+      "contact_notes": null,
+      "source_interview_id": "int_001",
+      "is_new": true,
+      "needs_verification": false,
+      "source_quote": "Но это уже потом, и всё, дочери тёти Шуры, они же у нас учились тут, в Калинине. Вот. И очень часто у нас были Римма и Шура. Ой, Шура, Зина. Римма, Зина."
+    },
+    {
+      "id": "person_auto_003",
+      "name": "Зина",
+      "aliases": [],
+      "birth_year": null,
+      "death_year": null,
+      "relation_to_subject": "племянница мужа",
+      "description": "Дочь тёти Шуры, часто бывала в доме Валентины, училась в Калинине",
+      "genealogy_note": null,
+      "access_status": "unknown",
+      "contact_notes": null,
+      "source_interview_id": "int_001",
+      "is_new": true,
+      "needs_verification": false,
+      "source_quote": "И очень часто у нас были Римма и Шура. Ой, Шура, Зина. Римма, Зина."
+    }
+  ],
+  "timeline": [
+    {
+      "id": "event_001",
+      "date": {
+        "year": 1920,
+        "month": 12,
+        "day": 17,
+        "precision": "exact"
+      },
+      "title": "Рождение Валентины Ивановны",
+      "description": "Родилась в селе Мариевка, Новомиргородский район, Кировоградская область",
+      "location": "село Мариевка, Новомиргородский район, Кировоградская область",
+      "participants": [
+        "person_001",
+        "person_002"
+      ],
+      "life_period": "childhood",
+      "emotional_tone": "neutral",
+      "source_interview_id": "int_001",
+      "source_quote": "Каракулина Валентина Ивановна, девичья фамилия Рудая, дата рождения 17 декабря 1920 года, место рождения Кировоградская область, Новомиргородский район, село Мариевка",
+      "confidence": "high",
+      "needs_verification": false,
+      "is_new": true
+    },
+    {
+      "id": "event_002",
+      "date": {
+        "year": 1933,
+        "month": null,
+        "day": null,
+        "precision": "approximate"
+      },
+      "title": "Голод 1933 года и смерть матери",
+      "description": "Во время голода отец ушёл на заработки, мать умерла, Валентина попала в детдом",
+      "location": "Кировоградская область",
+      "participants": [
+        "person_001",
+        "person_002"
+      ],
+      "life_period": "childhood",
+      "emotional_tone": "negative",
+      "source_interview_id": "int_001",
+      "source_quote": "В 1933 году во время голода отец ушел на заработки, а мать умерла. Валентина попала в детдом",
+      "confidence": "high",
+      "needs_verification": false,
+      "is_new": true
+    },
+    {
+      "id": "event_003",
+      "date": {
+        "year": 1933,
+        "month": null,
+        "day": null,
+        "precision": "approximate"
+      },
+      "title": "Забрали из детдома к сестре",
+      "description": "Старшая сестра Полина забрала Валентину из детдома в Старобельск",
+      "location": "Старобельск, Луганская область",
+      "participants": [
+        "person_004"
+      ],
+      "life_period": "childhood",
+      "emotional_tone": "positive",
+      "source_interview_id": "int_001",
+      "source_quote": "её оттуда забрала старшая сестра Полина, тётя Поля, в Старобельск — это в Луганской области",
+      "confidence": "high",
+      "needs_verification": false,
+      "is_new": true
+    },
+    {
+      "id": "event_004",
+      "date": {
+        "year": 1938,
+        "month": null,
+        "day": null,
+        "precision": "approximate"
+      },
+      "title": "Поступление в акушерское училище",
+      "description": "Поступила в Кировоградскую фельдшерско-акушерскую школу",
+      "location": "Кировоград",
+      "participants": [],
+      "life_period": "education",
+      "emotional_tone": "positive",
+      "source_interview_id": "int_001",
+      "source_quote": "Валентина закончила акушерское училище, называется оно Кировоградская фельдшерско-акушерская школа, и она училась там с 1938 по 1940 год",
+      "confidence": "high",
+      "needs_verification": false,
+      "is_new": true
+    },
+    {
+      "id": "event_005",
+      "date": {
+        "year": 1940,
+        "month": null,
+        "day": null,
+        "precision": "approximate"
+      },
+      "title": "Окончание акушерского училища",
+      "description": "Получила специальность акушерки, была направлена в село Глинск",
+      "location": "Кировоград",
+      "participants": [],
+      "life_period": "education",
+      "emotional_tone": "positive",
+      "source_interview_id": "int_001",
+      "source_quote": "В 1940 году окончила фельдшерско-акушерскую школу в городе Кировограде и получила специальность акушерки. После окончания медицинской школы была направлена в Кировоградскую область, Светловолодский район, село Глинск",
+      "confidence": "high",
+      "needs_verification": false,
+      "is_new": true
+    },
+    {
+      "id": "event_006",
+      "date": {
+        "year": 1941,
+        "month": 6,
+        "day": 23,
+        "precision": "exact"
+      },
+      "title": "Призыв на фронт",
+      "description": "Была призвана в советскую армию, служила в военном госпитале",
+      "location": null,
+      "participants": [],
+      "life_period": "career",
+      "emotional_tone": "neutral",
+      "source_interview_id": "int_001",
+      "source_quote": "В 1941 году, 23 июня, была призвана на фронт. Воевала всю войну, работала в госпитале",
+      "confidence": "high",
+      "needs_verification": false,
+      "is_new": true
+    },
+    {
+      "id": "event_007",
+      "date": {
+        "year": 1943,
+        "month": 7,
+        "day": null,
+        "precision": "approximate"
+      },
+      "title": "Вступление в партию",
+      "description": "Стала членом коммунистической партии",
+      "location": null,
+      "participants": [],
+      "life_period": "career",
+      "emotional_tone": "positive",
+      "source_interview_id": "int_001",
+      "source_quote": "С июля 43-го года является членом партии",
+      "confidence": "high",
+      "needs_verification": false,
+      "is_new": true
+    },
+    {
+      "id": "event_008",
+      "date": {
+        "year": 1943,
+        "month": null,
+        "day": null,
+        "precision": "approximate"
+      },
+      "title": "Награждение медалью за боевые заслуги",
+      "description": "Получила первую боевую награду",
+      "location": null,
+      "participants": [],
+      "life_period": "career",
+      "emotional_tone": "positive",
+      "source_interview_id": "int_001",
+      "source_quote": "за что была награждена в 43 году медалью за боевые заслуги",
+      "confidence": "high",
+      "needs_verification": false,
+      "is_new": true
+    },
+    {
+      "id": "event_009",
+      "date": {
+        "year": 1945,
+        "month": null,
+        "day": null,
+        "precision": "approximate"
+      },
+      "title": "Награждение орденом Красная Звезда",
+      "description": "Получила орден за службу в госпитале",
+      "location": null,
+      "participants": [],
+      "life_period": "career",
+      "emotional_tone": "positive",
+      "source_interview_id": "int_001",
+      "source_quote": "а в 45 году орденом Красная Звезда",
+      "confidence": "high",
+      "needs_verification": false,
+      "is_new": true
+    },
+    {
+      "id": "event_010",
+      "date": {
+        "year": 1945,
+        "month": 12,
+        "day": 24,
+        "precision": "exact"
+      },
+      "title": "Демобилизация",
+      "description": "Окончание военной службы",
+      "location": "Германия",
+      "participants": [],
+      "life_period": "career",
+      "emotional_tone": "neutral",
+      "source_interview_id": "int_001",
+      "source_quote": "до 24 декабря 1945 года",
+      "confidence": "high",
+      "needs_verification": false,
+      "is_new": true
+    },
+    {
+      "id": "event_011",
+      "date": {
+        "year": 1946,
+        "month": null,
+        "day": null,
+        "precision": "approximate"
+      },
+      "title": "Знакомство с Дмитрием Каракулиным",
+      "description": "Встретила будущего мужа на Украине, знакомство длилось две недели",
+      "location": "Украина",
+      "participants": [
+        "person_006"
+      ],
+      "life_period": "family",
+      "emotional_tone": "positive",
+      "source_interview_id": "int_001",
+      "source_quote": "В 1946 году собирались с подружкой поступать, и она приехала домой и встретила там Дмитрия Каракулина на Украине",
+      "confidence": "high",
+      "needs_verification": false,
+      "is_new": true
+    },
+    {
+      "id": "event_012",
+      "date": {
+        "year": 1946,
+        "month": 7,
+        "day": 12,
+        "precision": "exact"
+      },
+      "title": "Свадьба",
+      "description": "Поженились в Старобельске после двух недель знакомства",
+      "location": "Старобельск",
+      "participants": [
+        "person_006"
+      ],
+      "life_period": "family",
+      "emotional_tone": "positive",
+      "source_interview_id": "int_001",
+      "source_quote": "Поженились 12 июля в Старобельске",
+      "confidence": "high",
+      "needs_verification": false,
+      "is_new": true
+    },
+    {
+      "id": "event_013",
+      "date": {
+        "year": 1946,
+        "month": null,
+        "day": null,
+        "precision": "approximate"
+      },
+      "title": "Переезд в Германию",
+      "description": "Уехали в Германию после свадьбы, кража документов на вокзале",
+      "location": "Германия",
+      "participants": [
+        "person_006"
+      ],
+      "life_period": "family",
+      "emotional_tone": "bittersweet",
+      "source_interview_id": "int_001",
+      "source_quote": "уехали оттуда в Германию. И у неё на вокзале крадут документы. Пришлось резко в моменте решать проблему. За ней какой-то солдат приезжал от Дмитрия и как-то её выковыривал без документов",
+      "confidence": "high",
+      "needs_verification": false,
+      "is_new": true
+    },
+    {
+      "id": "event_014",
+      "date": {
+        "year": 1948,
+        "month": null,
+        "day": null,
+        "precision": "approximate"
+      },
+      "title": "Возвращение из Германии",
+      "description": "Переехали в Вышний Волочёк",
+      "location": "Вышний Волочёк",
+      "participants": [
+        "person_006"
+      ],
+      "life_period": "family",
+      "emotional_tone": "neutral",
+      "source_interview_id": "int_001",
+      "source_quote": "В 1948 году вернулись из Германии в Вышний Волочок",
+      "confidence": "high",
+      "needs_verification": false,
+      "is_new": true
+    },
+    {
+      "id": "event_015",
+      "date": {
+        "year": 1948,
+        "month": null,
+        "day": null,
+        "precision": "approximate"
+      },
+      "title": "Рождение сына Валерия",
+      "description": "Родился в Вышнем Волочке",
+      "location": "Вышний Волочёк",
+      "participants": [
+        "person_007"
+      ],
+      "life_period": "family",
+      "emotional_tone": "positive",
+      "source_interview_id": "int_001",
+      "source_quote": "Там родился Валерий Каракулин, её сын",
+      "confidence": "high",
+      "needs_verification": false,
+      "is_new": true
+    },
+    {
+      "id": "event_016",
+      "date": {
+        "year": 1956,
+        "month": null,
+        "day": null,
+        "precision": "approximate"
+      },
+      "title": "Рождение дочери Татьяны",
+      "description": "Родилась в Твери (Калинине)",
+      "location": "Тверь (Калинин)",
+      "participants": [
+        "narrator_001"
+      ],
+      "life_period": "family",
+      "emotional_tone": "positive",
+      "source_interview_id": "int_001",
+      "source_quote": "В 1956 году в Твери родилась Татьяна Каракулина, её дочь",
+      "confidence": "high",
+      "needs_verification": false,
+      "is_new": true
+    },
+    {
+      "id": "event_017",
+      "date": {
+        "year": 1958,
+        "month": null,
+        "day": null,
+        "precision": "approximate"
+      },
+      "title": "Переезд в Венгрию",
+      "description": "Семья переехала в Венгрию по службе мужа",
+      "location": "Венгрия",
+      "participants": [
+        "person_006",
+        "person_007",
+        "narrator_001"
+      ],
+      "life_period": "family",
+      "emotional_tone": "neutral",
+      "source_interview_id": "int_001",
+      "source_quote": "В 1958 году они переехали в Венгрию",
+      "confidence": "high",
+      "needs_verification": false,
+      "is_new": true
+    },
+    {
+      "id": "event_018",
+      "date": {
+        "year": 1960,
+        "month": null,
+        "day": null,
+        "precision": "approximate"
+      },
+      "title": "Операция на желудок",
+      "description": "Перенесла операцию, после которой мало ела и не ела молочные продукты",
+      "location": "Венгрия",
+      "participants": [],
+      "life_period": "other",
+      "emotional_tone": "negative",
+      "source_interview_id": "int_001",
+      "source_quote": "В 60-м году Валентина перенесла операцию на желудок. Из-за этого она мало ела и молочку не ела",
+      "confidence": "high",
+      "needs_verification": false,
+      "is_new": true
+    },
+    {
+      "id": "event_019",
+      "date": {
+        "year": 1961,
+        "month": null,
+        "day": null,
+        "precision": "approximate"
+      },
+      "title": "Валерий остался у тёти Шуры",
+      "description": "Сын не захотел возвращаться в интернат в Венгрии и остался в Кирсанове",
+      "location": "Кирсанов, Тамбовская область",
+      "participants": [
+        "person_007",
+        "person_012"
+      ],
+      "life_period": "family",
+      "emotional_tone": "bittersweet",
+      "source_interview_id": "int_001",
+      "source_quote": "В 61 году он не захотел возвращаться после летних каникул в Венгрии в интернат и остался с тётей Шурой в городе Кирсанове в Тамбовской области",
+      "confidence": "high",
+      "needs_verification": false,
+      "is_new": true
+    },
+    {
+      "id": "event_020",
+      "date": {
+        "year": 1962,
+        "month": null,
+        "day": null,
+        "precision": "approximate"
+      },
+      "title": "Переезд в Химинститут",
+      "description": "Демобилизация мужа, получение квартиры в посёлке Химинститут",
+      "location": "Химинститут, Калинин",
+      "participants": [
+        "person_006",
+        "narrator_001"
+      ],
+      "life_period": "family",
+      "emotional_tone": "positive",
+      "source_interview_id": "int_001",
+      "source_quote": "В 62-м году они переехали в Химинститут — это поселок городского типа на окраине города Калинин. Там была демобилизация и всех военных распустили",
+      "confidence": "high",
+      "needs_verification": false,
+      "is_new": true
+    },
+    {
+      "id": "event_021",
+      "date": {
+        "year": 1962,
+        "month": null,
+        "day": null,
+        "precision": "approximate"
+      },
+      "title": "Начало работы в поликлинике",
+      "description": "Устроилась медсестрой в поликлинику химинститута",
+      "location": "Химинститут, Калинин",
+      "participants": [],
+      "life_period": "career",
+      "emotional_tone": "positive",
+      "source_interview_id": "int_001",
+      "source_quote": "В 62–63 году Валентина стала работать в поликлинике в химинституте. Работала там медсестрой",
+      "confidence": "high",
+      "needs_verification": false,
+      "is_new": true
+    },
+    {
+      "id": "event_022",
+      "date": {
+        "year": 1965,
+        "month": null,
+        "day": null,
+        "precision": "approximate"
+      },
+      "title": "Звание «Ударник коммунистического труда»",
+      "description": "Получила почётное звание за трудовые достижения",
+      "location": "Калинин",
+      "participants": [],
+      "life_period": "career",
+      "emotional_tone": "positive",
+      "source_interview_id": "int_001",
+      "source_quote": "В 1965 году было присвоено звание «Ударник коммунистического труда»",
+      "confidence": "high",
+      "needs_verification": false,
+      "is_new": true
+    },
+    {
+      "id": "event_023",
+      "date": {
+        "year": 1970,
+        "month": null,
+        "day": null,
+        "precision": "approximate"
+      },
+      "title": "Медаль за доблестный труд к 100-летию Ленина",
+      "description": "Награждена медалью в честь столетия Ленина",
+      "location": "Калинин",
+      "participants": [],
+      "life_period": "career",
+      "emotional_tone": "positive",
+      "source_interview_id": "int_001",
+      "source_quote": "В день столетия со дня рождения Владимира Ильича Ленина была награждена медалью за доблестный труд",
+      "confidence": "high",
+      "needs_verification": false,
+      "is_new": true
+    },
+    {
+      "id": "event_024",
+      "date": {
+        "year": 1977,
+        "month": null,
+        "day": null,
+        "precision": "approximate"
+      },
+      "title": "Свадьба дочери Татьяны",
+      "description": "Татьяна вышла замуж за Владимира Маргося",
+      "location": "Калинин",
+      "participants": [
+        "narrator_001",
+        "person_008"
+      ],
+      "life_period": "family",
+      "emotional_tone": "bittersweet",
+      "source_interview_id": "int_001",
+      "source_quote": "1977 год. Дочь Татьяна вышла замуж за Владимира Маргося. Валентина с Владимиром не особо относились друг к другу",
+      "confidence": "high",
+      "needs_verification": false,
+      "is_new": true
+    },
+    {
+      "id": "event_025",
+      "date": {
+        "year": 1978,
+        "month": null,
+        "day": null,
+        "precision": "approximate"
+      },
+      "title": "Смерть мужа Дмитрия",
+      "description": "Умер муж, Валентина осталась вдовой",
+      "location": "Химинститут, Калинин",
+      "participants": [
+        "person_006"
+      ],
+      "life_period": "other",
+      "emotional_tone": "negative",
+      "source_interview_id": "int_001",
+      "source_quote": "В 1978 году умер её муж Дмитрий Каракулин",
+      "confidence": "high",
+      "needs_verification": false,
+      "is_new": true
+    },
+    {
+      "id": "event_026",
+      "date": {
+        "year": 1994,
+        "month": 8,
+        "day": null,
+        "precision": "approximate"
+      },
+      "title": "Выход на пенсию",
+      "description": "Перестала работать в поликлинике",
+      "location": "Химинститут, Калинин",
+      "participants": [],
+      "life_period": "retirement",
+      "emotional_tone": "neutral",
+      "source_interview_id": "int_001",
+      "source_quote": "В 1994 году, в августе, она перестала работать и ушла на пенсию",
+      "confidence": "high",
+      "needs_verification": false,
+      "is_new": true
+    },
+    {
+      "id": "event_027",
+      "date": {
+        "year": 1996,
+        "month": 9,
+        "day": null,
+        "precision": "approximate"
+      },
+      "title": "Дочь переехала в центр Твери",
+      "description": "Татьяна вышла замуж за Олега Кужбу и переехала с детьми на Капошвара",
+      "location": "Тверь",
+      "participants": [
+        "narrator_001",
+        "person_009",
+        "person_010",
+        "person_011"
+      ],
+      "life_period": "retirement",
+      "emotional_tone": "negative",
+      "source_interview_id": "int_001",
+      "source_quote": "В 1996 году, в сентябре, осталась в химинституте одна в двухкомнатной квартире, потому что её дочь Татьяна вышла замуж за Олега Кужбу и вместе со своими детьми, то есть с внуками Валентины, с Никитой и с Дашей, переехали в город Тверь, в центр Твери, на Капошвара",
+      "confidence": "high",
+      "needs_verification": false,
+      "is_new": true
+    },
+    {
+      "id": "event_028",
+      "date": {
+        "year": 2005,
+        "month": null,
+        "day": null,
+        "precision": "approximate"
+      },
+      "title": "Перелом ноги и переезд к дочери",
+      "description": "Сломала ногу, не могла ходить, дочь перевезла её к себе",
+      "location": "Тверь, Капошвара",
+      "participants": [
+        "narrator_001"
+      ],
+      "life_period": "retirement",
+      "emotional_tone": "negative",
+      "source_interview_id": "int_001",
+      "source_quote": "В 2005 году она тоже переехала на Капошвара, потому что не могла ходить — она сломала ногу, и чтобы за ней ухаживать, собственно, её перевезли, дочка перевезла её к себе на Капошвара",
+      "confidence": "high",
+      "needs_verification": false,
+      "is_new": true
+    },
+    {
+      "id": "event_auto_001",
+      "date": {
+        "year": 1973,
+        "month": null,
+        "day": null,
+        "precision": "approximate"
+      },
+      "title": "Просьба Татьяны к матери уйти с работы",
+      "description": "Татьяна попросила мать уйти с работы в поликлинике, чтобы та встречала внучку Дашу после школы",
+      "location": "Химинститут, Калинин",
+      "participants": [
+        "narrator_001"
+      ],
+      "life_period": "retirement",
+      "emotional_tone": "neutral",
+      "source_interview_id": "int_001",
+      "source_quote": "В 1973 году же я её попросила просто уже уйти, чтобы она... Дашку там после школы встречала",
+      "confidence": "high",
+      "needs_verification": false,
+      "is_new": true
+    },
+    {
+      "id": "event_auto_002",
+      "date": {
+        "year": 1977,
+        "month": null,
+        "day": null,
+        "precision": "approximate"
+      },
+      "title": "Конфликт между Валентиной и зятем Владимиром при ремонте счётчика",
+      "description": "Валентина поправила Владимира при ремонте электрического счётчика, сказав, что её муж Дмитрий так никогда не делал. Это вызвало недовольство зятя и стало началом напряжённых отношений.",
+      "location": "Химинститут, Калинин",
+      "participants": [
+        "person_008"
+      ],
+      "life_period": "other",
+      "emotional_tone": "negative",
+      "source_interview_id": "int_001",
+      "source_quote": "Я рассказывала историю, когда она его там поправила и сказала, что папа так не делал никогда, когда он в счетчик залез. Ему это очень не понравилось",
+      "confidence": "high",
+      "needs_verification": false,
+      "is_new": true
+    },
+    {
+      "id": "event_auto_003",
+      "date": {
+        "year": 1978,
+        "month": null,
+        "day": null,
+        "precision": "approximate"
+      },
+      "title": "Изменение характера Валентины после смерти мужа",
+      "description": "После смерти мужа Дмитрия в 1978 году Валентина стала более требовательной и сварливой, особенно по отношению к внукам. Появилось больше недовольства и строгости.",
+      "location": "Химинститут, Калинин",
+      "participants": [],
+      "life_period": "other",
+      "emotional_tone": "negative",
+      "source_interview_id": "int_001",
+      "source_quote": "И отношение к Татьяне было другое. А когда деде Мите, то есть её муже Дмитрии, не стало, то появилось больше недовольства",
+      "confidence": "high",
+      "needs_verification": false,
+      "is_new": true
+    },
+    {
+      "id": "event_auto_004",
+      "date": {
+        "year": 1990,
+        "month": null,
+        "day": null,
+        "precision": "approximate"
+      },
+      "title": "Волна крещения в семье в 90-е годы",
+      "description": "В 90-е годы в стране началась волна крещения. Вся семья крестилась, но Валентина, как убеждённая коммунистка-атеистка, не крестилась.",
+      "location": "Химинститут, Калинин",
+      "participants": [],
+      "life_period": "other",
+      "emotional_tone": "neutral",
+      "source_interview_id": "int_001",
+      "source_quote": "Волна в 90-е, которая поднялась, и когда все стали креститься, и её вроде тоже захлестнуло, ну и получается там все покрестились в семье. Но бабушка, наверное, не крестилась. Валентина, то есть, не крестилась",
+      "confidence": "high",
+      "needs_verification": false,
+      "is_new": true
+    },
+    {
+      "id": "event_auto_005",
+      "date": {
+        "year": 1962,
+        "month": null,
+        "day": null,
+        "precision": "approximate"
+      },
+      "title": "Татьяна начала ходить в детский сад №95",
+      "description": "После переезда в Химинститут дочь Татьяна стала ходить в детский сад номер 95, расположенный рядом с овощным магазином",
+      "location": "Химинститут, Калинин",
+      "participants": [
+        "narrator_001"
+      ],
+      "life_period": "family",
+      "emotional_tone": "neutral",
+      "source_interview_id": "int_001",
+      "source_quote": "Там Татьяна Каракулина, его дочь, стала ходить в детский сад, сад номер 95, рядом с овощным магазином",
+      "confidence": "high",
+      "needs_verification": false,
+      "is_new": true
+    },
+    {
+      "id": "event_auto_006",
+      "date": {
+        "year": 1946,
+        "month": null,
+        "day": null,
+        "precision": "approximate"
+      },
+      "title": "Кража документов на вокзале при отъезде в Германию",
+      "description": "Когда Валентина с Дмитрием уезжали в Германию после свадьбы, у неё на вокзале украли документы. Пришлось срочно решать проблему. Солдат, посланный Дмитрием, помог ей уехать без документов.",
+      "location": "Украина, вокзал",
+      "participants": [
+        "person_006"
+      ],
+      "life_period": "family",
+      "emotional_tone": "negative",
+      "source_interview_id": "int_001",
+      "source_quote": "И у неё на вокзале крадут документы. Пришлось резко в моменте решать проблему. За ней какой-то солдат приезжал от Дмитрия и как-то её выковыривал без документов",
+      "confidence": "high",
+      "needs_verification": false,
+      "is_new": true
+    },
+    {
+      "id": "event_auto_007",
+      "date": {
+        "year": 1946,
+        "month": null,
+        "day": null,
+        "precision": "approximate"
+      },
+      "title": "Развилка судьбы: Сахалин или уход из армии",
+      "description": "Дмитрию Каракулину при демобилизации в 1962 году предложили выбор: либо ехать на Сахалин, либо уходить из армии. Он выбрал уход из армии и получил квартиру в Химинституте.",
+      "location": "Калинин",
+      "participants": [
+        "person_006"
+      ],
+      "life_period": "career",
+      "emotional_tone": "neutral",
+      "source_interview_id": "int_001",
+      "source_quote": "Дмитрию Каракулину предложили или на Сахалин, или уходить из армии",
+      "confidence": "high",
+      "needs_verification": false,
+      "is_new": true
+    },
+    {
+      "id": "event_auto_008",
+      "date": {
+        "year": 1996,
+        "month": null,
+        "day": null,
+        "precision": "approximate"
+      },
+      "title": "Продажа шубы для покупки пианино дочери",
+      "description": "Валентина продала свою красивую шубу, привезённую из Венгрии, чтобы купить пианино для дочери Татьяны. Это был неожиданный поступок, показывающий её готовность жертвовать для детей.",
+      "location": "Химинститут, Калинин",
+      "participants": [
+        "narrator_001"
+      ],
+      "life_period": "family",
+      "emotional_tone": "positive",
+      "source_interview_id": "int_001",
+      "source_quote": "Что-то неожиданное, когда она продала свою шубу, и купили мне пианино. Ну, хотя шуба была, конечно, тяжеловата, но она была шикарная. На те времена это была очень шикарная шуба привезенная там из Венгрии",
+      "confidence": "high",
+      "needs_verification": false,
+      "is_new": true
+    },
+    {
+      "id": "event_auto_009",
+      "date": {
+        "year": 1962,
+        "month": null,
+        "day": null,
+        "precision": "approximate"
+      },
+      "title": "Покупка дорогого немецкого фарфорового сервиза",
+      "description": "Валентина купила красивый немецкий фарфоровый сервиз на 12 персон стоимостью 120 рублей (примерно месячная зарплата). Это показывает её любовь к красивой посуде и готовность потратить значительные деньги на красоту.",
+      "location": "Химинститут, Калинин",
+      "participants": [],
+      "life_period": "other",
+      "emotional_tone": "positive",
+      "source_interview_id": "int_001",
+      "source_quote": "она же не пожалела денег, чтобы купить такой шикарный на то время и очень дорогой сервиз немецкого фарфора. Вот, наверное, вот это может быть удивительным. Это не пожалев денег на что-то. Но потом... Ну, это тоже, в принципе, вот это я воспринимала не... Что-то неожиданное",
+      "confidence": "high",
+      "needs_verification": false,
+      "is_new": true
+    },
+    {
+      "id": "event_auto_010",
+      "date": {
+        "year": 1962,
+        "month": null,
+        "day": null,
+        "precision": "approximate"
+      },
+      "title": "Покупка мельхиоровых ложечек из Сафронова",
+      "description": "Валентина привезла красивые мельхиоровые ложечки из Сафронова (где жил её сын Валерий), а затем купила ещё больше, когда увидела их в другом месте. Это демонстрирует её любовь к красивой посуде и предметам быта.",
+      "location": "Сафроново",
+      "participants": [
+        "person_007"
+      ],
+      "life_period": "other",
+      "emotional_tone": "positive",
+      "source_interview_id": "int_001",
+      "source_quote": "Она же не пожалела денег, чтобы купить такой шикарный на то время и очень дорогой сервиз немецкого фарфора. Вот, наверное, вот это может быть удивительным. Она же их привозила там из Сафронова. Ну, был горнее уже что-то, да, куплено, а потом она еще там увидела, еще привезла, очень была довольна",
+      "confidence": "high",
+      "needs_verification": false,
+      "is_new": true
+    }
+  ],
+  "relationships": [
+    {
+      "person_a": "person_001",
+      "person_b": "subject",
+      "relation_type": "отец",
+      "details": "плотник, разные отцы у Валентины и её сестёр",
+      "source_interview_id": "int_001"
+    },
+    {
+      "person_a": "person_002",
+      "person_b": "subject",
+      "relation_type": "мать",
+      "details": "работница колхоза, умерла в 1933 году во время голода",
+      "source_interview_id": "int_001"
+    },
+    {
+      "person_a": "person_004",
+      "person_b": "subject",
+      "relation_type": "старшая сестра",
+      "details": "забрала из детдома, жила в Старобельске",
+      "source_interview_id": "int_001"
+    },
+    {
+      "person_a": "person_006",
+      "person_b": "subject",
+      "relation_type": "муж",
+      "details": "военный, поженились после двух недель знакомства",
+      "source_interview_id": "int_001"
+    },
+    {
+      "person_a": "person_007",
+      "person_b": "subject",
+      "relation_type": "сын",
+      "details": "родился в 1948 году в Вышнем Волочке",
+      "source_interview_id": "int_001"
+    },
+    {
+      "person_a": "narrator_001",
+      "person_b": "subject",
+      "relation_type": "дочь",
+      "details": "родилась в 1956 году в Твери",
+      "source_interview_id": "int_001"
+    }
+  ],
+  "locations": [
+    {
+      "id": "loc_001",
+      "name": "село Мариевка",
+      "type": "village",
+      "location_role": "origin",
+      "context": "место рождения героини",
+      "period": "1920",
+      "needs_verification": false,
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "id": "loc_002",
+      "name": "Старобельск",
+      "type": "city",
+      "location_role": "residence",
+      "context": "город, где жила сестра Полина, куда забрали из детдома",
+      "period": "1933-1946",
+      "needs_verification": false,
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "id": "loc_003",
+      "name": "Кировоград",
+      "type": "city",
+      "location_role": "education",
+      "context": "город, где училась в фельдшерско-акушерской школе",
+      "period": "1938-1940",
+      "needs_verification": false,
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "id": "loc_004",
+      "name": "село Глинск",
+      "type": "village",
+      "location_role": "work",
+      "context": "место первого назначения после училища",
+      "period": "1940-1941",
+      "needs_verification": true,
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "id": "loc_005",
+      "name": "Германия",
+      "type": "country",
+      "location_role": "residence",
+      "context": "место службы мужа и проживания семьи",
+      "period": "1946-1948",
+      "needs_verification": false,
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "id": "loc_006",
+      "name": "Вышний Волочёк",
+      "type": "city",
+      "location_role": "residence",
+      "context": "место проживания после возвращения из Германии",
+      "period": "1948",
+      "needs_verification": false,
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "id": "loc_007",
+      "name": "Венгрия",
+      "type": "country",
+      "location_role": "residence",
+      "context": "место службы мужа и проживания семьи",
+      "period": "1958-1962",
+      "needs_verification": false,
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "id": "loc_008",
+      "name": "Кечкемет",
+      "type": "city",
+      "location_role": "residence",
+      "context": "один из городов проживания в Венгрии",
+      "period": "1958-1962",
+      "needs_verification": true,
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "id": "loc_009",
+      "name": "Кишкунхалаш",
+      "type": "city",
+      "location_role": "residence",
+      "context": "один из городов проживания в Венгрии",
+      "period": "1958-1962",
+      "needs_verification": true,
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "id": "loc_010",
+      "name": "Байя",
+      "type": "city",
+      "location_role": "residence",
+      "context": "один из городов проживания в Венгрии",
+      "period": "1958-1962",
+      "needs_verification": true,
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "id": "loc_011",
+      "name": "Химинститут",
+      "type": "village",
+      "location_role": "residence",
+      "context": "посёлок городского типа, основное место проживания семьи",
+      "period": "1962-2005",
+      "needs_verification": false,
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "id": "loc_012",
+      "name": "Кирсанов",
+      "type": "city",
+      "location_role": "residence",
+      "context": "город, где жила тётя Шура и остался сын Валерий",
+      "period": "1961",
+      "needs_verification": false,
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "id": "loc_013",
+      "name": "улица Капошвара",
+      "type": "address",
+      "location_role": "residence",
+      "context": "улица в центре Твери, где жила дочь с семьёй",
+      "period": "1996-2005",
+      "needs_verification": true,
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "id": "loc_014",
+      "name": "Советская улица",
+      "type": "address",
+      "location_role": "residence",
+      "context": "улица в Калинине, где жила семья в коммуналке",
+      "period": "1948-1958",
+      "needs_verification": false,
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "id": "loc_auto_001",
+      "name": "ДК «Синтетик»",
+      "type": "cultural_center",
+      "location_role": "leisure",
+      "context": "дворец культуры, где Татьяна водила внука Никиту на аэробику",
+      "period": "1980-е",
+      "needs_verification": false,
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "id": "loc_auto_002",
+      "name": "Сафроново",
+      "type": "village",
+      "location_role": "residence",
+      "context": "место, где жил сын Валерий, куда ездили в гости",
+      "period": "1960-е-1990-е",
+      "needs_verification": true,
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "id": "loc_auto_003",
+      "name": "Воскресенская церковь во Власево",
+      "type": "church",
+      "location_role": "religious",
+      "context": "церковь, которую посещала Валентина в 90-е годы",
+      "period": "1990-е",
+      "needs_verification": true,
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "id": "loc_auto_004",
+      "name": "Сочи",
+      "type": "city",
+      "location_role": "vacation",
+      "context": "место отпуска, куда ездили с сыном Валериком",
+      "period": "1960-е-1970-е",
+      "needs_verification": false,
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "id": "loc_auto_005",
+      "name": "Гагры",
+      "type": "city",
+      "location_role": "vacation",
+      "context": "место отпуска, куда ездили с сыном Валериком",
+      "period": "1960-е-1970-е",
+      "needs_verification": false,
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "id": "loc_auto_006",
+      "name": "Санкт-Петербург",
+      "type": "city",
+      "location_role": "vacation",
+      "context": "место поездки с дочерью Татьяной",
+      "period": "1960-е-1970-е",
+      "needs_verification": false,
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "id": "loc_auto_007",
+      "name": "Белгород",
+      "type": "city",
+      "location_role": "residence",
+      "context": "город, где жил племянник Толя",
+      "period": "1960-е-1990-е",
+      "needs_verification": false,
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "id": "loc_auto_008",
+      "name": "Энгельс",
+      "type": "city",
+      "location_role": "residence",
+      "context": "город, где жил племянник Витя",
+      "period": "1960-е-1990-е",
+      "needs_verification": false,
+      "source_interview_id": "int_001",
+      "is_new": true
+    }
+  ],
+  "character_traits": [
+    {
+      "trait": "хорошо шила, вышивала",
+      "category": "skill",
+      "evidence": "Валентина хорошо шила, вышивала, закончила курсы кройки и шитья при доме офицеров",
+      "described_by": "narrator_001",
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "trait": "очень вкусно готовила",
+      "category": "skill",
+      "evidence": "Она очень вкусно готовила: пирожки, беляши, торт Наполеон, бисквиты. Взбивала крем каким-то чудным образом",
+      "described_by": "narrator_001",
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "trait": "любила возиться на даче",
+      "category": "hobby",
+      "evidence": "Любила возиться на даче",
+      "described_by": "narrator_001",
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "trait": "не любила ходить по грибы и ягоды",
+      "category": "habit",
+      "evidence": "Не особо любила ходить по грибы и ягоды — это в основном тётя Маша и её соседка были любителями",
+      "described_by": "narrator_001",
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "trait": "очень аккуратная, чистоплотная",
+      "category": "character",
+      "evidence": "Была очень аккуратной, чистоплотной: чашки обдавала кипятком, следила за чистотой одежды, много гладила",
+      "described_by": "narrator_001",
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "trait": "добрый характер, но могла зарубиться на пустом месте",
+      "category": "character",
+      "evidence": "Характер у Валентины, у бабушки, был добрый, но могла зарубиться на пустом месте и устроить скандал. Отходчивая",
+      "described_by": "narrator_001",
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "trait": "не любила читать",
+      "category": "habit",
+      "evidence": "Читать не любила, но книжный шкаф откуда-то взялся и наполнился",
+      "described_by": "narrator_001",
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "trait": "хорошо пела",
+      "category": "skill",
+      "evidence": "хорошо пела. В Венгрии пела в хоре. Вроде даже за столом пела. Точно был голос и точно любила петь",
+      "described_by": "narrator_001",
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "trait": "никакого отношения к спорту",
+      "category": "habit",
+      "evidence": "Когда Татьяна брала своего сына Никиту в ДК «Синтетик» на аэробику, Валентина удивлялась, зачем это надо",
+      "described_by": "narrator_001",
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "trait": "почерк с отрицательным наклоном",
+      "category": "other",
+      "evidence": "Бабушкин почерк: он достаточно интересен с отрицательным наклоном. У её внука Никиты такой же",
+      "described_by": "narrator_001",
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "trait": "была коммунисткой и не верила в Бога",
+      "category": "belief",
+      "evidence": "Бабушка была коммунисткой и не верила в Бога. В доме не было икон, не было Библии, вообще ничего про Бога не было",
+      "described_by": "narrator_001",
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "trait": "как муравей, а не стрекоза из известной басни",
+      "category": "metaphor",
+      "evidence": "Валентина была как муравей, а не стрекоза из известной басни. К искусству тяги у неё особо не было",
+      "described_by": "narrator_001",
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "trait": "хотелось красиво одеваться",
+      "category": "appearance",
+      "evidence": "Ей хотелось красиво одеваться, шляпки, сумочки всякие. Например, когда она уже была бабушкой, её внуки вспоминают авоську, сшитую из зонтика",
+      "described_by": "narrator_001",
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "trait": "душилась французскими духами",
+      "category": "habit",
+      "evidence": "Духи французские ей хотелось, и даже в 85 лет она ими душилась",
+      "described_by": "narrator_001",
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "trait": "любила красивое постельное бельё",
+      "category": "habit",
+      "evidence": "И всегда у неё должно было быть красивое постельное бельё",
+      "described_by": "narrator_001",
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "trait": "стойкий оловянный солдатик",
+      "category": "metaphor",
+      "evidence": "бабушка у нас все-таки стойкий, оловянный солдатик. она, мне кажется, не показывала, даже если было очень тяжело",
+      "described_by": "narrator_001",
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "trait": "чувство недовольства, сварливость",
+      "category": "character",
+      "evidence": "В характере Валентины было вроде как чувство недовольства, сварливость, строгость, может быть, какая-то по отношению к внукам",
+      "described_by": "narrator_001",
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "trait": "преданная коммунистка",
+      "category": "belief",
+      "evidence": "Валентина была преданная коммунистка. Всю войну за родину, за Сталина. Признавала, что победа из-за Сталина",
+      "described_by": "narrator_001",
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "trait": "была бессеребренницей",
+      "category": "character",
+      "evidence": "Валентина была бессеребренницей. Уколы делала бесплатно, ну, знамо, что медсестра. Спирт домой не носила, наверное, как другие медсёстры",
+      "described_by": "narrator_001",
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "trait": "употребляла алкоголь только по праздникам",
+      "category": "habit",
+      "evidence": "Алкоголь употребляла только немного совсем по праздникам. Стол накрыть, попеть иногда",
+      "described_by": "narrator_001",
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "trait": "гостеприимная и хлебосольная",
+      "category": "character",
+      "evidence": "Валентина была зато гостеприимная и хлебосольная",
+      "described_by": "narrator_001",
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "trait": "не было чувства юмора",
+      "category": "character",
+      "evidence": "Чувства юмора у бабушки, скорее всего, не было. То есть у Валентины не было этого чувства юмора",
+      "described_by": "narrator_001",
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "trait": "любила красиво накрывать на стол",
+      "category": "hobby",
+      "evidence": "она же любила красиво накрыть на стол. Для неё это тоже важно всегда было, чтобы это все было красиво. Она же всегда эти салаты все украшала, да, вот какие-то там из варенья, украшения делала, еще что-то",
+      "described_by": "narrator_001",
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "trait": "требовала порядка и чистоты в доме",
+      "category": "character",
+      "evidence": "Не дай бог, чтобы расчёска лежала на столе. И это очень понятно. Если я увижу, там Олег может расчёску положить. Это именно от мамы идёт",
+      "described_by": "narrator_001",
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "trait": "сдержанная в проявлении эмоций",
+      "category": "character",
+      "evidence": "Нельзя сказать, что она была очень эмоциональная. Наверное, все-таки сдержанная",
+      "described_by": "narrator_001",
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "trait": "не показывала слёз и жалоб даже в трудные моменты",
+      "category": "character",
+      "evidence": "я от неё слез или капризов, или какого-то нытья, я от неё не помню. Нет, жалобы нет. Это не её",
+      "described_by": "narrator_001",
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "trait": "давала непрошенные советы",
+      "category": "behavior",
+      "evidence": "Непрошенных советов не любил. Я думаю, что да. Ну, не указывали, что как делать, да, но то, что слишком самостоятельный, и, может быть, где-то ему не хватало уважения к маме",
+      "described_by": "narrator_001",
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "trait": "была преданной коммунисткой, верила в Сталина",
+      "category": "belief",
+      "evidence": "Валентина была преданная коммунистка. Всю войну за родину, за Сталина. Признавала, что победа из-за Сталина",
+      "described_by": "narrator_001",
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "trait": "относилась к голодомору как к бедствию, а не политике",
+      "category": "belief",
+      "evidence": "Голодомору в 30-е годы, от которого пострадала очень сильно её семья, она относилась как просто к бедствию",
+      "described_by": "narrator_001",
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "trait": "была трудолюбивой и работоспособной",
+      "category": "character",
+      "evidence": "я бабулю, вот бабулина натура, она не какая-то не наслаждающаяся жизнью, а вот работящая",
+      "described_by": "narrator_001",
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "trait": "получала удовольствие от печения тортов и булочек",
+      "category": "hobby",
+      "evidence": "Печь торты, булочки и все прочее я вот не могу. Вот это она удовольствие получала все-таки от того, что она вот могла спечь торт, кому-то кто-то её попросил. Или в поликлинике какое-то событие она там обязательно спечет, чтобы её все похвалили, все радовались",
+      "described_by": "narrator_001",
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "trait": "была уважаемой в поликлинике",
+      "category": "character",
+      "evidence": "Ей очень нравилось в поликлинике работать, да? Потому что её все там очень любили и уважали. Может, чего она дома недополучала",
+      "described_by": "narrator_001",
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "trait": "была добрым и отзывчивым человеком на работе",
+      "category": "character",
+      "evidence": "сколько о ней говорили в посёлке, сколько я встречала, да, все очень хорошо о ней отзывались, как о добром, отзывчивом человеке",
+      "described_by": "narrator_001",
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "trait": "была жёсткой по отношению к внукам",
+      "category": "character",
+      "evidence": "Могу. Ты знаешь, в отношении вас, вот не себя. Вот у меня может быть от того, что вот я отжила папу и маму, да, и она не проявляла вот этих своих качеств, которые проявились потом, вот когда вы появились",
+      "described_by": "narrator_001",
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "trait": "не любила играть с внуками",
+      "category": "behavior",
+      "evidence": "Желание поиграть с внуками особо у неё не было. Покормить, обстирать, обгладить — это да, обязательно, но не играть",
+      "described_by": "narrator_001",
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "trait": "не учила внуков готовить и шить",
+      "category": "behavior",
+      "evidence": "Обучать не хотела внуков, на кухню не пускала, шить не учила, желания приготовить что-то вместе с внуками у неё не было",
+      "described_by": "narrator_001",
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "trait": "была зависима от авторитета врача",
+      "category": "behavior",
+      "evidence": "потом очень много у неё была зависимость от вот врача Нинваны. Нинвана считает так-то, а Нинвана считает это... И мне это очень не нравилось",
+      "described_by": "narrator_001",
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "trait": "была недовольна подарками от зятя",
+      "category": "behavior",
+      "evidence": "в моей голове вот осталось, что ей всегда было мало, что привозил или присылали Маргоси. Из Молдавии, да, да, из Молдавии",
+      "described_by": "narrator_001",
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "trait": "была любительницей красивых вещей и предметов быта",
+      "category": "character",
+      "evidence": "задним числом мне удивительно, что бабуля условно такая. Не советская? Не советская. Но это всё-таки то, что она прожила. Два года Германии, четыре года Венгрии. На неё наложили такой отпечаток и любви. Вот, хорошей посуде",
+      "described_by": "narrator_001",
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "trait": "была готова жертвовать для детей",
+      "category": "character",
+      "evidence": "мама не жадная, мама не, как бы, последнее отдать может. Что-то неожиданное, когда она продала свою шубу, и купили мне пианино",
+      "described_by": "narrator_001",
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "trait": "была скрытной и не показывала истинные чувства",
+      "category": "character",
+      "evidence": "она, мне кажется, не показывала, даже если было очень тяжело. Я от неё слез или капризов, или какого-то нытья, я от неё не помню",
+      "described_by": "narrator_001",
+      "source_interview_id": "int_001",
+      "is_new": true
+    }
+  ],
+  "quotes": [
+    {
+      "id": "quote_001",
+      "text": "победа благодаря Сталину была",
+      "type": "indirect",
+      "speaker": "subject",
+      "context": "отношение к войне и советской власти",
+      "emotional_value": "high",
+      "usable_in_book": true,
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "id": "quote_002",
+      "text": "всё дорого, всё дорого",
+      "type": "direct",
+      "speaker": "subject",
+      "context": "жалобы на цены в тяжёлые времена",
+      "emotional_value": "medium",
+      "usable_in_book": true,
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "id": "quote_003",
+      "text": "иди поесть, всё остыло",
+      "type": "direct",
+      "speaker": "subject",
+      "context": "забота о семье, но с назойливостью",
+      "emotional_value": "medium",
+      "usable_in_book": true,
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "id": "quote_004",
+      "text": "сколько на тебя можно, слуг у нас нет",
+      "type": "direct",
+      "speaker": "subject",
+      "context": "требование порядка от внуков",
+      "emotional_value": "medium",
+      "usable_in_book": true,
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "id": "quote_005",
+      "text": "папа так не делал никогда",
+      "type": "direct",
+      "speaker": "subject",
+      "context": "критика зятя Владимира при ремонте счётчика",
+      "emotional_value": "medium",
+      "usable_in_book": true,
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "id": "quote_006",
+      "text": "досуг её был в основном между кухней и ванной",
+      "type": "indirect",
+      "speaker": "narrator_001",
+      "context": "характеристика образа жизни бабушки",
+      "emotional_value": "high",
+      "usable_in_book": true,
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "id": "quote_007",
+      "text": "нельзя наживаться на горе ребёнка",
+      "type": "direct",
+      "speaker": "subject",
+      "context": "принципы по поводу страхования детей",
+      "emotional_value": "high",
+      "usable_in_book": true,
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "id": "quote_008",
+      "text": "была как муравей, а не стрекоза из известной басни",
+      "type": "indirect",
+      "speaker": "narrator_001",
+      "context": "характеристика трудолюбия и отношения к искусству",
+      "emotional_value": "high",
+      "usable_in_book": true,
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "id": "quote_auto_001",
+      "text": "посидеть на дорожку",
+      "type": "direct",
+      "speaker": "subject",
+      "context": "семейный ритуал перед поездкой",
+      "emotional_value": "high",
+      "usable_in_book": true,
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "id": "quote_auto_002",
+      "text": "иди поесть, всё остыло",
+      "type": "direct",
+      "speaker": "subject",
+      "context": "забота о семье, но с назойливостью",
+      "emotional_value": "medium",
+      "usable_in_book": true,
+      "source_interview_id": "int_001",
+      "is_new": true
+    },
+    {
+      "id": "quote_auto_003",
+      "text": "сколько на тебя можно, слуг у нас нет",
+      "type": "direct",
+      "speaker": "subject",
+      "context": "требование порядка от внуков",
+      "emotional_value": "medium",
+      "usable_in_book": true,
+      "source_interview_id": "int_001",
+      "is_new": true
+    }
+  ],
+  "conflicts": [
+    {
+      "description": "Хронологическая нестыковка периода проживания в Германии",
+      "value_a": "жили в Германии с 1946 по 1961 год",
+      "value_b": "в 1948 году вернулись из Германии в Вышний Волочёк",
+      "severity": "minor",
+      "recommendation": "Путаница рассказчика - уточнить у клиента точные даты проживания в Германии и Венгрии",
+      "source_interview_id": "int_001",
+      "parties": []
+    },
+    {
+      "description": "Противоречие в имени матери героини",
+      "value_a": "мать - Рудая Пелагея Алексеевна (из автобиографии)",
+      "value_b": "По-моему, Марфа. Я могу спутать. Может, Марфа была, или там Дуня была (из уточняющего интервью)",
+      "severity": "minor",
+      "recommendation": "Проверить документы или уточнить у других родственников",
+      "source_interview_id": "int_001",
+      "parties": []
+    }
+  ],
+  "gaps": [
+    {
+      "period": "1933-1938",
+      "description": "Период жизни у сестры Полины в Старобельске",
+      "trigger": "её оттуда забрала старшая сестра Полина, тётя Поля, в Старобельск",
+      "suggested_questions": [
+        "Как проходила жизнь у тёти Поли в Старобельске?",
+        "Ходила ли в школу, какое получила образование?",
+        "Как складывались отношения с семьёй сестры?"
+      ],
+      "related_persons": []
+    },
+    {
+      "period": "1941-1945",
+      "description": "Военная служба в госпитале",
+      "trigger": "Воевала всю войну, работала в госпитале, дослужилась до лейтенанта медицинской службы. Есть боевые награды",
+      "suggested_questions": [
+        "Какие конкретно боевые награды получила кроме медали за боевые заслуги и ордена Красная Звезда?",
+        "Какие запомнились эпизоды из военной службы?",
+        "Были ли близкие друзья среди сослуживцев?"
+      ],
+      "related_persons": []
+    },
+    {
+      "period": "1946-1948",
+      "description": "Жизнь в Германии",
+      "trigger": "С 1946 по 1961 год она не работала, сидела с детьми",
+      "suggested_questions": [
+        "Где именно в Германии жили?",
+        "Чем занимался муж, какая была служба?",
+        "Как проходила повседневная жизнь в Германии?"
+      ],
+      "related_persons": []
+    },
+    {
+      "period": "1958-1962",
+      "description": "Жизнь в Венгрии",
+      "trigger": "И в Венгрии каждый год они переезжали в разные города: Кечкемет, Кишкунхалаш, Байя",
+      "suggested_questions": [
+        "Почему каждый год переезжали в разные города?",
+        "Как Валентина адаптировалась к жизни в Венгрии?",
+        "Выучила ли венгерский язык, были ли местные знакомые?"
+      ],
+      "related_persons": []
+    },
+    {
+      "period": "1960-е",
+      "description": "Дача упомянута без подробностей",
+      "trigger": "В 60-х годах у них появилась дача",
+      "suggested_questions": [
+        "Где находилась дача?",
+        "Что выращивали на даче, как её использовали?",
+        "Когда и почему дачу продали?"
+      ],
+      "related_persons": []
+    },
+    {
+      "period": "1962-1994",
+      "description": "Работа в поликлинике",
+      "trigger": "Собственно, в поликлинике она так всю жизнь потом и проработала",
+      "suggested_questions": [
+        "Какие были обязанности в поликлинике?",
+        "Были ли любимые пациенты или коллеги?",
+        "Какие запомнились случаи из медицинской практики?"
+      ],
+      "related_persons": []
+    },
+    {
+      "period": "1978-1996",
+      "description": "Жизнь после смерти мужа",
+      "trigger": "В 1978 году умер её муж Дмитрий Каракулин",
+      "suggested_questions": [
+        "Как переживала потерю мужа?",
+        "Изменился ли образ жизни после его смерти?",
+        "Была ли поддержка от детей и внуков?"
+      ],
+      "related_persons": []
+    }
+  ],
+  "processing_notes": {
+    "total_facts_extracted": 156,
+    "new_facts_count": 156,
+    "conflicts_found": 2,
+    "gaps_identified": 7,
+    "interviews_processed": [
+      "int_001"
+    ],
+    "confidence_summary": "Высокая достоверность основных биографических фактов благодаря письменной автобиографии. Средняя достоверность для имён собственных из устной речи. Обнаружены хронологические нестыковки, требующие уточнения.",
+    "needs_verification_count": 8,
+    "conflicts_check": "passed"
+  },
+  "_merged_from_phase_b": true
+}

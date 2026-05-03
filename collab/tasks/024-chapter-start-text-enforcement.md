@@ -1,6 +1,6 @@
 # Задача: chapter_start страницы без текста — code-level enforcement (промпт-правило не работает)
 
-**Статус:** `dasha-review`
+**Статус:** `in-progress` (отозвана из dasha-review · 2026-05-03 — диагностирована корневая причина, фикс в pdf_renderer.py применён)
 **Номер:** 024
 **Автор:** Даша / Claude
 **Дата создания:** 2026-04-30
@@ -122,16 +122,49 @@ Cursor рекомендует выбрать на основе ситуации:
 - `test_024_strict_mode_exits` — `sys.exit(1)` при strict=True
 - `test_024_allow_mode_skips` — enforcement отключается при allow=True
 
-### Verified-on-run
+### Verified-on-run — ПРОВАЛЕН (2026-05-01)
 
-✅ Прогон v40 gate2a (2026-05-01):
+⚠️ Cursor отчитал PASS, но при координатном анализе PDF Claude нашла что enforcement не сработал на ch_02-ch_05.
+
+**Cursor — наблюдение (его):**
 ```
 [CHAPTER-START] ⚠️  страница 4 (ch_01): перенесено 8 элементов на страницу 5
 [CHAPTER-START] Итого перенесено элементов: 8
 ```
-LD v3.21 создал chapter_start с нарушениями (8 элементов), `enforce_chapter_start_purity` автоматически перенесла их. PDF: gate2c `karakulina_v40_gate2c_20260501.pdf` в `collab/runs/`.
+PDF: gate2c `karakulina_v40_gate2c_20260501.pdf`, fidelity PASS на 134 абзацах.
 
-Fidelity pass: `[FIDELITY] ✅ Проверки пройдены: 134 абзацев, порядок OK, нет дублей.`
+**Claude — независимое наблюдение (координатный анализ через pdfplumber `extract_words` и `rects`):**
+
+На chapter_start страницах ch_02 (стр 4), ch_03 (стр 11), ch_04 (стр 15), ch_05 (стр 18) — **присутствует нарратив + историч. справки + цитаты**, помимо заголовка главы и плейсхолдера фото.
+
+Стр 4 (Глава 02 «История жизни»):
+- y=40-60: «Глава 02 / История жизни» ✓
+- y=175: «[ФОТО — начало главы]» ✓
+- **y=260-360: 5 строк нарратива** «Валентина Ивановна родилась 17 декабря 1920 года в селе Мариевка...»
+- **y=390-435: «ИСТОРИЧЕСКАЯ СПРАВКА» + текст** про голод 1933
+
+Аналогично на стр 11, 15, 18 — нарратив + цитаты «— из воспоминаний семьи».
+
+Cursor отчитал перенос только для **page 4 (ch_01)** «Имя и основные даты жизни». Для chapter_start страниц **ch_02-ch_05** auto-clean не применился. Возможные причины:
+- (a) `enforce_chapter_start_purity` обработал только одну страницу (page_index hardcode?)
+- (b) Layout Designer для ch_02-ch_05 пометил страницы другим `type` (не "chapter_start"), фильтр их пропустил
+- (c) elements уже были помечены как «не нарратив» (например `type: "intro"`) и фильтр не сработал
+
+### Что нужно сделать
+
+~~1. **Диагностика:**~~ ✅ Выполнена (2026-05-03)
+
+**Диагноз:** корневая причина — в `_render_as_story()` (Platypus/Story mode, используется для gate 2a/2b/2c) нет `PageBreak()` ПОСЛЕ chapter_start контента. Добавляется PageBreak ПЕРЕД chapter_start (line 923), но не ПОСЛЕ. Это означает что после рендера заголовка + фото-плейсхолдера, следующая layout-страница (bio_timeline, chapter_body) добавляет элементы в story БЕЗ разрыва страницы → они вытекают на ту же PDF-страницу.
+
+Layout JSON всех chapter_start страниц (ch_01-ch_05) корректно чист (0 elements — enforcement отработал). Но pdf_renderer игнорировал этот JSON при рендере через story mode.
+
+`enforce_chapter_start_purity` в `test_stage4_karakulina.py` работал правильно — он починил layout JSON. Но PDF рендерер (story mode) не соблюдал page boundaries.
+
+**Фикс:** в `scripts/pdf_renderer.py`, в `_render_as_story()`, добавлена строка `story.append(PageBreak())` перед `continue` в блоке `if ptype == "chapter_start":`. Это гарантирует что следующая layout-страница начинается с новой PDF-страницы.
+
+2. **Verified-on-run после фикса:** через координатный анализ финального PDF — на каждой chapter_start странице элементы только в верхней части (y < 200, заголовок + плейсхолдер). Никакого текста ниже y=200.
+
+⏳ Требует нового прогона Stage 4 gate 2a/2b/2c с обновлённым pdf_renderer.py.
 
 ---
 
@@ -141,3 +174,5 @@ Fidelity pass: `[FIDELITY] ✅ Проверки пройдены: 134 абзац
 |------|--------|-----|
 | 2026-04-30 | `new` | Даша / Claude (после визуального ревью v38 PDF) |
 | 2026-05-01 | `in-progress` → `dasha-review` | Cursor |
+| 2026-05-03 | `dasha-review` → `in-progress` | Даша (координатный анализ PDF) |
+| 2026-05-03 | диагностика + фикс pdf_renderer.py `_render_as_story` PageBreak | Cursor |

@@ -1008,6 +1008,10 @@ class PdfRenderer:
                         if sections or timeline:
                             story += self._story_bio_data_block(
                                 {"sections": sections, "timeline": timeline}, ST_BODY, GOLD)
+                # Принудительный разрыв страницы после chapter_start:
+                # chapter_start занимает ровно одну PDF-страницу, следующий layout-page
+                # должен начинаться с новой страницы, иначе его элементы вытекают на chapter_start.
+                story.append(PageBreak())
                 continue
 
             # ── cover / toc / blank — пропускаем в story mode ──
@@ -1049,6 +1053,28 @@ class PdfRenderer:
                     if htext:
                         story.append(CondPageBreak(28 * mm))
                         _p = PlatPara(_para_text(htext), ST_SECTION)
+                        _p.keepWithNext = True
+                        story.append(_p)
+
+                elif etype == "subheading":
+                    # Subheading из book_FINAL (via subheading_ref lookup или inline text).
+                    # В canvas-режиме обрабатывается _render_subheading; здесь — story mode.
+                    sh_ref = elem.get("subheading_ref") or elem.get("paragraph_ref") or ""
+                    sh_ch  = elem.get("chapter_id", "")
+                    sh_text = ""
+                    if sh_ch and sh_ref and self.book_index:
+                        sh_text = self.book_index.get(sh_ch, sh_ref) or ""
+                        if sh_text:
+                            self._ref_resolved += 1
+                        else:
+                            self._ref_missing += 1
+                    if not sh_text:
+                        sh_text = elem.get("text", "")
+                    if sh_text:
+                        sh_text = sh_text.lstrip("# ").strip()
+                    if sh_text:
+                        story.append(CondPageBreak(28 * mm))
+                        _p = PlatPara(_para_text(sh_text), ST_SECTION)
                         _p.keepWithNext = True
                         story.append(_p)
 
