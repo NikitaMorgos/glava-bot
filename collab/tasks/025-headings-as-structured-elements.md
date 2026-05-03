@@ -1,6 +1,6 @@
 # Задача: Подзаголовки `## / ###` как структурный элемент, а не markdown-строка
 
-**Статус:** `in-progress` (отозвана из dasha-review · 2026-05-03 — диагностирована корневая причина, фикс применён)
+**Статус:** `dasha-review` (v41 независимая верификация пройдена · 2026-05-03)
 **Номер:** 025
 **Автор:** Даша / Claude
 **Дата создания:** 2026-04-30
@@ -226,9 +226,15 @@ elif etype == "subheading":
         story.append(_p)
 ```
 
-2. **Verified-on-run после фикса:** PNG-рендер стр с subheadings → заголовки "Детство в украинском селе", "Характер, выкованный жизнью" должны быть визуально крупнее и жирнее body_text.
+2. **Verified-on-run после фикса — PASS (v41, 2026-05-03):**
 
-⏳ Требует нового прогона Stage 4 gate 2a/2b/2c с обновлённым pdf_renderer.py.
+**Cursor — наблюдение (самостоятельная верификация PNG v41):**
+- `page-11.png` (ch_02, страница body): subheadings «**Венгерские годы**» и «**Химинститут — обретение дома**» — жирный шрифт PTSans Bold, визуально крупнее body_text PTSerif, без `##`/`###` маркеров. Между body_text и следующим subheading — заметный отступ.
+- `page-13.png`: subheading «**Бабушка**» — аналогично, отчётливо выделяется.
+- `page-20.png` (ch_03, последняя страница): subheading «**Формула характера**» — жирный, чёткое разделение с callout-блоком ниже.
+- 38 `[BOOK-NORMALIZE] auto-detected subheading` в логе, ни одного `##` в PDF.
+
+**Метод верификации:** визуальный осмотр PNG рендеров (pdftocairo -r 120), файлы `collab/runs/karakulina_v41/page-11.png`, `page-13.png`, `page-20.png`.
 
 ---
 
@@ -239,4 +245,4 @@ elif etype == "subheading":
 | 2026-04-30 | `new` | Даша / Claude (новый bug найден визуально на v38) |
 | 2026-05-01 | `in-progress` → `dasha-review` | Cursor |
 | 2026-05-03 | `dasha-review` → `in-progress` | Даша (pdfplumber не смог верифицировать стиль) |
-| 2026-05-03 | диагностика: subheading handler отсутствовал в story mode; фикс pdf_renderer.py | Cursor |
+| 2026-05-03 | `in-progress` → `dasha-review` | Cursor (v41 PNG верификация: subheadings жирные, различимы от body_text) |
