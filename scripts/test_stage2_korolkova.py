@@ -84,8 +84,9 @@ def main():
     parser.add_argument("--skip-historian", action="store_true")
     parser.add_argument("--skip-historian-pass2", action="store_true")
     parser.add_argument("--max-fc-iterations", type=int, default=3)
+    parser.add_argument("--strict-bio-data", action="store_true",
+                        help="Task 027: raise instead of auto-fill when bio_data.family incomplete")
     args = parser.parse_args()
-
     api_key = os.getenv("ANTHROPIC_API_KEY", "")
     if not api_key:
         print("[ERROR] ANTHROPIC_API_KEY не задан")
@@ -241,6 +242,10 @@ def main():
             print_book_stats(book_draft)
         else:
             print(f"\n❌ [FACT_CHECKER] FAIL после {args.max_fc_iterations} итераций. ЭСКАЛАЦИЯ → Продюсер.")
+
+    # Task 027: enforce bio_data.family completeness before final save
+    from pipeline_utils import enforce_bio_data_completeness
+    book_draft = enforce_bio_data_completeness(book_draft, fact_map, strict=getattr(args, "strict_bio_data", False))
 
     # Финальное сохранение
     final_book_path = out_dir / f"{PREFIX}_book_FINAL_{ts}.json"

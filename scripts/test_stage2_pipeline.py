@@ -92,6 +92,8 @@ def main():
     parser.add_argument("--variant-b", action="store_true",
                         help="Режим Вариант B: TR1-only основа. Пропускает gate_required_entities, "
                              "проверяет только непустоту глав и повторы.")
+    parser.add_argument("--strict-bio-data", action="store_true",
+                        help="Задача 027: вместо auto-fill — raise при неполной bio_data.family")
     args = parser.parse_args()
 
     # Guard: --skip-historian требует явной причины
@@ -277,6 +279,10 @@ def main():
                 sys.exit(1)
             else:
                 print(f"⚠️  --allow-fc-fail: продолжаем несмотря на FC FAIL. fc_fail_accepted=true в manifest.")
+
+    # Task 027: enforce bio_data.family completeness before final save
+    from pipeline_utils import enforce_bio_data_completeness
+    book_draft = enforce_bio_data_completeness(book_draft, fact_map, strict=getattr(args, "strict_bio_data", False))
 
     # Финальное сохранение книги
     final_book_path = out_dir / f"karakulina_book_FINAL_{ts}.json"
