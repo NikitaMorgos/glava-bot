@@ -92,6 +92,130 @@ def prepare_book_for_layout(book: dict) -> dict:
     return book
 
 
+# ─────────────────────────────────────────────────────────────────
+# Task 027: bio_data completeness enforcement (post-Stage-2)
+# ─────────────────────────────────────────────────────────────────
+
+_FAMILY_RELATIONS = {
+    "муж", "жена", "сын", "дочь", "отец", "мать", "брат", "сестра",
+    "дедушка", "бабушка", "внук", "внучка", "дядя", "тётя",
+    "племянник", "племянница", "свёкор", "свекровь",
+}
+
+_FAMILY_NAME_MARKERS = {
+    "тётя", "дядя", "брат", "сестра", "дедушка", "бабушка",
+    "мама", "папа", "внук", "внучка", "племянник", "племянница",
+}
+
+_UNKNOWN_RELATIONS = {"", "?", "неизвестно", "unknown", "н/а", "н.а.", "-"}
+
+
+def _is_family_person(person: dict) -> bool:
+    """True if this person is a family member (by relation field or name markers)."""
+    relation = (person.get("relation") or "").strip().lower()
+    name = (person.get("name") or "").strip().lower()
+
+    if relation and relation not in _UNKNOWN_RELATIONS:
+        for frel in _FAMILY_RELATIONS:
+            if frel in relation:
+                return True
+
+    for marker in _FAMILY_NAME_MARKERS:
+        if marker in name:
+            return True
+
+    return False
+
+
+def _name_in_family_entries(name: str, family_entries: list) -> bool:
+    """Check if person name (or any significant part) appears in existing bio_data.family."""
+    name_norm = name.strip().lower()
+    if not name_norm:
+        return False
+    name_parts = [p for p in name_norm.split() if len(p) >= 4]
+    for entry in family_entries:
+        entry_text = ((entry.get("value") or "") + " " + (entry.get("label") or "")).lower()
+        if name_norm in entry_text:
+            return True
+        for part in name_parts:
+            if part in entry_text:
+                return True
+    return False
+
+
+def enforce_bio_data_completeness(book_final: dict, fact_map: dict, strict: bool = False) -> dict:
+    """Task 027: ensure bio_data.family in ch_01 covers all family persons from fact_map.
+
+    Called after Stage 2 (Ghostwriter). Checks that every family person from fact_map
+    is mentioned somewhere in bio_data.family.
+
+    Default: auto-fill missing entries with source="auto-filled".
+    strict=True: raise RuntimeError instead of auto-filling (for prod override).
+    """
+    import copy
+    book_final = copy.deepcopy(book_final)
+
+    persons = fact_map.get("persons", [])
+    if not persons:
+        print("[BIO-COMPLETENESS] fact_map.persons пустой — пропускаем проверку.")
+        return book_final
+
+    chapters = book_final.get("chapters", [])
+    ch01 = next((ch for ch in chapters if ch.get("id") == "ch_01"), None)
+    if ch01 is None:
+        print("[BIO-COMPLETENESS] WARN: ch_01 not found in book_final - skipping.")
+        return book_final
+
+    bio_data = ch01.get("bio_data")
+    if bio_data is None:
+        print("[BIO-COMPLETENESS] WARN: bio_data absent in ch_01 - creating empty.")
+        bio_data = {}
+        ch01["bio_data"] = bio_data
+
+    family = bio_data.get("family")
+    if family is None:
+        family = []
+        bio_data["family"] = family
+
+    family_persons = [p for p in persons if _is_family_person(p)]
+    if not family_persons:
+        print("[BIO-COMPLETENESS] Семейных персон в fact_map не найдено — пропускаем.")
+        return book_final
+
+    missing = [
+        p for p in family_persons
+        if (p.get("name") or "").strip()
+        and not _name_in_family_entries((p.get("name") or "").strip(), family)
+    ]
+
+    if not missing:
+        print(
+            f"[BIO-COMPLETENESS] OK bio_data.family: {len(family)} entries, "
+            f"all {len(family_persons)} family persons from fact_map mentioned."
+        )
+        return book_final
+
+    missing_names = [p.get("name", "?") for p in missing]
+
+    if strict:
+        raise RuntimeError(
+            f"[BIO-COMPLETENESS] STRICT: в bio_data.family не упомянуты {len(missing)} персон: "
+            f"{missing_names}. Исправьте Ghostwriter или запустите без --strict-bio-data."
+        )
+
+    for person in missing:
+        name = (person.get("name") or "").strip()
+        relation = (person.get("relation") or "").strip()
+        label = relation if relation and relation not in _UNKNOWN_RELATIONS else "родственник"
+        family.append({"label": label, "value": name, "source": "auto-filled"})
+
+    print(
+        f"[BIO-COMPLETENESS] auto-filled {len(missing)} персон в bio_data.family: "
+        f"{missing_names}"
+    )
+    return book_final
+
+
 def load_config() -> dict:
     """Загружает pipeline_config.json. Падает с ошибкой если файл не найден."""
     if not CONFIG_FILE.exists():

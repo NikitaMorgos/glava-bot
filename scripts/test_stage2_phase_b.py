@@ -192,6 +192,8 @@ def main():
                         help="Отключить Incremental FactExtractor перед Ghostwriter Phase B")
     parser.add_argument("--variant-b", action="store_true",
                         help="Проверить рост объёма после Phase B (мин. +20%)")
+    parser.add_argument("--strict-bio-data", action="store_true",
+                        help="Задача 027: вместо auto-fill — raise при неполной bio_data.family")
     args = parser.parse_args()
 
     api_key = os.getenv("ANTHROPIC_API_KEY", "")
@@ -378,6 +380,10 @@ def main():
                 sys.exit(1)
             else:
                 print(f"⚠️  --allow-fc-fail: продолжаем несмотря на FC FAIL Phase B. fc_fail_accepted=true в manifest.")
+
+    # Task 027: enforce bio_data.family completeness before final save
+    from pipeline_utils import enforce_bio_data_completeness
+    book_draft = enforce_bio_data_completeness(book_draft, fact_map, strict=args.strict_bio_data)
 
     # Финальный файл
     final_path = out_dir / f"{prefix}_book_FINAL_phase_b_{ts}.json"
