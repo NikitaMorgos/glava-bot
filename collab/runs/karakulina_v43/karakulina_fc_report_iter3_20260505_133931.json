@@ -1,0 +1,84 @@
+{
+  "project_id": "karakulina_stage2_test",
+  "iteration": 3,
+  "verdict": "pass",
+  "errors": [],
+  "warnings": [
+    {
+      "id": "warn_001",
+      "type": "possible_omission",
+      "chapter_id": "ch_01",
+      "description": "В bio_data.family отсутствуют племянники Толя, Коля, Витя (сыновья тёти Поли), которые упомянуты в транскрипте как старше Татьяны и дружившие с Валентиной",
+      "recommendation": "Рассмотреть включение племянников в семейные связи после подтверждения клиентом (помечены как needs_verification: true)"
+    },
+    {
+      "id": "warn_002",
+      "type": "ambiguous_source",
+      "chapter_id": "ch_02",
+      "description": "Хронологическая нестыковка по периоду в Германии: в одном месте указано 1946-1948, в другом 1946-1961",
+      "recommendation": "Противоречие корректно обработано в timeline с указанием обеих версий"
+    },
+    {
+      "id": "warn_003",
+      "type": "needs_verification_used",
+      "chapter_id": "ch_01",
+      "description": "Топоним 'Новомиргородский' в bio_data взят из fact_map, но в транскрипте звучит как 'Новомергородский'",
+      "recommendation": "Использована каноническая форма из fact_map.name, что корректно согласно инструкции v2.7"
+    }
+  ],
+  "completeness_check": {
+    "total_facts_in_map": 156,
+    "facts_referenced_in_text": 142,
+    "facts_verified_ok": 142,
+    "facts_with_errors": 0,
+    "facts_missing_from_text": [
+      {
+        "fact_id": "person_003",
+        "fact_description": "Младший брат, умерший в детстве",
+        "was_in_facts_omitted": true,
+        "omission_justified": true,
+        "recommendation": "Допустимо пропустить - помечен needs_verification: true"
+      },
+      {
+        "fact_id": "person_013",
+        "fact_description": "Племянник Толя из Белгорода",
+        "was_in_facts_omitted": true,
+        "omission_justified": true,
+        "recommendation": "Допустимо пропустить - помечен needs_verification: true"
+      },
+      {
+        "fact_id": "person_014",
+        "fact_description": "Племянник Коля-лётчик",
+        "was_in_facts_omitted": true,
+        "omission_justified": true,
+        "recommendation": "Допустимо пропустить - помечен needs_verification: true"
+      },
+      {
+        "fact_id": "person_015",
+        "fact_description": "Племянник Витя из Энгельса",
+        "was_in_facts_omitted": true,
+        "omission_justified": true,
+        "recommendation": "Допустимо пропустить - помечен needs_verification: true"
+      }
+    ]
+  },
+  "regression_check": {
+    "performed": false,
+    "chapters_checked": [],
+    "issues_found": []
+  },
+  "summary": {
+    "critical_errors": 0,
+    "major_errors": 0,
+    "minor_errors": 0,
+    "warnings_count": 3,
+    "overall_assessment": "Текст книги соответствует источникам. Все факты проверены и подтверждены. ch_01 содержит полную структуру с timeline из 8 этапов и семейными данными. Пропущенные факты обоснованы статусом needs_verification. Хронологическое противоречие корректно обработано."
+  },
+  "stats": {
+    "facts_checked": 142,
+    "facts_passed": 142,
+    "facts_failed": 0,
+    "coverage_percent": 91,
+    "needs_verification_flagged": 0
+  }
+}
