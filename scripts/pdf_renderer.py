@@ -286,24 +286,29 @@ class PhotoManager:
 
 # ── Book index (paragraph lookup) ─────────────────────────────────────────────
 class BookIndex:
-    """Индекс абзацев книги для lookup по chapter_id + paragraph_ref/paragraph_id.
+    """Индекс абзацев / выносок / исторических справок книги для lookup по ref.
 
-    Layout Designer v3.20+ возвращает ссылки вида:
-      {"type": "paragraph", "chapter_id": "ch_02", "paragraph_ref": "p3"}
+    Layout Designer v3.21+ возвращает ссылки вида:
+      {"type": "paragraph",        "chapter_id": "ch_02", "paragraph_ref":        "p3"}
+      {"type": "callout",          "chapter_id": "ch_02", "callout_ref":          "callout_01"}
+      {"type": "historical_note",  "chapter_id": "ch_02", "historical_note_ref":  "hist_01"}
     Этот класс восстанавливает текст из book_FINAL.json по этим ключам.
 
-    Обратная совместимость (legacy v3.19):
-      {"type": "paragraph", "chapter_id": "ch_02", "paragraph_id": "p3"}
-    Тоже поддерживается через тот же .get() вызов.
+    Обратная совместимость:
+      paragraph: paragraph_id (v3.19 legacy) — поддерживается через тот же .get()
+      callout: callout_id (текущие сохранённые layout'ы 04-09) — get_callout()
+      historical_note: note_id / без id (legacy text inline) — fallback в renderer
 
     Fallback: если ref не найден — поведение зависит от strict_refs:
-    - strict_refs=False: возвращает None (_render_paragraph переходит к legacy text или пропуску)
+    - strict_refs=False: возвращает None (renderer переходит к legacy text или пропуску)
     - strict_refs=True:  raises ValueError (ошибка пайплайна)
     """
 
     def __init__(self, book: dict | None):
         self._index: dict[str, dict[str, dict]] = {}  # ch_id -> {para_id -> {"text": ..., "type": ...}}
         self._bio_data: dict[str, dict] = {}
+        self._callouts: dict[str, str] = {}            # callout_id -> text
+        self._historical_notes: dict[str, str] = {}    # note_id -> text
         self._raw_chapters: list[dict] = []
         if not book:
             return
@@ -330,6 +335,18 @@ class BookIndex:
                     for i, t in enumerate(parts)
                 }
 
+        # Top-level коллекции callouts и historical_notes
+        for co in book.get("callouts", []) or []:
+            co_id = co.get("id")
+            text = co.get("text", "")
+            if co_id and text:
+                self._callouts[co_id] = text
+        for hn in book.get("historical_notes", []) or []:
+            hn_id = hn.get("id")
+            text = hn.get("text", "")
+            if hn_id and text:
+                self._historical_notes[hn_id] = text
+
     def get(self, chapter_id: str, paragraph_id: str) -> str | None:
         ch = self._index.get(chapter_id)
         if ch is None:
@@ -348,6 +365,14 @@ class BookIndex:
         if entry is None:
             return "paragraph"
         return entry.get("type", "paragraph") if isinstance(entry, dict) else "paragraph"
+
+    def get_callout(self, callout_id: str) -> str | None:
+        """Возвращает текст выноски по id или None если не найден."""
+        return self._callouts.get(callout_id)
+
+    def get_historical_note(self, note_id: str) -> str | None:
+        """Возвращает текст исторической справки по id или None если не найден."""
+        return self._historical_notes.get(note_id)
 
     def chapter_paragraphs(self, chapter_id: str) -> list[tuple[str, str]]:
         """Возвращает [(paragraph_id, text), ...] в порядке главы."""
@@ -1082,7 +1107,7 @@ class PdfRenderer:
                     story += self._story_bio_data_block(elem, ST_BODY, GOLD)
 
                 elif etype == "callout" and not self.options.text_only:
-                    co_content = elem.get("content") or elem.get("text", "")
+                    co_content = self._elem_callout_text(elem)
                     co_title   = elem.get("title", "")
                     if co_content or co_title:
                         from reportlab.platypus import Table as _Table, TableStyle as _TS
@@ -1109,7 +1134,7 @@ class PdfRenderer:
                         story.append(Spacer(1, 10))
 
                 elif etype == "historical_note" and not self.options.text_only:
-                    hn_content = elem.get("content") or elem.get("text", "")
+                    hn_content = self._elem_historical_note_text(elem)
                     hn_title   = elem.get("title", "")
                     if hn_content or hn_title:
                         story += _hist_note_block(hn_content, hn_title)
@@ -1417,6 +1442,51 @@ class PdfRenderer:
         legacy_text = elem.get("text", "")
         if legacy_text and (ch_id or par_id):
             print(f"[RENDERER] ⚠️  legacy text fallback: {ch_id}/{par_id} — используется inline text")
+        return legacy_text
+
+    def _elem_callout_text(self, elem: dict) -> str:
+        """Возвращает текст выноски: ref → book.callouts; иначе legacy inline text/content.
+
+        v3.21+:    {type: callout, chapter_id, callout_ref: "callout_01"}
+        Legacy:    {type: callout, callout_id: "callout_01", text: "..."}
+        Inline:    {type: callout, text/content: "..."} — старые сохранённые layout'ы
+        """
+        # v3.21+: callout_ref — новый канонический формат
+        co_ref = elem.get("callout_ref", "")
+        # Legacy: callout_id — присутствует в текущих сохранённых layout'ах
+        co_id = elem.get("callout_id", "") or co_ref
+        if co_id:
+            text = self.book_index.get_callout(co_id)
+            if text is not None:
+                return text
+            if self.options.strict_refs and not self.options.allow_missing_refs:
+                raise ValueError(f"[RENDERER] strict_refs: callout_ref '{co_id}' not found in book_FINAL.callouts")
+        # Legacy fallback: inline text/content (deprecated)
+        legacy_text = elem.get("content") or elem.get("text", "")
+        if legacy_text and co_id:
+            print(f"[RENDERER] ⚠️  legacy callout text fallback: '{co_id}' — используется inline text")
+        return legacy_text
+
+    def _elem_historical_note_text(self, elem: dict) -> str:
+        """Возвращает текст исторической справки: ref → book.historical_notes; иначе legacy inline.
+
+        v3.21+:    {type: historical_note, chapter_id, historical_note_ref: "hist_01"}
+        Inline:    {type: historical_note, text/content: "..."} — все сохранённые layout'ы до v3.21
+        """
+        # v3.21+: historical_note_ref — новый канонический формат
+        hn_ref = elem.get("historical_note_ref", "") or elem.get("note_ref", "")
+        # Legacy id field (на случай если LD когда-либо ставил его)
+        hn_id = elem.get("note_id", "") or hn_ref
+        if hn_id:
+            text = self.book_index.get_historical_note(hn_id)
+            if text is not None:
+                return text
+            if self.options.strict_refs and not self.options.allow_missing_refs:
+                raise ValueError(f"[RENDERER] strict_refs: historical_note_ref '{hn_id}' not found in book_FINAL.historical_notes")
+        # Legacy fallback: inline text/content (deprecated)
+        legacy_text = elem.get("content") or elem.get("text", "")
+        if legacy_text and hn_id:
+            print(f"[RENDERER] ⚠️  legacy historical_note text fallback: '{hn_id}' — используется inline text")
         return legacy_text
 
     def _paragraph_count(self, page: dict) -> int:
@@ -2280,7 +2350,7 @@ class PdfRenderer:
 
     def _render_callout(self, c, elem: dict, y: float) -> float:
         """Pull-quote: PT Serif Italic 13pt, линии сверху/снизу, подпись справа."""
-        text = elem.get("text", "")
+        text = self._elem_callout_text(elem)
         if not text:
             return y
         pad     = self.callout_pad
@@ -2335,7 +2405,7 @@ class PdfRenderer:
         return bot_y - self.para_space * 1.5
 
     def _render_historical(self, c, elem: dict, y: float) -> float:
-        text = elem.get("text", "")
+        text = self._elem_historical_note_text(elem)
         if not text:
             return y
         top_bot_pad = 10.0

@@ -108,9 +108,9 @@
     "model": "claude-sonnet-4-20250514",
     "max_tokens": 64000,
     "temperature": 0.25,
-    "prompt_file": "08_layout_designer_v3.21.md",
-    "_notes": "v3.19 (2026-04-22): задача 010 — универсализация примеров на базе v3.18 (убраны Каракулина, Мариевка, Полина, Кировоград, Глинск, фронты). v3.18 base: убран форзац, пагинация cover→TOC.",
-    "_last_uploaded": "22.04.2026"
+    "prompt_file": "08_layout_designer_v3.22.md",
+    "_notes": "v3.22 (2026-05-06, волна 1.1 шаг 4): ссылочная архитектура расширена на callouts (callout_ref) и historical_notes (historical_note_ref) — симметрично paragraph_ref/subheading_ref. v3.21 base (2026-05-01): подзаголовки как тип subheading. v3.20: ссылочная архитектура для paragraph_ref. v3.19: универсализация примеров (убраны Каракулина, топонимы).",
+    "_last_uploaded": "06.05.2026"
   },
 
   "qa_layout": {
