@@ -27,69 +27,91 @@ from pathlib import Path
 ROOT = Path(__file__).parent.parent
 
 
-def _get_para_ref(elem: dict) -> str:
-    """Возвращает ref из элемента (paragraph_ref, subheading_ref, или paragraph_id legacy)."""
-    return (
-        elem.get("paragraph_ref", "")
-        or elem.get("subheading_ref", "")
-        or elem.get("paragraph_id", "")
-    )
+# ─── Конфигурация типов ref ──────────────────────────────────────────────────
+#
+# Каждый ключ — логический тип ref.
+# elem_types    — допустимые значения поля "type" у layout-элемента.
+# ref_fields    — имена полей ref в layout-элементе (первое непустое используется).
+# book_path     — описание: откуда берутся ids в book (реализовано в _collect_book_refs).
+#
+# callout / historical_note добавятся в шаге 3.
+
+REF_TYPE_CONFIG: dict[str, dict] = {
+    "paragraph": {
+        "elem_types": ("paragraph", "subheading", "section_header"),
+        "ref_fields": ("paragraph_ref", "subheading_ref", "paragraph_id"),  # legacy last
+        "book_path": "chapters[].paragraphs[]",  # fallback: content split by \n\n
+    },
+}
 
 
-def _collect_book_refs(book: dict) -> dict[str, list[str]]:
-    """Возвращает {chapter_id: [para_ref, ...]} в порядке главы."""
+# ─── Внутренние helpers ───────────────────────────────────────────────────────
+
+def _get_ref(elem: dict, ref_fields: tuple[str, ...]) -> str:
+    """Возвращает первый непустой ref из списка полей."""
+    for field in ref_fields:
+        val = elem.get(field, "")
+        if val:
+            return val
+    return ""
+
+
+def _collect_book_refs(book: dict, ref_type: str) -> dict[str, list[str]]:
+    """Возвращает {chapter_id: [ref, ...]} в порядке главы для заданного ref_type."""
     result: dict[str, list[str]] = {}
-    for ch in book.get("chapters", []):
-        ch_id = ch.get("id", "")
-        if not ch_id:
-            continue
-        paras = ch.get("paragraphs")
-        if paras:
-            ids = [p["id"] for p in paras if p.get("id")]
-        else:
-            content = ch.get("content") or ""
-            parts = [p.strip() for p in content.split("\n\n") if p.strip()]
-            ids = [f"p{i + 1}" for i in range(len(parts))]
-        if ids:
-            result[ch_id] = ids
+
+    if ref_type == "paragraph":
+        for ch in book.get("chapters", []):
+            ch_id = ch.get("id", "")
+            if not ch_id:
+                continue
+            paras = ch.get("paragraphs")
+            if paras:
+                ids = [p["id"] for p in paras if p.get("id")]
+            else:
+                content = ch.get("content") or ""
+                parts = [p.strip() for p in content.split("\n\n") if p.strip()]
+                ids = [f"p{i + 1}" for i in range(len(parts))]
+            if ids:
+                result[ch_id] = ids
+
     return result
 
 
-def _collect_layout_refs(layout: dict) -> dict[str, list[tuple[int, str]]]:
-    """Возвращает {chapter_id: [(page_number, para_ref), ...]} в порядке встречи в layout."""
+def _collect_layout_refs(layout: dict, ref_type: str) -> dict[str, list[tuple[int, str]]]:
+    """Возвращает {chapter_id: [(page_number, ref), ...]} в порядке встречи в layout."""
+    cfg = REF_TYPE_CONFIG[ref_type]
+    elem_types: tuple[str, ...] = cfg["elem_types"]
+    ref_fields: tuple[str, ...] = cfg["ref_fields"]
+
     result: dict[str, list[tuple[int, str]]] = defaultdict(list)
     pages = layout.get("pages") or layout.get("layout_instructions", {}).get("pages", [])
     for page in pages:
         page_num = page.get("page_number", 0)
         page_ch  = page.get("chapter_id", "")
         for elem in page.get("elements", []):
-            if elem.get("type") not in ("paragraph", "subheading", "section_header"):
+            if elem.get("type") not in elem_types:
                 continue
-            ref   = _get_para_ref(elem)
+            ref   = _get_ref(elem, ref_fields)
             el_ch = elem.get("chapter_id", "") or page_ch
             if ref and el_ch:
                 result[el_ch].append((page_num, ref))
     return result
 
 
-def validate_fidelity(
-    layout: dict,
-    book: dict,
-    allow_mismatch: bool = False,
-    strict_mode: bool = True,
-) -> tuple[bool, list[str]]:
+def _validate_ref_type(book: dict, layout: dict, ref_type: str) -> list[str]:
     """
-    Запускает три проверки.
+    Выполняет completeness / order / uniqueness check для одного типа ref'ов.
 
-    Возвращает (passed: bool, errors: list[str]).
-    Если allow_mismatch=True — ошибки логируются, но passed=True.
+    Возвращает список строк с ошибками (пустой список = всё ок).
+    Префиксы ошибок: [COMPLETENESS], [ORDER], [UNIQUENESS].
     """
     errors: list[str] = []
 
-    book_refs  = _collect_book_refs(book)
-    layout_refs = _collect_layout_refs(layout)
+    book_refs   = _collect_book_refs(book, ref_type)
+    layout_refs = _collect_layout_refs(layout, ref_type)
 
-    # Normalise layout_refs: list of (page_num, ref) → just [ref]
+    # Нормализуем: list of (page_num, ref) → just [ref]
     layout_refs_ordered: dict[str, list[str]] = {
         ch_id: [ref for _, ref in entries]
         for ch_id, entries in layout_refs.items()
@@ -104,7 +126,7 @@ def validate_fidelity(
                     f"[COMPLETENESS] {ch_id}/{pid} — отсутствует в layout"
                 )
 
-    # Обратная проверка: лишние refs которых нет в book
+    # Обратная проверка: лишние refs, которых нет в book
     for ch_id, layout_ids in layout_refs_ordered.items():
         book_ids_set = set(book_refs.get(ch_id, []))
         for pid in layout_ids:
@@ -116,7 +138,6 @@ def validate_fidelity(
     # ── Проверка 2: Order ─────────────────────────────────────────────────────
     for ch_id, expected_ids in book_refs.items():
         lo = layout_refs_ordered.get(ch_id, [])
-        # Берём только те, что есть и там и там, проверяем относительный порядок
         common_expected = [pid for pid in expected_ids if pid in set(lo)]
         common_actual   = [pid for pid in lo if pid in set(expected_ids)]
         if common_expected != common_actual:
@@ -135,6 +156,27 @@ def validate_fidelity(
                 errors.append(
                     f"[UNIQUENESS] {ch_id}/{pid} — встречается {count} раза в layout (дубль)"
                 )
+
+    return errors
+
+
+# ─── Публичный API ────────────────────────────────────────────────────────────
+
+def validate_fidelity(
+    layout: dict,
+    book: dict,
+    allow_mismatch: bool = False,
+    strict_mode: bool = True,
+) -> tuple[bool, list[str]]:
+    """
+    Запускает три проверки для paragraph-ref'ов.
+
+    Возвращает (passed: bool, errors: list[str]).
+    Если allow_mismatch=True — ошибки логируются, но passed=True.
+    """
+    errors = _validate_ref_type(book, layout, "paragraph")
+
+    book_refs = _collect_book_refs(book, "paragraph")
 
     passed = len(errors) == 0
     if errors:
