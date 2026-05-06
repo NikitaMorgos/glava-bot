@@ -428,10 +428,11 @@ def test_callout_legacy_callout_id_field():
 
 
 # ──────────────────────────────────────────────────────────────────
-# Тест 17: Order callouts внутри одной главы
+# Тест 17: Order callouts внутри одной главы — soft warning, не fail
+#   order_strict=False для callouts (LD-вёрстка): перестановка → WARN, passed=True
 # ──────────────────────────────────────────────────────────────────
 
-def test_callout_order_violation():
+def test_callout_order_violation_is_soft_warning(capsys):
     book = _book_with_collections(
         [_ch("ch_02", ["p1"])],
         callouts=[_co("c01", "ch_02"), _co("c02", "ch_02"), _co("c03", "ch_02")],
@@ -449,9 +450,81 @@ def test_callout_order_violation():
 
     passed, errors = validate_fidelity(layout, book)
 
-    assert passed is False
-    assert any("[ORDER][callout]" in e and "ch_02" in e for e in errors), \
-        f"Ожидалась order-ошибка для callouts в ch_02, получено: {errors}"
+    # passed остаётся True — ORDER для callouts не блокирует (order_strict=False)
+    assert passed is True, f"Ожидался PASS (soft warning), но получили FAIL: {errors}"
+    # И в errors не должно быть [ORDER][callout] — это soft warning, не error
+    assert not any("[ORDER][callout]" in e for e in errors), \
+        f"ORDER для callout не должен быть в errors, получили: {errors}"
+    # При этом warning должен быть напечатан в stdout с префиксом [WARN][ORDER][callout]
+    captured = capsys.readouterr()
+    assert "[WARN]" in captured.out and "[ORDER][callout]" in captured.out, \
+        f"Ожидался [WARN][ORDER][callout] в stdout, получили: {captured.out!r}"
+
+
+# ──────────────────────────────────────────────────────────────────
+# Тест 17b: Order historical_notes — тоже soft warning (симметрично callouts)
+# ──────────────────────────────────────────────────────────────────
+
+def test_historical_note_order_is_soft_warning(capsys):
+    book = _book_with_collections(
+        [_ch("ch_02", ["p1"])],
+        historical_notes=[_hn("hist_01", "ch_02"), _hn("hist_02", "ch_02"), _hn("hist_03", "ch_02")],
+    )
+    # В layout порядок переставлен: hist_01, hist_03, hist_02
+    layout = _layout([
+        {"page_number": 1, "chapter_id": "ch_02",
+         "elements": [
+             _para_elem("ch_02", "p1"),
+             _hn_elem("ch_02", "hist_01"),
+             _hn_elem("ch_02", "hist_03"),
+             _hn_elem("ch_02", "hist_02"),
+         ]},
+    ])
+
+    passed, errors = validate_fidelity(layout, book)
+
+    assert passed is True, f"Ожидался PASS, получили FAIL: {errors}"
+    assert not any("[ORDER][historical_note]" in e for e in errors)
+    captured = capsys.readouterr()
+    assert "[WARN]" in captured.out and "[ORDER][historical_note]" in captured.out
+
+
+# ──────────────────────────────────────────────────────────────────
+# Тест 17c: COMPLETENESS для callout остаётся блокирующим
+#   (только ORDER стал soft — не вся валидация callout стала мягкой)
+# ──────────────────────────────────────────────────────────────────
+
+def test_callout_completeness_still_blocking():
+    book = _book_with_collections(
+        [_ch("ch_02", ["p1"])],
+        callouts=[_co("c01", "ch_02"), _co("c02", "ch_02")],
+    )
+    layout = _layout([
+        {"page_number": 1, "chapter_id": "ch_02",
+         "elements": [_para_elem("ch_02", "p1"), _co_elem("ch_02", "c01")]},
+        # c02 пропущен — это всё ещё блокирующая ошибка
+    ])
+
+    passed, errors = validate_fidelity(layout, book)
+
+    assert passed is False, "COMPLETENESS для callout должно быть блокирующим"
+    assert any("[COMPLETENESS][callout]" in e and "c02" in e for e in errors)
+
+
+# ──────────────────────────────────────────────────────────────────
+# Тест 17d: ORDER для paragraph остаётся блокирующим (order_strict=True)
+#   Симметрия: для paragraph order критичен (последовательность текста).
+# ──────────────────────────────────────────────────────────────────
+
+def test_paragraph_order_remains_blocking():
+    """Sanity: order_strict=True для paragraph — ORDER violation = FAIL."""
+    book = _book([_ch("ch_01", ["p1", "p2", "p3"])])
+    layout = _layout([_page(1, "ch_01", ["p1", "p3", "p2"])])  # порядок переставлен
+
+    passed, errors = validate_fidelity(layout, book)
+
+    assert passed is False, "ORDER для paragraph должно блокировать (order_strict=True)"
+    assert any("[ORDER]" in e for e in errors)
 
 
 # ──────────────────────────────────────────────────────────────────
