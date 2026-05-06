@@ -42,6 +42,11 @@ ROOT = Path(__file__).parent.parent
 #                       False: коллекция внутри каждого chapter
 # book_split_content  — fallback (только для paragraph): если paragraphs[] нет,
 #                       разбивать chapter.content по \n\n и генерить id p1, p2, ...
+# order_strict        — True: ORDER violation = блокирующая ошибка (paragraph —
+#                       последовательный текст, перестановка ломает связность);
+#                       False: ORDER violation = warning, не fail (callout/note —
+#                       автономные блоки, LD расставляет по местам визуальной вёрстки,
+#                       строгий порядок не критичен).
 REF_TYPE_CONFIG: dict[str, dict] = {
     "paragraph": {
         "elem_types": ("paragraph", "subheading", "section_header"),
@@ -50,6 +55,7 @@ REF_TYPE_CONFIG: dict[str, dict] = {
         "book_collection": "paragraphs",
         "book_top_level": False,
         "book_split_content": True,
+        "order_strict": True,
     },
     "callout": {
         "elem_types": ("callout",),
@@ -58,6 +64,7 @@ REF_TYPE_CONFIG: dict[str, dict] = {
         "book_collection": "callouts",
         "book_top_level": True,
         "book_split_content": False,
+        "order_strict": False,
     },
     "historical_note": {
         "elem_types": ("historical_note",),
@@ -66,6 +73,7 @@ REF_TYPE_CONFIG: dict[str, dict] = {
         "book_collection": "historical_notes",
         "book_top_level": True,
         "book_split_content": False,
+        "order_strict": False,
     },
 }
 
@@ -148,18 +156,32 @@ def _collect_layout_refs(layout: dict, ref_type: str) -> dict[str, list[tuple[in
     return result
 
 
-def _validate_ref_type(book: dict, layout: dict, ref_type: str) -> list[str]:
+def _validate_ref_type(book: dict, layout: dict, ref_type: str) -> tuple[list[str], list[str]]:
     """
     Запускает три проверки (completeness/order/uniqueness) для одного типа ref.
 
-    Возвращает список текстовых ошибок. Префиксы [COMPLETENESS]/[ORDER]/[UNIQUENESS]
-    зафиксированы как часть API — на них завязаны тесты и логи.
+    Возвращает (errors, warnings):
+      errors    — блокирующие нарушения (passed=False)
+      warnings  — не блокирующие (логируются, passed остаётся True)
+
+    Распределение ORDER между errors/warnings зависит от cfg["order_strict"]:
+      paragraph (order_strict=True)        — ORDER в errors (перестановка ломает связность текста)
+      callout / historical_note (False)    — ORDER в warnings (автономные блоки, LD-вёрстка)
+
+    COMPLETENESS и UNIQUENESS всегда в errors независимо от типа.
+
+    Префиксы [COMPLETENESS]/[ORDER]/[UNIQUENESS] зафиксированы как часть API —
+    на них завязаны тесты и логи.
     """
     if ref_type not in REF_TYPE_CONFIG:
         raise ValueError(f"Неизвестный ref_type: {ref_type!r}. "
                          f"Поддерживаются: {list(REF_TYPE_CONFIG)}")
 
+    cfg = REF_TYPE_CONFIG[ref_type]
+    order_strict: bool = cfg.get("order_strict", True)
+
     errors: list[str] = []
+    warnings: list[str] = []
 
     book_refs = _collect_book_refs(book, ref_type)
     layout_refs = _collect_layout_refs(layout, ref_type)
@@ -189,14 +211,16 @@ def _validate_ref_type(book: dict, layout: dict, ref_type: str) -> list[str]:
                 )
 
     # ── Проверка 2: Order ─────────────────────────────────────────────────────
+    # Для paragraph (order_strict=True) — в errors; для callout/note — в warnings.
+    order_target = errors if order_strict else warnings
     for ch_id, expected_ids in book_refs.items():
         lo = layout_refs_ordered.get(ch_id, [])
         # Берём только те, что есть и там и там, проверяем относительный порядок
         common_expected = [pid for pid in expected_ids if pid in set(lo)]
         common_actual = [pid for pid in lo if pid in set(expected_ids)]
         if common_expected != common_actual:
-            errors.append(
-                f"[ORDER] {ch_id}: порядок абзацев не совпадает с book_FINAL. "
+            order_target.append(
+                f"[ORDER] {ch_id}: порядок не совпадает с book_FINAL. "
                 f"Ожидалось: {common_expected}, в layout: {common_actual}"
             )
 
@@ -211,7 +235,7 @@ def _validate_ref_type(book: dict, layout: dict, ref_type: str) -> list[str]:
                     f"[UNIQUENESS] {ch_id}/{pid} — встречается {count} раза в layout (дубль)"
                 )
 
-    return errors
+    return errors, warnings
 
 
 def _inject_ref_type_label(err: str, ref_type: str) -> str:
@@ -237,21 +261,32 @@ def validate_fidelity(
     ref из REF_TYPE_CONFIG: paragraph, callout, historical_note.
 
     Возвращает (passed: bool, errors: list[str]).
-    Если allow_mismatch=True — ошибки логируются, но passed=True.
+    Если allow_mismatch=True — все нарушения логируются, но passed=True.
+
+    Soft warnings (ORDER для callout/historical_note — order_strict=False) логируются
+    отдельным префиксом [WARN][ORDER]... но не влияют на passed=False независимо
+    от allow_mismatch — это by design, не override.
 
     Префиксы ошибок дополнены типом: [COMPLETENESS][callout] / [ORDER][historical_note] / etc.
     Для paragraph — без ярлыка (backward compatibility с существующими тестами/логами).
     """
     errors: list[str] = []
+    soft_warnings: list[str] = []
     counts: dict[str, int] = {}
 
     for ref_type in REF_TYPE_CONFIG:
-        type_errors = _validate_ref_type(book, layout, ref_type)
-        prefixed = [_inject_ref_type_label(e, ref_type) for e in type_errors]
-        errors.extend(prefixed)
+        type_errors, type_warnings = _validate_ref_type(book, layout, ref_type)
+        errors.extend(_inject_ref_type_label(e, ref_type) for e in type_errors)
+        soft_warnings.extend(_inject_ref_type_label(w, ref_type) for w in type_warnings)
         counts[ref_type] = sum(len(v) for v in _collect_book_refs(book, ref_type).values())
 
     passed = len(errors) == 0
+
+    # Soft warnings всегда печатаются как [WARN] и не влияют на passed — by design,
+    # не override.
+    for w in soft_warnings:
+        print(f"[WARN] {w}")
+
     if errors:
         prefix = "[WARN]" if allow_mismatch else "[ERROR]"
         for e in errors:
@@ -262,8 +297,11 @@ def validate_fidelity(
             print(f"\n[FIDELITY] ⚠️  {len(errors)} нарушений (--allow-mismatch: пропускаем).")
     else:
         summary = ", ".join(f"{n} {t}" for t, n in counts.items() if n)
-        print(f"[FIDELITY] ✅ Проверки пройдены: {summary or '0 элементов'}, порядок OK, нет дублей.")
+        soft_note = f", {len(soft_warnings)} мягких warnings" if soft_warnings else ""
+        print(f"[FIDELITY] ✅ Проверки пройдены: {summary or '0 элементов'}, порядок OK, нет дублей{soft_note}.")
 
+    # errors контракт сохранён: только блокирующие. Soft warnings из ORDER
+    # для не-paragraph типов туда не попадают.
     if allow_mismatch:
         return True, errors
     return passed, errors
