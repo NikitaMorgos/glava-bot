@@ -50,11 +50,7 @@
           <td class="px-5 py-3 text-gray-700 pl-8">{{ row.label }}</td>
           {% for val in row.totals %}
           <td class="px-4 py-3 text-right font-mono text-gray-800">
-            {% if val > 0 %}
-              {{ "{:,.0f}".format(val).replace(",", " ") }}
-            {% else %}
-              <span class="text-gray-300">—</span>
-            {% endif %}
+            {{ "{:,.0f}".format(val).replace(",", " ") }}
           </td>
           {% endfor %}
           <td class="px-5 py-3 text-right font-mono font-semibold text-emerald-800">
@@ -74,11 +70,7 @@
           <td class="px-5 py-3 font-bold text-emerald-800">Итого выручки</td>
           {% for val in data.revenue_totals %}
           <td class="px-4 py-3 text-right font-mono font-bold text-emerald-800">
-            {% if val > 0 %}
-              {{ "{:,.0f}".format(val).replace(",", " ") }}
-            {% else %}
-              <span class="text-gray-300 font-normal">—</span>
-            {% endif %}
+            {{ "{:,.0f}".format(val).replace(",", " ") }}
           </td>
           {% endfor %}
           <td class="px-5 py-3 text-right font-mono font-bold text-emerald-900">
@@ -99,11 +91,7 @@
           <td class="px-5 py-3 text-gray-700 pl-8">{{ row.category }}</td>
           {% for val in row.totals %}
           <td class="px-4 py-3 text-right font-mono text-gray-800">
-            {% if val > 0 %}
-              {{ "{:,.0f}".format(val).replace(",", " ") }}
-            {% else %}
-              <span class="text-gray-300">—</span>
-            {% endif %}
+            {{ "{:,.0f}".format(val).replace(",", " ") }}
           </td>
           {% endfor %}
           <td class="px-5 py-3 text-right font-mono font-semibold text-gray-900">
@@ -123,11 +111,7 @@
           <td class="px-5 py-3 font-bold text-red-700">Итого расходов</td>
           {% for val in data.expense_totals %}
           <td class="px-4 py-3 text-right font-mono font-bold text-red-700">
-            {% if val > 0 %}
-              {{ "{:,.0f}".format(val).replace(",", " ") }}
-            {% else %}
-              <span class="text-gray-300 font-normal">—</span>
-            {% endif %}
+            {{ "{:,.0f}".format(val).replace(",", " ") }}
           </td>
           {% endfor %}
           <td class="px-5 py-3 text-right font-mono font-bold text-red-700">
