@@ -1019,6 +1019,79 @@ def _book_total_chars(book: dict) -> int:
     return total
 
 
+def _normalize_for_evidence(text: str) -> str:
+    """Нормализует текст для evidence-сравнения: lowercase + collapse whitespace.
+    Не меняет content semantically — снимает только формат (пробелы, регистр)."""
+    import re
+    return re.sub(r"\s+", " ", (text or "").lower()).strip()
+
+
+def _chapter_content(book: dict, chapter_id: str) -> str:
+    """Возвращает content главы по id или пустую строку."""
+    for ch in book.get("chapters", []) or []:
+        if ch.get("id") == chapter_id:
+            return ch.get("content") or ""
+    return ""
+
+
+def _verify_evidence_in_book(
+    err: dict,
+    book_after: dict,
+) -> tuple[bool, str]:
+    """
+    Для error с legitimate_deletion=true — проверяет evidence_in_other_chapter
+    (если задано) против реального содержимого book_after.
+
+    Возвращает (passed, reason):
+      passed=True — всё ок (либо evidence не нужен, либо цитата найдена)
+      passed=False — evidence указан но quote не найдена в указанной главе
+
+    Логика:
+      - Если у error НЕ framing_distortion type → evidence не требуется (вариант A)
+      - Если framing_distortion + evidence отсутствует → fail
+      - Если framing_distortion + evidence есть → проверить quote в book_after
+    """
+    err_type = err.get("type", "")
+
+    # Только для cross-chapter (framing_distortion) требуется evidence
+    if err_type != "framing_distortion":
+        return True, "non_cross_chapter_legitimate_deletion"
+
+    evidence = err.get("evidence_in_other_chapter") or {}
+    ev_chapter = evidence.get("chapter_id", "")
+    ev_quote = evidence.get("quote", "")
+
+    if not ev_chapter or not ev_quote:
+        return False, (
+            f"FC error {err.get('id')}: framing_distortion + legitimate_deletion=true "
+            f"требует evidence_in_other_chapter (chapter_id + quote ≥30 символов). "
+            f"Не указано — потенциальная галлюцинация cross-chapter дубля."
+        )
+
+    if len(ev_quote) < 30:
+        return False, (
+            f"FC error {err.get('id')}: evidence_in_other_chapter.quote слишком короткая "
+            f"({len(ev_quote)} символов, требуется ≥30) — недостаточная верификация."
+        )
+
+    chapter_content = _chapter_content(book_after, ev_chapter)
+    if not chapter_content:
+        return False, (
+            f"FC error {err.get('id')}: evidence ссылается на ch={ev_chapter}, "
+            f"но эта глава пустая или отсутствует в book_after."
+        )
+
+    # Сравниваем нормализованно — допускаем минимальные изменения formatting'а после GW revision
+    if _normalize_for_evidence(ev_quote) in _normalize_for_evidence(chapter_content):
+        return True, "evidence_verified"
+
+    return False, (
+        f"FC error {err.get('id')}: evidence quote не найдена в book_after.{ev_chapter}.content. "
+        f"Возможная галлюцинация дубля или эпизод исчез из обеих глав. "
+        f"Quote (первые 80 симв): {ev_quote[:80]!r}"
+    )
+
+
 def validate_revision_volume(
     book_before: dict,
     book_after: dict,
@@ -1031,18 +1104,21 @@ def validate_revision_volume(
     GW «исправил» ошибку через удаление эпизода вместо корректировки факта.
 
     Снижение объёма допускается только если в fc_report есть errors с
-    legitimate_deletion=true, суммарный размер которых компенсирует потерю.
+    legitimate_deletion=true. Дополнительно (v1.2.3): для cross-chapter
+    framing_distortion проверяется что evidence_in_other_chapter.quote
+    реально присутствует в book_after — иначе FC галлюцинирует дубль
+    (v47 регрессия #3 второй проявок).
 
     Возвращает (passed, details):
       passed: bool — True если объём допустим
-      details: dict — chars_before, chars_after, ratio, threshold,
-        legitimate_deletions (число помеченных эпизодов),
-        unauthorized_drop_chars (сколько символов потеряно сверх легитимного)
+      details: dict — chars_before, chars_after, ratio, threshold, verdict,
+        legitimate_deletions (число помеченных эпизодов), evidence_failures
 
-    Сценарии:
-      A. ratio >= min_ratio → passed=True (нормальный revision)
-      B. ratio < min_ratio, legitimate_deletions > 0 → passed=True (FC разрешил)
-      C. ratio < min_ratio, нет legitimate_deletion → passed=False (защита сработала)
+    Verdict'ы:
+      - ok_within_threshold              — ratio >= min_ratio (нормальный revision)
+      - ok_with_legitimate_deletion      — ratio < min_ratio + все evidence verified
+      - blocked_unauthorized_deletion    — ratio < min_ratio + нет legitimate_deletion
+      - blocked_phantom_evidence         — есть legitimate, но evidence не подтверждён в book_after
     """
     chars_before = _book_total_chars(book_before)
     chars_after = _book_total_chars(book_after)
@@ -1068,6 +1144,7 @@ def validate_revision_volume(
                     "chapter_id": err.get("chapter_id"),
                     "type": err.get("type"),
                     "fix_instruction": (err.get("fix_instruction") or "")[:120],
+                    "evidence_in_other_chapter": err.get("evidence_in_other_chapter"),
                 })
 
     details = {
@@ -1078,24 +1155,47 @@ def validate_revision_volume(
         "drop_chars": max(0, chars_before - chars_after),
         "legitimate_deletions_count": len(legitimate_deletions),
         "legitimate_deletions": legitimate_deletions,
+        "evidence_failures": [],
     }
 
     if ratio >= min_ratio:
         details["verdict"] = "ok_within_threshold"
         return True, details
 
-    if legitimate_deletions:
-        details["verdict"] = "ok_with_legitimate_deletion"
-        return True, details
+    if not legitimate_deletions:
+        details["verdict"] = "blocked_unauthorized_deletion"
+        details["reason"] = (
+            f"Объём после revision упал на {details['drop_chars']} символов "
+            f"({(1 - ratio) * 100:.1f}%), порог снижения {(1 - min_ratio) * 100:.1f}%. "
+            f"FC отчёт не содержит errors с legitimate_deletion=true. "
+            f"GW нарушил anti-deletion правило (GW v2.15)."
+        )
+        return False, details
 
-    details["verdict"] = "blocked_unauthorized_deletion"
-    details["reason"] = (
-        f"Объём после revision упал на {details['drop_chars']} символов "
-        f"({(1 - ratio) * 100:.1f}%), порог снижения {(1 - min_ratio) * 100:.1f}%. "
-        f"FC отчёт не содержит errors с legitimate_deletion=true. "
-        f"GW нарушил anti-deletion правило (v2.15)."
-    )
-    return False, details
+    # Есть legitimate_deletions — проверяем evidence для каждого framing_distortion
+    if fc_report:
+        for err in fc_report.get("errors", []) or []:
+            if err.get("legitimate_deletion") is True:
+                ev_passed, ev_reason = _verify_evidence_in_book(err, book_after)
+                if not ev_passed:
+                    details["evidence_failures"].append({
+                        "error_id": err.get("id"),
+                        "reason": ev_reason,
+                    })
+
+    if details["evidence_failures"]:
+        details["verdict"] = "blocked_phantom_evidence"
+        details["reason"] = (
+            f"Объём после revision упал на {details['drop_chars']} символов, "
+            f"но {len(details['evidence_failures'])} legitimate_deletion-flag(s) "
+            f"не подтверждены evidence в book_after. FC v2.10 требует "
+            f"дословную цитату из другой главы для cross-chapter удаления "
+            f"(защита от галлюцинаций дубля, v47 регрессия #3 закрытие)."
+        )
+        return False, details
+
+    details["verdict"] = "ok_with_legitimate_deletion"
+    return True, details
 
 
 # ─────────────────────────────────────────────────────────────────

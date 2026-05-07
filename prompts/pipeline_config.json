@@ -75,8 +75,8 @@
     "model": "claude-sonnet-4-20250514",
     "max_tokens": 64000,
     "temperature": 0.1,
-    "prompt_file": "04_fact_checker_v2.9.md",
-    "_notes": "v2.9 (2026-05-06, волна 1.2.1): cross-chapter дубли расширены с пары ch_03↔ch_04 на все пары ch_02/ch_03/ch_04 (симметрично GW v2.14). v2.8: ch_01.content=null норма. v2.7: правило «только name». v2.6: false-positive защита timeline."
+    "prompt_file": "04_fact_checker_v2.10.md",
+    "_notes": "v2.10 (2026-05-07, волна 1.2.3): для cross-chapter framing_distortion+legitimate_deletion обязательное поле evidence_in_other_chapter с дословной цитатой. Защита от галлюцинаций cross-chapter дубля. v2.9: cross-chapter правило расширено на все пары контентных глав. v2.8: ch_01.content=null норма."
   },
 
   "literary_editor": {
