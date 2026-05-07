@@ -280,3 +280,177 @@ def test_regression_3_v43_cucumbers_episode_deletion_blocked():
     assert passed is False, "Регрессия #3 должна блокироваться"
     assert details["verdict"] == "blocked_unauthorized_deletion"
     assert details["drop_chars"] >= len(cucumber_episode) - 50
+
+
+# ──────────────────────────────────────────────────────────────────
+# Волна 1.2.3: evidence-required для cross-chapter framing_distortion
+# ──────────────────────────────────────────────────────────────────
+
+def _err_cross_chapter(err_id: str, evidence: dict | None = None) -> dict:
+    """FC ошибка cross-chapter дубля с (опциональным) evidence."""
+    err = _err(
+        err_id,
+        type="framing_distortion",
+        severity="major",
+        chapter_id="ch_04",
+        fix_instruction="Удалить эпизод из ch_04 — есть в ch_02",
+        legitimate_deletion=True,
+    )
+    if evidence is not None:
+        err["evidence_in_other_chapter"] = evidence
+    return err
+
+
+def test_cross_chapter_with_valid_evidence_passes():
+    """Cross-chapter дубль + правильное evidence (quote есть в ch_02) → passed."""
+    quote = "В 1985 году Валентина начала возить огурцы в Молдавию"
+    before = _book({"ch_02": quote + ". " + "А" * 5000, "ch_04": "Б" * 2000})
+    after = _book({"ch_02": quote + ". " + "А" * 5000, "ch_04": ""})  # ch_04 опустошён
+    fc = _fc_report([
+        _err_cross_chapter("err_dup", evidence={"chapter_id": "ch_02", "quote": quote}),
+    ])
+
+    passed, details = validate_revision_volume(before, after, fc_report=fc)
+
+    assert passed is True
+    assert details["verdict"] == "ok_with_legitimate_deletion"
+    assert details["evidence_failures"] == []
+
+
+def test_cross_chapter_without_evidence_fails():
+    """Cross-chapter дубль БЕЗ evidence → blocked_phantom_evidence (FC промахнулся)."""
+    before = _book({"ch_02": "А" * 5000, "ch_04": "Б" * 2000})
+    after = _book({"ch_02": "А" * 5000, "ch_04": ""})
+    fc = _fc_report([
+        _err_cross_chapter("err_dup", evidence=None),  # нет evidence
+    ])
+
+    passed, details = validate_revision_volume(before, after, fc_report=fc)
+
+    assert passed is False
+    assert details["verdict"] == "blocked_phantom_evidence"
+    assert len(details["evidence_failures"]) == 1
+    assert "требует evidence" in details["evidence_failures"][0]["reason"]
+
+
+def test_cross_chapter_with_phantom_evidence_fails():
+    """
+    v47 регрессия #3: FC заявил что эпизод есть в ch_02, но quote'а там
+    реально нет. Должно блокировать.
+    """
+    phantom_quote = "В 1985 году Валентина начала возить огурцы в Молдавию"
+    # ch_02 после revision НЕ содержит этот quote
+    before = _book({"ch_02": "Хроника жизни. " * 200, "ch_04": "Эпизод об огурцах " * 50})
+    after = _book({"ch_02": "Хроника жизни. " * 200, "ch_04": ""})
+    fc = _fc_report([
+        _err_cross_chapter(
+            "err_phantom_dup",
+            evidence={"chapter_id": "ch_02", "quote": phantom_quote},
+        ),
+    ])
+
+    passed, details = validate_revision_volume(before, after, fc_report=fc)
+
+    assert passed is False, "Phantom evidence должен блокировать удаление"
+    assert details["verdict"] == "blocked_phantom_evidence"
+    assert any("не найдена в book_after" in f["reason"]
+               for f in details["evidence_failures"])
+
+
+def test_cross_chapter_with_too_short_evidence_fails():
+    """Quote короче 30 символов — недостаточная верификация, fail."""
+    short_quote = "огурцы"  # 6 символов
+    before = _book({"ch_02": "огурцы упомянуты " * 100, "ch_04": "Б" * 2000})
+    after = _book({"ch_02": "огурцы упомянуты " * 100, "ch_04": ""})
+    fc = _fc_report([
+        _err_cross_chapter(
+            "err_short_quote",
+            evidence={"chapter_id": "ch_02", "quote": short_quote},
+        ),
+    ])
+
+    passed, details = validate_revision_volume(before, after, fc_report=fc)
+
+    assert passed is False
+    assert details["verdict"] == "blocked_phantom_evidence"
+    assert any("слишком короткая" in f["reason"]
+               for f in details["evidence_failures"])
+
+
+def test_cross_chapter_with_evidence_pointing_to_empty_chapter_fails():
+    """Evidence ссылается на главу которой нет / пустую."""
+    before = _book({"ch_02": "А" * 5000, "ch_04": "Эпизод " * 200})
+    after = _book({"ch_02": "А" * 5000, "ch_04": ""})
+    fc = _fc_report([
+        _err_cross_chapter(
+            "err_wrong_ch",
+            evidence={"chapter_id": "ch_99", "quote": "несуществующая глава " * 5},
+        ),
+    ])
+
+    passed, details = validate_revision_volume(before, after, fc_report=fc)
+
+    assert passed is False
+    assert details["verdict"] == "blocked_phantom_evidence"
+
+
+def test_hallucination_legitimate_deletion_no_evidence_required():
+    """
+    Вариант A (галлюцинация без источника, не cross-chapter):
+    type=hallucination + legitimate_deletion=true БЕЗ evidence — это норма,
+    эпизод действительно нужно удалить целиком.
+    """
+    before = _book({"ch_02": "Реальный текст. " * 200 + "Галлюцинированный эпизод о Магадане. " * 50})
+    after = _book({"ch_02": "Реальный текст. " * 200})
+    fc = _fc_report([
+        _err("err_hallucinated",
+             type="hallucination",
+             severity="critical",
+             fix_instruction="Удалить эпизод о Магадане целиком — нет источника",
+             legitimate_deletion=True),
+    ])
+
+    passed, details = validate_revision_volume(before, after, fc_report=fc)
+
+    assert passed is True, "Hallucination не требует evidence — это вариант A"
+    assert details["verdict"] == "ok_with_legitimate_deletion"
+    assert details["evidence_failures"] == []
+
+
+def test_v47_regression_phantom_cross_chapter_dup():
+    """
+    Точная репродукция v47 ситуации:
+    - FC v2.9 заявил что эпизод об огурцах есть в ch_02 (но это галлюцинация)
+    - GW удалил из ch_04, в ch_02 ничего не было — эпизод исчез из всех глав
+    - Старый validator пропустил с ok_with_legitimate_deletion
+    - Новый validator должен зафейлить с blocked_phantom_evidence
+    """
+    cucumber_episode = "Эпизод об огурцах в чешском чемодане. " * 30  # ~1100 chars
+    # ch_02 не содержит огурцы (FC галлюцинировал что содержит)
+    book_v47_before = _book({
+        "ch_02": "Хроника жизни Валентины. " * 250,  # ~6000 chars
+        "ch_04": cucumber_episode,
+    })
+    book_v47_after = _book({
+        "ch_02": "Хроника жизни Валентины. " * 250,  # без изменений
+        "ch_04": "",  # эпизод об огурцах удалён
+    })
+    fc_v47_like = _fc_report([
+        _err_cross_chapter(
+            "err_v47_phantom",
+            evidence={
+                "chapter_id": "ch_02",
+                # quote якобы из ch_02, но в реальности там нет огурцов
+                "quote": "Эпизод об огурцах в чешском чемодане упомянут как часть жизни",
+            },
+        ),
+    ])
+
+    passed, details = validate_revision_volume(
+        book_v47_before, book_v47_after, fc_report=fc_v47_like
+    )
+
+    assert passed is False, "v47 phantom evidence должен блокироваться (волна 1.2.3)"
+    assert details["verdict"] == "blocked_phantom_evidence"
+    # Эпизод действительно потерян (drop_chars > 0)
+    assert details["drop_chars"] >= len(cucumber_episode) - 50
