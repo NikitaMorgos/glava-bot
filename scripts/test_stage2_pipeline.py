@@ -227,12 +227,16 @@ def main():
 
     fc_report = None
     for iteration in range(1, args.max_fc_iterations + 1):
+        # Волна 1.3: передаём historical_context от Историка как третий
+        # валидный источник для FC v2.11+. Без этого Историка-материал в
+        # книге классифицируется как hallucination (v48 регрессия).
         fc_report = run_fact_checker(
             client, book_draft, fact_map, transcripts,
             project_id=PROJECT_ID,
             phase="A",
             iteration=iteration,
             max_iterations=args.max_fc_iterations,
+            historical_context=historical_context if historical_context else None,
             cfg=cfg,
         )
         fc_path = out_dir / f"karakulina_fc_report_iter{iteration}_{ts}.json"
@@ -258,6 +262,10 @@ def main():
                 "fact_checker_errors": errors,
             }
             book_before_revision = book_draft  # снимок для post-validator
+            # Волна 1.3: передаём historical_context в revision GW тоже,
+            # чтобы Историка-материал не терялся между revision-итерациями
+            # (Курсорское наблюдение v48: без этого если revision требует
+            # переписать главу — Historian-вставки могут не воспроизвестись).
             book_draft = run_ghostwriter(
                 client, fact_map, transcripts,
                 subject_name=CHARACTER_NAME,
@@ -265,6 +273,7 @@ def main():
                 cfg=cfg,
                 call_type="revision",
                 current_book=book_draft,
+                historical_context=historical_context if historical_context else None,
                 revision_scope=revision_scope,
                 version=iteration + 2,
             )
