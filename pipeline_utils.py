@@ -1075,17 +1075,31 @@ def _topic_tokens(text: str, min_len: int = 4) -> set[str]:
 # Ниже — считаем что evidence описывает другой эпизод (не дубль того что удаляется).
 EVIDENCE_TOPIC_OVERLAP_MIN = 0.25  # 25% от меньшего из двух множеств
 
+# Абсолютный минимум общих значимых токенов (волна 1.3.2): защита от случая
+# когда множества маленькие и 25% — это всего 1 токен. v50: один общий токен
+# («валентина» — имя субъекта) при множестве из 10 = 10% < 25%, но если
+# множества по 4 токена каждое, 25% = 1 токен, что недостаточно для
+# подтверждения тождества эпизода.
+EVIDENCE_MIN_SHARED_TOKENS = 2
+
 
 def _evidence_topic_overlap(evidence_quote: str, what_is_written: str) -> dict:
     """
     Считает topic-overlap между evidence quote и удаляемым фрагментом.
 
     Возвращает dict с:
-      evidence_tokens: set из evidence
-      written_tokens: set из what_is_written
-      shared: пересечение
+      evidence_tokens_count, written_tokens_count
+      shared_count: число общих значимых токенов
+      shared: пересечение (top-10 для диагностики)
       overlap_ratio: |shared| / min(|evidence|, |written|)
-      passed: True если overlap >= EVIDENCE_TOPIC_OVERLAP_MIN
+      passed: True если выполнены ОБА условия:
+        1. overlap_ratio >= EVIDENCE_TOPIC_OVERLAP_MIN (25%)
+        2. shared_count >= EVIDENCE_MIN_SHARED_TOKENS (2)
+
+      Оба условия защищают от разных провалов:
+      - ratio: «множества большие, общих мало» — т.е. эпизоды не пересекаются
+      - shared_count: «множества маленькие, 1 общий токен это случайность»
+        (v50 кейс — общая «валентина», но конкретные объекты эпизодов разные)
     """
     ev_tokens = _topic_tokens(evidence_quote)
     wr_tokens = _topic_tokens(what_is_written)
@@ -1105,13 +1119,20 @@ def _evidence_topic_overlap(evidence_quote: str, what_is_written: str) -> dict:
         }
 
     overlap_ratio = len(shared) / smaller
+    ratio_ok = overlap_ratio >= EVIDENCE_TOPIC_OVERLAP_MIN
+    abs_ok = len(shared) >= EVIDENCE_MIN_SHARED_TOKENS
+    passed = ratio_ok and abs_ok
+
     return {
         "evidence_tokens_count": len(ev_tokens),
         "written_tokens_count": len(wr_tokens),
         "shared_count": len(shared),
         "shared": sorted(shared)[:10],  # для диагностики, top-10
         "overlap_ratio": round(overlap_ratio, 3),
-        "passed": overlap_ratio >= EVIDENCE_TOPIC_OVERLAP_MIN,
+        "min_shared_tokens": EVIDENCE_MIN_SHARED_TOKENS,
+        "ratio_check_passed": ratio_ok,
+        "abs_check_passed": abs_ok,
+        "passed": passed,
     }
 
 
@@ -1184,18 +1205,40 @@ def _verify_evidence_in_book(
             f"Quote (первые 80 симв): {ev_quote[:80]!r}"
         ), {}
 
-    # Волна 1.3.1: topic-overlap проверка — evidence quote должна описывать
-    # тот же эпизод что удаляется, не «общую тему».
+    # Волна 1.3.1 + 1.3.2: topic-overlap проверка — evidence quote должна
+    # описывать тот же эпизод что удаляется, не «общую тему». Два условия:
+    # (a) ratio >= 25% от меньшего из множеств (волна 1.3.1)
+    # (b) abs >= 2 общих значимых токенов (волна 1.3.2 — защита от случая
+    #     когда множества маленькие и 25% это всего 1 токен).
     what_is_written = err.get("what_is_written", "")
     overlap = _evidence_topic_overlap(ev_quote, what_is_written)
     if not overlap["passed"]:
+        # Конкретизируем причину для диагностики
+        if overlap.get("reason") == "insufficient_tokens":
+            cause = "недостаточно значимых токенов в evidence или удаляемом фрагменте"
+        elif not overlap.get("ratio_check_passed", True) and not overlap.get("abs_check_passed", True):
+            cause = (
+                f"и ratio ({overlap['overlap_ratio']} < {EVIDENCE_TOPIC_OVERLAP_MIN}), "
+                f"и абсолютное число общих токенов ({overlap['shared_count']} < "
+                f"{EVIDENCE_MIN_SHARED_TOKENS}) — оба условия провалились"
+            )
+        elif not overlap.get("ratio_check_passed", True):
+            cause = (
+                f"ratio {overlap['overlap_ratio']} < {EVIDENCE_TOPIC_OVERLAP_MIN}"
+            )
+        else:
+            cause = (
+                f"общих значимых токенов всего {overlap['shared_count']} "
+                f"< минимума {EVIDENCE_MIN_SHARED_TOKENS} (защита от случая "
+                f"когда совпадает только имя субъекта или общая тема, "
+                f"но не предметные маркеры эпизода)"
+            )
         return False, (
             f"FC error {err.get('id')}: evidence quote семантически не покрывает "
-            f"удаляемый фрагмент (topic-overlap {overlap.get('overlap_ratio', 'N/A')} < "
-            f"{EVIDENCE_TOPIC_OVERLAP_MIN}). Общих значимых слов: "
-            f"{overlap['shared_count']} из мин({overlap['evidence_tokens_count']}, "
-            f"{overlap['written_tokens_count']}). Возможно FC галлюцинирует семантическое "
-            f"тождество разных эпизодов одной темы (см. v49 регрессия про огурцы vs счётчик)."
+            f"удаляемый фрагмент: {cause}. "
+            f"Shared tokens: {overlap.get('shared', [])}. "
+            f"Возможно FC галлюцинирует семантическое тождество разных эпизодов "
+            f"одной темы (v49: огурцы vs счётчик; v50: один общий токен «валентина»)."
         ), overlap
 
     return True, "evidence_verified", overlap

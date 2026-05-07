@@ -575,6 +575,125 @@ def test_evidence_quote_only_stopwords_blocks():
     assert details["verdict"] == "blocked_phantom_evidence"
 
 
+# ──────────────────────────────────────────────────────────────────
+# Волна 1.3.2: абсолютный минимум 2 общих значимых токенов
+# ──────────────────────────────────────────────────────────────────
+
+def test_v50_regression_one_shared_token_blocks():
+    """
+    Точная репродукция v50 регрессии: 1 общий токен («валентина») между
+    evidence quote и удаляемым фрагментом. Старый ratio-only check мог
+    пропустить (1/1=100% если evidence короткий). Новый абсолютный
+    минимум 2 токена → blocked.
+    """
+    # Минимальные тексты — общий только субъект «Валентина», ratio мог быть 100%
+    counter_quote = "Валентина сделала замечание про счётчик зятю Владимиру"
+    cucumber_episode = "Валентина возила огурцы в Молдавию через чемодан"
+
+    before = _book({
+        "ch_02": counter_quote + " " + "А" * 500,
+        "ch_04": cucumber_episode + " " + "Б" * 200,
+    })
+    after = _book({
+        "ch_02": counter_quote + " " + "А" * 500,
+        "ch_04": "Б" * 200,
+    })
+
+    fc = _fc_report([
+        _err_cross_chapter(
+            "err_v50",
+            evidence={"chapter_id": "ch_02", "quote": counter_quote},
+            what_is_written=cucumber_episode,
+        ),
+    ])
+
+    passed, details = validate_revision_volume(before, after, fc_report=fc)
+
+    # Должно быть заблокировано даже если ratio высокий — abs_check провалится
+    assert passed is False, "v50 кейс с 1 общим токеном должен блокироваться"
+    assert details["verdict"] == "blocked_phantom_evidence"
+    failure = details["evidence_failures"][0]
+    overlap = failure["topic_overlap"]
+    # Проверяем что именно abs_check провалился (или ratio_check тоже)
+    assert overlap["shared_count"] < 2, f"Shared должно быть <2, есть {overlap['shared_count']}"
+    assert overlap["passed"] is False
+    assert overlap["abs_check_passed"] is False
+
+
+def test_two_shared_tokens_passes_when_ratio_ok():
+    """
+    Граничный случай: 2 общих значимых токена при ratio >= 25% → passed.
+    Минимально достаточная связь для cross-chapter дубля.
+    """
+    # Два общих маркера: огурц + молдави
+    quote = "В 1985 году огурцы возили в Молдавию через знакомого"
+    written = "Эпизод про огурцы и Молдавию через зятя Маргося"
+    # Большой drop чтобы verdict был ok_with_legitimate_deletion
+    before = _book({
+        "ch_02": quote + " " + "А" * 500,
+        "ch_04": written + " " + "Б" * 500,
+    })
+    after = _book({
+        "ch_02": quote + " " + "А" * 500,
+        "ch_04": "Б" * 500,
+    })
+
+    fc = _fc_report([
+        _err_cross_chapter(
+            "err_two_markers",
+            evidence={"chapter_id": "ch_02", "quote": quote},
+            what_is_written=written,
+        ),
+    ])
+
+    passed, details = validate_revision_volume(before, after, fc_report=fc)
+
+    assert passed is True, f"2 общих токенов с ratio>=25% должно проходить, details: {details}"
+
+
+def test_one_shared_token_at_high_ratio_still_blocks():
+    """
+    Edge case: всего 1 общий значимый токен, ratio мог бы пройти. Должно
+    блокироваться абсолютным минимумом 2 shared tokens.
+
+    Реалистичный кейс: evidence короткий, what_is_written тоже короткий,
+    общий только «валентина» (имя субъекта). Без abs-check ratio мог бы
+    пройти (например, evidence={валентина, было} ∩ written={валентина, тоже}
+    = {валентина}, ratio = 1/2 = 50% >= 25%, но shared=1 < 2).
+    """
+    # Quote должен быть длиной ≥30 символов и реально присутствовать в ch_02
+    quote = "Валентина была активной женщиной по жизни."  # >30 chars
+    written = "Валентина тоже многое делала своими руками."
+
+    before = _book({
+        "ch_02": quote + " " + "Реальный текст. " * 50,
+        "ch_04": written + " " + "Прочее " * 50,
+    })
+    after = _book({
+        "ch_02": quote + " " + "Реальный текст. " * 50,  # quote сохранён
+        "ch_04": "Прочее " * 50,  # written удалён
+    })
+
+    fc = _fc_report([
+        _err_cross_chapter(
+            "err_one_token_high_ratio",
+            evidence={"chapter_id": "ch_02", "quote": quote},
+            what_is_written=written,
+        ),
+    ])
+
+    passed, details = validate_revision_volume(before, after, fc_report=fc)
+
+    assert passed is False, f"Должно быть заблокировано, details: {details}"
+    assert details["verdict"] == "blocked_phantom_evidence"
+    overlap = details["evidence_failures"][0]["topic_overlap"]
+    # shared_count должен быть < 2 (только «валентина» — общая) ИЛИ если ratio
+    # тоже не прошёл — overall не passed
+    assert overlap.get("passed") is False
+    if overlap.get("shared_count") is not None:
+        assert overlap["shared_count"] < 2 or overlap["abs_check_passed"] is False
+
+
 def test_evidence_general_topic_keyword_overlap_insufficient():
     """
     Граничный случай: evidence и удаляемый фрагмент разделяют ОДНО общее
