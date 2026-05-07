@@ -1001,6 +1001,104 @@ def run_ghostwriter(client, fact_map: dict, transcripts: list[dict],
 
 
 # ─────────────────────────────────────────────────────────────────
+# Post-validator: anti-deletion guard для revision (волна 1.2.2)
+# ─────────────────────────────────────────────────────────────────
+
+REVISION_MIN_VOLUME_RATIO = 0.95  # объём после revision должен быть ≥ 95% от до
+
+
+def _book_total_chars(book: dict) -> int:
+    """Суммарный объём контента: chapters[].content + callouts[].text + historical_notes[].text."""
+    total = 0
+    for ch in book.get("chapters", []) or []:
+        total += len(ch.get("content") or "")
+    for co in book.get("callouts", []) or []:
+        total += len(co.get("text") or "")
+    for hn in book.get("historical_notes", []) or []:
+        total += len(hn.get("text") or "")
+    return total
+
+
+def validate_revision_volume(
+    book_before: dict,
+    book_after: dict,
+    fc_report: dict | None = None,
+    min_ratio: float = REVISION_MIN_VOLUME_RATIO,
+) -> tuple[bool, dict]:
+    """
+    Проверяет что после revision-вызова Ghostwriter объём контента не упал
+    больше чем на (1 - min_ratio). Защита от регрессии #3 v43:
+    GW «исправил» ошибку через удаление эпизода вместо корректировки факта.
+
+    Снижение объёма допускается только если в fc_report есть errors с
+    legitimate_deletion=true, суммарный размер которых компенсирует потерю.
+
+    Возвращает (passed, details):
+      passed: bool — True если объём допустим
+      details: dict — chars_before, chars_after, ratio, threshold,
+        legitimate_deletions (число помеченных эпизодов),
+        unauthorized_drop_chars (сколько символов потеряно сверх легитимного)
+
+    Сценарии:
+      A. ratio >= min_ratio → passed=True (нормальный revision)
+      B. ratio < min_ratio, legitimate_deletions > 0 → passed=True (FC разрешил)
+      C. ratio < min_ratio, нет legitimate_deletion → passed=False (защита сработала)
+    """
+    chars_before = _book_total_chars(book_before)
+    chars_after = _book_total_chars(book_after)
+
+    if chars_before == 0:
+        # Edge case: пустая исходная книга. Любой объём после OK.
+        return True, {
+            "chars_before": 0,
+            "chars_after": chars_after,
+            "ratio": None,
+            "threshold": min_ratio,
+            "reason": "empty_book_before",
+        }
+
+    ratio = chars_after / chars_before
+
+    legitimate_deletions = []
+    if fc_report:
+        for err in fc_report.get("errors", []) or []:
+            if err.get("legitimate_deletion") is True:
+                legitimate_deletions.append({
+                    "id": err.get("id"),
+                    "chapter_id": err.get("chapter_id"),
+                    "type": err.get("type"),
+                    "fix_instruction": (err.get("fix_instruction") or "")[:120],
+                })
+
+    details = {
+        "chars_before": chars_before,
+        "chars_after": chars_after,
+        "ratio": round(ratio, 4),
+        "threshold": min_ratio,
+        "drop_chars": max(0, chars_before - chars_after),
+        "legitimate_deletions_count": len(legitimate_deletions),
+        "legitimate_deletions": legitimate_deletions,
+    }
+
+    if ratio >= min_ratio:
+        details["verdict"] = "ok_within_threshold"
+        return True, details
+
+    if legitimate_deletions:
+        details["verdict"] = "ok_with_legitimate_deletion"
+        return True, details
+
+    details["verdict"] = "blocked_unauthorized_deletion"
+    details["reason"] = (
+        f"Объём после revision упал на {details['drop_chars']} символов "
+        f"({(1 - ratio) * 100:.1f}%), порог снижения {(1 - min_ratio) * 100:.1f}%. "
+        f"FC отчёт не содержит errors с legitimate_deletion=true. "
+        f"GW нарушил anti-deletion правило (v2.15)."
+    )
+    return False, details
+
+
+# ─────────────────────────────────────────────────────────────────
 # Stage 2: Фактчекер
 # ─────────────────────────────────────────────────────────────────
 

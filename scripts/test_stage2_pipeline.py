@@ -49,6 +49,7 @@ from pipeline_utils import (
     print_book_stats,
     print_fact_check_report,
     save_run_manifest,
+    validate_revision_volume,
 )
 from pipeline_quality_gates import (
     run_stage2_text_gates, run_stage2_text_gates_variant_b,
@@ -94,6 +95,10 @@ def main():
                              "проверяет только непустоту глав и повторы.")
     parser.add_argument("--strict-bio-data", action="store_true",
                         help="Задача 027: вместо auto-fill — raise при неполной bio_data.family")
+    parser.add_argument("--allow-deletion-drop", action="store_true",
+                        help="Волна 1.2.2: разрешить unauthorized снижение объёма при revision. "
+                             "По умолчанию: hard fail когда GW удалил эпизод без legitimate_deletion-сигнала "
+                             "от FC. Override только для аварийной отладки.")
     args = parser.parse_args()
 
     # Guard: --skip-historian требует явной причины
@@ -252,6 +257,7 @@ def main():
                 "instructions": f"Исправь {len(errors)} ошибок, найденных Фактчекером.",
                 "fact_checker_errors": errors,
             }
+            book_before_revision = book_draft  # снимок для post-validator
             book_draft = run_ghostwriter(
                 client, fact_map, transcripts,
                 subject_name=CHARACTER_NAME,
@@ -266,6 +272,36 @@ def main():
             book_path.write_text(json.dumps(book_draft, ensure_ascii=False, indent=2), encoding="utf-8")
             print(f"[SAVED] Черновик v{iteration + 2} (после правок): {book_path.name}")
             print_book_stats(book_draft)
+
+            # ── Post-validator anti-deletion (волна 1.2.2) ────────────────────
+            # Защита от регрессии #3 v43: GW «исправил» через удаление эпизода
+            # вместо корректировки факта. Если объём упал > 5% и FC не пометил
+            # legitimate_deletion — блокируем прогон.
+            rv_passed, rv_details = validate_revision_volume(
+                book_before_revision, book_draft, fc_report=fc_report
+            )
+            rv_path = out_dir / f"karakulina_revision_volume_iter{iteration}_{ts}.json"
+            rv_path.write_text(
+                json.dumps(rv_details, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
+            print(f"[SAVED] Revision volume check: {rv_path.name} "
+                  f"({rv_details['chars_before']} → {rv_details['chars_after']} симв, "
+                  f"verdict={rv_details['verdict']})")
+
+            if not rv_passed and not args.allow_deletion_drop:
+                print(
+                    f"\n🛑 [REVISION_VOLUME] ПРОГОН ОСТАНОВЛЕН: "
+                    f"{rv_details.get('reason', 'volume drop')}\n"
+                    f"   Для аварийного обхода: --allow-deletion-drop "
+                    f"(деталь: {rv_path.name})"
+                )
+                sys.exit(1)
+            if not rv_passed:
+                print(
+                    f"⚠️  --allow-deletion-drop: продолжаем несмотря на volume drop. "
+                    f"revision_volume_overridden=true в manifest."
+                )
         else:
             errors_remain = [e for e in fc_report.get("errors", []) if e.get("severity") in ("critical", "major")]
             print(f"\n❌ [FACT_CHECKER] FAIL после {args.max_fc_iterations} итераций.")
