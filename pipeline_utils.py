@@ -1207,9 +1207,18 @@ def run_fact_checker(client, book_draft: dict, fact_map: dict,
                      phase: str = "A", iteration: int = 1,
                      max_iterations: int = 3,
                      affected_chapters: list[str] | None = None,
+                     historical_context: dict | list | None = None,
                      cfg: dict | None = None) -> dict:
     """
     Запускает Фактчекера.
+
+    historical_context (волна 1.3): output Историка-краеведа (агент 12).
+    Принимает либо dict {"historical_context": [...], "era_glossary": [...]} —
+    точно как возвращает run_historian — либо распакованный список contextов.
+    FC v2.11+ использует это как ТРЕТИЙ валидный источник наряду с transcript
+    и fact_map. Текст в book.chapter, совпадающий с historian.suggested_insertions,
+    НЕ помечается как hallucination. До v2.11 параметр игнорировался.
+
     Возвращает отчёт с verdict ("pass" | "fail") и списком ошибок.
     """
     if cfg is None:
@@ -1235,6 +1244,20 @@ def run_fact_checker(client, book_draft: dict, fact_map: dict,
     }
     if affected_chapters is not None:
         user_message["affected_chapters"] = affected_chapters
+    if historical_context:
+        # Распаковка как в run_ghostwriter: dict-обёртку разворачиваем,
+        # список — как есть, прочее — в список.
+        if isinstance(historical_context, dict) and "historical_context" in historical_context:
+            user_message["historical_context"] = historical_context["historical_context"]
+            if historical_context.get("era_glossary"):
+                user_message["era_glossary"] = historical_context["era_glossary"]
+        elif isinstance(historical_context, list):
+            user_message["historical_context"] = historical_context
+        else:
+            user_message["historical_context"] = [historical_context]
+        n_ctx = len(user_message.get("historical_context") or [])
+        print(f"[FACT_CHECKER] historical_context передан: {n_ctx} контекстных блоков "
+              f"(FC v2.11+ использует как третий источник вместе с transcript и fact_map).")
 
     # Streaming — обязательно при max_tokens >= 16000
     raw_parts = []

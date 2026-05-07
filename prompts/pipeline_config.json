@@ -75,8 +75,8 @@
     "model": "claude-sonnet-4-20250514",
     "max_tokens": 64000,
     "temperature": 0.1,
-    "prompt_file": "04_fact_checker_v2.10.md",
-    "_notes": "v2.10 (2026-05-07, волна 1.2.3): для cross-chapter framing_distortion+legitimate_deletion обязательное поле evidence_in_other_chapter с дословной цитатой. Защита от галлюцинаций cross-chapter дубля. v2.9: cross-chapter правило расширено на все пары контентных глав. v2.8: ch_01.content=null норма."
+    "prompt_file": "04_fact_checker_v2.11.md",
+    "_notes": "v2.11 (2026-05-07, волна 1.3): добавлен ТРЕТИЙ валидный источник — historical_context от Историка. Текст из historian.suggested_insertions более не помечается как hallucination. Также: framing_distortion для чисто стилистических замечаний → severity=warning (усилено ПРАВИЛО 2 «не оценивай стиль»). v2.10: evidence_in_other_chapter обязателен для cross-chapter legitimate_deletion. v2.9: cross-chapter правило на все пары контентных глав."
   },
 
   "literary_editor": {
