@@ -67,16 +67,16 @@
     "model": "claude-sonnet-4-20250514",
     "max_tokens": 32000,
     "temperature": 0.4,
-    "prompt_file": "03_ghostwriter_v2.14.md",
-    "_notes": "v2.14 (2026-04-14): СТОП-ФРАЗЫ (авторские обобщения/оценки/комментарии). bio_data.awards: ВСЕ 4 категории наград из fact_map.timeline. Правило «только name» для топонимов. Temperature 0.4."
+    "prompt_file": "03_ghostwriter_v2.15.md",
+    "_notes": "v2.15 (2026-05-06, волна 1.2.2): ANTI-DELETION при revision — корректируй факт, не удаляй эпизод. Тип legitimate_deletion: GW удаляет только при явном FC-сигнале. Защита от регрессии #3 v43. v2.14 base: СТОП-ФРАЗЫ, bio_data.awards 4 категории, правило «только name»."
   },
 
   "fact_checker": {
     "model": "claude-sonnet-4-20250514",
     "max_tokens": 64000,
     "temperature": 0.1,
-    "prompt_file": "04_fact_checker_v2.8.md",
-    "_notes": "v2.8 (2026-04-14): ch_01.content=null явная норма — не флагать. v2.7 base: правило «только name», aliases/asr_variants не эталон. v2.6 base: false-positive защита timeline, universal."
+    "prompt_file": "04_fact_checker_v2.9.md",
+    "_notes": "v2.9 (2026-05-06, волна 1.2.1): cross-chapter дубли расширены с пары ch_03↔ch_04 на все пары ch_02/ch_03/ch_04 (симметрично GW v2.14). v2.8: ch_01.content=null норма. v2.7: правило «только name». v2.6: false-positive защита timeline."
   },
 
   "literary_editor": {
