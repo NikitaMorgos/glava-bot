@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Автономные агенты — GLAVA</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #1a1a1a;
+    background: #fff;
+    padding: 40px 48px;
+    max-width: 860px;
+    margin: 0 auto;
+  }
+
+  h1 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+  h2 { font-size: 15px; font-weight: 700; margin-bottom: 12px; margin-top: 28px; }
+
+  .subtitle {
+    color: #555;
+    font-size: 13px;
+    margin-bottom: 26px;
+    max-width: 700px;
+  }
+
+  /* Role cards */
+  .roles {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+
+  .role-card {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+
+  .role-card .name { font-weight: 700; font-size: 13px; margin-bottom: 8px; }
+
+  .pill {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 9px;
+    border-radius: 100px;
+    margin-bottom: 8px;
+  }
+  .pill-green  { background: #e6f4ea; color: #1a7a3a; }
+  .pill-blue   { background: #e3eeff; color: #1a4db5; }
+  .pill-orange { background: #fff3e0; color: #b35c00; }
+
+  .role-card .desc  { font-size: 12px; color: #333; margin-bottom: 6px; }
+  .role-card .meta  { font-size: 11px; color: #888; }
+
+  hr { border: none; border-top: 1px solid #e8e8e8; margin: 26px 0; }
+
+  /* Two paths */
+  .two-paths {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 8px;
+  }
+
+  .path-box {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 16px;
+  }
+
+  .path-box .path-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+
+  .path-box h3 { font-size: 14px; font-weight: 700; }
+
+  .badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 100px;
+  }
+  .badge-green  { background: #e6f4ea; color: #1a7a3a; }
+  .badge-orange { background: #fff3e0; color: #b35c00; }
+
+  .path-box .path-sub {
+    font-size: 11px;
+    color: #888;
+    margin-bottom: 14px;
+  }
+
+  /* Flow diagram SVG */
+  .flow { margin-bottom: 4px; }
+
+  /* Node styles inline in SVG */
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    margin-bottom: 8px;
+  }
+
+  th {
+    background: #f5f5f5;
+    font-weight: 700;
+    padding: 8px 12px;
+    text-align: left;
+    border: 1px solid #e0e0e0;
+  }
+
+  td {
+    padding: 7px 12px;
+    border: 1px solid #e8e8e8;
+    vertical-align: top;
+  }
+
+  tr:nth-child(even) td { background: #fafafa; }
+
+  td.center, th.center { text-align: center; }
+
+  .write { color: #1a7a3a; font-weight: 600; }
+  .dash  { color: #bbb; }
+
+  .row-danger td { background: #fff0f0 !important; }
+  .row-success td { background: #edfaef !important; }
+  .row-warning td { background: #fffbe6 !important; }
+
+  .risk-badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 1px 8px;
+    border-radius: 4px;
+  }
+  .risk-low  { background: #e6f4ea; color: #1a7a3a; }
+  .risk-med  { background: #fff3e0; color: #b35c00; }
+  .risk-high { background: #fde8e8; color: #b01010; }
+
+  /* Callout */
+  .callout {
+    border: 1px solid #d0d8e8;
+    border-left: 4px solid #3a7bd5;
+    background: #f0f5ff;
+    border-radius: 6px;
+    padding: 14px 16px;
+    margin-top: 26px;
+  }
+  .callout .ct { font-weight: 700; margin-bottom: 5px; }
+  .callout .cb { font-size: 12px; color: #333; }
+
+  .date { font-size: 11px; color: #bbb; margin-top: 40px; }
+
+  @media print {
+    body  { padding: 20px 28px; }
+    .two-paths { page-break-inside: avoid; }
+    table { page-break-inside: auto; }
+    tr    { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<h1>Автономные агенты — без тим-лида в цикле</h1>
+<p class="subtitle">
+  Агенты работают самостоятельно в ~80% задач. Тим-лид видит только то,
+  что не прошло ворота или превышает полномочия агента.
+</p>
+
+<!-- Roles -->
+<div class="roles">
+  <div class="role-card">
+    <div class="name">Ты — тим-лид</div>
+    <span class="pill pill-green">Cursor + Sonnet</span>
+    <p class="desc">Получает только эскалации: высокий риск, кросс-домен, упавшие тесты. Архитектура, правила, аудит.</p>
+    <span class="meta">Участие: ~20% задач</span>
+  </div>
+  <div class="role-card">
+    <div class="name">Агент Даши</div>
+    <span class="pill pill-blue">Claude Projects + MCP FS</span>
+    <p class="desc">Реализует, прогоняет ворота, сам мёрджит в dev при прохождении. Эскалирует только при высоком риске.</p>
+    <span class="meta">feature/dasha/* → dev</span>
+  </div>
+  <div class="role-card">
+    <div class="name">Агент Лены</div>
+    <span class="pill pill-orange">Claude Projects + MCP FS</span>
+    <p class="desc">То же в своей области. SMM, лендинг, контент — полная автономия при прохождении ворот.</p>
+    <span class="meta">feature/lena/* → dev</span>
+  </div>
+</div>
+
+<hr>
+
+<!-- Two paths -->
+<h2>Два сценария выполнения задачи</h2>
+
+<div class="two-paths">
+  <!-- Happy path -->
+  <div class="path-box">
+    <div class="path-title">
+      <h3>Основной путь</h3>
+      <span class="badge badge-green">~80% задач</span>
+    </div>
+    <p class="path-sub">Низкий / средний риск, только своя область, тесты зелёные</p>
+    <svg width="100%" viewBox="0 0 460 54" class="flow">
+      <defs>
+        <marker id="a1" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="#aaa"/>
+        </marker>
+      </defs>
+      <!-- Nodes -->
+      <rect x="0"   y="7" width="96"  height="40" rx="5" fill="#f0f4ff" stroke="#c8d4f0"/>
+      <text x="48"  y="31" text-anchor="middle" font-size="11" fill="#333">Задача создана</text>
+
+      <rect x="120" y="7" width="100" height="40" rx="5" fill="#f0f4ff" stroke="#c8d4f0"/>
+      <text x="170" y="31" text-anchor="middle" font-size="11" fill="#333">Агент реализует</text>
+
+      <rect x="244" y="7" width="86"  height="40" rx="5" fill="#fffbe6" stroke="#e8d488"/>
+      <text x="287" y="31" text-anchor="middle" font-size="11" fill="#333">Автоворота</text>
+
+      <rect x="354" y="7" width="100" height="40" rx="5" fill="#3a7bd5" stroke="#3a7bd5"/>
+      <text x="404" y="31" text-anchor="middle" font-size="11" fill="#fff" font-weight="600">Merge → dev</text>
+
+      <!-- Arrows -->
+      <line x1="96"  y1="27" x2="111" y2="27" stroke="#bbb" stroke-width="1.5" marker-end="url(#a1)"/>
+      <line x1="220" y1="27" x2="235" y2="27" stroke="#bbb" stroke-width="1.5" marker-end="url(#a1)"/>
+      <line x1="330" y1="27" x2="345" y2="27" stroke="#bbb" stroke-width="1.5" marker-end="url(#a1)"/>
+    </svg>
+    <p style="font-size:11px;color:#888;margin-top:6px">Тим-лид не участвует</p>
+  </div>
+
+  <!-- Escalation path -->
+  <div class="path-box">
+    <div class="path-title">
+      <h3>Эскалация</h3>
+      <span class="badge badge-orange">~20% задач</span>
+    </div>
+    <p class="path-sub">Высокий риск, кросс-домен или тесты упали</p>
+    <svg width="100%" viewBox="0 0 460 54" class="flow">
+      <defs>
+        <marker id="a2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="#aaa"/>
+        </marker>
+      </defs>
+      <!-- Nodes -->
+      <rect x="0"   y="7" width="76"  height="40" rx="5" fill="#f0f4ff" stroke="#c8d4f0"/>
+      <text x="38"  y="31" text-anchor="middle" font-size="10.5" fill="#333">Задача создана</text>
+
+      <rect x="96"  y="7" width="80"  height="40" rx="5" fill="#f0f4ff" stroke="#c8d4f0"/>
+      <text x="136" y="31" text-anchor="middle" font-size="10.5" fill="#333">Агент реализует</text>
+
+      <rect x="196" y="7" width="70"  height="40" rx="5" fill="#fde8e8" stroke="#e8a0a0"/>
+      <text x="231" y="31" text-anchor="middle" font-size="10.5" fill="#b01010">Ворота: FAIL</text>
+
+      <rect x="286" y="7" width="64"  height="40" rx="5" fill="#fff3e0" stroke="#e8c888"/>
+      <text x="318" y="31" text-anchor="middle" font-size="10.5" fill="#333">Тим-лид</text>
+
+      <rect x="370" y="7" width="84"  height="40" rx="5" fill="#3a7bd5" stroke="#3a7bd5"/>
+      <text x="412" y="31" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="600">Merge → dev</text>
+
+      <!-- Arrows -->
+      <line x1="76"  y1="27" x2="87"  y2="27" stroke="#bbb" stroke-width="1.5" marker-end="url(#a2)"/>
+      <line x1="176" y1="27" x2="187" y2="27" stroke="#bbb" stroke-width="1.5" marker-end="url(#a2)"/>
+      <line x1="266" y1="27" x2="277" y2="27" stroke="#bbb" stroke-width="1.5" marker-end="url(#a2)"/>
+      <line x1="350" y1="27" x2="361" y2="27" stroke="#bbb" stroke-width="1.5" marker-end="url(#a2)"/>
+    </svg>
+    <p style="font-size:11px;color:#888;margin-top:6px">Тим-лид получает уже готовый PR</p>
+  </div>
+</div>
+
+<hr>
+
+<h2>Автоворота — что проверяется перед мёрджем</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Проверка</th>
+      <th>Как</th>
+      <th class="center" style="width:130px">Блокирует мёрдж?</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>pytest tests/ -v</td>
+      <td>Агент запускает локально перед коммитом</td>
+      <td class="center" style="color:#b01010;font-weight:600">Да — при любом FAIL</td>
+    </tr>
+    <tr>
+      <td>Файлы только в своём домене</td>
+      <td>Правило в agent.mdc: список запрещённых путей, агент не может их записать</td>
+      <td class="center" style="color:#b01010;font-weight:600">Да — при нарушении</td>
+    </tr>
+    <tr>
+      <td>Самооценка риска в задаче</td>
+      <td>Поле «Оценка риска» в task-файле: low/medium → авто, high → создать PR</td>
+      <td class="center" style="color:#b01010;font-weight:600">Да — при high</td>
+    </tr>
+    <tr class="row-danger">
+      <td><strong>Защищённые файлы не изменены</strong></td>
+      <td>.env, _user_has_paid, pipeline_config.json — запрет на запись в правилах агента</td>
+      <td class="center" style="color:#b01010;font-weight:600">Да — всегда</td>
+    </tr>
+    <tr>
+      <td>Нет конфликтов с dev</td>
+      <td>git merge --no-commit перед push</td>
+      <td class="center" style="color:#888">Нет — агент решает или эскалирует</td>
+    </tr>
+  </tbody>
+</table>
+
+<hr>
+
+<h2>Классификация риска — кто мёрджит</h2>
+<table>
+  <thead>
+    <tr>
+      <th style="width:80px">Риск</th>
+      <th>Примеры задач</th>
+      <th style="width:140px">Кто мёрджит</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr class="row-success">
+      <td><span class="risk-badge risk-low">low</span></td>
+      <td>Текст промпта, SMM-контент, копирайт лендинга, стиль ответов бота</td>
+      <td style="color:#1a7a3a;font-weight:600">Агент автономно</td>
+    </tr>
+    <tr class="row-warning">
+      <td><span class="risk-badge risk-med">medium</span></td>
+      <td>Новый агент в pipeline, новый блок лендинга, новый шаблон письма, новая команда бота</td>
+      <td style="color:#b35c00;font-weight:600">Агент (тесты обязательны)</td>
+    </tr>
+    <tr class="row-danger">
+      <td><span class="risk-badge risk-high">high</span></td>
+      <td>Изменение форматов JSON-контрактов, DB-миграция, кросс-домен, payment-логика, новый сервис</td>
+      <td style="color:#b01010;font-weight:600">PR → тим-лид</td>
+    </tr>
+  </tbody>
+</table>
+
+<hr>
+
+<h2>Разграничение файлов</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Директория / файлы</th>
+      <th class="center">Агент Даши</th>
+      <th class="center">Агент Лены</th>
+      <th class="center">Тим-лид</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>prompts/*.md, pipeline_config.json</td>
+      <td class="center write">write</td>
+      <td class="center dash">—</td>
+      <td class="center write">write</td>
+    </tr>
+    <tr>
+      <td>collab/tasks/</td>
+      <td class="center write">write</td>
+      <td class="center write">write</td>
+      <td class="center write">write</td>
+    </tr>
+    <tr>
+      <td>main.py, pipeline_utils.py</td>
+      <td class="center write">write</td>
+      <td class="center dash">—</td>
+      <td class="center write">write</td>
+    </tr>
+    <tr>
+      <td>landing/</td>
+      <td class="center dash">—</td>
+      <td class="center write">write</td>
+      <td class="center write">write</td>
+    </tr>
+    <tr>
+      <td>admin/templates/smm/, smm/</td>
+      <td class="center dash">—</td>
+      <td class="center write">write</td>
+      <td class="center write">write</td>
+    </tr>
+    <tr>
+      <td>tests/</td>
+      <td class="center write">write</td>
+      <td class="center dash">—</td>
+      <td class="center write">write</td>
+    </tr>
+    <tr class="row-danger">
+      <td><strong>.env, .cursor/rules/, _user_has_paid</strong></td>
+      <td class="center dash">—</td>
+      <td class="center dash">—</td>
+      <td class="center write">write</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout">
+  <div class="ct">Как это не ломается</div>
+  <div class="cb">
+    Защита не в том, что тим-лид всё смотрит — защита в том, что агент физически
+    не может записать в запрещённые файлы (правила агента) и не может смёрджить
+    при упавших тестах (ворота). Тим-лид нужен только там, где автоматика не даёт
+    ответа: архитектурные развилки и кросс-доменные задачи.
+  </div>
+</div>
+
+<p class="date">GLAVA — май 2026</p>
+
+</body>
+</html>
