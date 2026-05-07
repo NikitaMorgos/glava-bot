@@ -1026,6 +1026,95 @@ def _normalize_for_evidence(text: str) -> str:
     return re.sub(r"\s+", " ", (text or "").lower()).strip()
 
 
+# Стоп-слова для evidence-topic overlap: служебные/частотные русские слова,
+# которые не несут смысла эпизода. Без них «общими словами» считаются только
+# содержательные токены (имена, объекты, места, действия).
+_EVIDENCE_STOPWORDS = {
+    # союзы / частицы
+    "что", "как", "это", "так", "там", "тот", "этот", "тоже", "также",
+    "ещё", "уже", "когда", "если", "чтобы", "тогда", "хотя", "потому", "ведь",
+    "только", "очень", "более", "менее", "потом", "затем", "куда", "откуда",
+    "пока", "после", "перед", "теперь", "потому", "поэтому", "вместе",
+    # местоимения
+    "она", "его", "ему", "ей", "ним", "них", "которые", "которая", "которое",
+    "которые", "себя", "свою", "своё", "свой", "своих", "сама", "сам",
+    "одна", "один", "одно", "одни", "другой", "другая", "другое", "другие",
+    "каждый", "каждая", "всё", "все", "кто", "что-то", "кто-то", "ничего",
+    # глаголы общего действия
+    "был", "была", "было", "были", "есть", "стал", "стала", "стало", "стали",
+    "будет", "может", "можно", "нужно", "хочет", "сказал", "сказала",
+    "говорит", "сделал", "сделала", "пришёл", "пришла", "ушёл", "ушла",
+    "знает", "знал", "знала", "видел", "видела", "имел", "имела",
+    # частые предлоги/наречия которые нужно отфильтровать на токенах ≥4 символов
+    "сразу", "затем", "после", "потом", "тогда", "очень", "много", "мало",
+    "часто", "редко", "сразу", "вдруг", "никогда", "всегда", "иногда",
+    # обобщения тем (специально для семейных биографий)
+    "семья", "семьи", "семью", "родители", "родственники", "близкие",
+    "конфликт", "отношения", "разговор", "случай", "история", "эпизод",
+    "однажды", "ситуация", "момент",
+}
+
+
+def _topic_tokens(text: str, min_len: int = 4) -> set[str]:
+    """
+    Извлекает значимые токены для topic-overlap сравнения.
+    Lowercase, минимум `min_len` символов, не в стоп-словах.
+
+    Цель: оставить только сущностные слова (имена, объекты, места,
+    конкретные действия), отбросить служебные и общие.
+    """
+    import re
+    if not text:
+        return set()
+    # Разбиваем по любому non-letter символу (включая дефисы для составных слов)
+    tokens = re.findall(r"[а-яёa-z]+", text.lower())
+    return {t for t in tokens if len(t) >= min_len and t not in _EVIDENCE_STOPWORDS}
+
+
+# Минимальный overlap значимых токенов между evidence и удаляемым фрагментом.
+# Ниже — считаем что evidence описывает другой эпизод (не дубль того что удаляется).
+EVIDENCE_TOPIC_OVERLAP_MIN = 0.25  # 25% от меньшего из двух множеств
+
+
+def _evidence_topic_overlap(evidence_quote: str, what_is_written: str) -> dict:
+    """
+    Считает topic-overlap между evidence quote и удаляемым фрагментом.
+
+    Возвращает dict с:
+      evidence_tokens: set из evidence
+      written_tokens: set из what_is_written
+      shared: пересечение
+      overlap_ratio: |shared| / min(|evidence|, |written|)
+      passed: True если overlap >= EVIDENCE_TOPIC_OVERLAP_MIN
+    """
+    ev_tokens = _topic_tokens(evidence_quote)
+    wr_tokens = _topic_tokens(what_is_written)
+    shared = ev_tokens & wr_tokens
+
+    smaller = min(len(ev_tokens), len(wr_tokens))
+    if smaller == 0:
+        # Один из текстов пустой по значимым токенам — не можем сравнить
+        return {
+            "evidence_tokens_count": len(ev_tokens),
+            "written_tokens_count": len(wr_tokens),
+            "shared_count": 0,
+            "shared": [],
+            "overlap_ratio": None,
+            "passed": False,
+            "reason": "insufficient_tokens",
+        }
+
+    overlap_ratio = len(shared) / smaller
+    return {
+        "evidence_tokens_count": len(ev_tokens),
+        "written_tokens_count": len(wr_tokens),
+        "shared_count": len(shared),
+        "shared": sorted(shared)[:10],  # для диагностики, top-10
+        "overlap_ratio": round(overlap_ratio, 3),
+        "passed": overlap_ratio >= EVIDENCE_TOPIC_OVERLAP_MIN,
+    }
+
+
 def _chapter_content(book: dict, chapter_id: str) -> str:
     """Возвращает content главы по id или пустую строку."""
     for ch in book.get("chapters", []) or []:
@@ -1037,25 +1126,31 @@ def _chapter_content(book: dict, chapter_id: str) -> str:
 def _verify_evidence_in_book(
     err: dict,
     book_after: dict,
-) -> tuple[bool, str]:
+) -> tuple[bool, str, dict]:
     """
     Для error с legitimate_deletion=true — проверяет evidence_in_other_chapter
-    (если задано) против реального содержимого book_after.
+    (если задано) против реального содержимого book_after, и дополнительно
+    (волна 1.3.1) проверяет что evidence quote описывает ТОТ ЖЕ ЭПИЗОД,
+    не «общую тему» (через topic-overlap значимых токенов).
 
-    Возвращает (passed, reason):
-      passed=True — всё ок (либо evidence не нужен, либо цитата найдена)
-      passed=False — evidence указан но quote не найдена в указанной главе
+    Возвращает (passed, reason, topic_overlap):
+      passed=True — всё ок (либо evidence не нужен, либо все проверки прошли)
+      passed=False — evidence указан но какая-то проверка провалилась
+      topic_overlap: dict с метриками overlap (или {} если не считалось)
 
-    Логика:
-      - Если у error НЕ framing_distortion type → evidence не требуется (вариант A)
-      - Если framing_distortion + evidence отсутствует → fail
-      - Если framing_distortion + evidence есть → проверить quote в book_after
+    Проверки последовательно:
+      0. err.type != framing_distortion → evidence не нужен (variant A)
+      1. evidence не указан / quote < 30 символов → blocked_missing_evidence
+      2. evidence.chapter_id указывает на пустую главу → blocked
+      3. evidence.quote не найдена в book_after.chapter_id.content → blocked_phantom_evidence
+      4. topic-overlap между evidence.quote и err.what_is_written < EVIDENCE_TOPIC_OVERLAP_MIN
+         → blocked_evidence_topic_mismatch (волна 1.3.1)
     """
     err_type = err.get("type", "")
 
     # Только для cross-chapter (framing_distortion) требуется evidence
     if err_type != "framing_distortion":
-        return True, "non_cross_chapter_legitimate_deletion"
+        return True, "non_cross_chapter_legitimate_deletion", {}
 
     evidence = err.get("evidence_in_other_chapter") or {}
     ev_chapter = evidence.get("chapter_id", "")
@@ -1066,30 +1161,44 @@ def _verify_evidence_in_book(
             f"FC error {err.get('id')}: framing_distortion + legitimate_deletion=true "
             f"требует evidence_in_other_chapter (chapter_id + quote ≥30 символов). "
             f"Не указано — потенциальная галлюцинация cross-chapter дубля."
-        )
+        ), {}
 
     if len(ev_quote) < 30:
         return False, (
             f"FC error {err.get('id')}: evidence_in_other_chapter.quote слишком короткая "
             f"({len(ev_quote)} символов, требуется ≥30) — недостаточная верификация."
-        )
+        ), {}
 
     chapter_content = _chapter_content(book_after, ev_chapter)
     if not chapter_content:
         return False, (
             f"FC error {err.get('id')}: evidence ссылается на ch={ev_chapter}, "
             f"но эта глава пустая или отсутствует в book_after."
-        )
+        ), {}
 
     # Сравниваем нормализованно — допускаем минимальные изменения formatting'а после GW revision
-    if _normalize_for_evidence(ev_quote) in _normalize_for_evidence(chapter_content):
-        return True, "evidence_verified"
+    if _normalize_for_evidence(ev_quote) not in _normalize_for_evidence(chapter_content):
+        return False, (
+            f"FC error {err.get('id')}: evidence quote не найдена в book_after.{ev_chapter}.content. "
+            f"Возможная галлюцинация дубля или эпизод исчез из обеих глав. "
+            f"Quote (первые 80 симв): {ev_quote[:80]!r}"
+        ), {}
 
-    return False, (
-        f"FC error {err.get('id')}: evidence quote не найдена в book_after.{ev_chapter}.content. "
-        f"Возможная галлюцинация дубля или эпизод исчез из обеих глав. "
-        f"Quote (первые 80 симв): {ev_quote[:80]!r}"
-    )
+    # Волна 1.3.1: topic-overlap проверка — evidence quote должна описывать
+    # тот же эпизод что удаляется, не «общую тему».
+    what_is_written = err.get("what_is_written", "")
+    overlap = _evidence_topic_overlap(ev_quote, what_is_written)
+    if not overlap["passed"]:
+        return False, (
+            f"FC error {err.get('id')}: evidence quote семантически не покрывает "
+            f"удаляемый фрагмент (topic-overlap {overlap.get('overlap_ratio', 'N/A')} < "
+            f"{EVIDENCE_TOPIC_OVERLAP_MIN}). Общих значимых слов: "
+            f"{overlap['shared_count']} из мин({overlap['evidence_tokens_count']}, "
+            f"{overlap['written_tokens_count']}). Возможно FC галлюцинирует семантическое "
+            f"тождество разных эпизодов одной темы (см. v49 регрессия про огурцы vs счётчик)."
+        ), overlap
+
+    return True, "evidence_verified", overlap
 
 
 def validate_revision_volume(
@@ -1118,7 +1227,9 @@ def validate_revision_volume(
       - ok_within_threshold              — ratio >= min_ratio (нормальный revision)
       - ok_with_legitimate_deletion      — ratio < min_ratio + все evidence verified
       - blocked_unauthorized_deletion    — ratio < min_ratio + нет legitimate_deletion
-      - blocked_phantom_evidence         — есть legitimate, но evidence не подтверждён в book_after
+      - blocked_phantom_evidence         — есть legitimate, но evidence не подтверждён
+                                            в book_after или topic-overlap слишком мал
+                                            (волна 1.3.1: семантическое тождество ≠ формальное)
     """
     chars_before = _book_total_chars(book_before)
     chars_after = _book_total_chars(book_after)
@@ -1158,6 +1269,34 @@ def validate_revision_volume(
         "evidence_failures": [],
     }
 
+    # Шаг 1 (волна 1.3.1): evidence-check ВСЕГДА выполняется при наличии
+    # legitimate_deletion=true, независимо от volume ratio. Это закрывает
+    # пробел v49: маленькое удаление (300 chars / 2.3%) обходило evidence
+    # проверку через ratio >= 0.95 → ok_within_threshold.
+    if fc_report:
+        for err in fc_report.get("errors", []) or []:
+            if err.get("legitimate_deletion") is True:
+                ev_passed, ev_reason, topic_overlap = _verify_evidence_in_book(err, book_after)
+                if not ev_passed:
+                    details["evidence_failures"].append({
+                        "error_id": err.get("id"),
+                        "reason": ev_reason,
+                        "topic_overlap": topic_overlap,
+                    })
+
+    if details["evidence_failures"]:
+        details["verdict"] = "blocked_phantom_evidence"
+        details["reason"] = (
+            f"{len(details['evidence_failures'])} legitimate_deletion-flag(s) не "
+            f"подтверждены: либо evidence quote отсутствует в book_after, либо "
+            f"topic-overlap с удаляемым фрагментом ниже {EVIDENCE_TOPIC_OVERLAP_MIN}. "
+            f"FC v2.12 требует не только наличие quote, но и совпадение по "
+            f"конкретному эпизоду (волна 1.3.1: защита от семантического "
+            f"тождества разных эпизодов одной темы, v49 регрессия)."
+        )
+        return False, details
+
+    # Шаг 2: volume threshold check (как было)
     if ratio >= min_ratio:
         details["verdict"] = "ok_within_threshold"
         return True, details
@@ -1172,28 +1311,7 @@ def validate_revision_volume(
         )
         return False, details
 
-    # Есть legitimate_deletions — проверяем evidence для каждого framing_distortion
-    if fc_report:
-        for err in fc_report.get("errors", []) or []:
-            if err.get("legitimate_deletion") is True:
-                ev_passed, ev_reason = _verify_evidence_in_book(err, book_after)
-                if not ev_passed:
-                    details["evidence_failures"].append({
-                        "error_id": err.get("id"),
-                        "reason": ev_reason,
-                    })
-
-    if details["evidence_failures"]:
-        details["verdict"] = "blocked_phantom_evidence"
-        details["reason"] = (
-            f"Объём после revision упал на {details['drop_chars']} символов, "
-            f"но {len(details['evidence_failures'])} legitimate_deletion-flag(s) "
-            f"не подтверждены evidence в book_after. FC v2.10 требует "
-            f"дословную цитату из другой главы для cross-chapter удаления "
-            f"(защита от галлюцинаций дубля, v47 регрессия #3 закрытие)."
-        )
-        return False, details
-
+    # Шаг 3: ratio < min_ratio + есть legitimate_deletions + evidence все verified
     details["verdict"] = "ok_with_legitimate_deletion"
     return True, details
 
