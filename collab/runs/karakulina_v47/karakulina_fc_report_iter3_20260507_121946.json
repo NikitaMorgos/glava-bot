@@ -1,0 +1,66 @@
+{
+  "project_id": "karakulina_stage2_test",
+  "iteration": 3,
+  "verdict": "pass",
+  "errors": [],
+  "warnings": [
+    {
+      "id": "warn_001",
+      "type": "possible_omission",
+      "chapter_id": "ch_01",
+      "description": "В bio_data.awards отсутствует медаль 20 лет Победы в ВОВ (1965), хотя она упомянута в автобиографии",
+      "recommendation": "Рассмотреть добавление медали 20 лет Победы в ВОВ в список наград"
+    },
+    {
+      "id": "warn_002",
+      "type": "style_concern",
+      "chapter_id": "ch_02",
+      "description": "В абзаце p_02_024 используется обобщающая формулировка без прямого источника",
+      "recommendation": "Фраза 'сохранившей до конца преданность своим принципам' является авторской оценкой, но допустима в заключительном абзаце"
+    }
+  ],
+  "completeness_check": {
+    "total_facts_in_map": 156,
+    "facts_referenced_in_text": 89,
+    "facts_verified_ok": 89,
+    "facts_with_errors": 0,
+    "facts_missing_from_text": [
+      {
+        "fact_id": "event_auto_013",
+        "fact_description": "Конфликты с внуком Никитой по поводу еды и посуды",
+        "was_in_facts_omitted": true,
+        "omission_justified": true,
+        "recommendation": "Допустимо пропустить - уже отражено в общей характеристике отношений с внуками"
+      },
+      {
+        "fact_id": "event_auto_016",
+        "fact_description": "История с огурцами и чемоданом из Молдавии",
+        "was_in_facts_omitted": true,
+        "omission_justified": true,
+        "recommendation": "Допустимо пропустить - дублирует конфликт с зятем из главы 2"
+      }
+    ]
+  },
+  "regression_check": {
+    "performed": true,
+    "chapters_checked": [
+      "ch_02",
+      "ch_03"
+    ],
+    "issues_found": []
+  },
+  "summary": {
+    "critical_errors": 0,
+    "major_errors": 0,
+    "minor_errors": 0,
+    "warnings_count": 2,
+    "overall_assessment": "Текст книги соответствует источникам. Все критические ошибки из предыдущих итераций исправлены. Фактическая точность высокая, галлюцинации устранены, структура ch_01 корректна."
+  },
+  "stats": {
+    "facts_checked": 89,
+    "facts_passed": 89,
+    "facts_failed": 0,
+    "coverage_percent": 57,
+    "needs_verification_flagged": 0
+  }
+}

@@ -1,0 +1,184 @@
+{
+  "project_id": "karakulina_stage2_test",
+  "iteration": 1,
+  "verdict": "fail",
+  "errors": [
+    {
+      "id": "err_001",
+      "type": "distortion",
+      "severity": "major",
+      "chapter_id": "ch_02",
+      "location": "Глава 2, абзац p_02_002: «Тринадцатилетняя Валентина попала в детский дом»",
+      "what_is_written": "Тринадцатилетняя Валентина попала в детский дом",
+      "what_should_be": "Валентина попала в детский дом в 1933 году, когда ей было 12-13 лет (родилась в декабре 1920, голод в 1933)",
+      "source": {
+        "type": "fact_map",
+        "reference": "event_001 (birth_year: 1920) + event_002 (1933 год голода)"
+      },
+      "fix_instruction": "Заменить «тринадцатилетняя» на «двенадцатилетняя» или «тринадцатилетняя» (в зависимости от того, до или после декабря 1933 года произошло событие). Если точная дата неизвестна, использовать «двенадцати-тринадцатилетняя»",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_002",
+      "type": "distortion",
+      "severity": "major",
+      "chapter_id": "ch_02",
+      "location": "Глава 2, абзац p_02_021: «оставшись вдовой в 58 лет»",
+      "what_is_written": "оставшись вдовой в 58 лет",
+      "what_should_be": "оставшись вдовой в 57-58 лет",
+      "source": {
+        "type": "fact_map",
+        "reference": "event_001 (birth_year: 1920) + event_025 (смерть мужа в 1978 году)"
+      },
+      "fix_instruction": "Исправить возраст: 1978 - 1920 = 58 лет, но поскольку день рождения 17 декабря, то до декабря 1978 года ей было 57 лет. Использовать «в 57 лет» или «в возрасте 57-58 лет»",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_003",
+      "type": "distortion",
+      "severity": "major",
+      "chapter_id": "ch_02",
+      "location": "Глава 2, абзац p_02_022: «Остаться одной в двухкомнатной квартире в 76 лет»",
+      "what_is_written": "Остаться одной в двухкомнатной квартире в 76 лет",
+      "what_should_be": "Остаться одной в двухкомнатной квартире в 75-76 лет",
+      "source": {
+        "type": "fact_map",
+        "reference": "event_001 (birth_year: 1920) + event_027 (1996 год переезда дочери)"
+      },
+      "fix_instruction": "Исправить возраст: 1996 - 1920 = 76 лет, но до декабря 1996 года ей было 75 лет. Использовать «в 75 лет» или убрать конкретный возраст",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_004",
+      "type": "framing_distortion",
+      "severity": "major",
+      "chapter_id": "ch_04",
+      "location": "Глава 4, весь раздел «Огурцы в чешском чемодане»",
+      "what_is_written": "Эпизод с огурцами в чемодане рассказан как отдельная история в главе «Интересные факты»",
+      "what_should_be": "Этот эпизод уже упомянут в ch_02 как часть конфликтов с зятем. Дублирование одного эпизода в двух главах нарушает правило «один эпизод — одна глава»",
+      "source": {
+        "type": "fact_map",
+        "reference": "event_auto_016 - один эпизод не должен повторяться в разных главах"
+      },
+      "fix_instruction": "Удалить раздел «Огурцы в чешском чемодане» из ch_04, так как конфликт с зятем уже описан в ch_02. Заменить другим эпизодом из fact_map или объединить с разделом о конфликте с зятем",
+      "legitimate_deletion": true
+    },
+    {
+      "id": "err_005",
+      "type": "omission",
+      "severity": "critical",
+      "chapter_id": "ch_01",
+      "location": "ch_01.bio_data.family",
+      "what_is_written": "В bio_data.family указано 15 родственников",
+      "what_should_be": "В fact_map.persons указано 18 родственников с relation_to_subject",
+      "source": {
+        "type": "fact_map",
+        "reference": "Пропущены: person_auto_004 (Римма), person_auto_005 (Зина), person_auto_006 (Толя), person_auto_007 (Коля), person_auto_008 (Витя)"
+      },
+      "fix_instruction": "Добавить в bio_data.family недостающих родственников: племянницу Римму, племянницу Зину, племянников Толю, Колю и Витю с соответствующими описаниями из fact_map",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_006",
+      "type": "omission",
+      "severity": "major",
+      "chapter_id": "ch_01",
+      "location": "ch_01.bio_data.awards",
+      "what_is_written": "В awards указано 8 наград",
+      "what_should_be": "В fact_map.timeline есть дополнительные награды, которые не включены",
+      "source": {
+        "type": "fact_map",
+        "reference": "Отсутствует медаль 50 лет Вооружённых Сил СССР (1968) из автобиографии"
+      },
+      "fix_instruction": "Проверить полноту списка наград в bio_data.awards и добавить все награды из fact_map.timeline и автобиографии героя",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_007",
+      "type": "hallucination",
+      "severity": "major",
+      "chapter_id": "ch_02",
+      "location": "Глава 2, абзац p_02_007: описание медалей и орденов",
+      "what_is_written": "Медаль «За боевые заслуги» получали за конкретные подвиги — спасение раненых под огнём, самоотверженную работу в госпитале, храбрость в бою. А в 1945 году — орденом Красная Звезда. Орден Красная Звезда в 1945 году — это признание того, что человек прошёл войну до конца, от первых дней до Победы",
+      "what_should_be": "Конкретные критерии награждения и их интерпретация не указаны в источниках",
+      "source": {
+        "type": "fact_map",
+        "reference": "event_008, event_009 - указаны только факты получения наград, без детализации критериев"
+      },
+      "fix_instruction": "Убрать детальные объяснения критериев награждения. Оставить только факты: «За это в 1943 году её наградили медалью за боевые заслуги, а в 1945 году — орденом Красная Звезда»",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_008",
+      "type": "hallucination",
+      "severity": "minor",
+      "chapter_id": "ch_02",
+      "location": "Глава 2, исторические комментарии",
+      "what_is_written": "Множественные исторические комментарии о времени: «1920 год — время, когда в украинских сёлах ещё жили по старинке», «1940 год — последний мирный год», «Венгрия конца 1950-х — союзная страна, где советские семьи жили в относительном достатке, но под присмотром спецслужб»",
+      "what_should_be": "Исторический контекст должен быть в historical_notes, а не в основном тексте",
+      "source": {
+        "type": "fact_map",
+        "reference": "Исторические справки должны быть структурированы отдельно"
+      },
+      "fix_instruction": "Перенести исторические комментарии в historical_notes или убрать их из основного текста, оставив только биографические факты",
+      "legitimate_deletion": false
+    }
+  ],
+  "warnings": [
+    {
+      "id": "warn_001",
+      "type": "possible_omission",
+      "chapter_id": "ch_02",
+      "description": "В тексте не упомянута работа в санэпидемстанции в Старобельске после войны",
+      "recommendation": "Рассмотреть включение периода работы в санэпидемстанции между демобилизацией и переездом в Химинститут"
+    },
+    {
+      "id": "warn_002",
+      "type": "style_concern",
+      "chapter_id": "ch_02",
+      "description": "Много исторических отступлений в основном тексте",
+      "recommendation": "Рассмотреть перенос части исторического контекста в historical_notes для лучшей структуры"
+    }
+  ],
+  "completeness_check": {
+    "total_facts_in_map": 156,
+    "facts_referenced_in_text": 89,
+    "facts_verified_ok": 81,
+    "facts_with_errors": 8,
+    "facts_missing_from_text": [
+      {
+        "fact_id": "person_013",
+        "fact_description": "Врач Нинвана Полсачева - авторитет для Валентины",
+        "was_in_facts_omitted": true,
+        "omission_justified": true,
+        "recommendation": "Допустимо пропустить - второстепенный персонаж"
+      },
+      {
+        "fact_id": "event_auto_013",
+        "fact_description": "Конфликты с внуком по поводу еды",
+        "was_in_facts_omitted": true,
+        "omission_justified": true,
+        "recommendation": "Включено в общую характеристику отношений с внуками"
+      }
+    ]
+  },
+  "regression_check": {
+    "performed": false,
+    "chapters_checked": [],
+    "issues_found": []
+  },
+  "summary": {
+    "critical_errors": 1,
+    "major_errors": 6,
+    "minor_errors": 1,
+    "warnings_count": 2,
+    "overall_assessment": "Текст содержит критические ошибки в структуре ch_01 и несколько значимых фактических искажений в датах и возрастах. Основная проблема - дублирование эпизода между главами и неполнота bio_data. Требуется доработка."
+  },
+  "stats": {
+    "facts_checked": 89,
+    "facts_passed": 81,
+    "facts_failed": 8,
+    "coverage_percent": 57,
+    "needs_verification_flagged": 0
+  }
+}

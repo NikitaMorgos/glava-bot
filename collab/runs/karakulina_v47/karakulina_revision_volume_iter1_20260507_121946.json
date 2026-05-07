@@ -1,0 +1,17 @@
+{
+  "chars_before": 17180,
+  "chars_after": 14944,
+  "ratio": 0.8698,
+  "threshold": 0.95,
+  "drop_chars": 2236,
+  "legitimate_deletions_count": 1,
+  "legitimate_deletions": [
+    {
+      "id": "err_004",
+      "chapter_id": "ch_04",
+      "type": "framing_distortion",
+      "fix_instruction": "Удалить раздел «Огурцы в чешском чемодане» из ch_04, так как конфликт с зятем уже описан в ch_02. Заменить другим эпизод"
+    }
+  ],
+  "verdict": "ok_with_legitimate_deletion"
+}
