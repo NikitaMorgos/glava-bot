@@ -286,8 +286,12 @@ def test_regression_3_v43_cucumbers_episode_deletion_blocked():
 # Волна 1.2.3: evidence-required для cross-chapter framing_distortion
 # ──────────────────────────────────────────────────────────────────
 
-def _err_cross_chapter(err_id: str, evidence: dict | None = None) -> dict:
-    """FC ошибка cross-chapter дубля с (опциональным) evidence."""
+def _err_cross_chapter(
+    err_id: str,
+    evidence: dict | None = None,
+    what_is_written: str = "",
+) -> dict:
+    """FC ошибка cross-chapter дубля с (опциональным) evidence и what_is_written."""
     err = _err(
         err_id,
         type="framing_distortion",
@@ -298,16 +302,34 @@ def _err_cross_chapter(err_id: str, evidence: dict | None = None) -> dict:
     )
     if evidence is not None:
         err["evidence_in_other_chapter"] = evidence
+    if what_is_written:
+        err["what_is_written"] = what_is_written
     return err
 
 
 def test_cross_chapter_with_valid_evidence_passes():
-    """Cross-chapter дубль + правильное evidence (quote есть в ch_02) → passed."""
-    quote = "В 1985 году Валентина начала возить огурцы в Молдавию"
-    before = _book({"ch_02": quote + ". " + "А" * 5000, "ch_04": "Б" * 2000})
-    after = _book({"ch_02": quote + ". " + "А" * 5000, "ch_04": ""})  # ch_04 опустошён
+    """
+    Cross-chapter дубль с валидным evidence И ВЫСОКИМ topic-overlap → passed.
+    Реалистичный кейс: тот же эпизод в двух главах, quote и what_is_written
+    разделяют ключевые сущности (огурцы/Молдавия/чемодан). Большой drop
+    (>5%) чтобы verdict был ok_with_legitimate_deletion, а не ok_within_threshold.
+    """
+    quote = "В 1985 году Валентина начала возить огурцы из Молдавии в чемодане"
+    what_written = "Эпизод об огурцах из Молдавии в чешском чемодане Валентины Маргось"
+    before = _book({
+        "ch_02": quote + ". " + "А" * 1000,
+        "ch_04": what_written + ". " + "А" * 1000,
+    })
+    after = _book({
+        "ch_02": quote + ". " + "А" * 1000,  # без изменений
+        "ch_04": "",  # ch_04 опустошён, drop ~50%
+    })
     fc = _fc_report([
-        _err_cross_chapter("err_dup", evidence={"chapter_id": "ch_02", "quote": quote}),
+        _err_cross_chapter(
+            "err_dup",
+            evidence={"chapter_id": "ch_02", "quote": quote},
+            what_is_written=what_written,
+        ),
     ])
 
     passed, details = validate_revision_volume(before, after, fc_report=fc)
@@ -415,6 +437,184 @@ def test_hallucination_legitimate_deletion_no_evidence_required():
     assert passed is True, "Hallucination не требует evidence — это вариант A"
     assert details["verdict"] == "ok_with_legitimate_deletion"
     assert details["evidence_failures"] == []
+
+
+# ──────────────────────────────────────────────────────────────────
+# Волна 1.3.1: topic-overlap check для evidence_in_other_chapter
+# ──────────────────────────────────────────────────────────────────
+
+def test_v49_regression_evidence_topic_mismatch():
+    """
+    Точный кейс v49 регрессии: FC v2.11 пометил эпизод об огурцах в ch_04
+    как cross-chapter дубль, evidence quote из ch_02 — реальная цитата
+    про «замечание про счётчик». Quote ЕСТЬ в ch_02 (формальная проверка
+    проходит), но описывает ДРУГОЙ ЭПИЗОД (счётчик ≠ огурцы). Это разные
+    инциденты в общей теме «конфликт с зятем».
+
+    Старый validate_revision_volume пропустил с ok_with_legitimate_deletion.
+    Новый (волна 1.3.1) должен зафейлить с blocked_evidence_topic_mismatch
+    через topic-overlap check.
+    """
+    # Реальный quote из v49 — эпизод о замечании про счётчик
+    counter_quote = (
+        "Однажды Валентина сделала ему замечание, когда он работал со счётчиком, "
+        "сказав: «Папа так не делал никогда». Это очень не понравилось зятю."
+    )
+    # Удаляемый фрагмент в ch_04 — эпизод об огурцах
+    cucumber_episode = (
+        "Зять Владимир Маргось привёз из Молдавии чемодан огурцов с её огорода. "
+        "Огурцы оказались испорченными в дороге, что вызвало конфликт."
+    )
+
+    before = _book({
+        "ch_02": "Хроника жизни. " * 100 + counter_quote + " " * 200,
+        "ch_04": "Интересные факты. " * 50 + cucumber_episode,
+    })
+    after = _book({
+        "ch_02": "Хроника жизни. " * 100 + counter_quote + " " * 200,
+        "ch_04": "Интересные факты. " * 50,  # эпизод об огурцах удалён
+    })
+
+    fc = _fc_report([
+        _err_cross_chapter(
+            "err_v49_topic_mismatch",
+            evidence={"chapter_id": "ch_02", "quote": counter_quote},
+            what_is_written=cucumber_episode,
+        ),
+    ])
+
+    passed, details = validate_revision_volume(before, after, fc_report=fc)
+
+    # Должно быть заблокировано — overlap слишком мал
+    assert passed is False, "v49 кейс должен блокироваться topic-overlap проверкой"
+    assert details["verdict"] == "blocked_phantom_evidence"
+    assert len(details["evidence_failures"]) == 1
+    failure = details["evidence_failures"][0]
+    assert "topic-overlap" in failure["reason"].lower() or "семантически не покрывает" in failure["reason"]
+    # topic_overlap метрика должна быть в details для диагностики
+    assert "topic_overlap" in failure
+    assert failure["topic_overlap"]["overlap_ratio"] is not None
+    assert failure["topic_overlap"]["overlap_ratio"] < 0.25
+
+
+def test_high_topic_overlap_real_cross_chapter_dup_passes():
+    """
+    Реальный cross-chapter дубль: тот же эпизод об огурцах рассказан
+    в двух главах с большим набором общих сущностей. Topic-overlap
+    высокий → удаление одной копии легитимно, passed=True.
+
+    Verdict зависит от размера drop: >5% → ok_with_legitimate_deletion,
+    <5% → ok_within_threshold. Оба случая — passed=True (проверяем оба).
+    """
+    cucumber_in_ch02 = (
+        "В 1985 году Валентина возила огурцы в Молдавию. "
+        "Зять Владимир Маргось помог с чемоданом для огурцов."
+    )
+    cucumber_in_ch04 = (
+        "Эпизод о Молдавии: Валентина возила чемодан огурцов в Молдавию, "
+        "помогал зять Маргось."
+    )
+
+    # Большой drop — будет ok_with_legitimate_deletion
+    before = _book({
+        "ch_02": cucumber_in_ch02 + " " + "А" * 500,
+        "ch_04": cucumber_in_ch04 + " " + "Б" * 500,
+    })
+    after = _book({
+        "ch_02": cucumber_in_ch02 + " " + "А" * 500,
+        "ch_04": "Б" * 500,  # cucumber удалён из ch_04, drop >5%
+    })
+
+    fc = _fc_report([
+        _err_cross_chapter(
+            "err_real_dup",
+            evidence={"chapter_id": "ch_02", "quote": cucumber_in_ch02},
+            what_is_written=cucumber_in_ch04,
+        ),
+    ])
+
+    passed, details = validate_revision_volume(before, after, fc_report=fc)
+
+    assert passed is True, f"Реальный дубль с высоким overlap должен пройти, details: {details}"
+    # Допустимы оба verdict'а — главное что не blocked_*
+    assert not details["verdict"].startswith("blocked_"), f"Verdict: {details['verdict']}"
+    assert details["evidence_failures"] == []
+
+
+def test_evidence_quote_only_stopwords_blocks():
+    """
+    Edge case: evidence quote состоит только из служебных слов
+    (стоп-слова, общие глаголы). Содержательных токенов 0 → overlap=0 →
+    blocked. Защита от FC который шлёт «как сказала она однажды это» в
+    качестве evidence.
+    """
+    # Quote из стоп-слов и коротких слов
+    stopword_quote = "Однажды она сказала это так что было очень понятно всем нам тогда"
+    real_episode = "Эпизод про огурцы в Молдавии и чемодан Маргося"
+
+    before = _book({
+        "ch_02": stopword_quote + " " + "А" * 5000,
+        "ch_04": real_episode + " " + "Б" * 2000,
+    })
+    after = _book({
+        "ch_02": stopword_quote + " " + "А" * 5000,
+        "ch_04": "Б" * 2000,
+    })
+
+    fc = _fc_report([
+        _err_cross_chapter(
+            "err_stopwords",
+            evidence={"chapter_id": "ch_02", "quote": stopword_quote},
+            what_is_written=real_episode,
+        ),
+    ])
+
+    passed, details = validate_revision_volume(before, after, fc_report=fc)
+
+    assert passed is False
+    assert details["verdict"] == "blocked_phantom_evidence"
+
+
+def test_evidence_general_topic_keyword_overlap_insufficient():
+    """
+    Граничный случай: evidence и удаляемый фрагмент разделяют ОДНО общее
+    слово темы («зять»), но конкретные сущности эпизодов не совпадают.
+    Overlap должен быть ниже 25% порога → blocked.
+
+    Это прямое разделение «общая тема» vs «конкретный эпизод» из v49.
+    """
+    common_topic_quote = (
+        "Замечание про счётчик зятю Владимиру вызвало конфликт между ними"
+    )  # тема: «конфликт с зятем», конкретно — счётчик
+    episode_about_cucumbers = (
+        "Огурцы из Молдавии в чешском чемодане зять привёз с огорода"
+    )  # тема: «конфликт с зятем», конкретно — огурцы
+
+    before = _book({
+        "ch_02": common_topic_quote + " " + "А" * 3000,
+        "ch_04": episode_about_cucumbers + " " + "Б" * 1500,
+    })
+    after = _book({
+        "ch_02": common_topic_quote + " " + "А" * 3000,
+        "ch_04": "Б" * 1500,
+    })
+
+    fc = _fc_report([
+        _err_cross_chapter(
+            "err_general_topic",
+            evidence={"chapter_id": "ch_02", "quote": common_topic_quote},
+            what_is_written=episode_about_cucumbers,
+        ),
+    ])
+
+    passed, details = validate_revision_volume(before, after, fc_report=fc)
+
+    assert passed is False, "Общая тема (зять) ≠ конкретный эпизод — должно блокироваться"
+    assert details["verdict"] == "blocked_phantom_evidence"
+    failure = details["evidence_failures"][0]
+    # топик-overlap должен быть посчитан и < порога
+    assert failure["topic_overlap"]["overlap_ratio"] is not None
+    assert failure["topic_overlap"]["overlap_ratio"] < 0.25
 
 
 def test_v47_regression_phantom_cross_chapter_dup():
