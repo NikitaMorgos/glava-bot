@@ -67,8 +67,8 @@
     "model": "claude-sonnet-4-20250514",
     "max_tokens": 32000,
     "temperature": 0.4,
-    "prompt_file": "03_ghostwriter_v2.15.md",
-    "_notes": "v2.15 (2026-05-06, волна 1.2.2): ANTI-DELETION при revision — корректируй факт, не удаляй эпизод. Тип legitimate_deletion: GW удаляет только при явном FC-сигнале. Защита от регрессии #3 v43. v2.14 base: СТОП-ФРАЗЫ, bio_data.awards 4 категории, правило «только name»."
+    "prompt_file": "03_ghostwriter_v2.16.md",
+    "_notes": "v2.16 (2026-05-08, волна 1.3.3): REVISION SCOPE GUARDRAIL вынесен в АБСОЛЮТНЫЕ ЗАПРЕТЫ (запрет 0). v52: GW v2.15 проигнорировал SCOPE LOCK (стр. 1383 v2.15) — снёс ch_03/ch_04/epilogue при FC errors в ch_01/ch_02. Параллельно: code-level enforcement — `pipeline_utils.merge_revision_out_of_scope_chapters` программно восстанавливает out-of-scope главы из snapshot. v2.15 base (волна 1.2.2): ANTI-DELETION при revision. v2.14: СТОП-ФРАЗЫ, bio_data.awards."
   },
 
   "fact_checker": {

@@ -50,6 +50,7 @@ from pipeline_utils import (
     print_fact_check_report,
     save_run_manifest,
     validate_revision_volume,
+    merge_revision_out_of_scope_chapters,
 )
 from pipeline_quality_gates import (
     run_stage2_text_gates, run_stage2_text_gates_variant_b,
@@ -279,13 +280,45 @@ def main():
             )
             book_path = out_dir / f"karakulina_book_draft_v{iteration + 2}_{ts}.json"
             book_path.write_text(json.dumps(book_draft, ensure_ascii=False, indent=2), encoding="utf-8")
-            print(f"[SAVED] Черновик v{iteration + 2} (после правок): {book_path.name}")
+            print(f"[SAVED] Черновик v{iteration + 2} (после правок, до scope-merge): {book_path.name}")
             print_book_stats(book_draft)
+
+            # ── Scope-merge guardrail (волна 1.3.3) ───────────────────────────
+            # Защита от GW out-of-scope modification при revision (v52: FC
+            # errors в ch_01/ch_02, GW снёс ch_03/ch_04/epilogue). GW v2.15
+            # промпт SCOPE LOCK правило проигнорировал; merge на коде —
+            # детерминированная защита. Главы вне affected_chapters физически
+            # копируются из book_before snapshot.
+            book_draft, merge_details = merge_revision_out_of_scope_chapters(
+                book_before_revision,
+                book_draft,
+                affected_chapters=revision_scope.get("affected_chapters"),
+            )
+            merge_path = out_dir / f"karakulina_scope_merge_iter{iteration}_{ts}.json"
+            merge_path.write_text(
+                json.dumps(merge_details, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
+            restored_count = len(merge_details.get("chapters_restored", []))
+            if restored_count > 0:
+                print(
+                    f"[SCOPE_MERGE] ⚠️  GW изменил {restored_count} глав вне scope — "
+                    f"восстановлены из snapshot ({merge_details['chars_restored']} симв). "
+                    f"См. {merge_path.name}"
+                )
+            else:
+                print(f"[SCOPE_MERGE] ✅ GW работал в scope (affected={merge_details.get('affected_chapters')}). "
+                      f"{merge_path.name}")
+            # Сохраняем merged-черновик для аудита
+            merged_book_path = out_dir / f"karakulina_book_draft_v{iteration + 2}_merged_{ts}.json"
+            merged_book_path.write_text(
+                json.dumps(book_draft, ensure_ascii=False, indent=2), encoding="utf-8"
+            )
 
             # ── Post-validator anti-deletion (волна 1.2.2) ────────────────────
             # Защита от регрессии #3 v43: GW «исправил» через удаление эпизода
-            # вместо корректировки факта. Если объём упал > 5% и FC не пометил
-            # legitimate_deletion — блокируем прогон.
+            # вместо корректировки факта. После scope-merge остаётся как
+            # secondary защита — ловит in-scope deletion (внутри affected_chapters).
             rv_passed, rv_details = validate_revision_volume(
                 book_before_revision, book_draft, fc_report=fc_report
             )

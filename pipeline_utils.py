@@ -1244,6 +1244,239 @@ def _verify_evidence_in_book(
     return True, "evidence_verified", overlap
 
 
+def merge_revision_out_of_scope_chapters(
+    book_before: dict,
+    book_after: dict,
+    affected_chapters: list[str] | None,
+) -> tuple[dict, dict]:
+    """
+    Защита волны 1.3.3: GW out-of-scope guardrail при revision.
+
+    Гарантирует архитектурно (не промптом), что Ghostwriter при revision не
+    меняет главы вне revision_scope.affected_chapters. Главы вне scope
+    физически копируются из book_before snapshot, независимо от того, что
+    вернул GW.
+
+    История класса (v52, 2026-05-08):
+      FC v2.13 нашёл 8 ошибок в ch_01/ch_02 (`legitimate_deletion=False` —
+      требуется fact_correction). GW v2.15 при revision вернул книгу с
+      пустыми ch_03/ch_04/epilogue (52.8% drop). GW v2.15 промпт явно
+      содержит SCOPE LOCK правило (строки 1383-1385 v2.15) — модель
+      его проигнорировала. validate_revision_volume поймал на
+      blocked_unauthorized_deletion, прогон остановился с откатом.
+
+      Этот merge переводит защиту scope с промпт-уровня (ненадёжный) на
+      код-уровень (детерминированный). После merge validate_revision_volume
+      остаётся как secondary защита (если merge сам сломается).
+
+    Алгоритм:
+      1. chapters в affected_chapters: берутся из book_after (результат GW)
+      2. chapters вне affected_chapters: восстанавливаются из book_before
+      3. callouts/historical_notes с chapter_id вне scope:
+         восстанавливаются из book_before (если в book_after отсутствуют
+         или изменены — восстанавливаем по chapter_id принадлежности)
+      4. callouts/historical_notes БЕЗ chapter_id (глобальные): pass-through
+         из book_after
+      5. Top-level fields (title, и т.д.) — pass-through из book_after
+
+    Edge cases:
+      - affected_chapters=None или []: ничего не модифицируется (нет scope —
+        нет защиты, GW работал во всех главах). Возвращает book_after as-is
+        с пометкой no_scope_provided.
+      - Глава отсутствует в book_after, но есть в book_before: восстанавливается.
+      - Новая глава в book_after, которой нет в book_before: добавляется
+        ТОЛЬКО если её id в affected_chapters (иначе считается out-of-scope
+        новотворчеством GW и отбрасывается).
+
+    Args:
+      book_before: snapshot книги до GW revision
+      book_after: результат GW revision
+      affected_chapters: список chapter_id из revision_scope.affected_chapters
+
+    Returns:
+      (merged_book, details):
+        merged_book: dict — результат scope-aware merge
+        details: dict — диагностика модификаций
+    """
+    import copy
+
+    if not affected_chapters:
+        return copy.deepcopy(book_after), {
+            "scope_enforcement": "skipped",
+            "reason": "no_scope_provided",
+            "affected_chapters": affected_chapters,
+            "chapters_restored": [],
+            "callouts_restored": 0,
+            "historical_notes_restored": 0,
+            "chars_restored": 0,
+        }
+
+    affected_set = set(affected_chapters)
+    chars_before_total = _book_total_chars(book_before)
+    chars_after_total = _book_total_chars(book_after)
+
+    chapters_before_by_id = {
+        ch.get("id"): ch for ch in (book_before.get("chapters") or []) if ch.get("id")
+    }
+    chapters_after_by_id = {
+        ch.get("id"): ch for ch in (book_after.get("chapters") or []) if ch.get("id")
+    }
+
+    merged = copy.deepcopy(book_after)
+
+    chapters_restored = []
+    new_out_of_scope_dropped = []
+
+    # Сохраняем порядок глав из book_before. Если в book_after появились
+    # in-scope главы которых не было в before — добавляем в конец.
+    merged_chapters = []
+    seen_ids = set()
+    for ch_before in (book_before.get("chapters") or []):
+        chid = ch_before.get("id")
+        if not chid:
+            continue
+        seen_ids.add(chid)
+        if chid in affected_set:
+            ch_after = chapters_after_by_id.get(chid)
+            if ch_after is not None:
+                merged_chapters.append(copy.deepcopy(ch_after))
+            else:
+                # GW потерял главу из scope — восстанавливаем из before
+                merged_chapters.append(copy.deepcopy(ch_before))
+                chapters_restored.append({
+                    "chapter_id": chid,
+                    "reason": "in_scope_but_missing_in_after",
+                    "chars_restored": len(ch_before.get("content") or ""),
+                })
+        else:
+            ch_after = chapters_after_by_id.get(chid)
+            chars_in_before = len(ch_before.get("content") or "")
+            chars_in_after = len((ch_after or {}).get("content") or "")
+            if ch_after is None or chars_in_after != chars_in_before or \
+                    (ch_after.get("content") or "") != (ch_before.get("content") or ""):
+                # Out-of-scope глава была изменена/удалена — восстанавливаем
+                chapters_restored.append({
+                    "chapter_id": chid,
+                    "reason": "out_of_scope_modified",
+                    "chars_before": chars_in_before,
+                    "chars_after_gw": chars_in_after,
+                    "chars_restored": chars_in_before,
+                })
+            merged_chapters.append(copy.deepcopy(ch_before))
+
+    # Главы из book_after которых не было в book_before
+    for ch_after in (book_after.get("chapters") or []):
+        chid = ch_after.get("id")
+        if not chid or chid in seen_ids:
+            continue
+        if chid in affected_set:
+            merged_chapters.append(copy.deepcopy(ch_after))
+            seen_ids.add(chid)
+        else:
+            # GW добавил главу вне scope — отбрасываем
+            new_out_of_scope_dropped.append({
+                "chapter_id": chid,
+                "chars": len(ch_after.get("content") or ""),
+            })
+            seen_ids.add(chid)
+
+    merged["chapters"] = merged_chapters
+
+    # callouts: filter by chapter_id scope
+    callouts_restored_count = _restore_chapter_scoped_items(
+        merged, book_before, book_after, "callouts", affected_set, seen_ids
+    )
+
+    # historical_notes: filter by chapter_id scope
+    notes_restored_count = _restore_chapter_scoped_items(
+        merged, book_before, book_after, "historical_notes", affected_set, seen_ids
+    )
+
+    chars_after_merged = _book_total_chars(merged)
+    chars_restored_total = sum(c["chars_restored"] for c in chapters_restored)
+
+    details = {
+        "scope_enforcement": "applied",
+        "affected_chapters": list(affected_chapters),
+        "chapters_restored": chapters_restored,
+        "callouts_restored": callouts_restored_count,
+        "historical_notes_restored": notes_restored_count,
+        "new_out_of_scope_dropped": new_out_of_scope_dropped,
+        "chars_before_total": chars_before_total,
+        "chars_after_gw": chars_after_total,
+        "chars_after_merged": chars_after_merged,
+        "chars_restored": chars_restored_total,
+    }
+
+    return merged, details
+
+
+def _restore_chapter_scoped_items(
+    merged: dict,
+    book_before: dict,
+    book_after: dict,
+    field: str,
+    affected_set: set[str],
+    valid_chapter_ids: set[str],
+) -> int:
+    """
+    Helper для merge_revision_out_of_scope_chapters: восстанавливает
+    out-of-scope элементы массива (callouts/historical_notes) по chapter_id.
+
+    Логика:
+      - Элементы с chapter_id вне affected_set: должны быть byte-identical
+        с book_before. Если в book_after изменены/удалены — восстанавливаем
+        ВСЕ соответствующие элементы из book_before.
+      - Элементы с chapter_id в affected_set: pass-through из book_after.
+      - Элементы без chapter_id (глобальные): pass-through из book_after.
+      - Удаление дубликатов по id, если есть.
+
+    Возвращает число восстановленных элементов.
+    """
+    items_before = book_before.get(field) or []
+    items_after = book_after.get(field) or []
+
+    in_scope_after = [
+        it for it in items_after
+        if (it.get("chapter_id") in affected_set) or (it.get("chapter_id") is None)
+    ]
+
+    out_of_scope_before = [
+        it for it in items_before
+        if it.get("chapter_id") and it.get("chapter_id") not in affected_set
+    ]
+
+    out_of_scope_after = [
+        it for it in items_after
+        if it.get("chapter_id") and it.get("chapter_id") not in affected_set
+    ]
+
+    # Сравниваем out-of-scope содержимое: если изменилось — restore из before
+    out_of_scope_modified = (
+        len(out_of_scope_before) != len(out_of_scope_after)
+        or any(
+            (b.get("id"), (b.get("text") or ""))
+            != (a.get("id"), (a.get("text") or ""))
+            for b, a in zip(out_of_scope_before, out_of_scope_after)
+        )
+    )
+
+    if out_of_scope_modified:
+        import copy
+        merged_items = list(in_scope_after) + [copy.deepcopy(it) for it in out_of_scope_before]
+        merged[field] = merged_items
+        # Считаем сколько элементов реально вернули
+        before_ids = {it.get("id") for it in out_of_scope_before if it.get("id")}
+        after_ids = {it.get("id") for it in out_of_scope_after if it.get("id")}
+        restored = len(before_ids - after_ids)
+        # Если у элементов нет id, считаем по разнице длин
+        if not before_ids and not after_ids:
+            restored = max(0, len(out_of_scope_before) - len(out_of_scope_after))
+        return restored
+
+    return 0
+
+
 def validate_revision_volume(
     book_before: dict,
     book_after: dict,
