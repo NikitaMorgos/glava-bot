@@ -38,7 +38,13 @@ except ImportError:
     print("[ERROR] pip install anthropic")
     sys.exit(1)
 
-from pipeline_utils import load_config, load_prompt, save_run_manifest, run_proofreader_per_chapter
+from pipeline_utils import (
+    load_config,
+    load_prompt,
+    save_run_manifest,
+    run_proofreader_per_chapter,
+    validate_le_fact_preservation,
+)
 from pipeline_quality_gates import (
     run_stage3_text_gates, run_stage3_text_gates_variant_b,
     save_gate_report, summarize_failed_gates,
@@ -459,6 +465,10 @@ async def main():
                         help="Отключить блокирующие Stage3 text-gates (не рекомендуется)")
     parser.add_argument("--variant-b", action="store_true",
                         help="Режим Вариант B: пропускает gate_required_entities в Stage3 gates")
+    parser.add_argument("--allow-le-fact-loss", action="store_true",
+                        help="Аварийный обход validate_le_fact_preservation (волна 1.4.0). "
+                             "Разрешает прогон даже если LE удалил эпизоды из fact_map.timeline. "
+                             "Использовать только для отладки.")
     args = parser.parse_args()
 
     cfg = load_config()
@@ -560,6 +570,43 @@ async def main():
     with open(report_path, "w", encoding="utf-8") as f:
         json.dump(result, f, ensure_ascii=False, indent=2)
     print(f"[SAVED] liteditor_report: {report_path.name}")
+
+    # ── Fact preservation guard (волна 1.4.0) ─────────────────────────
+    # Защита от регрессии #7 (v53b): Stage 3 LE удалил эпизод об огурцах
+    # тихо без revision-цикла. validate_revision_volume работает только
+    # на GW revision iters, не на Stage 2→3 transition. Здесь мы проверяем
+    # что каждое event из fact_map.timeline имеет ≥2 предметных маркеров
+    # в book после LE — иначе LE удалил эпизод вопреки v3.1 anti-deletion
+    # правилу.
+    fact_pres_passed, fact_pres_details = validate_le_fact_preservation(
+        book_before_le=book_draft,
+        book_after_le=book_after_le,
+        fact_map=fact_map,
+    )
+    fact_pres_path = out_dir / f"{args.prefix}_le_fact_preservation_{ts}.json"
+    with open(fact_pres_path, "w", encoding="utf-8") as f:
+        json.dump(fact_pres_details, f, ensure_ascii=False, indent=2)
+    print(
+        f"[SAVED] LE fact preservation check: {fact_pres_path.name} "
+        f"(verdict={fact_pres_details.get('verdict')}, "
+        f"events_lost={fact_pres_details.get('events_lost_in_le', 0)}, "
+        f"events_preserved={fact_pres_details.get('events_preserved', 0)})"
+    )
+
+    if not fact_pres_passed and not getattr(args, "allow_le_fact_loss", False):
+        print(
+            f"\n🛑 [LE_FACT_PRESERVATION] ПРОГОН ОСТАНОВЛЕН: "
+            f"{fact_pres_details.get('reason', 'events lost in LE')}\n"
+            f"   Утеряно событий: {fact_pres_details.get('events_lost_in_le')}\n"
+            f"   Для аварийного обхода: --allow-le-fact-loss "
+            f"(деталь: {fact_pres_path.name})"
+        )
+        sys.exit(1)
+    if not fact_pres_passed:
+        print(
+            f"⚠️  --allow-le-fact-loss: продолжаем несмотря на потерю эпизодов в LE. "
+            f"le_fact_loss_overridden=true в manifest."
+        )
 
     print_results(result, chars_before)
 

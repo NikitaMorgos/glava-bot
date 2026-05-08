@@ -1477,6 +1477,243 @@ def _restore_chapter_scoped_items(
     return 0
 
 
+def _extract_event_markers(event: dict, max_markers: int = 4) -> set[str]:
+    """
+    Извлекает предметные маркеры события для fact-preservation verification.
+
+    Концепт переиспользует object markers test из FC v2.13: маркеры — это
+    конкретные предметные/географические/временные токены эпизода, а не
+    темы или имена персон. Реализация — детерминированная (без LLM):
+    `_topic_tokens` уже отфильтровывает имена-темы стоп-словами.
+
+    Использует source_quotes (приоритет — там сохранены оригинальные слова
+    рассказчика), затем description и title как fallback.
+
+    Возвращает set из top-N (по длине — длинные токены более специфичны)
+    значимых токенов. Пустое множество если у event недостаточно текстового
+    материала для извлечения.
+    """
+    text_parts: list[str] = []
+    for q in event.get("source_quotes") or []:
+        if isinstance(q, str):
+            text_parts.append(q)
+        elif isinstance(q, dict):
+            text_parts.append(q.get("text") or q.get("quote") or "")
+    text_parts.append(event.get("description") or "")
+    text_parts.append(event.get("title") or "")
+    text_parts.append(event.get("summary") or "")
+
+    text = " ".join(t for t in text_parts if t)
+    markers = _topic_tokens(text)
+    # Сортируем по длине: длинные токены более специфичны (например,
+    # "молдавия" специфичнее "село"). Ограничиваем top-N чтобы не
+    # включать всю периферию.
+    return set(sorted(markers, key=lambda t: (-len(t), t))[:max_markers])
+
+
+def _marker_stem(marker: str, stem_len: int = 5) -> str:
+    """
+    Возвращает stem маркера для substring-match в тексте книги.
+
+    Для русского языка лемматизация дорогая (нужна natasha/pymorphy),
+    а exact token match не работает: «огурцы» / «огурцов» / «огурцами»
+    разные токены. Берём первые stem_len символов — это даёт правильный
+    match для большинства существительных и прилагательных
+    (огурц* → огурцы, огурцов, огурчиков; молда* → молдавия, молдавии,
+    молдавский). Минимум 4 символа чтобы не получить ложные совпадения.
+    """
+    return marker[:stem_len] if len(marker) >= stem_len else marker
+
+
+def _event_present_in_book(
+    event_markers: set[str], book: dict, min_markers: int
+) -> tuple[bool, set[str]]:
+    """
+    Проверяет наличие события в книге через ≥ min_markers значимых
+    маркеров, найденных как stems-substring в книжном тексте.
+
+    Stem-based substring match вместо exact set intersection — компромисс
+    для русской морфологии без дорогой лемматизации (см. _marker_stem).
+
+    Также учитывает callouts и historical_notes — LE может оставить
+    эпизод в callout, не в основном тексте, это всё равно сохранение.
+    """
+    if not event_markers or not book:
+        return False, set()
+
+    text_parts: list[str] = []
+    for ch in book.get("chapters") or []:
+        text_parts.append(ch.get("content") or "")
+    for co in book.get("callouts") or []:
+        text_parts.append(co.get("text") or "")
+    for hn in book.get("historical_notes") or []:
+        text_parts.append(hn.get("text") or "")
+
+    full_text_lower = " ".join(t for t in text_parts if t).lower()
+
+    found = set()
+    for marker in event_markers:
+        stem = _marker_stem(marker)
+        # Минимум 4 символа stem чтобы не получать ложные substring matches.
+        if len(stem) >= 4 and stem in full_text_lower:
+            found.add(marker)
+    return len(found) >= min_markers, found
+
+
+# Минимальное число значимых маркеров для подтверждения наличия
+# события в книге. Тот же концепт что EVIDENCE_MIN_SHARED_TOKENS
+# в FC defenses (волна 1.3.2): 1 маркер слишком слаб (имя субъекта
+# может совпадать), ≥2 даёт уверенность.
+LE_EVENT_MIN_MARKERS = 2
+
+
+def validate_le_fact_preservation(
+    book_before_le: dict,
+    book_after_le: dict,
+    fact_map: dict,
+    min_markers: int = LE_EVENT_MIN_MARKERS,
+) -> tuple[bool, dict]:
+    """
+    Защита волны 1.4.0: Stage 3 Literary Editor не удаляет события из
+    fact_map.timeline.
+
+    История класса (v53b, регрессия #7, 2026-05-08):
+      Stage 2 защиты (FC v2.13 + GW v2.16 + scope merge + evidence-check)
+      пропустили эпизод об огурцах в Молдавии в book_FINAL_stage2 ch_02.
+      Stage 3 LE v3 при revision удалил эпизод (LE промпт v3 имеет
+      правило «устранение дублей» без различения стилистических повторов
+      и сюжетных эпизодов из timeline). Прогон формально завершился без
+      ошибок (gate2c PDF 27 стр.), но огурцов нет.
+
+      Это сценарий C из task 031 (тихая мутация прошла через слой который
+      Stage 2 защиты не покрывают). validate_revision_volume работает
+      между revision-итерациями GW, не на Stage 2→3 transition.
+
+    Алгоритм:
+      Для каждого event в fact_map.timeline:
+        1. Извлечь предметные маркеры (`_extract_event_markers`):
+           2-4 значимых токена из source_quotes + description + title.
+        2. Проверить что событие было в book_before_le (≥ min_markers
+           маркеров найдены в content/callouts/historical_notes).
+           Если нет — пропустить (событие и так не было в книге, не
+           наша проблема — это пропуск GW, не удаление LE).
+        3. Проверить что событие сохранилось в book_after_le.
+        4. Если было до LE и НЕ сохранилось после — `event_lost_in_le`.
+
+    Защита учитывает что LE может legitimately:
+      - Перефразировать предложение (маркеры остаются).
+      - Сократить эпизод (но key markers сохраняются).
+      - Объединить два предложения в одно.
+
+    Защита НЕ позволяет LE:
+      - Удалить эпизод целиком.
+      - Сократить эпизод так что < min_markers маркеров остаётся.
+
+    Edge cases:
+      - timeline пуст или отсутствует → passed=True, all_skipped.
+      - event без id/markers → пропускается с пометкой
+        insufficient_markers (нет смысла проверять без маркеров).
+      - event не было в book_before_le → пропускается (not_in_book).
+        Это не наша зона ответственности — пусть Stage 1/2 это ловят.
+
+    Args:
+      book_before_le: book_FINAL после Stage 2 (вход LE).
+      book_after_le: book после LE (выход).
+      fact_map: с timeline/events.
+      min_markers: минимум общих маркеров для подтверждения наличия.
+
+    Returns:
+      (passed, details):
+        passed: True если ни одно событие не утеряно.
+        details: подробная диагностика — какие события утеряны/сохранены/
+          пропущены, маркеры, found_before vs found_after.
+    """
+    timeline = (
+        fact_map.get("timeline")
+        or fact_map.get("events")
+        or []
+    )
+
+    lost_events: list[dict] = []
+    preserved_events: list[dict] = []
+    not_in_book_events: list[dict] = []
+    insufficient_markers_events: list[dict] = []
+
+    for event in timeline:
+        if not isinstance(event, dict):
+            continue
+        event_id = event.get("id") or event.get("event_id") or event.get("title")
+
+        markers = _extract_event_markers(event)
+        if len(markers) < min_markers:
+            insufficient_markers_events.append({
+                "event_id": event_id,
+                "title": event.get("title"),
+                "markers_found": sorted(markers),
+                "min_required": min_markers,
+            })
+            continue
+
+        was_before, found_before = _event_present_in_book(markers, book_before_le, min_markers)
+        if not was_before:
+            not_in_book_events.append({
+                "event_id": event_id,
+                "title": event.get("title"),
+                "markers": sorted(markers),
+                "shared_with_book_before": sorted(found_before),
+            })
+            continue
+
+        is_after, found_after = _event_present_in_book(markers, book_after_le, min_markers)
+        if not is_after:
+            lost_events.append({
+                "event_id": event_id,
+                "title": event.get("title"),
+                "year": event.get("year") or event.get("date") or event.get("period"),
+                "markers": sorted(markers),
+                "shared_with_book_before": sorted(found_before),
+                "shared_with_book_after": sorted(found_after),
+                "min_required": min_markers,
+            })
+        else:
+            preserved_events.append({
+                "event_id": event_id,
+                "shared_with_book_after": sorted(found_after),
+            })
+
+    details = {
+        "events_in_timeline": len(timeline),
+        "events_lost_in_le": len(lost_events),
+        "events_preserved": len(preserved_events),
+        "events_not_in_book_before_le": len(not_in_book_events),
+        "events_insufficient_markers": len(insufficient_markers_events),
+        "min_markers_threshold": min_markers,
+        "lost_events": lost_events,
+        "not_in_book_events": not_in_book_events,
+        "insufficient_markers_events": insufficient_markers_events,
+        "preserved_event_ids": [e["event_id"] for e in preserved_events],
+    }
+
+    if lost_events:
+        details["verdict"] = "blocked_events_lost_in_le"
+        titles = [e.get("title") or e.get("event_id") or "?" for e in lost_events]
+        details["reason"] = (
+            f"{len(lost_events)} событий из fact_map.timeline исчезли после "
+            f"Stage 3 Literary Editor: {', '.join(titles[:5])}"
+            f"{'...' if len(titles) > 5 else ''}. "
+            f"Каждое событие имело ≥{min_markers} предметных маркеров в book "
+            f"до LE, осталось <{min_markers} в book после LE. "
+            f"Это новый класс регрессии #7 (v53b, 2026-05-08): LE v3 имеет "
+            f"правило 'устранение дублей' без различения стилистических "
+            f"повторов и сюжетных эпизодов timeline. v3.1 запрещает "
+            f"удаление эпизодов timeline (волна 1.4.0)."
+        )
+        return False, details
+
+    details["verdict"] = "ok_all_events_preserved"
+    return True, details
+
+
 def validate_revision_volume(
     book_before: dict,
     book_after: dict,
