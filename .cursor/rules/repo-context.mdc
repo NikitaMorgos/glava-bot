@@ -1,0 +1,22 @@
+---
+description: Единственный репозиторий проекта — NikitaMorgos/glava-bot
+alwaysApply: true
+---
+
+# Репозиторий проекта
+
+Мы работаем **только** с репозиторием:
+
+**https://github.com/NikitaMorgos/glava-bot**
+
+- Локальная копия: `d:\Cursor\glava`
+- Remote: `origin → https://github.com/NikitaMorgos/glava-bot.git`
+- Ветка по умолчанию: `main`
+- Git-пользователь: `ulabs` (collaborator)
+
+## Правила
+
+- Все коммиты и пуши идут только в этот репозиторий
+- Ветки для задач: `feature/lena/*` (Лена), `feature/dasha/*` (Даша), остальные — по договорённости с Никитой
+- Не создавать новых remote, не менять origin
+- Перед любым `git push` убедиться что находимся в `d:\Cursor\glava`
