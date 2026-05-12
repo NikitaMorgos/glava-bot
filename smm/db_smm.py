@@ -730,6 +730,26 @@ def get_recent_reviews(limit: int = 10) -> list[str]:
     return []
 
 
+def get_existing_post_signatures() -> list[dict]:
+    """
+    Возвращает сигнатуры активных постов для дедупликации при массовом импорте.
+
+    Используется в smm.calendar_import.import_items. Отдаёт только колонки,
+    нужные для матчинга — без тяжёлых текстов статей.
+    """
+    ensure_tables()
+    with _conn() as conn:
+        cur = conn.cursor()
+        cur.execute(
+            """
+            SELECT publish_date, platform_format_id, rubric_id, topic
+            FROM smm_posts
+            WHERE status != 'deleted'
+            """
+        )
+        return [dict(r) for r in cur.fetchall()]
+
+
 def get_recent_topic_titles(limit: int = 500, platform_name: Optional[str] = None) -> list[str]:
     """
     Возвращает последние темы/заголовки для анти-дублей у Scout.
