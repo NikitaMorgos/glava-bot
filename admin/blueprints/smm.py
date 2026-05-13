@@ -61,6 +61,21 @@ def _slug(text: str) -> str:
     return t[:40] or "item"
 
 
+CALENDAR_DRAFT_ROLE = "smm_calendar_import_draft"
+
+
+def _get_calendar_draft_text() -> str:
+    row = dba.get_prompt(CALENDAR_DRAFT_ROLE)
+    return (row or {}).get("prompt_text", "") if row else ""
+
+
+def _save_calendar_draft_text(text: str) -> None:
+    """Сохраняет (или очищает) черновик массового импорта календаря.
+    Использует существующее хранилище промптов — без новых таблиц.
+    """
+    dba.save_prompt(CALENDAR_DRAFT_ROLE, text or "", session.get("username", "lena"))
+
+
 # ── Главная — доска постов ─────────────────────────────────────────────────────
 
 @bp.route("/")
@@ -87,6 +102,10 @@ def index():
         bucket = board.get(p["status"], board["draft"])
         bucket.append(p)
 
+    rubrics = db_smm.get_active_rubrics()
+    calendar_draft = _get_calendar_draft_text()
+    import_report = session.pop("smm_calendar_import_report", None)
+
     return render_template(
         "smm/index.html",
         board=board,
@@ -96,6 +115,9 @@ def index():
         active_platform=pname_filter,
         status_labels=STATUS_LABELS,
         status_colors=STATUS_COLORS,
+        calendar_draft=calendar_draft,
+        rubrics=rubrics,
+        import_report=import_report,
     )
 
 
@@ -132,6 +154,80 @@ def generate_plan():
     threading.Thread(target=_run, daemon=True).start()
     label = platform_name_f or "все площадки"
     flash(f"Генерация контент-плана #{plan_id} для «{label}» запущена (~30 сек).", "success")
+    return redirect(url_for("smm.index"))
+
+
+# ── Массовый импорт контент-календаря ──────────────────────────────────────────
+
+@bp.route("/calendar/draft", methods=["POST"])
+@role_required("dev", "lena", "dasha")
+def save_calendar_draft():
+    text = request.form.get("calendar_text", "")
+    _save_calendar_draft_text(text)
+    flash("Черновик календаря сохранён", "success")
+    return redirect(url_for("smm.index"))
+
+
+@bp.route("/calendar/import", methods=["POST"])
+@role_required("dev", "lena", "dasha")
+def import_calendar():
+    from smm import calendar_import as ci
+
+    text = request.form.get("calendar_text", "")
+    _save_calendar_draft_text(text)
+
+    items, parse_errors = ci.parse_text(text)
+    rubrics = db_smm.get_all_rubrics()
+    pformats = db_smm.get_all_platform_formats()
+    existing = db_smm.get_existing_post_signatures()
+
+    def _create_plan() -> int:
+        from datetime import date as _date
+        return db_smm.create_plan(
+            week_start=_date.today().isoformat(),
+            manual_ideas="ручной массовый импорт календаря",
+        )
+
+    def _create_post(plan_id: int, item: ci.ParsedItem, rubric_id: int, pf_id: int) -> int:
+        post_id = db_smm.create_post(plan_id, item.topic, channel="dzen")
+        db_smm.update_post(post_id, rubric_id=rubric_id, platform_format_id=pf_id)
+        return post_id
+
+    def _apply_extras(post_id: int, item: ci.ParsedItem) -> None:
+        db_smm.set_publish_date(post_id, item.publish_date.isoformat())
+        if item.initiate_dialog:
+            db_smm.set_initiate_dialog(post_id, True)
+        extras = {}
+        if item.article_title:
+            extras["article_title"] = item.article_title
+        if item.image_prompt:
+            extras["image_prompt"] = item.image_prompt
+        if extras:
+            db_smm.update_post(post_id, **extras)
+
+    report = ci.import_items(
+        items, parse_errors,
+        rubrics=rubrics,
+        pformats=pformats,
+        existing_posts=existing,
+        create_plan_fn=_create_plan,
+        create_post_fn=_create_post,
+        apply_extras_fn=_apply_extras,
+    )
+
+    session["smm_calendar_import_report"] = report.to_dict()
+    if report.created:
+        flash(
+            f"Импорт календаря: создано {report.created}, дублей {report.duplicate}, ошибок {report.error}",
+            "success" if report.error == 0 else "warning",
+        )
+    elif report.duplicate and not report.error:
+        flash(f"Импорт календаря: все {report.duplicate} записей — дубли, ничего не создано", "warning")
+    else:
+        flash(
+            f"Импорт календаря: создано {report.created}, дублей {report.duplicate}, ошибок {report.error}",
+            "error" if report.error else "warning",
+        )
     return redirect(url_for("smm.index"))
 
 
