@@ -28,29 +28,31 @@ SMM_ROLES = [
 _jobs: dict[str, str] = {}
 
 STATUS_LABELS = {
-    "draft":            "Черновик",
-    "generating":       "Генерируется",
-    "journalist_done":  "Текст готов",
-    "editor_rejected":  "Отклонён редактором",
-    "ready":            "Готов к одобрению",
-    "approved":         "Одобрен",
-    "publishing":       "Публикуется",
-    "published":        "Опубликован",
-    "error":            "Ошибка",
-    "deleted":          "Удалён",
+    "draft":               "Черновик",
+    "generating":          "Генерируется",
+    "journalist_done":     "Текст готов (черновик)",
+    "journalist_revised":  "Текст исправлен",
+    "editor_rejected":     "Отклонён редактором",
+    "ready":               "Готов к одобрению",
+    "approved":            "Одобрен",
+    "publishing":          "Публикуется",
+    "published":           "Опубликован",
+    "error":               "Ошибка",
+    "deleted":             "Удалён",
 }
 
 STATUS_COLORS = {
-    "draft":            "gray",
-    "generating":       "yellow",
-    "journalist_done":  "blue",
-    "editor_rejected":  "red",
-    "ready":            "indigo",
-    "approved":         "green",
-    "publishing":       "yellow",
-    "published":        "emerald",
-    "error":            "red",
-    "deleted":          "gray",
+    "draft":               "gray",
+    "generating":          "yellow",
+    "journalist_done":     "blue",
+    "journalist_revised":  "sky",
+    "editor_rejected":     "red",
+    "ready":               "indigo",
+    "approved":            "green",
+    "publishing":          "yellow",
+    "published":           "emerald",
+    "error":               "red",
+    "deleted":             "gray",
 }
 
 
@@ -59,21 +61,6 @@ def _slug(text: str) -> str:
     t = re.sub(r"[^\w\s-]", "", t)
     t = re.sub(r"[\s_-]+", "_", t)
     return t[:40] or "item"
-
-
-CALENDAR_DRAFT_ROLE = "smm_calendar_import_draft"
-
-
-def _get_calendar_draft_text() -> str:
-    row = dba.get_prompt(CALENDAR_DRAFT_ROLE)
-    return (row or {}).get("prompt_text", "") if row else ""
-
-
-def _save_calendar_draft_text(text: str) -> None:
-    """Сохраняет (или очищает) черновик массового импорта календаря.
-    Использует существующее хранилище промптов — без новых таблиц.
-    """
-    dba.save_prompt(CALENDAR_DRAFT_ROLE, text or "", session.get("username", "lena"))
 
 
 # ── Главная — доска постов ─────────────────────────────────────────────────────
@@ -102,10 +89,6 @@ def index():
         bucket = board.get(p["status"], board["draft"])
         bucket.append(p)
 
-    rubrics = db_smm.get_active_rubrics()
-    calendar_draft = _get_calendar_draft_text()
-    import_report = session.pop("smm_calendar_import_report", None)
-
     return render_template(
         "smm/index.html",
         board=board,
@@ -115,9 +98,6 @@ def index():
         active_platform=pname_filter,
         status_labels=STATUS_LABELS,
         status_colors=STATUS_COLORS,
-        calendar_draft=calendar_draft,
-        rubrics=rubrics,
-        import_report=import_report,
     )
 
 
@@ -157,80 +137,6 @@ def generate_plan():
     return redirect(url_for("smm.index"))
 
 
-# ── Массовый импорт контент-календаря ──────────────────────────────────────────
-
-@bp.route("/calendar/draft", methods=["POST"])
-@role_required("dev", "lena", "dasha")
-def save_calendar_draft():
-    text = request.form.get("calendar_text", "")
-    _save_calendar_draft_text(text)
-    flash("Черновик календаря сохранён", "success")
-    return redirect(url_for("smm.index"))
-
-
-@bp.route("/calendar/import", methods=["POST"])
-@role_required("dev", "lena", "dasha")
-def import_calendar():
-    from smm import calendar_import as ci
-
-    text = request.form.get("calendar_text", "")
-    _save_calendar_draft_text(text)
-
-    items, parse_errors = ci.parse_text(text)
-    rubrics = db_smm.get_all_rubrics()
-    pformats = db_smm.get_all_platform_formats()
-    existing = db_smm.get_existing_post_signatures()
-
-    def _create_plan() -> int:
-        from datetime import date as _date
-        return db_smm.create_plan(
-            week_start=_date.today().isoformat(),
-            manual_ideas="ручной массовый импорт календаря",
-        )
-
-    def _create_post(plan_id: int, item: ci.ParsedItem, rubric_id: int, pf_id: int) -> int:
-        post_id = db_smm.create_post(plan_id, item.topic, channel="dzen")
-        db_smm.update_post(post_id, rubric_id=rubric_id, platform_format_id=pf_id)
-        return post_id
-
-    def _apply_extras(post_id: int, item: ci.ParsedItem) -> None:
-        db_smm.set_publish_date(post_id, item.publish_date.isoformat())
-        if item.initiate_dialog:
-            db_smm.set_initiate_dialog(post_id, True)
-        extras = {}
-        if item.article_title:
-            extras["article_title"] = item.article_title
-        if item.image_prompt:
-            extras["image_prompt"] = item.image_prompt
-        if extras:
-            db_smm.update_post(post_id, **extras)
-
-    report = ci.import_items(
-        items, parse_errors,
-        rubrics=rubrics,
-        pformats=pformats,
-        existing_posts=existing,
-        create_plan_fn=_create_plan,
-        create_post_fn=_create_post,
-        apply_extras_fn=_apply_extras,
-    )
-
-    session["smm_calendar_import_report"] = report.to_dict()
-    if report.created:
-        flash(
-            f"Импорт календаря: создано {report.created}, дублей {report.duplicate}, ошибок {report.error}",
-            "success" if report.error == 0 else "warning",
-        )
-    elif report.duplicate and not report.error:
-        flash(f"Импорт календаря: все {report.duplicate} записей — дубли, ничего не создано", "warning")
-    else:
-        flash(
-            f"Импорт календаря: создано {report.created}, дублей {report.duplicate}, ошибок {report.error}",
-            "error" if report.error else "warning",
-        )
-    return redirect(url_for("smm.index"))
-
-
 # ── Пост — детальный вид ───────────────────────────────────────────────────────
 
 @bp.route("/post/<int:post_id>")
@@ -253,6 +159,7 @@ def post_detail(post_id: int):
 @bp.route("/post/<int:post_id>/generate", methods=["POST"])
 @role_required("dev", "lena", "dasha")
 def generate_post(post_id: int):
+    """Быстрая генерация: журналист → иллюстратор → редактор (без промежуточной правки)."""
     post = db_smm.get_post(post_id)
     if not post:
         flash("Пост не найден", "error")
@@ -276,6 +183,38 @@ def generate_post(post_id: int):
 
     threading.Thread(target=_run, daemon=True).start()
     flash("Генерация статьи запущена (~60 сек).", "success")
+    return redirect(url_for("smm.post_detail", post_id=post_id))
+
+
+@bp.route("/post/<int:post_id>/generate-with-revision", methods=["POST"])
+@role_required("dev", "lena", "dasha")
+def generate_post_with_revision(post_id: int):
+    """Полный pipeline: журналист → редактор 1 (фидбек) → правка → иллюстратор → редактор 2."""
+    post = db_smm.get_post(post_id)
+    if not post:
+        flash("Пост не найден", "error")
+        return redirect(url_for("smm.index"))
+
+    db_smm.update_post(post_id, status="generating", last_error="", editor_1_feedback="")
+    job_key = f"post_{post_id}"
+    _jobs[job_key] = "running"
+
+    def _run():
+        try:
+            from smm.journalist import write_article, revise_article
+            from smm.editor import get_editorial_feedback, review_and_generate_image
+            write_article(post_id)
+            get_editorial_feedback(post_id)
+            revise_article(post_id)
+            review_and_generate_image(post_id)
+            _jobs[job_key] = "done"
+        except Exception as e:
+            logger.error("Pipeline (с правкой) ошибка пост_ид=%d: %s", post_id, e)
+            db_smm.update_post(post_id, status="error", last_error=str(e)[:2000])
+            _jobs[job_key] = f"error: {e}"
+
+    threading.Thread(target=_run, daemon=True).start()
+    flash("Генерация с правкой журналиста запущена (~3 мин).", "success")
     return redirect(url_for("smm.post_detail", post_id=post_id))
 
 
@@ -439,30 +378,47 @@ def settings():
 
     # Площадки/Форматы (v2)
     pformats = db_smm.get_all_platform_formats()
-    for pf in pformats:
-        pf["prompt"] = dba.get_prompt(f"smm_pf_{pf['slug']}")
 
     # Рубрики
     rubrics = db_smm.get_all_rubrics()
-    for r in rubrics:
-        r["prompt"] = dba.get_prompt(f"smm_rubric_{r['slug']}")
 
     # Журналисты
     journalists = db_smm.get_all_journalists()
+
+    # Собираем все нужные role-ключи и загружаем одним запросом
+    pf_keys  = [f"smm_pf_{pf['slug']}"       for pf in pformats]
+    rub_keys = [f"smm_rubric_{r['slug']}"     for r  in rubrics]
+    j_keys   = [f"smm_journalist_{j['slug']}" for j  in journalists]
+    role_keys = [r[0] for r in SMM_ROLES]
+
+    all_keys = pf_keys + rub_keys + j_keys + role_keys
+    prompts_map  = dba.get_prompts_batch(all_keys)
+    # История нужна только для журналистов и служебных ролей
+    histories_map = dba.get_prompt_histories_batch(j_keys + role_keys, limit=10)
+
+    # Назначения для всех журналистов — один запрос
+    j_ids = [j["id"] for j in journalists]
+    all_assignments = db_smm.get_journalist_assignments_batch(j_ids) if j_ids else {}
+
+    for pf in pformats:
+        pf["prompt"] = prompts_map.get(f"smm_pf_{pf['slug']}")
+
+    for r in rubrics:
+        r["prompt"] = prompts_map.get(f"smm_rubric_{r['slug']}")
+
     for j in journalists:
         prompt_key = f"smm_journalist_{j['slug']}"
-        j["prompt"] = dba.get_prompt(prompt_key)
-        j["prompt_history"] = dba.get_prompt_full_history(prompt_key, 10)
-        j["assignments"] = db_smm.get_journalist_assignments(j["id"])
+        j["prompt"]         = prompts_map.get(prompt_key)
+        j["prompt_history"] = histories_map.get(prompt_key, [])
+        j["assignments"]    = all_assignments.get(j["id"], {"rubric_ids": [], "pformat_ids": []})
 
-    # Служебные роли
     roles_data = []
     for role_key, role_name in SMM_ROLES:
         roles_data.append({
             "key":     role_key,
             "name":    role_name,
-            "current": dba.get_prompt(role_key),
-            "history": dba.get_prompt_full_history(role_key, 10),
+            "current": prompts_map.get(role_key),
+            "history": histories_map.get(role_key, []),
         })
 
     return render_template(
@@ -741,6 +697,163 @@ def dzen_auth_save():
     ok = dzen_auth_server.save_session()
     state = dzen_auth_server.get_state()
     return jsonify({"ok": ok, "message": state["message"]})
+
+
+# ── Контент-календарь ──────────────────────────────────────────────────────────
+
+@bp.route("/calendar")
+@role_required("dev", "lena", "dasha")
+def calendar_view():
+    import os
+    from datetime import date, timedelta
+
+    platform_id = request.args.get("platform_id", type=int)
+
+    platforms = db_smm.get_all_platforms()
+    rubrics   = db_smm.get_all_rubrics()
+
+    # Показываем ±60 дней от сегодня (достаточно для редактирования)
+    today    = date.today()
+    date_from = today - timedelta(days=7)
+    date_to   = today + timedelta(days=60)
+
+    entries = db_smm.get_calendar_entries_with_post_status(
+        date_from=date_from.isoformat(),
+        date_to=date_to.isoformat(),
+    )
+    if platform_id:
+        entries = [e for e in entries if e.get("platform_id") == platform_id]
+
+    scout_job_key = "calendar_scout"
+    return render_template(
+        "smm/calendar.html",
+        platforms=platforms,
+        rubrics=rubrics,
+        entries=entries,
+        active_platform_id=platform_id,
+        today=today,
+        scout_status=_jobs.get(scout_job_key, ""),
+    )
+
+
+@bp.route("/calendar/entry/add", methods=["POST"])
+@role_required("dev", "lena", "dasha")
+def calendar_entry_add():
+    platform_id   = request.form.get("platform_id", type=int)
+    publish_date  = request.form.get("publish_date", "").strip()
+    title         = request.form.get("title", "").strip()
+    material_type = request.form.get("material_type", "").strip()
+    rubric_id     = request.form.get("rubric_id", type=int) or None
+    extra_info    = request.form.get("extra_info", "").strip()
+    content_ready = bool(request.form.get("content_ready"))
+
+    if not platform_id or not publish_date or not title:
+        flash("Заполните площадку, дату и название", "error")
+        return redirect(url_for("smm.calendar_view", platform_id=platform_id))
+
+    db_smm.add_calendar_entry(
+        platform_id=platform_id,
+        publish_date=publish_date,
+        title=title,
+        material_type=material_type,
+        rubric_id=rubric_id,
+        extra_info=extra_info,
+        content_ready=content_ready,
+    )
+    flash("Запись добавлена в календарь", "success")
+    return redirect(url_for("smm.calendar_view", platform_id=platform_id))
+
+
+@bp.route("/calendar/entry/<int:entry_id>/edit", methods=["POST"])
+@role_required("dev", "lena", "dasha")
+def calendar_entry_edit(entry_id: int):
+    entry = db_smm.get_calendar_entry(entry_id)
+    if not entry:
+        flash("Запись не найдена", "error")
+        return redirect(url_for("smm.calendar_view"))
+
+    publish_date  = request.form.get("publish_date", "").strip()
+    title         = request.form.get("title", "").strip()
+    material_type = request.form.get("material_type", "").strip()
+    rubric_id     = request.form.get("rubric_id", type=int) or None
+    extra_info    = request.form.get("extra_info", "").strip()
+    content_ready = bool(request.form.get("content_ready"))
+
+    db_smm.update_calendar_entry(
+        entry_id,
+        publish_date=publish_date or None,
+        title=title,
+        material_type=material_type,
+        rubric_id=rubric_id,
+        extra_info=extra_info,
+        content_ready=content_ready,
+    )
+    flash("Запись обновлена", "success")
+    return redirect(url_for("smm.calendar_view", platform_id=entry.get("platform_id")))
+
+
+@bp.route("/calendar/entry/<int:entry_id>/delete", methods=["POST"])
+@role_required("dev", "lena", "dasha")
+def calendar_entry_delete(entry_id: int):
+    entry = db_smm.get_calendar_entry(entry_id)
+    platform_id = entry.get("platform_id") if entry else None
+    db_smm.delete_calendar_entry(entry_id)
+    flash("Запись удалена", "success")
+    return redirect(url_for("smm.calendar_view", platform_id=platform_id))
+
+
+# ── Скаут по календарю ─────────────────────────────────────────────────────────
+
+@bp.route("/scout/run", methods=["POST"])
+@role_required("dev", "lena", "dasha")
+def run_scout_calendar():
+    """Ручной запуск ежедневного скаута по контент-календарю."""
+    job_key = "calendar_scout"
+    if _jobs.get(job_key) == "running":
+        flash("Скаут уже запущен", "info")
+        return redirect(url_for("smm.calendar_view"))
+
+    _jobs[job_key] = "running"
+
+    def _run():
+        try:
+            from smm.scout import run_calendar_scout
+            result = run_calendar_scout(days_ahead=30)
+            _jobs[job_key] = f"done: создано {result['created']}, пропущено {result['skipped']}"
+        except Exception as e:
+            logger.error("Calendar scout ошибка: %s", e)
+            _jobs[job_key] = f"error: {e}"
+
+    threading.Thread(target=_run, daemon=True).start()
+    flash("Скаут запущен (30 дней)", "success")
+    return redirect(url_for("smm.calendar_view"))
+
+
+@bp.route("/scout/run-cron", methods=["POST"])
+def run_scout_cron():
+    """Endpoint для cron-задачи. Аутентификация по токену SCOUT_CRON_TOKEN."""
+    import os
+    token = os.environ.get("SCOUT_CRON_TOKEN", "")
+    if not token or request.headers.get("X-Scout-Token") != token:
+        abort(403)
+
+    job_key = "calendar_scout"
+    if _jobs.get(job_key) == "running":
+        return jsonify({"status": "already_running"})
+
+    _jobs[job_key] = "running"
+
+    def _run():
+        try:
+            from smm.scout import run_calendar_scout
+            result = run_calendar_scout(days_ahead=30)
+            _jobs[job_key] = f"done: {result}"
+        except Exception as e:
+            logger.error("Cron scout ошибка: %s", e)
+            _jobs[job_key] = f"error: {e}"
+
+    threading.Thread(target=_run, daemon=True).start()
+    return jsonify({"status": "started"})
 
 
 @bp.route("/status/<job_key>")
