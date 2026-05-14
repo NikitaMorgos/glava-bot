@@ -1,0 +1,273 @@
+{% extends "base.html" %}
+{% block title %}Контент-календарь — GLAVA Admin{% endblock %}
+{% block content %}
+
+<div class="flex items-center justify-between mb-4">
+  <h1 class="text-2xl font-bold text-gray-900">📅 Контент-календарь</h1>
+  <div class="flex items-center gap-2">
+    <a href="/smm/" class="text-sm text-gray-500 hover:text-gray-800 px-3 py-1.5 border border-gray-200 rounded-lg">
+      ← Доска постов
+    </a>
+    <a href="/smm/settings" class="text-sm text-gray-500 hover:text-gray-800 px-3 py-1.5 border border-gray-200 rounded-lg">
+      ⚙️ Настройки
+    </a>
+  </div>
+</div>
+
+<!-- Скаут -->
+<div class="bg-white rounded-xl shadow-sm p-5 mb-5 flex flex-wrap items-center gap-4">
+  <div class="flex-1 min-w-0">
+    <div class="font-semibold text-gray-700 mb-0.5">🔍 Ежедневный скаут</div>
+    <p class="text-xs text-gray-400">Создаёт черновики постов по всем записям календаря на 30 дней вперёд. Пропускает уже созданные.</p>
+    {% if scout_status %}
+    <div class="mt-1 text-xs
+      {% if scout_status == 'running' %}text-yellow-600
+      {% elif scout_status.startswith('done') %}text-green-600
+      {% elif scout_status.startswith('error') %}text-red-600
+      {% else %}text-gray-400{% endif %}">
+      {% if scout_status == 'running' %}⏳ Скаут работает...{% else %}{{ scout_status }}{% endif %}
+    </div>
+    {% endif %}
+  </div>
+  <form method="POST" action="/smm/scout/run">
+    <button type="submit"
+      class="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-700 transition-colors"
+      onclick="return confirm('Запустить скаута? Будут созданы черновики для всех незакрытых записей на 30 дней.')">
+      ▶ Запустить скаута
+    </button>
+  </form>
+</div>
+
+<!-- Фильтр по площадке -->
+<div class="flex items-center gap-2 mb-4 flex-wrap">
+  <span class="text-xs text-gray-500">Площадка:</span>
+  <a href="/smm/calendar" class="text-xs px-3 py-1 rounded-full border transition-colors
+    {% if not active_platform_id %}bg-gray-900 text-white border-gray-900{% else %}border-gray-200 text-gray-500 hover:border-gray-400{% endif %}">
+    Все
+  </a>
+  {% for p in platforms %}
+  <a href="/smm/calendar?platform_id={{ p.id }}" class="text-xs px-3 py-1 rounded-full border transition-colors
+    {% if active_platform_id == p.id %}bg-gray-900 text-white border-gray-900{% else %}border-gray-200 text-gray-500 hover:border-gray-400{% endif %}">
+    {{ p.name }}
+  </a>
+  {% endfor %}
+</div>
+
+<!-- Форма добавления -->
+<div class="bg-white rounded-xl shadow-sm p-5 mb-5">
+  <div class="font-semibold text-gray-700 mb-3">+ Добавить запись</div>
+  <form method="POST" action="/smm/calendar/entry/add" class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 items-end">
+
+    <div>
+      <label class="block text-xs text-gray-500 mb-1">Площадка *</label>
+      <select name="platform_id" required
+        class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-300">
+        <option value="">—</option>
+        {% for p in platforms %}
+        <option value="{{ p.id }}" {% if active_platform_id == p.id %}selected{% endif %}>{{ p.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label class="block text-xs text-gray-500 mb-1">Дата *</label>
+      <input type="date" name="publish_date" required value="{{ today.isoformat() }}"
+        class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-300">
+    </div>
+
+    <div>
+      <label class="block text-xs text-gray-500 mb-1">Тип материала</label>
+      <input type="text" name="material_type" placeholder="статья, пост, карточки..."
+        class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-300">
+    </div>
+
+    <div>
+      <label class="block text-xs text-gray-500 mb-1">Рубрика</label>
+      <select name="rubric_id"
+        class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-300">
+        <option value="">—</option>
+        {% for r in rubrics %}
+        <option value="{{ r.id }}">{{ r.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="xl:col-span-2">
+      <label class="block text-xs text-gray-500 mb-1">Название / тема *</label>
+      <input type="text" name="title" required placeholder="Заголовок или тема материала"
+        class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-300">
+    </div>
+
+    <div class="xl:col-span-5">
+      <label class="block text-xs text-gray-500 mb-1">Доп. информация (необязательно)</label>
+      <textarea name="extra_info" rows="2" placeholder="Контекст для журналиста или готовый текст для коротких форматов"
+        class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-300 resize-none"></textarea>
+    </div>
+
+    <div class="flex flex-col gap-2 justify-end">
+      <label class="flex items-center gap-2 text-xs text-gray-600 cursor-pointer">
+        <input type="checkbox" name="content_ready" value="1" class="rounded">
+        Готовый контент
+      </label>
+      <button type="submit"
+        class="w-full px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-700 transition-colors">
+        Добавить
+      </button>
+    </div>
+
+  </form>
+  <p class="text-xs text-gray-400 mt-2">
+    <b>Готовый контент</b>: если отмечено, «Доп. информация» будет считаться финальным текстом (для коротких форматов).
+    Скаут создаст пост сразу со статусом «Текст готов».
+  </p>
+</div>
+
+<!-- Таблица записей -->
+{% if entries %}
+<div class="bg-white rounded-xl shadow-sm overflow-hidden">
+  <table class="w-full text-sm">
+    <thead class="bg-gray-50">
+      <tr class="text-left text-xs text-gray-400 border-b border-gray-100">
+        <th class="px-4 py-3">Дата</th>
+        <th class="px-4 py-3">Площадка</th>
+        <th class="px-4 py-3">Тип</th>
+        <th class="px-4 py-3">Рубрика</th>
+        <th class="px-4 py-3">Название</th>
+        <th class="px-4 py-3">Доп. инфо</th>
+        <th class="px-4 py-3">Пост</th>
+        <th class="px-4 py-3"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for entry in entries %}
+      <tr class="border-b border-gray-50 hover:bg-gray-50 {% if entry.publish_date < today %}opacity-60{% endif %}"
+          id="entry-{{ entry.id }}">
+
+        {# ── Просмотр ── #}
+        <td class="px-4 py-2.5 font-medium text-gray-800 whitespace-nowrap view-mode-{{ entry.id }}">
+          {{ entry.publish_date.strftime('%d.%m.%Y') if entry.publish_date else '—' }}
+          {% if entry.publish_date == today %}<span class="ml-1 text-xs text-indigo-500">сегодня</span>{% endif %}
+        </td>
+        <td class="px-4 py-2.5 view-mode-{{ entry.id }}">
+          {% if entry.platform_name %}
+          <span class="text-xs bg-sky-50 text-sky-600 px-2 py-0.5 rounded">{{ entry.platform_name }}</span>
+          {% else %}—{% endif %}
+        </td>
+        <td class="px-4 py-2.5 text-gray-600 view-mode-{{ entry.id }}">
+          {{ entry.material_type or '—' }}
+        </td>
+        <td class="px-4 py-2.5 view-mode-{{ entry.id }}">
+          {% if entry.rubric_name %}
+          <span class="text-xs bg-violet-50 text-violet-600 px-2 py-0.5 rounded">{{ entry.rubric_name }}</span>
+          {% else %}—{% endif %}
+        </td>
+        <td class="px-4 py-2.5 max-w-xs view-mode-{{ entry.id }}">
+          <div class="font-medium text-gray-800 line-clamp-2">{{ entry.title }}</div>
+          {% if entry.content_ready %}
+          <span class="text-[10px] bg-green-50 text-green-600 px-1.5 py-0.5 rounded">✓ готовый контент</span>
+          {% endif %}
+        </td>
+        <td class="px-4 py-2.5 max-w-xs text-xs text-gray-400 view-mode-{{ entry.id }}">
+          {% if entry.extra_info %}
+          <div class="line-clamp-2">{{ entry.extra_info[:120] }}{% if entry.extra_info|length > 120 %}…{% endif %}</div>
+          {% else %}—{% endif %}
+        </td>
+        <td class="px-4 py-2.5 view-mode-{{ entry.id }}">
+          {% if entry.has_post %}
+          <span class="text-xs bg-green-50 text-green-600 px-2 py-0.5 rounded">✓ есть</span>
+          {% else %}
+          <span class="text-xs bg-amber-50 text-amber-600 px-2 py-0.5 rounded">нет</span>
+          {% endif %}
+        </td>
+        <td class="px-4 py-2.5 view-mode-{{ entry.id }}">
+          <div class="flex gap-1">
+            <button type="button" onclick="toggleEdit({{ entry.id }})"
+              class="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded hover:bg-gray-200">
+              ✏️ Ред.
+            </button>
+            <form method="POST" action="/smm/calendar/entry/{{ entry.id }}/delete"
+              onsubmit="return confirm('Удалить запись «{{ entry.title[:40] }}»?')">
+              <button type="submit" class="text-xs px-2 py-1 bg-red-50 text-red-500 rounded hover:bg-red-100">
+                ✕
+              </button>
+            </form>
+          </div>
+        </td>
+
+        {# ── Редактирование (скрыто по умолчанию) ── #}
+        <td colspan="8" class="px-4 pb-3 hidden edit-mode-{{ entry.id }}">
+          <form method="POST" action="/smm/calendar/entry/{{ entry.id }}/edit"
+            class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 items-end mt-2">
+            <div>
+              <label class="block text-xs text-gray-500 mb-1">Дата</label>
+              <input type="date" name="publish_date"
+                value="{{ entry.publish_date.isoformat() if entry.publish_date else '' }}"
+                class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm">
+            </div>
+            <div>
+              <label class="block text-xs text-gray-500 mb-1">Тип</label>
+              <input type="text" name="material_type" value="{{ entry.material_type or '' }}"
+                class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm">
+            </div>
+            <div>
+              <label class="block text-xs text-gray-500 mb-1">Рубрика</label>
+              <select name="rubric_id" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm">
+                <option value="">—</option>
+                {% for r in rubrics %}
+                <option value="{{ r.id }}" {% if entry.rubric_id == r.id %}selected{% endif %}>{{ r.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="xl:col-span-3">
+              <label class="block text-xs text-gray-500 mb-1">Название</label>
+              <input type="text" name="title" value="{{ entry.title }}" required
+                class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm">
+            </div>
+            <div class="xl:col-span-5">
+              <label class="block text-xs text-gray-500 mb-1">Доп. информация</label>
+              <textarea name="extra_info" rows="3"
+                class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none">{{ entry.extra_info or '' }}</textarea>
+            </div>
+            <div class="flex flex-col gap-2 justify-end">
+              <label class="flex items-center gap-2 text-xs text-gray-600 cursor-pointer">
+                <input type="checkbox" name="content_ready" value="1"
+                  {% if entry.content_ready %}checked{% endif %} class="rounded">
+                Готовый
+              </label>
+              <button type="submit"
+                class="w-full px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700">
+                Сохранить
+              </button>
+              <button type="button" onclick="toggleEdit({{ entry.id }})"
+                class="w-full px-3 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm hover:bg-gray-200">
+                Отмена
+              </button>
+            </div>
+          </form>
+        </td>
+
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="bg-white rounded-xl shadow-sm p-10 text-center text-gray-400">
+  <div class="text-4xl mb-3">📋</div>
+  <div class="font-medium text-gray-500 mb-1">Календарь пуст</div>
+  <div class="text-sm">Добавьте записи выше — скаут создаст черновики по расписанию.</div>
+</div>
+{% endif %}
+
+<script>
+function toggleEdit(id) {
+  document.querySelectorAll('.view-mode-' + id).forEach(function(el) {
+    el.classList.toggle('hidden');
+  });
+  document.querySelectorAll('.edit-mode-' + id).forEach(function(el) {
+    el.classList.toggle('hidden');
+  });
+}
+</script>
+
+{% endblock %}

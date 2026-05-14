@@ -6,30 +6,107 @@ DB-функции для SMM-редакции v2.
 """
 import json
 import os
+import time
 import threading
 from contextlib import contextmanager
 from typing import Optional
 
 import psycopg2
 import psycopg2.extras
+import psycopg2.pool
 
 
 _ensure_lock = threading.Lock()
 _tables_ready = False
+_pool: psycopg2.pool.ThreadedConnectionPool | None = None
+_pool_lock = threading.Lock()
+_conn_last_used: dict[int, float] = {}   # id(conn) → monotonic timestamp
+
+
+def _make_pool() -> psycopg2.pool.ThreadedConnectionPool:
+    db_url = os.environ.get("DATABASE_URL", "")
+    return psycopg2.pool.ThreadedConnectionPool(
+        2, 10, db_url,
+        cursor_factory=psycopg2.extras.RealDictCursor,
+        keepalives=1,
+        keepalives_idle=30,
+        keepalives_interval=10,
+        keepalives_count=3,
+    )
+
+
+def _get_pool() -> psycopg2.pool.ThreadedConnectionPool:
+    global _pool
+    if _pool is None:
+        with _pool_lock:
+            if _pool is None:
+                _pool = _make_pool()
+    return _pool
+
+
+def _reset_pool() -> psycopg2.pool.ThreadedConnectionPool:
+    global _pool
+    with _pool_lock:
+        old = _pool
+        _pool = _make_pool()
+        if old:
+            try:
+                old.closeall()
+            except Exception:
+                pass
+        return _pool
 
 
 @contextmanager
 def _conn():
-    db_url = os.environ.get("DATABASE_URL", "")
-    conn = psycopg2.connect(db_url, cursor_factory=psycopg2.extras.RealDictCursor)
+    """
+    Context manager: берёт соединение из пула, пингует его (SELECT 1) только если
+    оно простаивало > 45 сек. При SSL-ошибке сбрасывает пул и берёт свежее.
+    Гарантирует возврат соединения в пул ровно один раз.
+    """
+    pool = _get_pool()
+    conn = pool.getconn()
+    returned = False
+
+    # Ping только если соединение простаивало > 45 сек
+    if time.monotonic() - _conn_last_used.get(id(conn), 0) > 45:
+        try:
+            conn.cursor().execute("SELECT 1")
+            conn.rollback()
+        except Exception:
+            try:
+                pool.putconn(conn, close=True)
+            except Exception:
+                pass
+            returned = True
+            pool = _reset_pool()
+            conn = pool.getconn()
+            returned = False
+
     try:
         yield conn
         conn.commit()
+        _conn_last_used[id(conn)] = time.monotonic()
+    except (psycopg2.OperationalError, psycopg2.InterfaceError):
+        returned = True
+        try:
+            pool.putconn(conn, close=True)
+        except Exception:
+            pass
+        _reset_pool()
+        raise
     except Exception:
-        conn.rollback()
+        try:
+            conn.rollback()
+        except Exception:
+            pass
         raise
     finally:
-        conn.close()
+        if not returned:
+            try:
+                pool.putconn(conn)
+            except Exception:
+                pass
 
 
 def _migration_is_complete() -> bool:
@@ -40,6 +117,7 @@ def _migration_is_complete() -> bool:
     required = {
         'journalist_id', 'platform_format_id', 'rubric_id',
         'publish_date', 'last_error', 'initiate_dialog', 'image_url_2',
+        'editor_1_feedback', 'calendar_entry_id',
     }
     try:
         with _conn() as conn:
@@ -173,6 +251,7 @@ def _run_migrations() -> None:
                 ("last_error",          "TEXT DEFAULT ''"),
                 ("initiate_dialog",     "BOOLEAN NOT NULL DEFAULT FALSE"),
                 ("image_url_2",         "TEXT DEFAULT ''"),
+                ("editor_1_feedback",   "TEXT DEFAULT ''"),
             ]:
                 cur.execute(
                     f"ALTER TABLE smm_posts ADD COLUMN IF NOT EXISTS {col} {typ};"
@@ -187,6 +266,32 @@ def _run_migrations() -> None:
                 "ADD COLUMN IF NOT EXISTS platform_id INTEGER "
                 "REFERENCES smm_platforms(id) ON DELETE SET NULL;"
             )
+
+            # Контент-календарь (ручной план по площадкам)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS smm_content_calendar (
+                    id            SERIAL PRIMARY KEY,
+                    platform_id   INTEGER REFERENCES smm_platforms(id) ON DELETE CASCADE,
+                    publish_date  DATE NOT NULL,
+                    material_type TEXT DEFAULT '',
+                    rubric_id     INTEGER REFERENCES smm_rubrics(id) ON DELETE SET NULL,
+                    title         TEXT NOT NULL DEFAULT '',
+                    extra_info    TEXT DEFAULT '',
+                    content_ready BOOLEAN NOT NULL DEFAULT FALSE,
+                    created_at    TIMESTAMPTZ DEFAULT NOW(),
+                    updated_at    TIMESTAMPTZ DEFAULT NOW()
+                );
+                CREATE INDEX IF NOT EXISTS idx_smm_calendar_platform_date
+                    ON smm_content_calendar(platform_id, publish_date);
+            """)
+
+            # Связь поста с записью в контент-календаре
+            for col, typ in [
+                ("calendar_entry_id", "INTEGER REFERENCES smm_content_calendar(id) ON DELETE SET NULL"),
+            ]:
+                cur.execute(
+                    f"ALTER TABLE smm_posts ADD COLUMN IF NOT EXISTS {col} {typ};"
+                )
 
             # Seed: площадка Дзен
             cur.execute("""
@@ -329,6 +434,28 @@ def get_journalist_assignments(j_id: int) -> dict:
         return {"rubric_ids": rubric_ids, "pformat_ids": pformat_ids}
 
 
+def get_journalist_assignments_batch(j_ids: list[int]) -> dict[int, dict]:
+    """Назначения (рубрики + форматы) для нескольких журналистов — два запроса вместо 2×N."""
+    if not j_ids:
+        return {}
+    result: dict[int, dict] = {jid: {"rubric_ids": [], "pformat_ids": []} for jid in j_ids}
+    with _conn() as conn:
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT journalist_id, rubric_id FROM smm_journalist_rubrics WHERE journalist_id = ANY(%s)",
+            (j_ids,),
+        )
+        for row in cur.fetchall():
+            result[row["journalist_id"]]["rubric_ids"].append(row["rubric_id"])
+        cur.execute(
+            "SELECT journalist_id, platform_format_id FROM smm_journalist_pformats WHERE journalist_id = ANY(%s)",
+            (j_ids,),
+        )
+        for row in cur.fetchall():
+            result[row["journalist_id"]]["pformat_ids"].append(row["platform_format_id"])
+    return result
+
+
 def set_journalist_rubrics(j_id: int, rubric_ids: list[int]) -> None:
     with _conn() as conn:
         cur = conn.cursor()
@@ -405,10 +532,11 @@ def find_journalist(rubric_id: Optional[int], platform_format_id: Optional[int])
 # ── Площадки (legacy, обратная совместимость) ─────────────────────────────────
 
 def get_all_platforms() -> list[dict]:
+    """Все площадки. Используется в календаре и других разделах."""
     ensure_tables()
     with _conn() as conn:
         cur = conn.cursor()
-        cur.execute("SELECT * FROM smm_platforms ORDER BY id")
+        cur.execute("SELECT * FROM smm_platforms ORDER BY name")
         return [dict(r) for r in cur.fetchall()]
 
 
@@ -549,21 +677,155 @@ def set_plan_raw(plan_id: int, raw_plan: list) -> None:
         )
 
 
+# ── Контент-календарь ──────────────────────────────────────────────────────────
+
+def get_calendar_entries(
+    platform_id: Optional[int] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+) -> list[dict]:
+    """Записи контент-календаря, опционально с фильтрами по площадке и датам."""
+    ensure_tables()
+    with _conn() as conn:
+        cur = conn.cursor()
+        q = """
+            SELECT c.*,
+                   p.name AS platform_name,
+                   r.name AS rubric_name, r.slug AS rubric_slug
+            FROM smm_content_calendar c
+            LEFT JOIN smm_platforms p ON p.id = c.platform_id
+            LEFT JOIN smm_rubrics   r ON r.id = c.rubric_id
+            WHERE 1=1
+        """
+        params: list = []
+        if platform_id:
+            q += " AND c.platform_id = %s"
+            params.append(platform_id)
+        if date_from:
+            q += " AND c.publish_date >= %s"
+            params.append(date_from)
+        if date_to:
+            q += " AND c.publish_date <= %s"
+            params.append(date_to)
+        q += " ORDER BY c.publish_date ASC, c.id ASC"
+        cur.execute(q, params)
+        return [dict(r) for r in cur.fetchall()]
+
+
+def get_calendar_entry(entry_id: int) -> Optional[dict]:
+    ensure_tables()
+    with _conn() as conn:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT c.*,
+                   p.name AS platform_name,
+                   r.name AS rubric_name, r.slug AS rubric_slug
+            FROM smm_content_calendar c
+            LEFT JOIN smm_platforms p ON p.id = c.platform_id
+            LEFT JOIN smm_rubrics   r ON r.id = c.rubric_id
+            WHERE c.id = %s
+        """, (entry_id,))
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
+def add_calendar_entry(
+    platform_id: int,
+    publish_date: str,
+    title: str,
+    material_type: str = "",
+    rubric_id: Optional[int] = None,
+    extra_info: str = "",
+    content_ready: bool = False,
+) -> int:
+    ensure_tables()
+    with _conn() as conn:
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO smm_content_calendar
+                (platform_id, publish_date, title, material_type, rubric_id, extra_info, content_ready)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            RETURNING id
+        """, (platform_id, publish_date, title, material_type, rubric_id, extra_info, content_ready))
+        return cur.fetchone()["id"]
+
+
+def update_calendar_entry(entry_id: int, **fields) -> None:
+    allowed = {"publish_date", "title", "material_type", "rubric_id", "extra_info", "content_ready"}
+    cols = {k: v for k, v in fields.items() if k in allowed}
+    if not cols:
+        return
+    set_clause = ", ".join(f"{k} = %s" for k in cols)
+    with _conn() as conn:
+        cur = conn.cursor()
+        cur.execute(
+            f"UPDATE smm_content_calendar SET {set_clause}, updated_at = NOW() WHERE id = %s",
+            [*cols.values(), entry_id],
+        )
+
+
+def delete_calendar_entry(entry_id: int) -> None:
+    with _conn() as conn:
+        cur = conn.cursor()
+        cur.execute("DELETE FROM smm_content_calendar WHERE id = %s", (entry_id,))
+
+
+def get_posts_by_calendar_entry(entry_id: int) -> list[dict]:
+    """Посты, созданные по конкретной записи календаря."""
+    ensure_tables()
+    with _conn() as conn:
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT * FROM smm_posts WHERE calendar_entry_id = %s ORDER BY id",
+            (entry_id,),
+        )
+        return [dict(r) for r in cur.fetchall()]
+
+
+def get_calendar_entries_with_post_status(
+    date_from: str,
+    date_to: str,
+) -> list[dict]:
+    """Записи календаря с флагом has_post (True если уже есть связанный пост)."""
+    ensure_tables()
+    with _conn() as conn:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT c.*,
+                   p.name  AS platform_name,
+                   r.name  AS rubric_name,
+                   EXISTS(
+                       SELECT 1 FROM smm_posts sp
+                       WHERE sp.calendar_entry_id = c.id
+                         AND sp.status != 'deleted'
+                   ) AS has_post
+            FROM smm_content_calendar c
+            LEFT JOIN smm_platforms p ON p.id = c.platform_id
+            LEFT JOIN smm_rubrics   r ON r.id = c.rubric_id
+            WHERE c.publish_date BETWEEN %s AND %s
+            ORDER BY c.publish_date ASC, c.platform_id ASC, c.id ASC
+        """, (date_from, date_to))
+        return [dict(r) for r in cur.fetchall()]
+
+
 # ── Посты ──────────────────────────────────────────────────────────────────────
 
 def create_post(
-    plan_id: int,
+    plan_id: Optional[int],
     topic: str,
     channel: str = "dzen",
     rubric_slug: Optional[str] = None,
     platform_format_slug: Optional[str] = None,
+    rubric_id: Optional[int] = None,
+    publish_date: Optional[str] = None,
+    calendar_entry_id: Optional[int] = None,
+    article_body: str = "",
+    status: str = "draft",
 ) -> int:
     """Создаёт пост, при наличии связывает с рубрикой и площадкой_форматом."""
     ensure_tables()
-    rubric_id: Optional[int] = None
-    pf_id: Optional[int] = None
 
-    if rubric_slug:
+    if rubric_id is None and rubric_slug:
         with _conn() as conn:
             cur = conn.cursor()
             cur.execute("SELECT id FROM smm_rubrics WHERE slug = %s", (rubric_slug,))
@@ -571,6 +833,7 @@ def create_post(
             if row:
                 rubric_id = row["id"]
 
+    pf_id: Optional[int] = None
     if platform_format_slug:
         with _conn() as conn:
             cur = conn.cursor()
@@ -582,9 +845,12 @@ def create_post(
     with _conn() as conn:
         cur = conn.cursor()
         cur.execute("""
-            INSERT INTO smm_posts (plan_id, topic, channel, status, rubric_id, platform_format_id)
-            VALUES (%s, %s, %s, 'draft', %s, %s) RETURNING id
-        """, (plan_id, topic, channel, rubric_id, pf_id))
+            INSERT INTO smm_posts
+                (plan_id, topic, channel, status, rubric_id, platform_format_id,
+                 publish_date, calendar_entry_id, article_body)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id
+        """, (plan_id, topic, channel, status, rubric_id, pf_id,
+              publish_date, calendar_entry_id, article_body))
         return cur.fetchone()["id"]
 
 
@@ -659,10 +925,10 @@ def get_all_posts(
 
 _ALLOWED_POST_FIELDS = frozenset({
     "status", "topic", "article_title", "article_body",
-    "editor_feedback", "image_prompt", "image_url",
+    "editor_feedback", "image_prompt", "image_url", "image_url_2",
     "published_url", "published_at",
     "journalist_id", "platform_format_id", "rubric_id", "publish_date",
-    "last_error",
+    "last_error", "initiate_dialog", "editor_1_feedback", "calendar_entry_id",
 })
 
 
@@ -731,21 +997,13 @@ def get_recent_reviews(limit: int = 10) -> list[str]:
 
 
 def get_existing_post_signatures() -> list[dict]:
-    """
-    Возвращает сигнатуры активных постов для дедупликации при массовом импорте.
-
-    Используется в smm.calendar_import.import_items. Отдаёт только колонки,
-    нужные для матчинга — без тяжёлых текстов статей.
-    """
+    """Совместимость: сигнатуры активных постов для дедупликации при импорте."""
     ensure_tables()
     with _conn() as conn:
         cur = conn.cursor()
         cur.execute(
-            """
-            SELECT publish_date, platform_format_id, rubric_id, topic
-            FROM smm_posts
-            WHERE status != 'deleted'
-            """
+            "SELECT publish_date, platform_format_id, rubric_id, topic "
+            "FROM smm_posts WHERE status != 'deleted'"
         )
         return [dict(r) for r in cur.fetchall()]
 
