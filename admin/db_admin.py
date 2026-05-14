@@ -3,9 +3,12 @@
 Использует прямое подключение psycopg2 (не через db.py основного модуля).
 """
 import os
+import time
 from contextlib import contextmanager
 from datetime import datetime, timedelta
 from typing import Any
+
+import threading
 
 import psycopg2
 import psycopg2.extras
@@ -13,31 +16,91 @@ import psycopg2.pool
 
 
 _pool: psycopg2.pool.ThreadedConnectionPool | None = None
+_pool_lock = threading.Lock()
+def _make_pool() -> psycopg2.pool.ThreadedConnectionPool:
+    db_url = os.environ.get("DATABASE_URL", "")
+    return psycopg2.pool.ThreadedConnectionPool(
+        2, 10, db_url,
+        cursor_factory=psycopg2.extras.RealDictCursor,
+        # TCP keepalives — не дают SSL-соединению умереть при простое
+        keepalives=1,
+        keepalives_idle=60,
+        keepalives_interval=10,
+        keepalives_count=5,
+    )
 
 
 def _get_pool() -> psycopg2.pool.ThreadedConnectionPool:
     global _pool
     if _pool is None:
-        db_url = os.environ.get("DATABASE_URL", "")
-        _pool = psycopg2.pool.ThreadedConnectionPool(
-            2, 10, db_url,
-            cursor_factory=psycopg2.extras.RealDictCursor,
-        )
+        with _pool_lock:
+            if _pool is None:
+                _pool = _make_pool()
     return _pool
+
+
+def _reset_pool() -> psycopg2.pool.ThreadedConnectionPool:
+    """Пересоздаёт пул целиком — вызывается когда все соединения оказались мёртвыми."""
+    global _pool
+    with _pool_lock:
+        old = _pool
+        _pool = _make_pool()
+        if old:
+            try:
+                old.closeall()
+            except Exception:
+                pass
+        return _pool
+
+
+_conn_last_used: dict[int, float] = {}   # id(conn) → monotonic timestamp
 
 
 @contextmanager
 def _conn():
     pool = _get_pool()
     conn = pool.getconn()
+    returned = False
+
+    # Ping только если соединение простаивало > 45 сек (избегаем RTT на каждый запрос)
+    if time.monotonic() - _conn_last_used.get(id(conn), 0) > 45:
+        try:
+            conn.cursor().execute("SELECT 1")
+            conn.rollback()
+        except Exception:
+            try:
+                pool.putconn(conn, close=True)
+            except Exception:
+                pass
+            returned = True
+            pool = _reset_pool()
+            conn = pool.getconn()
+            returned = False
+
     try:
         yield conn
         conn.commit()
+        _conn_last_used[id(conn)] = time.monotonic()
+    except (psycopg2.OperationalError, psycopg2.InterfaceError):
+        returned = True
+        try:
+            pool.putconn(conn, close=True)
+        except Exception:
+            pass
+        _reset_pool()
+        raise
     except Exception:
-        conn.rollback()
+        try:
+            conn.rollback()
+        except Exception:
+            pass
         raise
     finally:
-        pool.putconn(conn)
+        if not returned:
+            try:
+                pool.putconn(conn)
+            except Exception:
+                pass
 
 
 # ── Таблицы создаются один раз при старте через init_db() ─────────
@@ -108,6 +171,42 @@ def get_prompt_full_history(role: str, limit: int = 20) -> list[dict]:
             ORDER BY version DESC LIMIT %s
         """, (role, limit))
         return [dict(r) for r in cur.fetchall()]
+
+
+def get_prompts_batch(roles: list[str]) -> dict[str, dict]:
+    """Последние активные версии промтов для нескольких ролей — один запрос."""
+    if not roles:
+        return {}
+    with _conn() as conn:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT DISTINCT ON (role) role, version, prompt_text, updated_at, updated_by
+            FROM prompts
+            WHERE role = ANY(%s) AND is_active = TRUE
+            ORDER BY role, version DESC
+        """, (roles,))
+        return {r["role"]: dict(r) for r in cur.fetchall()}
+
+
+def get_prompt_histories_batch(roles: list[str], limit: int = 10) -> dict[str, list[dict]]:
+    """История версий с полным текстом для нескольких ролей — один запрос."""
+    if not roles:
+        return {}
+    with _conn() as conn:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT role, version, prompt_text, updated_at, updated_by,
+                   ROW_NUMBER() OVER (PARTITION BY role ORDER BY version DESC) AS rn
+            FROM prompts
+            WHERE role = ANY(%s)
+        """, (roles,))
+        result: dict[str, list] = {r: [] for r in roles}
+        for row in cur.fetchall():
+            if row["rn"] <= limit:
+                d = dict(row)
+                d.pop("rn", None)
+                result[row["role"]].append(d)
+        return result
 
 
 def restore_prompt_version(role: str, version: int, author: str) -> bool:
