@@ -49,6 +49,13 @@ case $CMD in
     sleep 2
     bash /opt/glava/ops.sh health
     ;;
+  deploy-staging)
+    cd /opt/glava-staging
+    git fetch origin
+    git checkout dev
+    git pull origin dev
+    sudo systemctl restart glava-admin-staging
+    ;;
   seed-prompts)
     cd /opt/glava
     source .venv/bin/activate
@@ -98,8 +105,9 @@ conn.close()
     echo '  logs-bot [N]       — логи Telegram бота'
     echo '  logs-n8n [N]       — логи n8n docker'
     echo '  status             — systemctl status'
-    echo '  deploy             — git pull + restart + health'
-    echo '  restart            — restart services + health'
+  echo '  deploy             — git pull + restart + health'
+  echo '  deploy-staging     — обновить staging из ветки dev'
+  echo '  restart            — restart services + health'
     echo '  n8n-workflows      — список воркфлоу n8n'
     echo '  n8n-executions [N] — последние N executions'
     echo '  n8n-execution <id> — детали execution'
