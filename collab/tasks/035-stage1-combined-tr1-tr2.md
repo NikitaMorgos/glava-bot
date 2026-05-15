@@ -1,6 +1,6 @@
 # Задача 035: Stage 1 на combined TR1+TR2 теряет TR2-эпизоды
 
-**Статус:** `new`
+**Статус:** `in-progress` (v55 done, 2/4 эпизодов)
 **Номер:** 035
 **Автор:** Опус
 **Дата создания:** 2026-05-15 (после Дашиного feedback'а v54)
@@ -133,3 +133,25 @@ Split-extract + pin-list. Самый дорогой, но самая высок�
 | Дата | Статус | Кто |
 |------|--------|-----|
 | 2026-05-15 | `new` | Опус |
+| 2026-05-15 | `in-progress` | Cursor |
+
+## v55 результаты (2026-05-15)
+
+Реализован Вариант 1 (split-extract) в `test_stage1_karakulina_full.py` + CA v1.2.
+14 unit-тестов PASS. Слияние через PR #24 в main.
+
+**Split-extract диагностика:**
+- Phase A (TR1): 33 events, 18 persons
+- Phase B (TR2) добавил: +9 events, +8 persons
+- fact_map_full: 42 events, 26 persons
+
+**Маркеры в fact_map_full:**
+- ✅ счётчик 1977 (event_auto_002)
+- ❌ огурцы Молдавия (не в timeline, но ✅ в book через CA persons/descriptions)
+- ❌ Нинвана (не в timeline, но ✅ в book)
+- ❌ шарлотка (absent)
+
+**task 035 в book_FINAL_stage3:** 2/4 ✅ (огурцы ✅, Нинвана ✅, счётчик ❌, шарлотка ❌)
+
+**Вывод:** Split-extract улучшил с 0/4 → 2/4. Огурцы и Нинвана попадают в книгу через CA обогащение.
+Счётчик и шарлотка нужны итерация v56 с pin-list events (CA v1.2) через `--prev-fact-map v55_fact_map`.
