@@ -1,0 +1,358 @@
+{
+  "project_id": "karakulina",
+  "stage": "stage1_full",
+  "timestamp": "20260515_090538",
+  "generated_at": "2026-05-15T09:15:22.285951Z",
+  "git_sha": "2274ca4",
+  "config_file": "/opt/glava/prompts/pipeline_config.json",
+  "config_sha256": "f654b5677e462db9d698c3681814e20c865136953cc9c6b104d2e2c5d5ddc672",
+  "active_prompts": {
+    "cleaner": {
+      "prompt_file": "01_cleaner_v1.md",
+      "prompt_exists": true,
+      "prompt_sha256": "bcdb4a845744438ee931e5557c8d30e3eaa0dbeec2b4ee158aeb89337147e1fc",
+      "model": "claude-haiku-4-5-20251001",
+      "max_tokens": 32000,
+      "temperature": 0.1
+    },
+    "fact_extractor": {
+      "prompt_file": "02_fact_extractor_v3.4.md",
+      "prompt_exists": true,
+      "prompt_sha256": "a863422a7676dab7ce098b2a7cf6fa4ec7dfc9a6cb17197a4e201b4210ddf26f",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 32000,
+      "temperature": 0.15
+    },
+    "historian": {
+      "prompt_file": "12_historian_v3.md",
+      "prompt_exists": true,
+      "prompt_sha256": "3e316c1468738ceb22b4f8ce2cea1defd7918ac04180b2551b3e59f0f8a76a22",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 64000,
+      "temperature": 0.3
+    },
+    "ghostwriter": {
+      "prompt_file": "03_ghostwriter_v2.17.md",
+      "prompt_exists": true,
+      "prompt_sha256": "118500d35955c0cd387a30caad3e1bde79bd1e5ac132c1be1621999a14071ec8",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 32000,
+      "temperature": 0.4
+    },
+    "fact_checker": {
+      "prompt_file": "04_fact_checker_v2.13.md",
+      "prompt_exists": true,
+      "prompt_sha256": "efec0625f4ae6f71bb3920f93615f1150a681b2609a34ceb69e0d32fa61acd3d",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 64000,
+      "temperature": 0.1
+    },
+    "literary_editor": {
+      "prompt_file": "05_literary_editor_v3.1.md",
+      "prompt_exists": true,
+      "prompt_sha256": "544582a54c287aaeff44be3826c00276d063b4ce915d29c02dd5ebfdd3f90485",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 32000,
+      "temperature": 0.5
+    },
+    "proofreader": {
+      "prompt_file": "06_proofreader_v1.md",
+      "prompt_exists": true,
+      "prompt_sha256": "5c600132d206cdc62876661662b917b17922e3779047de366485a78703758d79",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 32000,
+      "temperature": 0.0
+    },
+    "photo_editor": {
+      "prompt_file": "07_photo_editor_v1.md",
+      "prompt_exists": true,
+      "prompt_sha256": "0d55f58677f5c2568566b4cff82d0faccf9cea6af0d6f413830fa86a363a4179",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 32000,
+      "temperature": 0.25
+    },
+    "layout_designer": {
+      "prompt_file": "08_layout_designer_v3.22.md",
+      "prompt_exists": true,
+      "prompt_sha256": "d328e96f13fea1f2f692af68db8c1d055c62a029e70bebc339646f206f3f79ff",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 64000,
+      "temperature": 0.25
+    },
+    "qa_layout": {
+      "prompt_file": "09_qa_layout_v1.md",
+      "prompt_exists": true,
+      "prompt_sha256": "04a0b4137d947ef287a3e78de08f8dd0e024c3da836a3bafb8ab9bb08e1a4c92",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 32000,
+      "temperature": 0.05
+    },
+    "cover_designer": {
+      "prompt_file": "13_cover_designer_v2.6.md",
+      "prompt_exists": true,
+      "prompt_sha256": "38c4330f89f693ca8928b75e5a43822a9b64223238d0a3eaabac1df1199bdcf4",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 32000,
+      "temperature": 0.65
+    },
+    "layout_art_director": {
+      "prompt_file": "15_layout_art_director_v1.8.md",
+      "prompt_exists": true,
+      "prompt_sha256": "f04d0ab80ad4c86298503cd38b23e32f9608613957b79fa04c37dd2e2b6d49ea",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 64000,
+      "temperature": 0.45
+    },
+    "interview_architect": {
+      "prompt_file": "11_interview_architect_v4.1.md",
+      "prompt_exists": true,
+      "prompt_sha256": "b5d627abeca38235a963a2f1efa44d17ed5bc22c37aacf7115834d205f54ded2",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 32000,
+      "temperature": 0.5
+    },
+    "completeness_auditor": {
+      "prompt_file": "16_completeness_auditor_v1.1.md",
+      "prompt_exists": true,
+      "prompt_sha256": "e83bb8a6db14159cfe40f3925bce665d176245ef685902149b3b6ac696959ac1",
+      "model": "claude-haiku-4-5-20251001",
+      "max_tokens": 32000,
+      "temperature": 0.1
+    }
+  },
+  "inputs": {
+    "transcript1": "/opt/glava/exports/transcripts/karakulina_valentina_interview_assemblyai.txt",
+    "transcript2": "/opt/glava/exports/transcripts/karakulina_nikita_tatyana_interview_20260403.txt"
+  },
+  "inputs_sha256": {
+    "transcript1": "sha256:3555b3d0cb4da1ea",
+    "transcript2": "sha256:e5a1c8e149ed51c7"
+  },
+  "outputs": {
+    "cleaned": "exports/karakulina_v54/karakulina_combined_cleaned_20260515_090538.txt",
+    "fact_map_full": "exports/karakulina_v54/karakulina_fact_map_full_20260515_090538.json",
+    "fact_map_clean": "exports/karakulina_v54/karakulina_fact_map_20260515_090538.json",
+    "completeness_audit": "exports/karakulina_v54/karakulina_completeness_audit_20260515_090538.json",
+    "normalization_log": "exports/karakulina_v54/karakulina_normalization_log_20260515_090538.json"
+  },
+  "checkpoints": {},
+  "notes": {
+    "completeness_audit": {
+      "completeness_status": "incomplete",
+      "auto_enriched": {
+        "persons": 5,
+        "events": 18,
+        "locations": 7,
+        "traits": 13
+      },
+      "log_only_gaps": {
+        "missing_persons": [
+          {
+            "mention_in_transcript": "мать Валентины (имя неизвестно)",
+            "transcript_quote": "Про маму. По-моему, Марфа. Я могу спутать. Может, Марфа была, или там Дуня была. Где-то была Дуня, где-то Марфа",
+            "likely_relation": "бабушка Валентины (мать её отца)",
+            "reason_low_confidence": "Имя не уточнено, рассказчик сам сомневается (Марфа или Дуня). Упомянуто вскользь в контексте уточняющего вопроса. Нет прямой цитаты из основного интервью.",
+            "was_in_pin_list": false
+          },
+          {
+            "mention_in_transcript": "девичья фамилия тёти Поли",
+            "transcript_quote": "Девичья фамилия тёти Поли я не знаю. Амельченко она была не по мужу, а это была фамилия. Но это она была по мужу Амельченко",
+            "likely_relation": "старшая сестра Валентины",
+            "reason_low_confidence": "Рассказчик не знает девичью фамилию. Амельченко — фамилия мужа. Это не новая информация, а пробел в знаниях.",
+            "was_in_pin_list": false
+          },
+          {
+            "mention_in_transcript": "Шура (дочь тёти Шуры)",
+            "transcript_quote": "И очень часто у нас были Римма и Шура. Ой, Шура, Зина. Римма, Зина",
+            "likely_relation": "дочь тёти Шуры (сестры мужа Дмитрия)",
+            "reason_low_confidence": "Упомянута в списке имён, но не ясно, это ли Шура или это опечатка/переговор. Рассказчик сам себя исправляет ('Ой, Шура, Зина'). Может быть, это не отдельная персона, а ошибка в речи.",
+            "was_in_pin_list": false
+          },
+          {
+            "mention_in_transcript": "подружка, с которой Валентина собиралась поступать в 1946 году",
+            "transcript_quote": "В 1946 году собирались с подружкой поступать, и она приехала домой и встретила там Дмитрия Каракулина на Украине",
+            "likely_relation": "подруга Валентины",
+            "reason_low_confidence": "Имя не названо, роль минимальна (только упоминание в контексте плана на 1946 год). Дальнейшая судьба неизвестна.",
+            "was_in_pin_list": false
+          }
+        ],
+        "missing_events": [
+          {
+            "keyword": "школа в Старобельске",
+            "transcript_quote": "Училась в школе, скорее всего в сельской школе",
+            "suggested_title": "Обучение в школе (место и период неизвестны)",
+            "reason_low_confidence": "Рассказчик сам не уверен ('скорее всего в сельской школе'). Нет конкретных дат, названия школы, деталей обучения."
+          },
+          {
+            "keyword": "направление на работу в село Глинск",
+            "transcript_quote": "После окончания медицинской школы была направлена в Кировоградскую область, Светловолодский район, село Глинск",
+            "suggested_title": "Первое направление на работу в село Глинск (1940-1941)",
+            "reason_low_confidence": "Упомянуто только в автобиографии, без деталей о том, что там происходило, как долго работала, почему уехала."
+          },
+          {
+            "keyword": "фронты Великой Отечественной войны",
+            "transcript_quote": "Юго-Западном фронте: Кировоград, Воронеж, Саратов, Фрунзе, затем 4-й Украинский фронт, Киев, Западная Украина, Польша, Чехословакия и Германия",
+            "suggested_title": "Маршрут военной службы по фронтам (1941-1945)",
+            "reason_low_confidence": "Перечисление мест без деталей, эмоций, конкретных событий. Это скелет, а не полноценное событие."
+          },
+          {
+            "keyword": "работа в санэпидемстанции в Старобельске",
+            "transcript_quote": "После войны работала в Ворошиловградской области, город Старобельск, в городской санэпидемстанции, заведующей малярийным пунктом",
+            "suggested_title": "Работа в санэпидемстанции Старобельска (1945-1962)",
+            "reason_low_confidence": "Упомянуто только в автобиографии, без деталей о работе, достижениях, причинах ухода."
+          },
+          {
+            "keyword": "проживание в разных городах Венгрии",
+            "transcript_quote": "И в Венгрии каждый год они переезжали в разные города: Кечкемет, Кишкунхалаш, Байя",
+            "suggested_title": "Переезды по городам Венгрии (1958-1961)",
+            "reason_low_confidence": "Просто перечисление городов без деталей о жизни, впечатлениях, причинах переездов."
+          },
+          {
+            "keyword": "дача в 60-х годах",
+            "transcript_quote": "В 60-х годах у них появилась дача. Выходит, такие же зажиточные ребята переехали в собственную двухкомнатную квартиру большую в химинституте. У них появилась дача",
+            "suggested_title": "Появление дачи в 60-х годах",
+            "reason_low_confidence": "Упомянуто вскользь, без деталей о местоположении, что там выращивали, когда продали, почему продали."
+          },
+          {
+            "keyword": "дочь Татьяна не брали в отпуск",
+            "transcript_quote": "Отпуска проводили то в Сочи, то в Гагры с Валериком. Валерик — это её сын. Татьяну особо не брали, дочку Татьяну",
+            "suggested_title": "Отпуска без дочери Татьяны",
+            "reason_low_confidence": "Упомянуто как факт, но без объяснения причин, эмоционального контекста, деталей."
+          },
+          {
+            "keyword": "две доски почёта",
+            "transcript_quote": "Дважды была на доске почета",
+            "suggested_title": "Награждение доской почёта (дважды)",
+            "reason_low_confidence": "Упомянуто в автобиографии без дат, причин, деталей."
+          },
+          {
+            "keyword": "медали за победу в ВОВ",
+            "transcript_quote": "Медаль «20 лет победы в Великой Отечественной войне», Медаль 25 лет победы в ВОВ, Медаль 30 лет победы в ВОВ, Медаль 50 лет вооруженных сил СССР",
+            "suggested_title": "Награждение юбилейными медалями",
+            "reason_low_confidence": "Просто перечисление медалей без контекста, дат вручения, значения для Валентины."
+          },
+          {
+            "keyword": "зависимость от врача Нинваны",
+            "transcript_quote": "Потом очень много у неё была зависимость от вот врача Нинваны. Помнишь Полсачева? Да. Меня это очень раздражало. Когда она всегда вот приходила и там докладывала. Нинвана считает так-то, а Нинвана считает это",
+            "suggested_title": "Влияние врача Нинваны Полсачевой на Валентину",
+            "reason_low_confidence": "Упомянуто как проблема, но без деталей о том, когда это началось, как долго длилось, какие конкретные советы давала врач."
+          }
+        ],
+        "missing_locations": [
+          {
+            "mention_in_transcript": "Светловолодский район",
+            "transcript_quote": "была направлена в Кировоградскую область, Светловолодский район, село Глинск",
+            "likely_role": "место первого направления на работу",
+            "reason_low_confidence": "Упомянуто только в автобиографии как административное деление, без деталей о самом месте."
+          },
+          {
+            "mention_in_transcript": "Ворошиловградская область",
+            "transcript_quote": "После войны работала в Ворошиловградской области, город Старобельск",
+            "likely_role": "административное деление, где работала после войны",
+            "reason_low_confidence": "Историческое название (теперь Луганская область), упомянуто только в контексте работы."
+          },
+          {
+            "mention_in_transcript": "Белгород",
+            "transcript_quote": "Толя из Белгорода",
+            "likely_role": "место проживания племянника Толи",
+            "reason_low_confidence": "Упомянуто только как место проживания племянника, без связи с жизнью Валентины."
+          },
+          {
+            "mention_in_transcript": "Энгельс",
+            "transcript_quote": "Витя из Энгельса",
+            "likely_role": "место проживания племянника Вити",
+            "reason_low_confidence": "Упомянуто только как место проживания племянника, без связи с жизнью Валентины."
+          }
+        ],
+        "missing_traits": [
+          {
+            "trait": "трудолюбивость",
+            "transcript_quote": "Бабушкина трудолюбивость, скорее всего, утерялась. Наша праздность от Татьяны",
+            "reason_low_confidence": "Упомянуто как предположение ('скорее всего'), без конкретных примеров трудолюбивости."
+          },
+          {
+            "trait": "рукастость",
+            "transcript_quote": "Дед Митя, то есть отец Татьяны, тоже был трудолюбивый и рукастый. У Никиты, внука Валентины, навык рукастости был, но утрачен",
+            "reason_low_confidence": "Упомянуто как предположение о наследовании черты, без конкретных примеров рукастости Валентины."
+          }
+        ]
+      }
+    },
+    "name_normalization": {
+      "merged_pairs": [
+        {
+          "status": "merged",
+          "field": "persons",
+          "canonical": "Никита",
+          "canonical_id": "person_010",
+          "merged": "Никита",
+          "merged_id": "person_auto_005",
+          "overlap": 1.0,
+          "shared_variants": [
+            "никита",
+            "никиша"
+          ]
+        }
+      ],
+      "rejected_pairs": [
+        {
+          "status": "rejected",
+          "field": "persons",
+          "candidate_a": "Рудая Пелагея Алексеевна",
+          "candidate_id_a": "person_002",
+          "candidate_b": "Полина (тётя Поля)",
+          "candidate_id_b": "person_004",
+          "shared_variants": [
+            "пелагея",
+            "полина",
+            "поля"
+          ],
+          "blocked_reason": "relation_group_mismatch (parent:'мать' vs sibling:'старшая сестра')"
+        },
+        {
+          "status": "rejected",
+          "field": "persons",
+          "candidate_a": "старшие сёстры",
+          "candidate_id_a": "person_005",
+          "candidate_b": "тётя Маша",
+          "candidate_id_b": "person_016",
+          "shared_variants": [
+            "маня",
+            "мария",
+            "маша"
+          ],
+          "blocked_reason": "unknown_relation ('старшие сёстры' vs 'соседка')"
+        },
+        {
+          "status": "rejected",
+          "field": "persons",
+          "candidate_a": "старшие сёстры",
+          "candidate_id_a": "person_005",
+          "candidate_b": "Мария (тётя Маня)",
+          "candidate_id_b": "person_auto_002",
+          "shared_variants": [
+            "маня",
+            "маня тётя",
+            "мария"
+          ],
+          "blocked_reason": "unknown_relation ('старшие сёстры' vs 'старшая сестра')"
+        },
+        {
+          "status": "rejected",
+          "field": "persons",
+          "candidate_a": "тётя Маша",
+          "candidate_id_a": "person_016",
+          "candidate_b": "Мария (тётя Маня)",
+          "candidate_id_b": "person_auto_002",
+          "shared_variants": [
+            "маня",
+            "мария",
+            "маша"
+          ],
+          "blocked_reason": "relation_group_mismatch (non_family:'соседка' vs sibling:'старшая сестра')"
+        }
+      ],
+      "normalized_count": 1
+    }
+  }
+}

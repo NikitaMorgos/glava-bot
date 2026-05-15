@@ -1,0 +1,15 @@
+{
+  "scope_enforcement": "applied",
+  "affected_chapters": [
+    "ch_01",
+    "ch_02"
+  ],
+  "chapters_restored": [],
+  "callouts_restored": 0,
+  "historical_notes_restored": 0,
+  "new_out_of_scope_dropped": [],
+  "chars_before_total": 15853,
+  "chars_after_gw": 15853,
+  "chars_after_merged": 15853,
+  "chars_restored": 0
+}
