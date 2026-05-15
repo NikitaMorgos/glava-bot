@@ -67,8 +67,8 @@
     "model": "claude-sonnet-4-20250514",
     "max_tokens": 32000,
     "temperature": 0.4,
-    "prompt_file": "03_ghostwriter_v2.16.md",
-    "_notes": "v2.16 (2026-05-08, волна 1.3.3): REVISION SCOPE GUARDRAIL вынесен в АБСОЛЮТНЫЕ ЗАПРЕТЫ (запрет 0). v52: GW v2.15 проигнорировал SCOPE LOCK (стр. 1383 v2.15) — снёс ch_03/ch_04/epilogue при FC errors в ch_01/ch_02. Параллельно: code-level enforcement — `pipeline_utils.merge_revision_out_of_scope_chapters` программно восстанавливает out-of-scope главы из snapshot. v2.15 base (волна 1.2.2): ANTI-DELETION при revision. v2.14: СТОП-ФРАЗЫ, bio_data.awards."
+    "prompt_file": "03_ghostwriter_v2.17.md",
+    "_notes": "v2.17 (2026-05-08, Этап 1 рефакторинга): добавлен ЗАПРЕТ 8 — НЕ открывать главу/подсекцию пластиковым обобщением без фактов. v53b ch_04 начинался с «ярких поступков и запоминающихся привычек» с facts_used=[]. Каждый первый абзац главы и подсекции `##` должен содержать ≥1 конкретного факта (имя/год/место/предмет/событие). v2.16 base (волна 1.3.3): REVISION SCOPE GUARDRAIL. v2.15: ANTI-DELETION. v2.14: СТОП-ФРАЗЫ."
   },
 
   "fact_checker": {
@@ -83,8 +83,8 @@
     "model": "claude-sonnet-4-20250514",
     "max_tokens": 32000,
     "temperature": 0.5,
-    "prompt_file": "05_literary_editor_v3.md",
-    "_notes": "v3.0 (2026-03-28): уточнены Правило 1 (эпистемические маркеры), Правило 6 (характерные слова/выковыривал), Направление 8 (callout по главам, ch_04/ch_05 обязательны), исторические вставки 2-3. Temp 0.5 вместо 0.4. Апгрейд с v2."
+    "prompt_file": "05_literary_editor_v3.1.md",
+    "_notes": "v3.1 (2026-05-08, Этап 1 рефакторинга, task 034): TOP-PRIORITY ЗАПРЕТ 0 — preserve all structural fields главы (bio_data, timeline, facts_used, id, title, order) byte-identical. LE редактирует только content/is_modified/paragraphs/callouts. v53b: LE v3.0 дропнул chapters[ch_01].timeline (6 этапов жизни). Параллельно: `pipeline_utils.preserve_chapter_structural_fields` после Stage 3 LE копирует non-mutable поля из book_before_le. v3.0 base: уточнены Правило 1, Правило 6, Направление 8."
   },
 
   "proofreader": {

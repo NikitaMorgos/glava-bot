@@ -1477,6 +1477,99 @@ def _restore_chapter_scoped_items(
     return 0
 
 
+def preserve_chapter_structural_fields(
+    book_before_le: dict,
+    book_after_le: dict,
+    le_mutable_fields: tuple[str, ...] = ("content", "is_modified", "paragraphs"),
+) -> tuple[dict, dict]:
+    """
+    Защита Этапа 1 (task 034): Literary Editor может изменять только
+    `content` главы и `callouts/historical_notes` верхнего уровня. Все
+    остальные структурные поля главы (`bio_data`, `timeline`, `facts_used`,
+    `id`, `title`, `order`) программно копируются из book_before_le.
+
+    История класса (v53b регрессия, 2026-05-08):
+      Stage 2 GW v2.16 на TR2 правильно генерирует `chapters[ch_01].timeline`
+      с 6 этапами жизни (1920-1933 детство, ..., 1994-2005 пенсия). Stage 3
+      LE v3.0 возвращает главу без поля timeline (output schema LE не
+      описывает структурные поля главы → модель их не возвращает →
+      теряются). Результат: ch_01 в book_FINAL_stage3 пуст.
+
+    Эта функция переводит защиту с промпт-уровня (ненадёжный) на код-уровень
+    (детерминированный). LE v3.1 промпт явно описывает правило, но code
+    копирование — гарантия независимо от того, послушалась ли модель.
+
+    Алгоритм:
+      Для каждой главы в book_after_le по id:
+        - Берём соответствующую главу из book_before_le
+        - Копируем все non-mutable поля из before → after
+        - Mutable поля (content, is_modified, paragraphs) — оставляем из after
+      Главы которые есть в before но нет в after — игнорируются (это другой
+      класс проблем, scope merge задача).
+
+    Args:
+        book_before_le: snapshot book после Stage 2 (вход LE)
+        book_after_le: book после LE (выход)
+        le_mutable_fields: поля которые LE может изменять (default: content/
+            is_modified/paragraphs)
+
+    Returns:
+        (merged_book, details):
+            merged_book: dict — book_after_le с восстановленными
+                структурными полями
+            details: dict — что было восстановлено (диагностика)
+    """
+    import copy
+
+    chapters_before_by_id = {
+        ch.get("id"): ch
+        for ch in (book_before_le.get("chapters") or [])
+        if ch.get("id")
+    }
+
+    merged = copy.deepcopy(book_after_le)
+    restorations: list[dict] = []
+
+    for ch_after in merged.get("chapters") or []:
+        chid = ch_after.get("id")
+        if not chid:
+            continue
+        ch_before = chapters_before_by_id.get(chid)
+        if not ch_before:
+            continue
+
+        restored_keys: list[str] = []
+        for key, value in ch_before.items():
+            if key in le_mutable_fields:
+                continue
+            if key not in ch_after or ch_after.get(key) != value:
+                ch_after[key] = copy.deepcopy(value)
+                restored_keys.append(key)
+
+        if restored_keys:
+            restorations.append({
+                "chapter_id": chid,
+                "restored_fields": restored_keys,
+            })
+
+    details = {
+        "le_mutable_fields": list(le_mutable_fields),
+        "chapters_with_restored_fields": len(restorations),
+        "restorations": restorations,
+    }
+
+    if restorations:
+        details["reason"] = (
+            f"LE returned {len(restorations)} chapter(s) with missing or modified "
+            f"structural fields (timeline / bio_data / facts_used / etc.). "
+            f"Restored from book_before_le snapshot. v53b regression: LE v3.0 "
+            f"dropped chapters[ch_01].timeline (6 etapas) — fixed by v3.1 prompt + "
+            f"this programmatic copy."
+        )
+
+    return merged, details
+
+
 def validate_revision_volume(
     book_before: dict,
     book_after: dict,
