@@ -149,7 +149,10 @@ print("=" * 60)
 pres = json.loads(pres_path.read_text("utf-8"))
 restored_chs = pres.get("chapters_with_restored_fields", [])
 restorations = pres.get("restorations", [])
-print(f"chapters_with_restored_fields: {len(restored_chs)} — {restored_chs}")
+if isinstance(restored_chs, list):
+    print(f"chapters_with_restored_fields: {len(restored_chs)} — {restored_chs}")
+else:
+    print(f"chapters_with_restored_fields: {restored_chs}")
 for r in restorations:
     print(f"  {r.get('chapter_id')}: restored={r.get('restored_fields')}")
 if not restorations:
