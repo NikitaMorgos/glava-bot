@@ -17,7 +17,7 @@ import anthropic
 from pipeline_utils import (
     load_config, run_cleaner, run_fact_extractor, save_run_manifest,
     clean_fact_map_for_downstream, run_completeness_auditor,
-    apply_completeness_enrichment,
+    apply_completeness_enrichment, merge_fact_maps,
 )
 from scripts.normalize_named_entities import normalize_named_entities
 
@@ -42,8 +42,17 @@ def main():
         default=None,
         help="Путь к fact_map предыдущего прогона Stage 1 (JSON). "
              "Используется Completeness Auditor как pin-list: "
-             "персоны из предыдущего прогона — контрольный список; "
+             "персоны/events из предыдущего прогона — контрольный список; "
              "если кто-то был раньше и не найден сейчас — flag для re-extraction.",
+    )
+    parser.add_argument(
+        "--split-extract", action="store_true",
+        help="task 035 split-extract mode (для combined TR1+TR2). "
+             "Cleaner и FE проходят на КАЖДОМ транскрипте отдельно: "
+             "TR1 → fact_map_TR1 (Phase A) → TR2 (Phase B, existing_facts=fact_map_TR1) → "
+             "merged fact_map. Защита от потери TR2-уникальных эпизодов "
+             "(огурцы Молдавия, счётчик 1977, Нинвана — v54 регрессия). "
+             "Применимо только при --transcript2.",
     )
     args = parser.parse_args()
 
@@ -69,11 +78,26 @@ def main():
 
     text1 = tr1.read_text(encoding="utf-8")
 
-    if args.transcript2:
+    has_tr2 = bool(args.transcript2)
+    text2 = None
+    tr2 = None
+    if has_tr2:
         tr2 = Path(args.transcript2)
         if not tr2.exists():
             print(f"[ERROR] Файл не найден: {tr2}"); sys.exit(1)
         text2 = tr2.read_text(encoding="utf-8")
+
+    # Validation: split-extract требует --transcript2
+    split_mode = args.split_extract and has_tr2
+    if args.split_extract and not has_tr2:
+        print("[WARN] --split-extract игнорируется: --transcript2 не указан. Один транскрипт = классический режим.")
+        split_mode = False
+
+    if split_mode:
+        print(f"\n[STAGE1] Каракулина — SPLIT-EXTRACT mode (task 035)")
+        print(f"  Источник 1: {tr1.name} ({len(text1):,} симв) → Phase A")
+        print(f"  Источник 2: {tr2.name} ({len(text2):,} симв) → Phase B (existing_facts=fact_map_TR1)")
+    elif has_tr2:
         combined = (
             f"=== ИСТОЧНИК 1: {tr1.name} (оригинальный ASR, март 2026) ===\n\n"
             + text1.strip()
@@ -81,7 +105,7 @@ def main():
             + f"=== ИСТОЧНИК 2: {tr2.name} (уточняющее интервью, апрель 2026) ===\n\n"
             + text2.strip()
         )
-        print(f"\n[STAGE1] Каракулина — два транскрипта")
+        print(f"\n[STAGE1] Каракулина — два транскрипта (combined, classic mode)")
         print(f"  Источник 1: {tr1.name} ({len(text1):,} симв)")
         print(f"  Источник 2: {tr2.name} ({len(text2):,} симв)")
         print(f"  Суммарно:   {len(combined):,} симв")
@@ -100,38 +124,138 @@ def main():
     out_dir.mkdir(parents=True, exist_ok=True)
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-    # Cleaner
-    print(f"\n>>> ШАГ 1: CLEANER")
-    if args.skip_cleaner:
-        cleaned = combined
-        print("[CLEANER] Пропущен")
-    else:
-        cleaned, _ = run_cleaner(
-            client, combined,
+    if split_mode:
+        # === SPLIT-EXTRACT mode (task 035) ===
+        # Cleaner отдельно на каждом транскрипте, FE Phase A на TR1, FE Phase B на TR2.
+        # Цель — защита от потери TR2-уникальных эпизодов на combined Stage 1 (v54 регрессия).
+
+        # Cleaner TR1
+        print(f"\n>>> ШАГ 1a: CLEANER на TR1")
+        if args.skip_cleaner:
+            cleaned_tr1 = text1.strip()
+            print("[CLEANER TR1] Пропущен")
+        else:
+            cleaned_tr1, _ = run_cleaner(
+                client, text1,
+                subject_name=CHARACTER_NAME,
+                narrator_name=NARRATOR_NAME,
+                narrator_relation=NARRATOR_RELATION,
+                cfg=cfg,
+            )
+        cleaned_tr1_path = out_dir / f"karakulina_cleaned_TR1_{ts}.txt"
+        cleaned_tr1_path.write_text(cleaned_tr1, encoding="utf-8")
+        print(f"[SAVED] {cleaned_tr1_path.name} ({len(cleaned_tr1):,} симв)")
+
+        # Cleaner TR2
+        print(f"\n>>> ШАГ 1b: CLEANER на TR2")
+        if args.skip_cleaner:
+            cleaned_tr2 = text2.strip()
+            print("[CLEANER TR2] Пропущен")
+        else:
+            cleaned_tr2, _ = run_cleaner(
+                client, text2,
+                subject_name=CHARACTER_NAME,
+                narrator_name=NARRATOR_NAME,
+                narrator_relation=NARRATOR_RELATION,
+                cfg=cfg,
+            )
+        cleaned_tr2_path = out_dir / f"karakulina_cleaned_TR2_{ts}.txt"
+        cleaned_tr2_path.write_text(cleaned_tr2, encoding="utf-8")
+        print(f"[SAVED] {cleaned_tr2_path.name} ({len(cleaned_tr2):,} симв)")
+
+        # Объединённый cleaned для downstream (CA + manifest)
+        cleaned = (
+            f"=== ИСТОЧНИК 1: {tr1.name} (после Cleaner) ===\n\n"
+            + cleaned_tr1
+            + "\n\n" + "=" * 70 + "\n\n"
+            + f"=== ИСТОЧНИК 2: {tr2.name} (после Cleaner) ===\n\n"
+            + cleaned_tr2
+        )
+        cleaned_path = out_dir / f"karakulina_combined_cleaned_{ts}.txt"
+        cleaned_path.write_text(cleaned, encoding="utf-8")
+
+        # FE Phase A на TR1
+        print(f"\n>>> ШАГ 2a: FACT EXTRACTOR Phase A на TR1 ({cfg['fact_extractor']['prompt_file']})")
+        fact_map_tr1 = run_fact_extractor(
+            client, cleaned_tr1,
             subject_name=CHARACTER_NAME,
             narrator_name=NARRATOR_NAME,
             narrator_relation=NARRATOR_RELATION,
+            project_id=PROJECT_ID,
+            known_birth_year=KNOWN_BIRTH_YEAR,
+            phase="A",
+            call_type="initial",
             cfg=cfg,
         )
-    cleaned_path = out_dir / f"karakulina_combined_cleaned_{ts}.txt"
-    cleaned_path.write_text(cleaned, encoding="utf-8")
-    print(f"[SAVED] {cleaned_path.name} ({len(cleaned):,} симв)")
+        fm_tr1_path = out_dir / f"karakulina_fact_map_TR1_{ts}.json"
+        fm_tr1_path.write_text(json.dumps(fact_map_tr1, ensure_ascii=False, indent=2), encoding="utf-8")
+        tr1_persons = len(fact_map_tr1.get("persons", []))
+        tr1_events = len(fact_map_tr1.get("timeline", []))
+        print(f"[SAVED] {fm_tr1_path.name} (persons={tr1_persons}, events={tr1_events})")
 
-    # Fact Extractor
-    print(f"\n>>> ШАГ 2: FACT EXTRACTOR {cfg['fact_extractor']['prompt_file']}")
-    fact_map = run_fact_extractor(
-        client, cleaned,
-        subject_name=CHARACTER_NAME,
-        narrator_name=NARRATOR_NAME,
-        narrator_relation=NARRATOR_RELATION,
-        project_id=PROJECT_ID,
-        known_birth_year=KNOWN_BIRTH_YEAR,
-        cfg=cfg,
-    )
+        # FE Phase B на TR2 с existing_facts=fact_map_TR1
+        print(f"\n>>> ШАГ 2b: FACT EXTRACTOR Phase B на TR2 (existing_facts=fact_map_TR1)")
+        fact_map_tr2_incremental = run_fact_extractor(
+            client, cleaned_tr2,
+            subject_name=CHARACTER_NAME,
+            narrator_name=NARRATOR_NAME,
+            narrator_relation=NARRATOR_RELATION,
+            project_id=PROJECT_ID,
+            known_birth_year=KNOWN_BIRTH_YEAR,
+            existing_facts=fact_map_tr1,
+            phase="B",
+            call_type="incremental",
+            cfg=cfg,
+        )
+        tr2_persons_new = len(fact_map_tr2_incremental.get("persons", []))
+        tr2_events_new = len(fact_map_tr2_incremental.get("timeline", []))
+        print(f"[FE TR2 Phase B] incremental: persons={tr2_persons_new}, events={tr2_events_new}")
 
-    fm_path = out_dir / f"karakulina_fact_map_full_{ts}.json"
-    fm_path.write_text(json.dumps(fact_map, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"[SAVED] {fm_path.name}")
+        # Merge TR1 + TR2 incremental → fact_map_combined
+        fact_map = merge_fact_maps(base=fact_map_tr1, incremental=fact_map_tr2_incremental)
+        merged_persons = len(fact_map.get("persons", []))
+        merged_events = len(fact_map.get("timeline", []))
+        print(f"[SPLIT-EXTRACT] Merged: persons {tr1_persons}+{tr2_persons_new} → {merged_persons}, "
+              f"events {tr1_events}+{tr2_events_new} → {merged_events}")
+
+        fm_path = out_dir / f"karakulina_fact_map_full_{ts}.json"
+        fm_path.write_text(json.dumps(fact_map, ensure_ascii=False, indent=2), encoding="utf-8")
+        print(f"[SAVED] {fm_path.name}")
+
+    else:
+        # === CLASSIC mode (без split, один FE на combined cleaned) ===
+        # Cleaner
+        print(f"\n>>> ШАГ 1: CLEANER")
+        if args.skip_cleaner:
+            cleaned = combined
+            print("[CLEANER] Пропущен")
+        else:
+            cleaned, _ = run_cleaner(
+                client, combined,
+                subject_name=CHARACTER_NAME,
+                narrator_name=NARRATOR_NAME,
+                narrator_relation=NARRATOR_RELATION,
+                cfg=cfg,
+            )
+        cleaned_path = out_dir / f"karakulina_combined_cleaned_{ts}.txt"
+        cleaned_path.write_text(cleaned, encoding="utf-8")
+        print(f"[SAVED] {cleaned_path.name} ({len(cleaned):,} симв)")
+
+        # Fact Extractor
+        print(f"\n>>> ШАГ 2: FACT EXTRACTOR {cfg['fact_extractor']['prompt_file']}")
+        fact_map = run_fact_extractor(
+            client, cleaned,
+            subject_name=CHARACTER_NAME,
+            narrator_name=NARRATOR_NAME,
+            narrator_relation=NARRATOR_RELATION,
+            project_id=PROJECT_ID,
+            known_birth_year=KNOWN_BIRTH_YEAR,
+            cfg=cfg,
+        )
+
+        fm_path = out_dir / f"karakulina_fact_map_full_{ts}.json"
+        fm_path.write_text(json.dumps(fact_map, ensure_ascii=False, indent=2), encoding="utf-8")
+        print(f"[SAVED] {fm_path.name}")
 
     # Completeness Auditor (агент 16)
     print(f"\n>>> ШАГ 3: COMPLETENESS AUDITOR {cfg.get('completeness_auditor', {}).get('prompt_file', 'N/A')}")

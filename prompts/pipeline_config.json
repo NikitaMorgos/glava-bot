@@ -155,7 +155,7 @@
     "model": "claude-haiku-4-5-20251001",
     "max_tokens": 32000,
     "temperature": 0.1,
-    "prompt_file": "16_completeness_auditor_v1.1.md",
-    "_notes": "v1.0 (2026-04-27): новый агент, задача 014. Аудит полноты после FE: ищет пропущенные persons/events/locations/traits. Возвращает auto_enrich (мержится в fact_map) + log_only_gaps (только warning). Модель Haiku — задача паттерн-матчинга, Sonnet не нужен. v1.0.1 (2026-04-28): max_tokens 8000→32000 после truncation в прогонах v36a/b."
+    "prompt_file": "16_completeness_auditor_v1.2.md",
+    "_notes": "v1.2 (2026-05-15, task 035): pin-list расширен на events (не только persons). Защита от потери эпизодов на combined TR1+TR2 (v54 регрессия: огурцы Молдавия 1990, счётчик 1977, Нинвана Полсачева). Если event с 2+ markers в transcript но отсутствует в fact_map.timeline — Аудитор обязан восстановить. v1.1 base: pin-list persons. v1.0: новый агент задача 014."
   }
 }

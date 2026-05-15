@@ -528,9 +528,20 @@ def run_fact_extractor(client, cleaned_text: str, subject_name: str,
                        project_id: str, known_birth_year: int | None = None,
                        known_details: str | None = None,
                        existing_facts: dict | None = None,
+                       phase: str = "A",
+                       call_type: str = "initial",
                        cfg: dict | None = None) -> dict:
     """
     Запускает Fact Extractor.
+
+    Параметры:
+      phase: "A" (initial) или "B" (incremental — обогащение existing_facts).
+        Используется в task 035 split-extract mode: TR1 → Phase A,
+        TR2 → Phase B с existing_facts=fact_map_TR1.
+      call_type: "initial" (Phase A первый запуск) или "incremental"
+        (Phase B на дополнительном транскрипте).
+      existing_facts: для Phase B — fact_map от предыдущего прохода.
+
     Параметры модели берутся из pipeline_config.json (или cfg).
     Возвращает fact_map (dict).
     """
@@ -543,18 +554,31 @@ def run_fact_extractor(client, cleaned_text: str, subject_name: str,
     temperature = fe_cfg.get("temperature", 0.15)
     system_prompt = load_prompt(fe_cfg["prompt_file"])
 
-    print(f"\n[FACT EXTRACTOR] Запускаю ({model}, max_tokens={max_tokens})...")
+    print(f"\n[FACT EXTRACTOR] Запускаю ({model}, max_tokens={max_tokens}, phase={phase})...")
     start = datetime.now()
+
+    # Phase B instruction: incremental extraction
+    if phase == "B" and existing_facts:
+        instruction = (
+            "Извлеки факты из дополнительного протокола интервью. "
+            "Используй existing_facts как baseline: НЕ дублируй уже известные факты "
+            "(те же persons/events/locations с теми же id). Извлекай ТОЛЬКО НОВЫЕ "
+            "факты из этого транскрипта — эпизоды, имена, события которых нет в "
+            "existing_facts. Если факт уточняет уже известный (например, добавляет "
+            "детали к event_001) — верни его как is_refinement: true с тем же id."
+        )
+    else:
+        instruction = "Извлеки все факты из протокола интервью. Построй карту фактов, хронологию, определи пробелы."
 
     user_message = {
         "context": {
             "project_id": project_id,
-            "phase": "A",
-            "call_type": "initial",
+            "phase": phase,
+            "call_type": call_type,
             "iteration": 1,
             "max_iterations": 1,
             "previous_agent": "transcript_cleaner",
-            "instruction": "Извлеки все факты из протокола интервью. Построй карту фактов, хронологию, определи пробелы."
+            "instruction": instruction,
         },
         "data": {
             "subject": {
@@ -686,10 +710,11 @@ def run_completeness_auditor(
         },
     }
 
-    # Pin-list: добавляем персон из предыдущего прогона если передан
+    # Pin-list: персоны + events из предыдущего прогона или known_episodes файла (task 035 v1.2)
     if pin_list_fact_map:
-        prev_persons = pin_list_fact_map.get("persons", [])
-        if prev_persons:
+        prev_persons = pin_list_fact_map.get("persons", []) or []
+        prev_events = pin_list_fact_map.get("timeline", []) or pin_list_fact_map.get("events", []) or []
+        if prev_persons or prev_events:
             pin_list = [
                 {
                     "id": p.get("id", ""),
@@ -700,17 +725,28 @@ def run_completeness_auditor(
                 for p in prev_persons
                 if p.get("name")
             ]
+            pin_events = [
+                {
+                    "id": e.get("id", ""),
+                    "title": e.get("title", "") or e.get("description", "")[:80],
+                    "year": e.get("year") or e.get("date") or e.get("period"),
+                    "markers": e.get("markers", []),
+                }
+                for e in prev_events
+                if e.get("id") or e.get("title")
+            ]
             user_message["pin_list"] = {
-                "source": "previous_run_fact_map",
+                "source": "previous_run_fact_map_or_known_episodes",
                 "description": (
-                    "Персоны из предыдущего прогона Stage 1. "
-                    "Это контрольный список: если персона была в предыдущем прогоне, "
-                    "но отсутствует в текущем fact_map — обязательно проверить транскрипт. "
-                    "Если найдена → auto_enrich; если нет → log_only_gaps с пометкой 'was_in_pin_list'."
+                    "Контрольный список из предыдущего прогона или known_episodes файла. "
+                    "Если персона/event был в предыдущем прогоне, но отсутствует в текущем fact_map — "
+                    "обязательно проверить транскрипт. Если найден → auto_enrich; "
+                    "если нет → log_only_gaps с пометкой 'was_in_pin_list'."
                 ),
                 "persons": pin_list,
+                "events": pin_events,
             }
-            print(f"[COMPLETENESS AUDITOR] Pin-list: {len(pin_list)} персон из предыдущего прогона")
+            print(f"[COMPLETENESS AUDITOR] Pin-list: {len(pin_list)} персон + {len(pin_events)} events из предыдущего прогона")
 
     raw_chunks = []
     with client.messages.stream(
