@@ -38,7 +38,13 @@ except ImportError:
     print("[ERROR] pip install anthropic")
     sys.exit(1)
 
-from pipeline_utils import load_config, load_prompt, save_run_manifest, run_proofreader_per_chapter
+from pipeline_utils import (
+    load_config,
+    load_prompt,
+    save_run_manifest,
+    run_proofreader_per_chapter,
+    preserve_chapter_structural_fields,
+)
 from pipeline_quality_gates import (
     run_stage3_text_gates, run_stage3_text_gates_variant_b,
     save_gate_report, summarize_failed_gates,
@@ -545,16 +551,39 @@ async def main():
         print(f"[SAVED] Сырой ответ: {raw_path}")
         sys.exit(1)
 
-    # Сохранение промежуточного результата
-    book_after_le = {
+    # Сохранение промежуточного результата (raw LE output)
+    book_after_le_raw = {
         "chapters": result["chapters"],
         "callouts": result.get("callouts", []),
         "historical_notes": result.get("historical_notes", []),
     }
+
+    # ── Structural fields preservation guard (Этап 1, task 034) ────────
+    # Защита от регрессии Stage 3 LE: LE v3.0 теряет structural fields
+    # главы (bio_data, timeline, facts_used) если они отсутствуют в его
+    # output schema. v3.1 промпт + код copy здесь = defense in depth.
+    book_after_le, preserve_details = preserve_chapter_structural_fields(
+        book_before_le=book_draft,
+        book_after_le=book_after_le_raw,
+    )
+    preserve_path = out_dir / f"{args.prefix}_le_structural_preservation_{ts}.json"
+    with open(preserve_path, "w", encoding="utf-8") as f:
+        json.dump(preserve_details, f, ensure_ascii=False, indent=2)
+    restored_count = preserve_details.get("chapters_with_restored_fields", 0)
+    if restored_count > 0:
+        print(
+            f"[STRUCTURAL_PRESERVE] ⚠️  LE дропнул структурные поля в "
+            f"{restored_count} главах — восстановлены из book_before_le. "
+            f"Детали: {preserve_path.name}"
+        )
+    else:
+        print(f"[STRUCTURAL_PRESERVE] ✅ LE вернул все структурные поля. "
+              f"{preserve_path.name}")
+
     book_le_path = out_dir / f"{args.prefix}_book_stage3_liteditor_{ts}.json"
     with open(book_le_path, "w", encoding="utf-8") as f:
         json.dump({"book_draft": book_after_le}, f, ensure_ascii=False, indent=2)
-    print(f"[SAVED] book после Литредактора: {book_le_path.name}")
+    print(f"[SAVED] book после Литредактора (со structural preserve): {book_le_path.name}")
 
     report_path = out_dir / f"{args.prefix}_liteditor_report_{ts}.json"
     with open(report_path, "w", encoding="utf-8") as f:
