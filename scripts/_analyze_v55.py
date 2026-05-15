@@ -9,8 +9,8 @@ ROOT = Path("/opt/glava")
 
 # fact_map_full
 fm_path = sorted((ROOT / "exports/karakulina_v55").glob("karakulina_fact_map_full_*.json"))[-1]
-fm_tr1_path = sorted((ROOT / "exports/karakulina_v55").glob("karakulina_fact_map_TR1_*.json"), default=[None])
-fm_tr1_path = fm_tr1_path[-1] if fm_tr1_path else None
+_tr1_paths = sorted((ROOT / "exports/karakulina_v55").glob("karakulina_fact_map_TR1_*.json"))
+fm_tr1_path = _tr1_paths[-1] if _tr1_paths else None
 book_s3_path = sorted((ROOT / "exports/stage3_v55").glob("karakulina_v55_book_FINAL_stage3_*.json"))[-1]
 pres_path = sorted((ROOT / "exports/stage3_v55").glob("karakulina_v55_le_structural_preservation_*.json"))[-1]
 text_path = ROOT / "collab/runs/karakulina_v55/karakulina_v55_text_FULL.md"
