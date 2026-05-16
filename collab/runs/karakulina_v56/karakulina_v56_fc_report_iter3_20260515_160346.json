@@ -1,0 +1,139 @@
+{
+  "project_id": "karakulina_stage2_test",
+  "iteration": 3,
+  "verdict": "fail",
+  "errors": [
+    {
+      "id": "err_001",
+      "type": "distortion",
+      "severity": "critical",
+      "chapter_id": "ch_01",
+      "location": "bio_data.personal, место рождения",
+      "what_is_written": "село Мариевка, Новомергородский район, Кировоградская область",
+      "what_should_be": "село Мариевка, Новомиргородский район, Кировоградская область",
+      "source": {
+        "type": "fact_map",
+        "reference": "event_001: место рождения указано как 'село Мариевка, Новомиргородский район, Кировоградская область'"
+      },
+      "fix_instruction": "В bio_data.personal исправить написание района с 'Новомергородский' на 'Новомиргородский' согласно fact_map.subject.birth_place",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_002",
+      "type": "distortion",
+      "severity": "critical",
+      "chapter_id": "ch_02",
+      "location": "Абзац p_02_001, первое предложение",
+      "what_is_written": "село Мариевка Новомергородского района Кировоградской области",
+      "what_should_be": "село Мариевка Новомиргородского района Кировоградской области",
+      "source": {
+        "type": "fact_map",
+        "reference": "event_001 и fact_map.subject.birth_place"
+      },
+      "fix_instruction": "В p_02_001 исправить написание района с 'Новомергородского' на 'Новомиргородского'",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_003",
+      "type": "distortion",
+      "severity": "major",
+      "chapter_id": "ch_02",
+      "location": "Абзац p_02_011, последнее предложение",
+      "what_is_written": "остался с тётей Шурой в городе Керсанов Тамбовской области",
+      "what_should_be": "остался с тётей Шурой в городе Кирсанов Тамбовской области",
+      "source": {
+        "type": "fact_map",
+        "reference": "event_024: location указан как 'Кирсанов, Тамбовская область'"
+      },
+      "fix_instruction": "В p_02_011 исправить написание города с 'Керсанов' на 'Кирсанов'",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_004",
+      "type": "omission",
+      "severity": "critical",
+      "chapter_id": "ch_01",
+      "location": "bio_data.family",
+      "what_is_written": "Отсутствует запись о бабушке Марфе",
+      "what_should_be": "Должна быть запись: {\"label\": \"Бабушка\", \"value\": \"Марфа\", \"note\": \"мать отца Валентины\"}",
+      "source": {
+        "type": "fact_map",
+        "reference": "person_019: Марфа, relation_to_subject: 'бабушка', description: 'мать отца Валентины'"
+      },
+      "fix_instruction": "Добавить в bio_data.family запись о бабушке Марфе согласно person_019 из fact_map",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_005",
+      "type": "omission",
+      "severity": "major",
+      "chapter_id": "ch_01",
+      "location": "bio_data.awards",
+      "what_is_written": "Неполные названия юбилейных медалей",
+      "what_should_be": "Полные официальные названия медалей",
+      "source": {
+        "type": "transcript",
+        "reference": "int_001: 'Медаль 20 лет победы в Великой Отечественной войне', 'Медаль 25 лет победы в ВОВ', 'Медаль 30 лет победы в ВОВ', 'Медаль 50 лет вооруженных сил СССР'"
+      },
+      "fix_instruction": "Исправить сокращённые названия медалей на полные: '1965' → 'медаль 20 лет победы в Великой Отечественной войне', '1970' → 'медаль 25 лет победы в ВОВ', '1975' → 'медаль 30 лет победы в ВОВ', '1968' → 'медаль 50 лет вооруженных сил СССР'",
+      "legitimate_deletion": false
+    }
+  ],
+  "warnings": [
+    {
+      "id": "warn_001",
+      "type": "possible_omission",
+      "chapter_id": "ch_02",
+      "description": "В тексте отсутствует упоминание о работе в санэпидемстанции Старобельска после войны, хотя это указано в fact_map.timeline event_013",
+      "recommendation": "Рассмотреть включение информации о работе заведующей малярийным пунктом в санэпидемстанции Старобельска после войны"
+    },
+    {
+      "id": "warn_002",
+      "type": "ambiguous_source",
+      "chapter_id": "ch_01",
+      "description": "Имя бабушки в fact_map указано как 'Марфа' с aliases ['Дуня'] и confidence: 'low', но в bio_data отсутствует",
+      "recommendation": "Уточнить у клиента правильное имя бабушки или включить с оговоркой неточности"
+    }
+  ],
+  "completeness_check": {
+    "total_facts_in_map": 156,
+    "facts_referenced_in_text": 142,
+    "facts_verified_ok": 137,
+    "facts_with_errors": 5,
+    "facts_missing_from_text": [
+      {
+        "fact_id": "person_019",
+        "fact_description": "Бабушка Марфа (мать отца Валентины)",
+        "was_in_facts_omitted": true,
+        "omission_justified": false,
+        "recommendation": "Включить — близкий родственник должен быть в bio_data.family"
+      },
+      {
+        "fact_id": "event_013",
+        "fact_description": "Работа в санэпидемстанции Старобельска после войны",
+        "was_in_facts_omitted": true,
+        "omission_justified": false,
+        "recommendation": "Включить — важный период трудовой деятельности"
+      }
+    ]
+  },
+  "regression_check": {
+    "performed": false,
+    "chapters_checked": [],
+    "issues_found": []
+  },
+  "summary": {
+    "critical_errors": 3,
+    "major_errors": 2,
+    "minor_errors": 0,
+    "warnings_count": 2,
+    "overall_assessment": "ЭСКАЛАЦИЯ: после 3 итераций критические ошибки не устранены. Обнаружены критические искажения в написании топонимов (Новомиргородский/Новомергородский район) и критический пропуск родственника в bio_data.family. Требуется вмешательство Продюсера."
+  },
+  "stats": {
+    "facts_checked": 156,
+    "facts_passed": 137,
+    "facts_failed": 5,
+    "coverage_percent": 91.0,
+    "needs_verification_flagged": 0
+  }
+}
