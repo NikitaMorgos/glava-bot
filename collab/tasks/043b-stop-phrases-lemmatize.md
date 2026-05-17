@@ -61,12 +61,12 @@ def lemmatize_pattern(phrase: str) -> str:
     {
       "category": "metaphor_bonds",
       "pattern": r"\b(семейн\w+|кровн\w+|родств\w+)\s+узы\s+(оказ\w+\s+)?крепче\s+\w+",
-      "example_neg": "семейные узы оказались крепче формальных различий"
+      "example_neg_template": "[семейные|кровные|родственные] узы оказались крепче [X]"
     },
     {
       "category": "lifedefining_speciality",
       "pattern": r"(определ\w+|стал\w+)\s+(всю|её|всей|его)?\s*(дальнейш\w+|будущ\w+|всю)?\s*(жизн\w+|карьер\w+|судьб\w+)",
-      "example_neg": "профессия акушерки — специальность, которая определила всю её дальнейшую жизнь"
+      "example_neg_template": "[профессия] — специальность, которая определила всю [его/её] [жизнь/карьеру/судьбу]"
     },
     {
       "category": "could_X_any_Y_but_actually_Z",
@@ -83,12 +83,12 @@ def lemmatize_pattern(phrase: str) -> str:
     {
       "category": "filled_with_X",
       "pattern": r"(жизн\w+|жил\w+)\s+был\w+\s+наполнен\w+",
-      "example_neg": "жизнь была наполнена служением людям"
+      "example_neg_template": "жизнь была наполнена [абстрактное обобщение]"
     },
     {
       "category": "passed_to_generations",
       "pattern": r"передал\w+\s+(следующ\w+\s+поколен|потомк|следующ\w+\s+поколения)",
-      "example_neg": "передались следующим поколениям"
+      "example_neg_template": "передались следующим поколениям"
     },
     {
       "category": "person_of_their_time",

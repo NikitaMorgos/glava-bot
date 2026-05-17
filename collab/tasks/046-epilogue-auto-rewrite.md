@@ -36,7 +36,7 @@ task 043 — validate-only без auto-fix (я сам так зафиксиро�
       "category": "person_of_their_time",
       "pattern_regex": "\\b[Бб]ыл\\w*\\s+человек\\w{0,3}\\s+своего\\s+времени[.,]?",
       "action": "delete_sentence_if_starts_with_match",
-      "fallback_replacement": null
+      "reason": "клише обобщения эпохи"
     },
     {
       "category": "path_from_X_to_Y",
@@ -48,18 +48,19 @@ task 043 — validate-only без auto-fix (я сам так зафиксиро�
       "category": "life_filled_with_X",
       "pattern_regex": "(жизн\\w+|жил\\w+)\\s+был\\w+\\s+наполнен\\w+\\s+\\w+",
       "action": "delete_sentence",
-      "reason": "пафосное обобщение"
+      "reason": "пафосное обобщение без конкретики"
     },
     {
       "category": "passed_to_generations",
       "pattern_regex": "передал\\w+\\s+(следующ\\w+\\s+поколен|следующ\\w+\\s+поколения|потомк)",
-      "action": "delete_sentence"
+      "action": "delete_sentence",
+      "reason": "клише межпоколенческой передачи"
     },
     {
       "category": "tradition_lives_in_family",
       "pattern_regex": "(традиция|обычай)\\s+«?[^»]+»?\\s+(жив|живёт|остал\\w+)\\s+(в\\s+семье|с\\s+нами|в\\s+памяти)",
       "action": "delete_sentence",
-      "reason": "часто фантазия про продолжение традиции"
+      "reason": "часто фантазия про продолжение традиции без подтверждения в источнике"
     }
   ],
   "applies_to_chapter_ids": ["epilogue"]

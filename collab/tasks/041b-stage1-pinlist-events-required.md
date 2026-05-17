@@ -38,6 +38,17 @@ Diagnostic v58 fact_map выявил: CA `auto_enrich.timeline` содержит
 - В `<run>_stage1_full_run_manifest.json` зафиксировать поле `pin_list_used: <path>` + `pin_list_episodes_count`
 - На пустой pin-list — warning в manifest
 
+**4. Расширить pin-list schema — поле `min_sentences`** (для task 050 — Класс 14):
+- Добавить опциональную колонку в markdown таблицах `episodes`/`bytovye`/`traits`:
+```markdown
+| # | episode_id | Эпизод | Год | TR | Маркеры | min_sentences | В v_N? | Цитата |
+```
+- Парсер (`parse_pin_list_from_markdown` в `pipeline_utils.py`) — извлекает `min_sentences` если есть, default иначе:
+  - episodes default: 3
+  - bytovye default: 2
+  - traits default: 1
+- Передаётся в GW input через pin_list блок (для task 050 ПРАВИЛО 8)
+
 ### Какой результат ожидается
 
 В v59 Stage 1 manifest:
