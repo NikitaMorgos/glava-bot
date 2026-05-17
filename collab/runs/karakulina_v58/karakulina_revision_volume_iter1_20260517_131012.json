@@ -1,0 +1,11 @@
+{
+  "chars_before": 12957,
+  "chars_after": 12633,
+  "ratio": 0.975,
+  "threshold": 0.95,
+  "drop_chars": 324,
+  "legitimate_deletions_count": 0,
+  "legitimate_deletions": [],
+  "evidence_failures": [],
+  "verdict": "ok_within_threshold"
+}

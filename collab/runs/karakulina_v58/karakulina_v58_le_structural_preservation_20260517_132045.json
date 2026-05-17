@@ -1,0 +1,41 @@
+{
+  "le_mutable_fields": [
+    "content",
+    "is_modified",
+    "paragraphs"
+  ],
+  "chapters_with_restored_fields": 5,
+  "restorations": [
+    {
+      "chapter_id": "ch_01",
+      "restored_fields": [
+        "order"
+      ]
+    },
+    {
+      "chapter_id": "ch_02",
+      "restored_fields": [
+        "order"
+      ]
+    },
+    {
+      "chapter_id": "ch_03",
+      "restored_fields": [
+        "order"
+      ]
+    },
+    {
+      "chapter_id": "ch_04",
+      "restored_fields": [
+        "order"
+      ]
+    },
+    {
+      "chapter_id": "epilogue",
+      "restored_fields": [
+        "order"
+      ]
+    }
+  ],
+  "reason": "LE returned 5 chapter(s) with missing or modified structural fields (timeline / bio_data / facts_used / etc.). Restored from book_before_le snapshot. v53b regression: LE v3.0 dropped chapters[ch_01].timeline (6 etapas) — fixed by v3.1 prompt + this programmatic copy."
+}

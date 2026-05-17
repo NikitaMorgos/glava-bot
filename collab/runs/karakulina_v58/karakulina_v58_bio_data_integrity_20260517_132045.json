@@ -1,0 +1,23 @@
+{
+  "filtered_non_family": [
+    {
+      "label": "Сёстры",
+      "value": "старшие сёстры",
+      "source": ""
+    },
+    {
+      "label": "Родственница",
+      "value": "тётя Маша",
+      "source": ""
+    }
+  ],
+  "required_field_issues": [
+    {
+      "type": "missing_award",
+      "entity": "Присвоение звания «Ударник коммунистического труда»",
+      "source": "event_025"
+    }
+  ],
+  "issues_count": 1,
+  "filtered_count": 2
+}

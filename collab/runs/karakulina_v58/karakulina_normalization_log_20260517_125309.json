@@ -1,0 +1,29 @@
+[
+  {
+    "status": "rejected",
+    "field": "persons",
+    "candidate_a": "Рудая Пелагея Алексеевна",
+    "candidate_id_a": "person_002",
+    "candidate_b": "Полина",
+    "candidate_id_b": "person_004",
+    "shared_variants": [
+      "пелагея",
+      "полина",
+      "поля"
+    ],
+    "blocked_reason": "relation_group_mismatch (parent:'мать' vs sibling:'старшая сестра')"
+  },
+  {
+    "status": "merged",
+    "field": "locations",
+    "canonical": "село Мариевка, Новомиргородский район, Кировоградская область",
+    "canonical_id": "loc_001",
+    "merged": "село Глинск, Светловолодский район, Кировоградская область",
+    "merged_id": "loc_004",
+    "overlap": 1.0,
+    "shared_variants": [
+      "кировоградская",
+      "район,"
+    ]
+  }
+]

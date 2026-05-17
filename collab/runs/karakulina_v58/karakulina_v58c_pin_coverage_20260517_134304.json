@@ -1,0 +1,683 @@
+{
+  "episodes": [
+    {
+      "episode_id": "ep_001",
+      "category": "episodes",
+      "title": "Голод 1933, мать умерла + младший брат умер + отец ушёл на заработки, Валентина 13 лет → детдом → Полина забрала",
+      "coverage": "full",
+      "markers_found": 2,
+      "markers_total": 3,
+      "chapter_id": "ch_01",
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "ep_001a",
+      "category": "episodes",
+      "title": "Семья сильно пострадала от голодомора (не только мать) — антитриггер: не сводить к «мать умерла, отец ушёл», нужен масштаб",
+      "coverage": "skipped",
+      "markers_found": 0,
+      "markers_total": 1,
+      "chapter_id": null,
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "ep_001b",
+      "category": "episodes",
+      "title": "Разные отцы у Валентины и старших сестёр — Полина, Маня = Амельченко; Валентина = Рудая",
+      "coverage": "skipped",
+      "markers_found": 0,
+      "markers_total": 1,
+      "chapter_id": null,
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "ep_002",
+      "category": "episodes",
+      "title": "Фельдшерско-акушерская школа Кировоград",
+      "coverage": "full",
+      "markers_found": 3,
+      "markers_total": 3,
+      "chapter_id": "ch_01",
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "ep_003",
+      "category": "episodes",
+      "title": "Призыв на фронт 23.06.1941",
+      "coverage": "full",
+      "markers_found": 2,
+      "markers_total": 3,
+      "chapter_id": "ch_01",
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "ep_004",
+      "category": "episodes",
+      "title": "Госпиталь, награды: медаль 1943 + Красная Звезда 1945",
+      "coverage": "skipped",
+      "markers_found": 0,
+      "markers_total": 1,
+      "chapter_id": null,
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "ep_005",
+      "category": "episodes",
+      "title": "Знакомство с Дмитрием → свадьба 12.07.1946 в Старобельске",
+      "coverage": "full",
+      "markers_found": 4,
+      "markers_total": 4,
+      "chapter_id": "ch_01",
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "ep_006",
+      "category": "episodes",
+      "title": "Документы украдены на вокзале, солдат «выковыривал» через КПП в Германию",
+      "coverage": "full",
+      "markers_found": 3,
+      "markers_total": 3,
+      "chapter_id": "ch_02",
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "ep_007",
+      "category": "episodes",
+      "title": "Жизнь в Германии 1946-48",
+      "coverage": "partial",
+      "markers_found": 1,
+      "markers_total": 2,
+      "chapter_id": "ch_01",
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "ep_008",
+      "category": "episodes",
+      "title": "Рождение Валерия (Вышний Волочёк, 1948)",
+      "coverage": "partial",
+      "markers_found": 1,
+      "markers_total": 2,
+      "chapter_id": "ch_01",
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "ep_009",
+      "category": "episodes",
+      "title": "Рождение Татьяны (Тверь/Калинин, 1956)",
+      "coverage": "skipped",
+      "markers_found": 0,
+      "markers_total": 1,
+      "chapter_id": null,
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "ep_010",
+      "category": "episodes",
+      "title": "Венгрия 1958-62 (Кечкемет, Кишкунхалаш, Байя)",
+      "coverage": "partial",
+      "markers_found": 1,
+      "markers_total": 2,
+      "chapter_id": "ch_01",
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "ep_011",
+      "category": "episodes",
+      "title": "Операция на желудке 1960, после стала мало есть и не ела молочного",
+      "coverage": "full",
+      "markers_found": 2,
+      "markers_total": 3,
+      "chapter_id": "ch_02",
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "ep_012",
+      "category": "episodes",
+      "title": "Валерий остался у тёти Шуры в Кирсанове (1961) — мать спокойно приняла",
+      "coverage": "full",
+      "markers_found": 4,
+      "markers_total": 4,
+      "chapter_id": "ch_01",
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "ep_013",
+      "category": "episodes",
+      "title": "Сахалин-развилка 1962 (Дмитрий выбрал увольнение → квартира в Химинституте)",
+      "coverage": "partial",
+      "markers_found": 1,
+      "markers_total": 2,
+      "chapter_id": "ch_02",
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "ep_013a",
+      "category": "episodes",
+      "title": "Хрущевское сокращение армии 1962 — historical_note (фоновый контекст)",
+      "coverage": "skipped",
+      "markers_found": 0,
+      "markers_total": 1,
+      "chapter_id": null,
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "ep_014",
+      "category": "episodes",
+      "title": "Химинститут — посёлок городского типа на окраине Калинина, двухкомнатная квартира",
+      "coverage": "full",
+      "markers_found": 3,
+      "markers_total": 3,
+      "chapter_id": "ch_01",
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "ep_014a",
+      "category": "episodes",
+      "title": "Историческая реплика «Химинститут — типичный научный посёлок 1960-х (Синтетик ДК, пятиэтажки)» — historical_note",
+      "coverage": "skipped",
+      "markers_found": 0,
+      "markers_total": 1,
+      "chapter_id": null,
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "ep_015",
+      "category": "episodes",
+      "title": "Татьяна в детский сад №95, рядом с овощным магазином",
+      "coverage": "skipped",
+      "markers_found": 0,
+      "markers_total": 1,
+      "chapter_id": null,
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "ep_016",
+      "category": "episodes",
+      "title": "Работа в поликлинике с 1962-63, 40 лет к работе впервые",
+      "coverage": "full",
+      "markers_found": 3,
+      "markers_total": 3,
+      "chapter_id": "ch_01",
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "ep_017",
+      "category": "episodes",
+      "title": "Дача появилась в 60-х",
+      "coverage": "partial",
+      "markers_found": 1,
+      "markers_total": 2,
+      "chapter_id": "ch_02",
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "ep_018",
+      "category": "episodes",
+      "title": "Звание «Ударник коммунистического труда» 1965",
+      "coverage": "full",
+      "markers_found": 2,
+      "markers_total": 2,
+      "chapter_id": "ch_01",
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "ep_019",
+      "category": "episodes",
+      "title": "Дважды на доске почёта",
+      "coverage": "skipped",
+      "markers_found": 0,
+      "markers_total": 1,
+      "chapter_id": null,
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "ep_020",
+      "category": "episodes",
+      "title": "Партгрупорг / общественная работа в поликлинике",
+      "coverage": "skipped",
+      "markers_found": 0,
+      "markers_total": 1,
+      "chapter_id": null,
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "ep_021",
+      "category": "episodes",
+      "title": "Брак Татьяны с Маргось Владимир 1977",
+      "coverage": "full",
+      "markers_found": 3,
+      "markers_total": 3,
+      "chapter_id": "ch_01",
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "ep_022",
+      "category": "episodes",
+      "title": "Замечание про счётчик 1977 (конфликт с зятем)",
+      "coverage": "skipped",
+      "markers_found": 0,
+      "markers_total": 1,
+      "chapter_id": null,
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "ep_023",
+      "category": "episodes",
+      "title": "Смерть мужа Дмитрия 1978",
+      "coverage": "partial",
+      "markers_found": 1,
+      "markers_total": 2,
+      "chapter_id": "ch_01",
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "ep_024",
+      "category": "episodes",
+      "title": "Огурцы из Молдавии в чемодане (испорчены, Татьяна выкинула) — развёрнутый эпизод",
+      "coverage": "skipped",
+      "markers_found": 0,
+      "markers_total": 4,
+      "chapter_id": null,
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "ep_025",
+      "category": "episodes",
+      "title": "Жалобы на дороговизну в 90-е",
+      "coverage": "partial",
+      "markers_found": 1,
+      "markers_total": 2,
+      "chapter_id": "ch_02",
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "ep_026",
+      "category": "episodes",
+      "title": "Волна крещений в 90-е, ходила в Воскресенскую церковь во Власево (не верующая, дань традиции)",
+      "coverage": "skipped",
+      "markers_found": 0,
+      "markers_total": 1,
+      "chapter_id": null,
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "ep_027",
+      "category": "episodes",
+      "title": "Выход на пенсию август 1994",
+      "coverage": "full",
+      "markers_found": 3,
+      "markers_total": 3,
+      "chapter_id": "ch_01",
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "ep_028",
+      "category": "episodes",
+      "title": "Татьяна замуж за Кужбу Олега, переезд на площадь Капошвара 1996",
+      "coverage": "full",
+      "markers_found": 3,
+      "markers_total": 3,
+      "chapter_id": "ch_01",
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "ep_028a",
+      "category": "episodes",
+      "title": "Валентина осталась одна с 1996 (НЕ с 1978!)",
+      "coverage": "skipped",
+      "markers_found": 0,
+      "markers_total": 1,
+      "chapter_id": null,
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "ep_029",
+      "category": "episodes",
+      "title": "Продажа дачи 1990-е, Валентина жалела, тётя Маша повлияла",
+      "coverage": "skipped",
+      "markers_found": 0,
+      "markers_total": 1,
+      "chapter_id": null,
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "ep_030",
+      "category": "episodes",
+      "title": "Перелом ноги 2005, переезд к дочери на Капошвара",
+      "coverage": "partial",
+      "markers_found": 1,
+      "markers_total": 2,
+      "chapter_id": "ch_01",
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "byt_001",
+      "category": "bytovye",
+      "title": "Шуба → пианино для Татьяны 1962",
+      "coverage": "skipped",
+      "markers_found": 0,
+      "markers_total": 1,
+      "chapter_id": null,
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "byt_002",
+      "category": "bytovye",
+      "title": "Чудный взбитый крем",
+      "coverage": "skipped",
+      "markers_found": 0,
+      "markers_total": 1,
+      "chapter_id": null,
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "byt_003",
+      "category": "bytovye",
+      "title": "Пирожки, беляши, Наполеон, бисквиты, шарлотка",
+      "coverage": "skipped",
+      "markers_found": 0,
+      "markers_total": 2,
+      "chapter_id": null,
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "byt_004",
+      "category": "bytovye",
+      "title": "Авоська из зонтика",
+      "coverage": "skipped",
+      "markers_found": 0,
+      "markers_total": 2,
+      "chapter_id": null,
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "byt_005",
+      "category": "bytovye",
+      "title": "Французские духи в 85 лет",
+      "coverage": "skipped",
+      "markers_found": 0,
+      "markers_total": 1,
+      "chapter_id": null,
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "byt_006",
+      "category": "bytovye",
+      "title": "Курсы кройки и шитья в Доме офицеров",
+      "coverage": "skipped",
+      "markers_found": 0,
+      "markers_total": 1,
+      "chapter_id": null,
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "byt_007",
+      "category": "bytovye",
+      "title": "Немецкий фарфор сервиз на 12 персон за 120 руб (месячная зарплата)",
+      "coverage": "skipped",
+      "markers_found": 0,
+      "markers_total": 1,
+      "chapter_id": null,
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "byt_008",
+      "category": "bytovye",
+      "title": "Пение в хоре в Венгрии",
+      "coverage": "skipped",
+      "markers_found": 0,
+      "markers_total": 2,
+      "chapter_id": null,
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "byt_009",
+      "category": "bytovye",
+      "title": "Не любила грибы/ягоды; тётя Маша-соседка любила",
+      "coverage": "skipped",
+      "markers_found": 0,
+      "markers_total": 1,
+      "chapter_id": null,
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "byt_010",
+      "category": "bytovye",
+      "title": "Зависимость от авторитета врача Нинваны Полсачевой",
+      "coverage": "skipped",
+      "markers_found": 0,
+      "markers_total": 1,
+      "chapter_id": null,
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "byt_011",
+      "category": "bytovye",
+      "title": "Мельхиоровые ложечки из Сафроново",
+      "coverage": "skipped",
+      "markers_found": 0,
+      "markers_total": 1,
+      "chapter_id": null,
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "byt_012",
+      "category": "bytovye",
+      "title": "Шляпки, сумочки",
+      "coverage": "skipped",
+      "markers_found": 0,
+      "markers_total": 1,
+      "chapter_id": null,
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "byt_013",
+      "category": "bytovye",
+      "title": "Красивое постельное бельё",
+      "coverage": "skipped",
+      "markers_found": 0,
+      "markers_total": 1,
+      "chapter_id": null,
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "byt_014",
+      "category": "bytovye",
+      "title": "Чистоплотность: чашки кипятком, гладит",
+      "coverage": "skipped",
+      "markers_found": 0,
+      "markers_total": 1,
+      "chapter_id": null,
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "byt_015",
+      "category": "bytovye",
+      "title": "Карты и домино с внуками",
+      "coverage": "skipped",
+      "markers_found": 0,
+      "markers_total": 1,
+      "chapter_id": null,
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "byt_016",
+      "category": "bytovye",
+      "title": "ДК «Синтетик», Татьяна водила Никиту на аэробику; Валентина удивлялась",
+      "coverage": "skipped",
+      "markers_found": 0,
+      "markers_total": 1,
+      "chapter_id": null,
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "byt_017",
+      "category": "bytovye",
+      "title": "«Посидеть на дорожку» — святая семейная традиция (НЕ привязывать к конкретному отъезду)",
+      "coverage": "skipped",
+      "markers_found": 0,
+      "markers_total": 1,
+      "chapter_id": null,
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "byt_018",
+      "category": "bytovye",
+      "title": "Шила/вышивала",
+      "coverage": "skipped",
+      "markers_found": 0,
+      "markers_total": 1,
+      "chapter_id": null,
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "byt_019",
+      "category": "bytovye",
+      "title": "Украшения салатов из варенья, любила красиво накрыть",
+      "coverage": "skipped",
+      "markers_found": 0,
+      "markers_total": 1,
+      "chapter_id": null,
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "byt_020",
+      "category": "bytovye",
+      "title": "Почерк с отрицательным наклоном; такой же у внука Никиты",
+      "coverage": "skipped",
+      "markers_found": 0,
+      "markers_total": 1,
+      "chapter_id": null,
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "trait_001",
+      "category": "traits",
+      "title": "Стойкий оловянный солдатик",
+      "coverage": "skipped",
+      "markers_found": 0,
+      "markers_total": 1,
+      "chapter_id": null,
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "trait_002",
+      "category": "traits",
+      "title": "Работящая, не наслаждающаяся («муравей, не стрекоза»)",
+      "coverage": "skipped",
+      "markers_found": 0,
+      "markers_total": 1,
+      "chapter_id": null,
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "trait_003",
+      "category": "traits",
+      "title": "«Посидеть на дорожку» — святая традиция",
+      "coverage": "skipped",
+      "markers_found": 0,
+      "markers_total": 1,
+      "chapter_id": null,
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "trait_004",
+      "category": "traits",
+      "title": "Сдержанная, не показывала слёз",
+      "coverage": "skipped",
+      "markers_found": 0,
+      "markers_total": 1,
+      "chapter_id": null,
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "trait_005",
+      "category": "traits",
+      "title": "Сварливость после смерти мужа",
+      "coverage": "skipped",
+      "markers_found": 0,
+      "markers_total": 1,
+      "chapter_id": null,
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "trait_006",
+      "category": "traits",
+      "title": "Гостеприимная, хлебосольная",
+      "coverage": "skipped",
+      "markers_found": 0,
+      "markers_total": 1,
+      "chapter_id": null,
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "trait_007",
+      "category": "traits",
+      "title": "Бессребренница, уколы бесплатно",
+      "coverage": "skipped",
+      "markers_found": 0,
+      "markers_total": 1,
+      "chapter_id": null,
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "trait_008",
+      "category": "traits",
+      "title": "Атеистка, коммунистка",
+      "coverage": "skipped",
+      "markers_found": 0,
+      "markers_total": 2,
+      "chapter_id": null,
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "trait_009",
+      "category": "traits",
+      "title": "Чувства юмора особо не было",
+      "coverage": "skipped",
+      "markers_found": 0,
+      "markers_total": 1,
+      "chapter_id": null,
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "trait_010",
+      "category": "traits",
+      "title": "«Французская бабушка» (TR2 сравнение с бабой Аней)",
+      "coverage": "skipped",
+      "markers_found": 0,
+      "markers_total": 1,
+      "chapter_id": null,
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "trait_011",
+      "category": "traits",
+      "title": "«От рук отбились» — про внуков после смерти мужа",
+      "coverage": "skipped",
+      "markers_found": 0,
+      "markers_total": 1,
+      "chapter_id": null,
+      "must_include_failed": []
+    },
+    {
+      "episode_id": "trait_012",
+      "category": "traits",
+      "title": "«Сколько на тебя можно, слуг у нас нет» — внукам",
+      "coverage": "skipped",
+      "markers_found": 0,
+      "markers_total": 1,
+      "chapter_id": null,
+      "must_include_failed": []
+    }
+  ],
+  "summary": {
+    "full": 13,
+    "partial": 8,
+    "skipped": 46,
+    "total": 67,
+    "characteristic_words_found": 3,
+    "characteristic_words_total": 6,
+    "must_include_issues": 0
+  }
+}

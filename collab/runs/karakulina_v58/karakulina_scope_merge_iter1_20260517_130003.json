@@ -1,0 +1,24 @@
+{
+  "scope_enforcement": "applied",
+  "affected_chapters": [
+    "ch_01",
+    "ch_02",
+    "ch_04"
+  ],
+  "chapters_restored": [
+    {
+      "chapter_id": "epilogue",
+      "reason": "out_of_scope_modified",
+      "chars_before": 900,
+      "chars_after_gw": 894,
+      "chars_restored": 900
+    }
+  ],
+  "callouts_restored": 0,
+  "historical_notes_restored": 0,
+  "new_out_of_scope_dropped": [],
+  "chars_before_total": 12230,
+  "chars_after_gw": 12145,
+  "chars_after_merged": 12151,
+  "chars_restored": 900
+}

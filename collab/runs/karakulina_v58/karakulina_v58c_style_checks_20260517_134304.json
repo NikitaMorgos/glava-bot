@@ -1,0 +1,32 @@
+{
+  "epilogue_stop_phrases": {
+    "issues": [
+      {
+        "phrase": "судьба распорядилась",
+        "chapter_id": "ch_02",
+        "severity": "warning",
+        "snippet": "поступать дальше учиться. Но судьба распорядилась иначе. Она встретила Дмитрия"
+      },
+      {
+        "phrase": "путь от сироты",
+        "chapter_id": "epilogue",
+        "severity": "error",
+        "snippet": "на Ивановна Каракулина прошла путь от сироты времён голодомора до уважаемо"
+      },
+      {
+        "phrase": "жизнь была наполнена",
+        "chapter_id": "epilogue",
+        "severity": "error",
+        "snippet": "семью и вырастила детей.\n\nЕё жизнь была наполнена трудом и заботой о близких. Ч"
+      }
+    ],
+    "errors_count": 2,
+    "warnings_count": 1
+  },
+  "awkward_formulation": {
+    "issues": [],
+    "issues_count": 0
+  },
+  "errors_count": 2,
+  "warnings_count": 1
+}

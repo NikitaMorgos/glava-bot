@@ -1,0 +1,30 @@
+{
+  "historical_note_grounding": {
+    "issues": [],
+    "notes_checked": 0,
+    "errors_count": 0,
+    "warnings_count": 0
+  },
+  "motivation_attributions": {
+    "issues": [
+      {
+        "chapter_id": "ch_03",
+        "type": "motivation_unverified",
+        "severity": "warning",
+        "matched_phrase": "хотела —",
+        "context": "ались.\n\nОбучать внуков она не хотела — на кухню не пускала, шить не "
+      },
+      {
+        "chapter_id": "ch_03",
+        "type": "motivation_unverified",
+        "severity": "warning",
+        "matched_phrase": "хотела —",
+        "context": "Обучать внуков она не хотела — на кухню не пускала, шить не "
+      }
+    ],
+    "attributions_found": 2,
+    "errors_count": 0,
+    "warnings_count": 2
+  },
+  "critical_errors": 0
+}

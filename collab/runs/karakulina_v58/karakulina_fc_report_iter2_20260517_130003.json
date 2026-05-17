@@ -1,0 +1,136 @@
+{
+  "project_id": "karakulina_stage2_test",
+  "iteration": 2,
+  "verdict": "fail",
+  "errors": [
+    {
+      "id": "err_001",
+      "type": "distortion",
+      "severity": "major",
+      "chapter_id": "ch_01",
+      "location": "bio_data.personal[2].value",
+      "what_is_written": "село Мариевка, Новомергородский район, Кировоградская область",
+      "what_should_be": "село Мариевка, Новомиргородский район, Кировоградская область",
+      "source": {
+        "type": "fact_map",
+        "reference": "subject.birth_place и loc_001.name"
+      },
+      "fix_instruction": "Исправить написание района с «Новомергородский» на «Новомиргородский» в ch_01.bio_data.personal[2].value согласно fact_map.subject.birth_place",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_002",
+      "type": "distortion",
+      "severity": "major",
+      "chapter_id": "ch_02",
+      "location": "p_02_001, первое предложение",
+      "what_is_written": "село Мариевка Новомергородского района Кировоградской области",
+      "what_should_be": "село Мариевка Новомиргородского района Кировоградской области",
+      "source": {
+        "type": "fact_map",
+        "reference": "loc_001.name"
+      },
+      "fix_instruction": "Исправить написание района с «Новомергородского» на «Новомиргородского» в ch_02, первый абзац",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_003",
+      "type": "distortion",
+      "severity": "major",
+      "chapter_id": "ch_02",
+      "location": "p_02_015",
+      "what_is_written": "остался с тётей Шурой в городе Керсанов Тамбовской области",
+      "what_should_be": "остался с тётей Шурой в городе Кирсанов Тамбовской области",
+      "source": {
+        "type": "fact_map",
+        "reference": "loc_013.name и event_022"
+      },
+      "fix_instruction": "Исправить название города с «Керсанов» на «Кирсанов» в ch_02, абзац p_02_015",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_004",
+      "type": "distortion",
+      "severity": "major",
+      "chapter_id": "ch_02",
+      "location": "p_02_023 и p_02_026",
+      "what_is_written": "переехала в центр Твери, на Капашвара... переехала к дочери на Капашвара",
+      "what_should_be": "переехала в центр Твери, на Капошвара... переехала к дочери на Капошвара",
+      "source": {
+        "type": "fact_map",
+        "reference": "loc_015.name"
+      },
+      "fix_instruction": "Исправить написание улицы с «Капашвара» на «Капошвара» в ch_02 (абзацы p_02_023 и p_02_026)",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_005",
+      "type": "distortion",
+      "severity": "major",
+      "chapter_id": "epilogue",
+      "location": "p_ep_004",
+      "what_is_written": "переехала к дочери на улицу Капошвара",
+      "what_should_be": "переехала к дочери на улицу Капошвара",
+      "source": {
+        "type": "fact_map",
+        "reference": "loc_015.name"
+      },
+      "fix_instruction": "Проверить и унифицировать написание улицы как «Капошвара» в epilogue согласно fact_map.locations[].name",
+      "legitimate_deletion": false
+    }
+  ],
+  "warnings": [
+    {
+      "id": "warn_001",
+      "type": "possible_omission",
+      "chapter_id": "ch_04",
+      "description": "В ch_04 отсутствует эпизод с огурцами из Молдавии, который упоминался в предыдущих итерациях",
+      "recommendation": "Проверить, был ли эпизод намеренно удалён или случайно потерян при правках"
+    }
+  ],
+  "completeness_check": {
+    "total_facts_in_map": 156,
+    "facts_referenced_in_text": 142,
+    "facts_verified_ok": 137,
+    "facts_with_errors": 5,
+    "facts_missing_from_text": [
+      {
+        "fact_id": "person_013",
+        "fact_description": "Амельченко, племянник, сын тёти Поли",
+        "was_in_facts_omitted": true,
+        "omission_justified": true,
+        "recommendation": "Допустимо пропустить — упомянут в bio_data.family"
+      },
+      {
+        "fact_id": "person_014",
+        "fact_description": "Толя из Белгорода, племянник",
+        "was_in_facts_omitted": true,
+        "omission_justified": true,
+        "recommendation": "Допустимо пропустить — упомянут в bio_data.family"
+      }
+    ]
+  },
+  "regression_check": {
+    "performed": true,
+    "chapters_checked": [
+      "ch_01",
+      "ch_02",
+      "ch_04"
+    ],
+    "issues_found": []
+  },
+  "summary": {
+    "critical_errors": 0,
+    "major_errors": 5,
+    "minor_errors": 0,
+    "warnings_count": 1,
+    "overall_assessment": "Обнаружены 5 major ошибок в написании топонимов: «Новомергородский» вместо «Новомиргородский», «Керсанов» вместо «Кирсанов», и разнобой в написании «Капашвара/Капошвара». Все ошибки касаются точного написания географических названий согласно fact_map."
+  },
+  "stats": {
+    "facts_checked": 142,
+    "facts_passed": 137,
+    "facts_failed": 5,
+    "coverage_percent": 91,
+    "needs_verification_flagged": 0
+  }
+}

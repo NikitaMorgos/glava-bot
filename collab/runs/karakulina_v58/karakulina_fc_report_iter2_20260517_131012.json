@@ -1,0 +1,97 @@
+{
+  "project_id": "karakulina_stage2_test",
+  "iteration": 2,
+  "verdict": "pass",
+  "errors": [
+    {
+      "id": "err_001",
+      "type": "framing_distortion",
+      "severity": "major",
+      "chapter_id": "ch_04",
+      "location": "Абзац о пении в хоре: 'В Венгрии Валентина пела в хоре. У неё был хороший голос, и она любила петь даже за столом дома.'",
+      "what_is_written": "Эпизод о пении в хоре в Венгрии описан в ch_04 как интересный факт",
+      "what_should_be": "Тот же эпизод уже описан в ch_02 в контексте хронологии жизни в Венгрии",
+      "source": {
+        "type": "fact_map",
+        "reference": "character_trait_хорошо пела + event_021 (операция в Венгрии)"
+      },
+      "fix_instruction": "Удалить дубль эпизода о пении в хоре из ch_04, так как он уже описан в ch_02 в разделе 'Венгерские годы'. Заменить на другой интересный факт или убрать абзац полностью.",
+      "legitimate_deletion": true,
+      "evidence_in_other_chapter": {
+        "chapter_id": "ch_02",
+        "quote": "В Венгрии Валентина пела в хоре — у неё был хороший голос, и она любила петь даже за столом."
+      }
+    }
+  ],
+  "warnings": [
+    {
+      "id": "warn_001",
+      "type": "style_concern",
+      "chapter_id": "ch_04",
+      "description": "Абзац об авоське содержит интерпретацию 'яркий пример её практичности' и обобщение 'ничего не пропадало зря', которые не имеют прямого источника в транскрипте",
+      "recommendation": "Рассмотреть упрощение формулировки до констатации факта без интерпретации практичности как жизненного принципа"
+    },
+    {
+      "id": "warn_002",
+      "type": "style_concern",
+      "chapter_id": "ch_04",
+      "description": "Фраза 'Это показывало её доверие к медицинским специалистам и дисциплинированность в вопросах здоровья' является авторской интерпретацией без источника",
+      "recommendation": "Ограничиться констатацией факта о следовании рекомендациям врача без психологических выводов"
+    }
+  ],
+  "completeness_check": {
+    "total_facts_in_map": 156,
+    "facts_referenced_in_text": 89,
+    "facts_verified_ok": 88,
+    "facts_with_errors": 1,
+    "facts_missing_from_text": [
+      {
+        "fact_id": "person_013",
+        "fact_description": "Племянник Амельченко",
+        "was_in_facts_omitted": true,
+        "omission_justified": true,
+        "recommendation": "Допустимо пропустить - включён в bio_data.family"
+      },
+      {
+        "fact_id": "person_014",
+        "fact_description": "Племянник Толя из Белгорода",
+        "was_in_facts_omitted": true,
+        "omission_justified": true,
+        "recommendation": "Допустимо пропустить - включён в bio_data.family"
+      },
+      {
+        "fact_id": "person_015",
+        "fact_description": "Племянник Коля-лётчик",
+        "was_in_facts_omitted": true,
+        "omission_justified": true,
+        "recommendation": "Допустимо пропустить - включён в bio_data.family"
+      },
+      {
+        "fact_id": "person_016",
+        "fact_description": "Племянник Витя из Энгельса",
+        "was_in_facts_omitted": true,
+        "omission_justified": true,
+        "recommendation": "Допустимо пропустить - включён в bio_data.family"
+      }
+    ]
+  },
+  "regression_check": {
+    "performed": false,
+    "chapters_checked": [],
+    "issues_found": []
+  },
+  "summary": {
+    "critical_errors": 0,
+    "major_errors": 1,
+    "minor_errors": 0,
+    "warnings_count": 2,
+    "overall_assessment": "Текст книги в целом соответствует источникам. Обнаружен один дубль эпизода между главами ch_02 и ch_04 (пение в хоре в Венгрии). Несколько стилистических интерпретаций без источников переданы как warnings для Литредактора."
+  },
+  "stats": {
+    "facts_checked": 89,
+    "facts_passed": 88,
+    "facts_failed": 1,
+    "coverage_percent": 57,
+    "needs_verification_flagged": 0
+  }
+}
