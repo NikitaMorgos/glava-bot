@@ -79,6 +79,16 @@
 - **Класс 13 — discourse markers regression**: GW при сжатии нарратива убирает упоминания рассказчика («как вспоминает дочь», «по словам Татьяны»), что снижает теплоту/человечность. Каждая биография имеет своего rapporteur'а; markers должны сохраняться.
 - **Класс 14 — pin-list event minimum depth violation**: pin-list даёт **выбор** какие эпизоды, но не **глубину**. GW может свести эпизод к 1 фразе → формально `coverage: full`, но информационно беднее предыдущей версии. Пример v58: шуба→пианино свёрнут до 1 предложения (vs v56 = 3 с цитатой). Универсальный — каждая биография имеет ключевые эпизоды с required `min_sentences`.
 
+**Новые классы из v59 review Никиты:**
+- **Класс 15 — temporal place naming**: советские города переименовывались (Калинин→Тверь 1990, Ленинград→СПб 1991, Куйбышев→Самара 1991). В нарративе про конкретный год должно быть **исторически корректное** имя. v59: «в Твери родилась дочь Татьяна» в 1956 — неверно (тогда Калинин). Универсально для всех советских/постсоветских биографий.
+- **Класс 16 — contributors section** (продуктовое нововведение): каждая книга-биография имеет служебный раздел «Кто работал над этой Главой» с contributors (родственники/друзья субъекта, чьи воспоминания записаны). Универсально для жанра.
+
+**Расширения существующих классов после v59:**
+- **Класс 6 extended**: новые stop-phrase categories — `motivation_attribution_ideals` («верила в идеалы за которые воевала»), `unbroken_by_circumstances`, `that_is_how_X_passed`, `kept_until_end`, `survived_all_X`, `embraced_milestones`.
+- **Класс 10 extended**: chapter sections anchors не только для timeline (ch_01), но и для ch_03 (portrait) / ch_04 (episodes). Пример v59: пропал раздел «Гостеприимство и кулинария» в ch_03.
+- **Класс 12 extended**: внуки в chronology — birth_year inferred через parent.birth_year + 16 (для галлюцинаций типа «1973 встречала внучку Дашу из школы» где Даша ещё не родилась).
+- **Класс 4 extended**: gazeteer морфологические формы (родительный, дательный... падежи русских топонимов). Пример v59: «из Сапонова» (родительный) не матчился с «Сапоново» в gazeteer.
+
 **Дополнительно — спецификация формата (не баг):**
 - Паспортичка: писать «родился» / «умер» полностью, не «р.» / «ум.». → task 043 + GW input schema. ✅ в v58 работает.
 
@@ -134,6 +144,40 @@
 | **[049](../tasks/049-discourse-markers-preservation.md)** | **Класс 13** — discourse markers preservation (метрика + GW v2.20 ПРАВИЛО 6) | скрипт + минор промпт | `s` |
 | **[050](../tasks/050-pinlist-event-minimum-depth.md)** | **Класс 14** — pin-list event minimum depth (3 предл. для хронологических, 2 для бытовых) + GW v2.20 ПРАВИЛО 8 | скрипт + минор промпт | `s` |
 | **GW v2.20** | Universal categorical правила (БЕЗ subject-конкретики, placeholders `[субъект]`, `[рассказчик]`) — мерж в task 043b/049/050 | промпт | `xs` |
+
+### v60 sprint — финальная доводка после Никитиного review v59 (11 задач)
+
+После v59 verified Никита одобрил план финальной доводки:
+
+| Task | Что | Тип | Сложность |
+|---|---|---|---|
+| **[046b](../tasks/046b-stage3-runner-order-fix.md)** | Stage 3 runner: auto_rewrite **до** validators (порядок) | скрипт | `xs` |
+| **[044c](../tasks/044c-relation-overrides-apply-to-final-book.md)** | Override применить к final book — debug почему баба Аня в family | скрипт | `xs` |
+| **[043c](../tasks/043c-stop-phrases-extended-categorical.md)** | Stop-phrases extended categorical (мотивация идеалов, не сломленная, такой ушла и т.п.) | конфиг + regex | `xs` |
+| **[049b](../tasks/049b-gw-v220-activation.md)** | GW v2.20 verify активирован в Stage 2 (Курсор подтвердил «нужен v60 pass») | implementation fix | `xs` |
+| **[050b](../tasks/050b-pinlist-depth-paragraph-filter.md)** | Pin-list depth — фильтровать paspart, искать только в narrative | скрипт | `xs` |
+| **[040b](../tasks/040b-gazeteer-morphology-cases.md)** | Gazeteer морфологические формы (падежи русских топонимов) | скрипт | `s` |
+| **[048b](../tasks/048b-chronology-grandchildren.md)** | Chronology extension — внуки (parent.birth_year + 16, если grandchild birth неизвестен) | скрипт | `s` |
+| **[051](../tasks/051-temporal-place-naming.md)** | **Класс 15** — temporal place naming (Калинин/Тверь, Ленинград/СПб) | конфиг + скрипт + минор промпт | `s` |
+| **[052](../tasks/052-contributors-section.md)** | **Класс 16** — contributors section в конце книги (продуктовое нововведение) | конфиг + скрипт + минор промпт | `s` |
+| **[045c](../tasks/045c-chapter-sections-anchors.md)** | **Класс 10 extension** — chapter sections anchors для ch_03 (гостеприимство/кулинария) | конфиг + скрипт + минор промпт | `s` |
+| **verify-universality** | Отчёт об universality findings (см. ниже) | анализ | `xs` done |
+
+**Universality findings (verify-universality):**
+- ✅ `pipeline_utils.py` — generic, нет hardcoded «karakulina»
+- ✅ `scripts/build_gate1_full_text.py` — параметризован CLI
+- ❌ `scripts/test_stage1_karakulina_full.py` — name + PROJECT_ID hardcoded
+- ❌ `scripts/test_stage2_pipeline.py` — PROJECT_ID + defaults hardcoded
+- ❌ `scripts/test_stage3.py` — PROJECT_ID + DEFAULT_BOOK_DRAFT hardcoded
+
+→ `task 053 — Generic Stage runners refactor` отложен в **Batch 3** (prework для Корольковой, не блокер PASS Ворот 1).
+
+### Batch 3 — backlog после v60 PASS
+
+- **task 053** — generic Stage runners (`test_stage1_full.py --subject X`, etc.)
+- Подключение Корольковой / Дмитриева — генерализация на 2-й и 3-й subject
+- Этап 2 (Proofreader scripted, task 030)
+- Phase B механика (корректировки от клиента)
 
 Batch 2-fix финансово: 1 прогон v59 покрывает все 9 (~$2-3).
 
