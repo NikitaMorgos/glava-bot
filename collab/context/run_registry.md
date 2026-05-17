@@ -418,30 +418,65 @@ Same as v56:
 - `--known-episodes` обязателен
 - Diff baseline: v56
 
-### Outputs (PENDING прогона)
-- Run artifacts: `runs/karakulina-v60-artifacts` (ожидается)
-- Expected:
-  - Огурцы развёрнутый эпизод с цитатой + конкретный год (не 1990-е)
-  - Шуба→пианино 1962 + цитата «тяжеловата»
-  - Шарлотка, карты/домино, дача продали (если в TR)
-  - Марфа/Маня/Римма/Зина в family
-  - Баба Аня НЕ в family
-  - Epilogue без stop phrases (4 категории)
-  - Калинин в нарративе 50-60-х (не Тверь)
-  - Сафронова/Сафронове (не Сапонова)
-  - Раздел «Кто работал над этой Главой» в конце
-  - ch_03 «Гостеприимство и кулинария» раздел
-  - Discourse markers ch_02 ≥ 5 (минимум, threshold 8 идеально)
+### Outputs
+- Run artifacts: `runs/karakulina-v60-artifacts` @ `3c9b84d` (12 файлов)
+- text_FULL.md: 17 427 chars (ch_01=3308 / ch_02=6266 / ch_03=5043 / ch_04=1961 / epilogue=849)
+- bio_data.family: 23 (баба Аня excluded ✅)
+- historical_notes: 5 field + 0 inline ⚠️ (vs v59 7+9)
+- Pin-list: full 15, partial 7, skipped 45 / 67
+- Timeline anchors: 7/7 found ✅
+- Stage 2 manifest: `ghostwriter_version: v2.21` ✅
+- FC verdict: PASS iter2
+- Proofreader: 14 исправлений, Δ+3310 chars
 
-### Verification — pending после прогона
+### Verification — НЕ PASS Ворот 1 (5 блокеров)
 
-10 expected outcomes (см. PR #28 v60 sprint текст).
+**Закрытые задачи (✅ 7/10):**
+- 046b порядок Stage 3 — ✅ (style_checks на финальном тексте)
+- 044c relation overrides → final book — ✅ (excluded_by_override отчёт)
+- 049b GW manifest tracking — ✅ (v2.21 зафиксирован)
+- 043c stop-phrases extended — ✅ (только 1 error + 1 warning vs v59 4 errors)
+- 050b pin-list depth scope — ✅ (только narrative ch_02-04)
+- 040b gazeteer морфо — ✅ (Сапон 0 в тексте; Сафроново в narrative)
+- 048b chronology grandchildren — ⚠️ детектор реализован, сценарий «1973 + внучка» не активировался (GW не написал галлюцинацию)
 
-Если 10+ из 10 PASS → **РЕКОМЕНДАЦИЯ PASS Ворот 1** → RP-1 tag → Batch 3 (task 053 generic runners + подключение Корольковой) + Этап 2 (Proofreader scripted, task 030).
+**Блокеры (❌ 5/10):**
+- **052 Contributors галлюцинация** — «Наталья Каракулина» вместо «Татьяна»; только 2 из 4 контрибьюторов; формат другой («роли», не «список людей»). config rogue, не из pin-list v3
+- **051 Temporal place names wrong direction** — 3 replacements автоматических все wrong: Тверь→Калинин в context 1920 (когда было Тверь, переименовали в Калинин только в 1931); + 1 warning не fix'ил 1996 «Калинин» (когда уже Тверь). Bug: single transition_year не покрывает multi-rename history
+- **046 epilogue auto_rewrite pattern bug** — «прошла путь от сироты ИЗ УКРАИНСКОГО СЕЛА до уважаемой» не покрыт regex (intermediate words между `\w+` и `(до|к)`)
+- **045c chapter sections в GW** — config не передаётся в Stage 2 GW system context (Курсор подтвердил follow-up)
+- **GW v2.21 промпт не выучил** ПРАВИЛО 6 (discourse markers ch_02=2/8) + ПРАВИЛО 8 (pin-list depth 3 errors)
+
+**Регрессии vs v59:**
+- ❌ Власьево / Воскресенская церковь — пропало
+- ❌ «У сестёр был разный отец с Валентиной» — пропало
+- ❌ Детский сад № 95 — пропало
+- ❌ Тётя Маня в bio_data.family — пропала
+- ❌ Французская бабушка сравнение с бабой Аней — пропало
+- ❌ historical_notes inline 0 (vs v59 9)
+- ↘ Total chars 17 427 (vs v59 19 930)
+
+**Не закрылось из Никитиного feedback v59:**
+- ❌ Шарлотка, карты подробно, грибы+тётя Маша эпизод, продажа дачи
+- ❌ ch_03 раздел «Гостеприимство и кулинария»
 
 ### Notes
-- v60 sprint: 10 tasks (046b/044c/049b/043c/050b/040b/048b/051/052/045c) + 2 universality patches (NARRATIVE_CHAPTERS / GW v2.21 placeholders)
-- Lesson learned: Universality check template недостаточен, нужен subject-replacement test построчно (зафиксирован в memory)
+- v60 sprint: 10 tasks shipped, 7 закрылись формально, 5 блокеров для PASS
+- Новые баги обнаружены: 052 contributors галлюцинация, 051 temporal wrong direction, 046 mapping pattern
+- Mixed picture: structural improvements (timeline anchors 7/7, family clean, manifest tracking) + content regressions (Власьево, разные отцы, Маня, и т.д.)
+- **PASS Ворот 1: НЕ достигнут. Требуется v61 sprint.**
+
+### План v61 sprint (минорные fixes — не новые классы)
+
+| Task | Что | Сложность |
+|---|---|---|
+| 052b | Contributors из pin-list v3 (Татьяна/Никита/Даша/Кужба полные имена) | `xs` |
+| 051b | Temporal place names multi-rename history (Тверь→Калинин 1931→Тверь 1990) | `s` |
+| 046c | Epilogue rewrite regex с intermediate words | `xs` |
+| 045d | Chapter sections anchors передать в GW Stage 2 input | `xs` |
+| GW v2.22 | Усилить ПРАВИЛА 6/8 + ЗАПРЕТ 12 anti-regression на v59 эпизоды | `s` |
+
+Финансово v61: $2-3.
 
 ---
 
