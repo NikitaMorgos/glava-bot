@@ -988,6 +988,7 @@ def run_completeness_auditor(
     narrator_relation: str,
     project_id: str,
     pin_list_fact_map: dict | None = None,
+    pin_list_episodes: dict | None = None,
     cfg: dict | None = None,
 ) -> dict:
     """
@@ -1074,6 +1075,28 @@ def run_completeness_auditor(
                 "events": pin_events,
             }
             print(f"[COMPLETENESS AUDITOR] Pin-list: {len(pin_list)} персон + {len(pin_events)} events из предыдущего прогона")
+
+    # Task 041b/038b: known_episodes pin_list с bypass strict для CA v1.4
+    if pin_list_episodes:
+        ep_list = pin_list_episodes.get("episodes", [])
+        req_persons = pin_list_episodes.get("required_persons", [])
+        # Добавляем is_pin_list_required: true для всех элементов
+        ep_with_flag = [{**ep, "is_pin_list_required": True} for ep in ep_list]
+        rp_with_flag = [{**rp, "is_pin_list_required": True} for rp in req_persons]
+
+        existing_pinlist = user_message.get("pin_list", {})
+        user_message["pin_list"] = {
+            **existing_pinlist,
+            "source": "known_episodes_file",
+            "description": (
+                "Pin-list эпизодов из known_episodes файла. "
+                "Элементы с is_pin_list_required=true: ПРАВИЛО 4 (strict description) НЕ применяется. "
+                "Обязательно добавить в auto_enrich с was_in_pin_list=true, даже если confidence=low."
+            ),
+            "episodes": ep_with_flag,
+            "required_persons": rp_with_flag,
+        }
+        print(f"[COMPLETENESS AUDITOR] Pin-list episodes: {len(ep_with_flag)} эпизодов + {len(rp_with_flag)} required_persons (bypass strict)")
 
     raw_chunks = []
     with client.messages.stream(
@@ -2607,9 +2630,28 @@ def _extract_bio_data_timeline(book: dict) -> list:
     return periods
 
 
-def validate_timeline_anchors(book: dict, anchors_config: dict) -> dict:
-    """Task 045: проверить bio_data.timeline на наличие всех обязательных anchor-периодов.
+def _parse_markdown_timeline_periods(ch01_content: str) -> list:
+    """Task 045b: извлечь периоды биографии из markdown **YYYY[-YYYY]. Title** в ch_01.content."""
+    import re
+    if not ch01_content:
+        return []
+    # Match **1920–1933. Детство и сиротство** or **1962. Работа** etc.
+    PERIOD_RE = re.compile(
+        r"\*\*(\d{4}(?:[–\-]\d{4})?)[.\s]+([^*\n]+)\*\*",
+        re.MULTILINE,
+    )
+    periods = []
+    for m in PERIOD_RE.finditer(ch01_content):
+        year_range = m.group(1).strip()
+        title = m.group(2).strip()
+        periods.append({"title": f"{year_range}. {title}", "year_range": year_range, "source": "markdown"})
+    return periods
 
+
+def validate_timeline_anchors(book: dict, anchors_config: dict) -> dict:
+    """Task 045/045b: проверить bio_data.timeline на наличие всех обязательных anchor-периодов.
+
+    Falls back to parsing **YYYY. Title** markdown in ch_01.content if JSON array is empty.
     Returns {anchors_found, anchors_missing, merges, issues_count}.
     Idempotent — только чтение, не изменяет book.
     """
@@ -2621,11 +2663,20 @@ def validate_timeline_anchors(book: dict, anchors_config: dict) -> dict:
 
     chapters = book.get("chapters", [])
     ch01 = next((ch for ch in chapters if ch.get("id") == "ch_01"), None)
-    full_text = ""
+    ch01_content = ""
     if ch01:
-        full_text = (ch01.get("content") or "") + " ".join(
+        ch01_content = (ch01.get("content") or "") + " ".join(
             p.get("text", "") for p in ch01.get("paragraphs", [])
         )
+
+    # Task 045b: fallback to markdown parsing if JSON array is empty or too small
+    markdown_periods = _parse_markdown_timeline_periods(ch01_content)
+    if len(periods) < min_periods and len(markdown_periods) >= len(periods):
+        print(f"[TIMELINE-ANCHORS] JSON array={len(periods)} < min={min_periods}, "
+              f"fallback → markdown parsing ({len(markdown_periods)} periods found)")
+        periods = markdown_periods
+
+    full_text = ch01_content
 
     found_anchor_ids = []
     missing_anchor_ids = []
@@ -2810,16 +2861,37 @@ def enforce_timeline_anchors(book: dict, anchors_config: dict, fact_map: dict) -
 
 # ─── Task 043: Epilogue stop-phrases + paspart format + Class 11 awkward ──
 
-def validate_epilogue_stop_phrases(book: dict, stop_list_config: dict) -> dict:
-    """Task 043: проверить epilogue и нарративные главы на пластиковые шаблонные фразы (Класс 6).
+def _lemmatize_pattern(phrase: str) -> str:
+    """Task 043b: грубая лемматизация — добавляет \\w{0,4} к словам с флективными суффиксами."""
+    import re
+    VOWELS = "аеиоыуяюэёАЕИОЫУЯЮЭЁ"
+    words = phrase.split()
+    pat = []
+    for w in words:
+        if len(w) >= 5 and w[-1] in VOWELS:
+            pat.append(re.escape(w[:-1]) + r"\w{0,4}")
+        else:
+            pat.append(re.escape(w))
+    return r"\b" + r"\s+".join(pat) + r"\b"
 
+
+def validate_epilogue_stop_phrases(book: dict, stop_list_config: dict) -> dict:
+    """Task 043/043b: проверить epilogue и нарративные главы на пластиковые шаблонные фразы (Класс 6).
+
+    Поддерживает как literal substring, так и regex patterns (суффикс-aware через _lemmatize_pattern).
     Returns {issues: [...], errors_count, warnings_count}.
     Idempotent — только чтение.
     """
+    import re as _re
     phrases = stop_list_config.get("generic_stop_phrases", [])
+    # Task 043b: generic_categorical_patterns with precompiled regex
+    categorical = stop_list_config.get("generic_categorical_patterns", [])
     scoped_error = set(stop_list_config.get("scoped_chapter_ids", ["epilogue"]))
     scoped_warning = set(stop_list_config.get("extra_general_scope", []))
     severity_map = stop_list_config.get("severity_map", {})
+
+    # Pre-compile categorical patterns scoped to epilogue
+    epilogue_categories = set(stop_list_config.get("scoped_to_epilogue_only", []))
 
     issues = []
     chapters = book.get("chapters", [])
@@ -2835,24 +2907,38 @@ def validate_epilogue_stop_phrases(book: dict, stop_list_config: dict) -> dict:
         full_text = content + " " + " ".join(p.get("text", "") for p in paragraphs)
         full_text_lower = full_text.lower()
 
+        def _add_issue(phrase_label, severity_default):
+            severity = severity_map.get(ch_id, "error" if ch_id in scoped_error else severity_default)
+            issues.append({"phrase": phrase_label, "chapter_id": ch_id, "severity": severity})
+
+        # Literal phrases (with lemmatize-aware regex)
         for phrase in phrases:
-            if phrase.lower() in full_text_lower:
-                severity = severity_map.get(
-                    ch_id,
-                    "error" if ch_id in scoped_error else "warning",
-                )
-                idx = full_text_lower.find(phrase.lower())
-                snippet = full_text[max(0, idx - 30): idx + len(phrase) + 30].strip()
-                issues.append({
-                    "phrase": phrase,
-                    "chapter_id": ch_id,
-                    "severity": severity,
-                    "snippet": snippet,
-                })
+            try:
+                pat = _lemmatize_pattern(phrase)
+                if _re.search(pat, full_text, _re.IGNORECASE):
+                    _add_issue(phrase, "warning")
+            except Exception:
+                if phrase.lower() in full_text_lower:
+                    _add_issue(phrase, "warning")
+
+        # Categorical patterns
+        is_epilogue = "epilogue" in ch_id.lower() or ch_id in scoped_error
+        for cat in categorical:
+            category = cat.get("category", "?")
+            if category in epilogue_categories and not is_epilogue:
+                continue
+            pattern = cat.get("pattern") or cat.get("pattern_regex")
+            if not pattern:
+                continue
+            try:
+                if _re.search(pattern, full_text, _re.IGNORECASE):
+                    _add_issue(f"[cat:{category}]", "warning" if not is_epilogue else "error")
+            except Exception:
+                pass
 
     errors = sum(1 for i in issues if i["severity"] == "error")
     warnings = sum(1 for i in issues if i["severity"] == "warning")
-    print(f"[EPILOGUE-STOP] {errors} errors + {warnings} warnings по {len(phrases)} фразам.")
+    print(f"[EPILOGUE-STOP] {errors} errors + {warnings} warnings по {len(phrases)} фразам + {len(categorical)} категориям.")
     return {"issues": issues, "errors_count": errors, "warnings_count": warnings}
 
 
@@ -3002,6 +3088,10 @@ def validate_description_drift(audit_data: dict) -> dict:
         events = audit_data
 
     for event in events:
+        # Task 038b: bypass strict drift check for pin-list events
+        if event.get("was_in_pin_list"):
+            continue
+
         description = (event.get("description") or "").strip()
         source_quote = (event.get("source_quote") or event.get("transcript_quote") or "").strip()
         event_id = event.get("event_id") or event.get("id") or "?"
@@ -3237,9 +3327,16 @@ def validate_motivation_attributions(book: dict, transcripts: list) -> dict:
 # ─── Task 041: Pin-list coverage + episode diff ───────────────────────────
 
 def parse_pin_list_from_markdown(md_path: str) -> dict:
-    """Task 041: парсить known_episodes_*.md → структурированный pin-list для GW input.
+    """Task 041/044b/050: парсить known_episodes_*.md → структурированный pin-list.
 
-    Returns {episodes: [...], bytovye: [...], traits: [...], characteristic_words: [...]}.
+    Returns:
+        {
+          episodes: [...],          # хронологические эпизоды с min_sentences
+          bytovye: [...],           # бытовые эпизоды с min_sentences
+          traits: [...],
+          characteristic_words: [],
+          required_persons: [...],  # task 044b: обязательные персоны из раздела «Прямые родственники»
+        }
     """
     import re
     from pathlib import Path
@@ -3247,7 +3344,7 @@ def parse_pin_list_from_markdown(md_path: str) -> dict:
     path = Path(md_path)
     if not path.exists():
         print(f"[PIN-LIST-PARSER] Файл не найден: {md_path}")
-        return {"episodes": [], "bytovye": [], "traits": [], "characteristic_words": []}
+        return {"episodes": [], "bytovye": [], "traits": [], "characteristic_words": [], "required_persons": []}
 
     content = path.read_text(encoding="utf-8")
     lines = content.splitlines()
@@ -3256,29 +3353,42 @@ def parse_pin_list_from_markdown(md_path: str) -> dict:
     bytovye = []
     traits = []
     char_words = []
+    required_persons = []
 
     current_table_type = None
     header_seen = False
+    # Track column index for min_sentences in the current table header
+    min_sentences_col_idx: dict = {}  # table_type -> col index
 
     for line in lines:
         line_stripped = line.strip()
 
         if "## Хронологические эпизоды" in line_stripped:
-            current_table_type = "episodes"; header_seen = False; continue
+            current_table_type = "episodes"; header_seen = False; min_sentences_col_idx = {}; continue
         elif "## Бытовые эпизоды" in line_stripped:
-            current_table_type = "bytovye"; header_seen = False; continue
+            current_table_type = "bytovye"; header_seen = False; min_sentences_col_idx = {}; continue
         elif "## Характеристики" in line_stripped:
-            current_table_type = "traits"; header_seen = False; continue
+            current_table_type = "traits"; header_seen = False; min_sentences_col_idx = {}; continue
         elif "## Голос рассказчика" in line_stripped:
-            current_table_type = "char_words"; header_seen = False; continue
+            current_table_type = "char_words"; header_seen = False; min_sentences_col_idx = {}; continue
+        elif ("## Прямые родственники" in line_stripped or "## Обязательные персоны" in line_stripped):
+            current_table_type = "required_persons"; header_seen = False; min_sentences_col_idx = {}; continue
         elif line_stripped.startswith("## "):
-            current_table_type = None; header_seen = False; continue
+            current_table_type = None; header_seen = False; min_sentences_col_idx = {}; continue
 
         if current_table_type is None:
             continue
 
         if re.match(r"^\|[-|\s]+\|$", line_stripped):
             header_seen = True
+            continue
+
+        # Parse header row to detect min_sentences column position
+        if not header_seen and line_stripped.startswith("|") and current_table_type in ("episodes", "bytovye", "traits"):
+            cells_h = [c.strip().lower() for c in line_stripped.split("|")[1:-1]]
+            for ci, ch in enumerate(cells_h):
+                if "min_sentences" in ch or "min_sent" in ch:
+                    min_sentences_col_idx[current_table_type] = ci
             continue
 
         if not (line_stripped.startswith("|") and header_seen):
@@ -3291,6 +3401,14 @@ def parse_pin_list_from_markdown(md_path: str) -> dict:
         def _clean(s):
             return re.sub(r"\*+", "", s).strip()
 
+        def _min_sent(cells_list, table_type, default):
+            idx = min_sentences_col_idx.get(table_type)
+            if idx is not None and idx < len(cells_list):
+                val = cells_list[idx].strip()
+                if val.isdigit():
+                    return int(val)
+            return default
+
         if current_table_type == "episodes":
             if len(cells) < 4:
                 continue
@@ -3298,35 +3416,70 @@ def parse_pin_list_from_markdown(md_path: str) -> dict:
             title = _clean(cells[2])
             markers_raw = cells[5] if len(cells) > 5 else ""
             markers = [m.strip() for m in re.split(r"[,;`]", re.sub(r"`", "", markers_raw)) if m.strip()]
+            min_sent = _min_sent(cells, "episodes", 3)
             if ep_id and title and ep_id not in ("#", "episode_id", "ep_id"):
-                episodes.append({"episode_id": ep_id, "title": title, "markers": markers})
+                episodes.append({
+                    "episode_id": ep_id, "title": title,
+                    "markers": markers, "min_sentences": min_sent,
+                })
 
         elif current_table_type == "bytovye":
             byt_id = cells[1]
             title = _clean(cells[2]) if len(cells) > 2 else _clean(cells[1])
             markers_raw = cells[3] if len(cells) > 3 else ""
             markers = [m.strip() for m in re.split(r"[,;`]", re.sub(r"`", "", markers_raw)) if m.strip()]
+            min_sent = _min_sent(cells, "bytovye", 2)
             if byt_id and title and byt_id not in ("#", "byt_id"):
-                bytovye.append({"byt_id": byt_id, "title": title, "markers": markers})
+                bytovye.append({
+                    "byt_id": byt_id, "title": title,
+                    "markers": markers, "min_sentences": min_sent,
+                })
 
         elif current_table_type == "traits":
             trait_id = cells[1]
             title = _clean(cells[2]) if len(cells) > 2 else _clean(cells[1])
             markers_raw = cells[3] if len(cells) > 3 else ""
             markers = [m.strip() for m in re.split(r"[,;`]", re.sub(r"`", "", markers_raw)) if m.strip()]
+            min_sent = _min_sent(cells, "traits", 1)
             if trait_id and title and trait_id not in ("#", "trait_id"):
-                traits.append({"trait_id": trait_id, "title": title, "markers": markers})
+                traits.append({
+                    "trait_id": trait_id, "title": title,
+                    "markers": markers, "min_sentences": min_sent,
+                })
 
         elif current_table_type == "char_words":
             word = _clean(cells[0])
             if word and word not in ("#", "Слово", "слово"):
                 char_words.append(word)
 
+        elif current_table_type == "required_persons":
+            # task 044b: раздел «Прямые родственники»
+            # Ожидается: | # | name | relation | note/aliases |
+            if len(cells) < 2:
+                continue
+            name = _clean(cells[1]) if len(cells) > 1 else _clean(cells[0])
+            relation = _clean(cells[2]) if len(cells) > 2 else ""
+            note = _clean(cells[3]) if len(cells) > 3 else ""
+            if name and name not in ("#", "Имя", "name", "имя"):
+                entry = {"name": name, "relation": relation, "is_pin_list_required": True}
+                if note:
+                    entry["note"] = note
+                # Parse aliases from note (e.g. "тётя Маня")
+                aliases = [a.strip() for a in re.split(r"[,;/]", note) if a.strip() and a.strip() != name]
+                if aliases:
+                    entry["aliases"] = aliases
+                required_persons.append(entry)
+
     print(
         f"[PIN-LIST-PARSER] Загружено: {len(episodes)} эпизодов, "
-        f"{len(bytovye)} бытовых, {len(traits)} характеристик, {len(char_words)} слов."
+        f"{len(bytovye)} бытовых, {len(traits)} характеристик, {len(char_words)} слов, "
+        f"{len(required_persons)} required_persons."
     )
-    return {"episodes": episodes, "bytovye": bytovye, "traits": traits, "characteristic_words": char_words}
+    return {
+        "episodes": episodes, "bytovye": bytovye,
+        "traits": traits, "characteristic_words": char_words,
+        "required_persons": required_persons,
+    }
 
 
 def validate_pin_list_coverage(book: dict, pin_list: dict) -> dict:
@@ -3634,3 +3787,416 @@ def run_proofreader_per_chapter(client, book_draft: dict, project_id: str,
     _auto_checkpoint(project_id, "proofreader", result)
     return result
 
+
+# ═══════════════════════════════════════════════════════════════
+# Batch 2-fix — новые функции (tasks 046, 043b, 038b, 049, 050, 048, 044b)
+# ═══════════════════════════════════════════════════════════════
+
+
+def enforce_epilogue_stop_phrases(book: dict, mapping: dict) -> tuple:
+    """Task 046: auto-rewrite epilogue — удалить предложения с пластиковыми шаблонами.
+
+    mapping — содержимое epilogue_rewrite_mapping.json (generic, universal).
+    Returns (modified_book, rewrite_log).
+    Idempotent.
+    """
+    import re
+    import copy
+
+    rules = mapping.get("rules", [])
+    applies_to = set(mapping.get("applies_to_chapter_ids", ["epilogue"]))
+    book_out = copy.deepcopy(book)
+    rewrite_log = []
+
+    def _split_sentences(text: str) -> list:
+        parts = re.split(r'(?<=[.!?])\s+(?=[А-ЯA-Z«"])', text)
+        return [p.strip() for p in parts if p.strip()]
+
+    for chapter in book_out.get("chapters", []):
+        ch_id = chapter.get("id") or ""
+        if ch_id not in applies_to and "epilogue" not in ch_id.lower():
+            continue
+        content = chapter.get("content") or ""
+        if not content:
+            continue
+        sentences = _split_sentences(content)
+        kept = []
+        for sent in sentences:
+            deleted = False
+            for rule in rules:
+                pat = rule.get("pattern_regex")
+                if not pat:
+                    continue
+                action = rule.get("action", "delete_sentence")
+                try:
+                    m = re.search(pat, sent, re.IGNORECASE)
+                except re.error:
+                    continue
+                if not m:
+                    continue
+                if action == "delete_sentence":
+                    rewrite_log.append({
+                        "chapter_id": ch_id, "action": "deleted",
+                        "category": rule.get("category", "?"),
+                        "reason": rule.get("reason", ""),
+                        "deleted_sentence": sent[:200],
+                    })
+                    deleted = True
+                    break
+                elif action == "delete_sentence_if_starts_with_match":
+                    if m.start() < 30:
+                        rewrite_log.append({
+                            "chapter_id": ch_id, "action": "deleted",
+                            "category": rule.get("category", "?"),
+                            "reason": rule.get("reason", ""),
+                            "deleted_sentence": sent[:200],
+                        })
+                        deleted = True
+                        break
+            if not deleted:
+                kept.append(sent)
+        chapter["content"] = " ".join(kept)
+        deleted_count = len(sentences) - len(kept)
+        if deleted_count:
+            print(f"[EPILOGUE-REWRITE] {ch_id}: удалено {deleted_count} из {len(sentences)} предложений")
+            if len(chapter["content"]) < 400:
+                print("[EPILOGUE-REWRITE] ⚠️ epilogue < 400 chars после rewrite — human review")
+                rewrite_log.append({"chapter_id": ch_id, "action": "warning",
+                                    "reason": "epilogue < 400 chars after rewrite"})
+    total_del = sum(1 for r in rewrite_log if r.get("action") == "deleted")
+    print(f"[EPILOGUE-REWRITE] Итого удалено: {total_del} предложений")
+    return book_out, rewrite_log
+
+
+def validate_narrative_stop_phrases(book: dict, config: dict) -> dict:
+    """Task 043b: проверить нарративные главы на Класс 6/11 украшения с pair-pattern support.
+
+    Returns {issues: [...], errors_count, warnings_count}.
+    Idempotent.
+    """
+    import re
+
+    patterns = config.get("generic_categorical_patterns", [])
+    scoped_epil_only = set(config.get("scoped_to_epilogue_only", []))
+    scoped_narrative = set(config.get("scoped_to_narrative_and_epilogue", []))
+    issues = []
+
+    for chapter in book.get("chapters", []):
+        ch_id = chapter.get("id") or ""
+        is_epilogue = "epilogue" in ch_id.lower()
+        paras = chapter.get("paragraphs", [])
+        texts = [p.get("text", "") for p in paras] if paras else [
+            t.strip() for t in re.split(r"\n\n+", chapter.get("content", "")) if t.strip()
+        ]
+        for pat_entry in patterns:
+            category = pat_entry.get("category", "?")
+            if category in scoped_epil_only and not is_epilogue:
+                continue
+            if category not in scoped_epil_only and category not in scoped_narrative:
+                continue
+            pair = pat_entry.get("pattern_pair")
+            if pair and len(pair) == 2:
+                try:
+                    re1 = re.compile(pair[0], re.IGNORECASE)
+                    re2 = re.compile(pair[1], re.IGNORECASE)
+                except re.error:
+                    continue
+                for para in texts:
+                    if re1.search(para) and re2.search(para):
+                        sev = "error" if is_epilogue else "warning"
+                        issues.append({"chapter_id": ch_id, "category": category,
+                                       "severity": sev, "match_type": "pair", "snippet": para[:150]})
+                continue
+            pattern = pat_entry.get("pattern") or pat_entry.get("pattern_regex")
+            if not pattern:
+                continue
+            try:
+                pat_re = re.compile(pattern, re.IGNORECASE)
+            except re.error:
+                continue
+            for para in texts:
+                if pat_re.search(para):
+                    sev = "error" if is_epilogue else "warning"
+                    issues.append({"chapter_id": ch_id, "category": category,
+                                   "severity": sev, "snippet": para[:150]})
+
+    errors = sum(1 for i in issues if i["severity"] == "error")
+    warnings = sum(1 for i in issues if i["severity"] == "warning")
+    print(f"[NARRATIVE-STOP] {errors} errors + {warnings} warnings по {len(patterns)} категориям.")
+    return {"issues": issues, "errors_count": errors, "warnings_count": warnings}
+
+
+def validate_pin_list_in_auto_enrich(audit_data: dict, pin_list: dict) -> dict:
+    """Task 038b: проверить что pin-list episodes/persons попали в CA auto_enrich.
+
+    Returns {pin_list_event_missing, pin_list_person_missing, errors_count}.
+    """
+    auto_enrich = audit_data.get("auto_enrich", {})
+    ae_event_texts = [
+        ((ev.get("title") or "") + " " + (ev.get("description") or "") + " " + (ev.get("source_quote") or "")).lower()
+        for ev in auto_enrich.get("timeline", [])
+    ]
+    ae_person_names = {(p.get("name") or "").lower() for p in auto_enrich.get("persons", [])}
+    gap_event_ids = {g.get("id") or g.get("event_id")
+                     for g in audit_data.get("log_only_gaps", {}).get("missing_events", [])}
+
+    missing_events = []
+    for ep in pin_list.get("episodes", []):
+        markers = ep.get("markers", [])
+        ep_id = ep.get("episode_id", "?")
+        if not markers:
+            continue
+        found = any(any(m.lower() in ae_text for m in markers if m) for ae_text in ae_event_texts)
+        if not found and ep_id not in gap_event_ids:
+            missing_events.append({"episode_id": ep_id, "title": ep.get("title", ""), "severity": "error"})
+
+    missing_persons = []
+    for rp in pin_list.get("required_persons", []):
+        name = (rp.get("name") or "").lower()
+        aliases = [(a or "").lower() for a in rp.get("aliases", [])]
+        if not any(n in ae_person_names for n in [name] + aliases if n):
+            missing_persons.append({"name": rp.get("name"), "relation": rp.get("relation", ""), "severity": "error"})
+
+    errors = len(missing_events) + len(missing_persons)
+    print(f"[PIN-LIST-COMPLIANCE] missing_events={len(missing_events)}, missing_persons={len(missing_persons)}")
+    return {"pin_list_event_missing": missing_events, "pin_list_person_missing": missing_persons, "errors_count": errors}
+
+
+def validate_discourse_markers(book: dict, fact_map: dict, config: dict) -> dict:
+    """Task 049: Класс 13 — подсчёт discourse markers рассказчика в нарративе.
+
+    config — discourse_markers_<subject>.json.
+    Returns {markers_found, thresholds, issues, errors_count, warnings_count}.
+    Idempotent.
+    """
+    import re
+
+    rapporteurs = config.get("rapporteurs", [])
+    thresholds = config.get("thresholds", {"ch_02": 8, "ch_03": 5, "ch_04": 3})
+
+    all_patterns = [
+        r"\bкак\s+вспоминает\s+(?:дочь|сын|внук\w*|племянник\w*)\b",
+        r"\bпо\s+словам\s+(?:дочери|сына|внука|внучки|племянника|племянницы)\b",
+        r"\bотмеча\w+\s+(?:дочь|сын|внук\w*)\b",
+        r"\bговорит\s+(?:дочь|сын|внук\w*)\b",
+        r"\bрассказывает\s+(?:дочь|сын|внук\w*)\b",
+    ]
+    for rap in rapporteurs:
+        for n in [rap.get("name", "")] + rap.get("aliases", []):
+            if not n:
+                continue
+            e = re.escape(n)
+            all_patterns.extend([
+                rf"\bкак\s+вспоминает\s+{e}\b",
+                rf"\bпо\s+словам\s+{e}\b",
+                rf"\b{e}\s+(?:отмеча\w+|вспомина\w+|говор\w+|рассказ\w+|пиш\w+)\b",
+            ])
+
+    compiled = []
+    for pat in all_patterns:
+        try:
+            compiled.append(re.compile(pat, re.IGNORECASE))
+        except re.error:
+            pass
+
+    markers_found = {}
+    for chapter in book.get("chapters", []):
+        ch_id = chapter.get("id") or ""
+        if "epilogue" in ch_id.lower():
+            continue
+        full_text = (chapter.get("content") or "") + " " + " ".join(
+            p.get("text", "") for p in chapter.get("paragraphs", [])
+        )
+        markers_found[ch_id] = sum(len(p.findall(full_text)) for p in compiled)
+
+    issues = []
+    for ch_id, threshold in thresholds.items():
+        found = markers_found.get(ch_id, 0)
+        if found < threshold:
+            issues.append({"chapter_id": ch_id, "type": "below_threshold",
+                           "found": found, "expected": threshold, "severity": "warning"})
+
+    errors = sum(1 for i in issues if i["severity"] == "error")
+    warnings = sum(1 for i in issues if i["severity"] == "warning")
+    print(f"[DISCOURSE-MARKERS] " + ", ".join(f"{k}={v}" for k, v in markers_found.items()))
+    return {"markers_found": markers_found, "thresholds": thresholds,
+            "issues": issues, "errors_count": errors, "warnings_count": warnings}
+
+
+def validate_pin_list_depth(book: dict, pin_list: dict) -> dict:
+    """Task 050: Класс 14 — минимальная глубина pin-list events в нарративе.
+
+    Returns {depth_issues: [...], errors_count, warnings_count}.
+    Idempotent.
+    """
+    import re
+
+    SENT_RE = re.compile(r'(?<=[.!?])\s+(?=[А-ЯA-Z«"])')
+    INITIAL_RE = re.compile(r'\b[А-ЯA-Z]\.')
+
+    def _count_sentences(text: str) -> int:
+        clean = INITIAL_RE.sub("X", text or "")
+        return max(1, len([p for p in SENT_RE.split(clean) if p.strip()]))
+
+    all_paragraphs = []
+    for ch in book.get("chapters", []):
+        ch_id = ch.get("id") or ""
+        paras = ch.get("paragraphs", [])
+        if paras:
+            all_paragraphs.extend((p.get("text", ""), ch_id) for p in paras)
+        else:
+            for t in re.split(r"\n\n+", ch.get("content", "") or ""):
+                if t.strip():
+                    all_paragraphs.append((t.strip(), ch_id))
+
+    depth_issues = []
+    for ep in pin_list.get("episodes", []):
+        ep_id = ep.get("episode_id", "?")
+        markers = [m.lower() for m in ep.get("markers", []) if m]
+        min_req = ep.get("min_sentences", 3)
+        coverage = ep.get("coverage", "")
+        if not markers or coverage == "skipped":
+            continue
+        best_para, best_hits, found_ch = None, 0, ""
+        for para_text, ch_id in all_paragraphs:
+            hits = sum(1 for m in markers if m in para_text.lower())
+            if hits > best_hits:
+                best_hits, best_para, found_ch = hits, para_text, ch_id
+        if not best_para or best_hits == 0:
+            continue
+        actual = _count_sentences(best_para)
+        if actual < min_req:
+            sev = "error" if coverage == "full" else "warning"
+            depth_issues.append({
+                "episode_id": ep_id, "title": ep.get("title", ""),
+                "min_required": min_req, "actual_sentences": actual,
+                "chapter_id": found_ch, "paragraph_snippet": best_para[:150], "severity": sev,
+            })
+
+    errors = sum(1 for i in depth_issues if i["severity"] == "error")
+    warnings = sum(1 for i in depth_issues if i["severity"] == "warning")
+    print(f"[PIN-DEPTH] {errors} errors + {warnings} warnings.")
+    return {"depth_issues": depth_issues, "errors_count": errors, "warnings_count": warnings}
+
+
+def validate_chronological_consistency(book: dict, fact_map: dict) -> dict:
+    """Task 048: Класс 12 — проверить хронологическую согласованность persons и событий.
+
+    Returns {issues: [...], errors_count, warnings_count}.
+    Idempotent.
+    """
+    import re
+
+    person_years = {}
+    for p in fact_map.get("persons", []):
+        name = (p.get("name") or "").strip().lower()
+        aliases = [(a or "").strip().lower() for a in (p.get("aliases") or [])]
+        birth = p.get("birth_year") or p.get("born")
+        death = p.get("death_year") or p.get("died")
+        for n in [name] + aliases:
+            if n:
+                person_years[n] = (int(birth) if birth else None, int(death) if death else None)
+
+    def _min_birth_rel(rel_kw):
+        years = [int(p["birth_year"]) for p in fact_map.get("persons", [])
+                 if p.get("birth_year") and rel_kw in (p.get("relation_to_subject") or "").lower()]
+        return min(years) if years else None
+
+    collective_births = {
+        "дет": min(filter(None, [_min_birth_rel("сын"), _min_birth_rel("дочь")]), default=None),
+        "сын": _min_birth_rel("сын"),
+        "доч": _min_birth_rel("дочь"),
+        "внук": _min_birth_rel("внук"),
+    }
+
+    YEAR_RE = re.compile(r'\b((?:19|20)\d{2})\b')
+    COLLECTIVE_RE = re.compile(r'\b(дет\w{0,4}|сын\w{0,2}|доч\w{0,4}|внук\w{0,4})\b', re.IGNORECASE)
+
+    issues = []
+    for chapter in book.get("chapters", []):
+        ch_id = chapter.get("id") or ""
+        paras = chapter.get("paragraphs", [])
+        para_texts = [p.get("text", "") for p in paras] if paras else re.split(
+            r"\n\n+", chapter.get("content", "") or ""
+        )
+        for para in para_texts:
+            if not para.strip():
+                continue
+            para_years = [int(m) for m in YEAR_RE.findall(para)]
+            if not para_years:
+                continue
+            min_year = min(para_years)
+            para_lower = para.lower()
+
+            for col_m in COLLECTIVE_RE.finditer(para):
+                stem = col_m.group(0)[:4].lower()
+                birth = collective_births.get(stem)
+                if birth and min_year < birth:
+                    issues.append({
+                        "chapter_id": ch_id, "type": "person_mentioned_before_birth",
+                        "person_name": stem + "...", "person_birth_year_min": birth,
+                        "event_year_range": str(min_year), "snippet": para[:200], "severity": "error",
+                    })
+
+            for name, (birth, death) in person_years.items():
+                if len(name) < 4 or name not in para_lower:
+                    continue
+                if birth and min_year < birth:
+                    issues.append({
+                        "chapter_id": ch_id, "type": "person_mentioned_before_birth",
+                        "person_name": name, "person_birth_year_min": birth,
+                        "event_year_range": str(min_year), "snippet": para[:200], "severity": "error",
+                    })
+                if death and min_year > death + 5:
+                    issues.append({
+                        "chapter_id": ch_id, "type": "person_mentioned_after_death",
+                        "person_name": name, "person_death_year": death,
+                        "event_year_range": str(min_year), "snippet": para[:200], "severity": "warning",
+                    })
+
+    seen, deduped = set(), []
+    for iss in issues:
+        key = (iss.get("chapter_id"), iss.get("person_name"), iss.get("snippet", "")[:60])
+        if key not in seen:
+            seen.add(key)
+            deduped.append(iss)
+
+    errors = sum(1 for i in deduped if i["severity"] == "error")
+    warnings = sum(1 for i in deduped if i["severity"] == "warning")
+    print(f"[CHRONOLOGY] {errors} errors + {warnings} warnings.")
+    return {"issues": deduped, "errors_count": errors, "warnings_count": warnings}
+
+
+def enforce_bio_data_required_persons(book_final: dict, required_persons: list) -> dict:
+    """Task 044b: добавить required_persons в bio_data.family если отсутствуют.
+
+    Идемпотентно. Returns modified book_final.
+    """
+    import copy
+    book_out = copy.deepcopy(book_final)
+    added = []
+    for chapter in book_out.get("chapters", []):
+        bio_data = chapter.get("bio_data")
+        if bio_data is None:
+            continue
+        family = bio_data.get("family", [])
+        existing_names = {(m.get("name") or "").lower() for m in family}
+        for rp in required_persons:
+            name = rp.get("name", "")
+            if not name:
+                continue
+            name_lower = name.lower()
+            aliases = [(a or "").lower() for a in rp.get("aliases", [])]
+            if any(n in existing_names for n in [name_lower] + aliases):
+                continue
+            family.append({
+                "name": name, "relation": rp.get("relation", ""),
+                "note": (rp.get("note", "") + " [from pin-list required_persons]").strip(),
+                "confidence": "low", "was_in_pin_list": True,
+            })
+            existing_names.add(name_lower)
+            added.append(name)
+            print(f"[REQUIRED-PERSONS] Добавлен: {name} ({rp.get('relation', '?')})")
+        bio_data["family"] = family
+    print(f"[REQUIRED-PERSONS] Добавлено {len(added)} required_persons.")
+    return book_out

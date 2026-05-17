@@ -1,0 +1,29 @@
+{
+  "chars_before": 16867,
+  "chars_after": 16740,
+  "ratio": 0.9925,
+  "threshold": 0.95,
+  "drop_chars": 127,
+  "legitimate_deletions_count": 1,
+  "legitimate_deletions": [
+    {
+      "id": "err_008",
+      "chapter_id": "ch_04",
+      "type": "framing_distortion",
+      "fix_instruction": "Перенести эпизод об огурцах в ch_02 в хронологическом контексте 1990-х годов, убрать из ch_04 или оставить только кратко",
+      "evidence_in_other_chapter": {
+        "chapter_id": "ch_02",
+        "quote": "Эпизод отсутствует в ch_02 - требуется добавление"
+      }
+    }
+  ],
+  "evidence_failures": [
+    {
+      "error_id": "err_008",
+      "reason": "FC error err_008: evidence quote не найдена в book_after.ch_02.content. Возможная галлюцинация дубля или эпизод исчез из обеих глав. Quote (первые 80 симв): 'Эпизод отсутствует в ch_02 - требуется добавление'",
+      "topic_overlap": {}
+    }
+  ],
+  "verdict": "blocked_phantom_evidence",
+  "reason": "1 legitimate_deletion-flag(s) не подтверждены: либо evidence quote отсутствует в book_after, либо topic-overlap с удаляемым фрагментом ниже 0.25. FC v2.12 требует не только наличие quote, но и совпадение по конкретному эпизоду (волна 1.3.1: защита от семантического тождества разных эпизодов одной темы, v49 регрессия)."
+}

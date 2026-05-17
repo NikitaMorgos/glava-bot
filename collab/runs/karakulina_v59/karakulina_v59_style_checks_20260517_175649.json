@@ -1,0 +1,52 @@
+{
+  "epilogue_stop_phrases": {
+    "issues": [
+      {
+        "phrase": "жизнь налаживалась",
+        "chapter_id": "ch_02",
+        "severity": "warning"
+      },
+      {
+        "phrase": "путь от сироты",
+        "chapter_id": "epilogue",
+        "severity": "error"
+      },
+      {
+        "phrase": "идеалы, за которые воевала",
+        "chapter_id": "epilogue",
+        "severity": "error"
+      },
+      {
+        "phrase": "жизнь была наполнена",
+        "chapter_id": "epilogue",
+        "severity": "error"
+      },
+      {
+        "phrase": "служением людям",
+        "chapter_id": "epilogue",
+        "severity": "error"
+      }
+    ],
+    "errors_count": 4,
+    "warnings_count": 1
+  },
+  "awkward_formulation": {
+    "issues": [
+      {
+        "type": "example_instead_of_generalization",
+        "chapter_id": "ch_04",
+        "severity": "warning",
+        "matched_text": "не любила ходить по грибы и ягоды,",
+        "suggestion": "Обобщение первым, затем примеры: «не любил советов; например, по ...»"
+      }
+    ],
+    "issues_count": 1
+  },
+  "errors_count": 4,
+  "warnings_count": 2,
+  "narrative_stop_phrases": {
+    "issues": [],
+    "errors_count": 0,
+    "warnings_count": 0
+  }
+}

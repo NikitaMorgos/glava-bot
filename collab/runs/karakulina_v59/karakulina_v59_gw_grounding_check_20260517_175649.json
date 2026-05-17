@@ -1,0 +1,65 @@
+{
+  "historical_note_grounding": {
+    "issues": [
+      {
+        "note_id": "hist_07",
+        "type": "generalization_unverified",
+        "severity": "warning",
+        "snippet": "1990-е годы стали временем религиозного возрождения в России. Многие люди, всю жизнь бывшие атеистами, начали ходить в церковь и креститься, что было "
+      },
+      {
+        "note_id": "inline_ch_02",
+        "type": "generalization_unverified",
+        "severity": "warning",
+        "chapter_id": "ch_02",
+        "snippet": "1994 год — время экономического кризиса, когда многие пожилые люди были вынуждены работать до преклонного возраста из-за мизерных пенсий."
+      },
+      {
+        "note_id": "inline_ch_02",
+        "type": "generalization_unverified",
+        "severity": "warning",
+        "chapter_id": "ch_02",
+        "snippet": "В 1990-е годы, когда началась волна крещений, Валентина несколько раз ходила в Воскресенскую церковь во Власьево. 1990-е годы стали временем религиозн"
+      }
+    ],
+    "notes_checked": 16,
+    "errors_count": 0,
+    "warnings_count": 3
+  },
+  "motivation_attributions": {
+    "issues": [
+      {
+        "chapter_id": "ch_03",
+        "type": "motivation_unverified",
+        "severity": "warning",
+        "matched_phrase": "верила в",
+        "context": "ов в семье не было. Валентина верила в советскую власть искренне и д"
+      },
+      {
+        "chapter_id": "epilogue",
+        "type": "motivation_antitrigger",
+        "severity": "error",
+        "matched_phrase": "верила в идеалы",
+        "snippet": " Валентина искренне верила в идеалы, за которые воевала. Эта вера помогла е"
+      },
+      {
+        "chapter_id": "epilogue",
+        "type": "motivation_antitrigger",
+        "severity": "error",
+        "matched_phrase": "идеалы, за которые воевала",
+        "snippet": "а искренне верила в идеалы, за которые воевала. Эта вера помогла ей пережить все испыт"
+      },
+      {
+        "chapter_id": "epilogue",
+        "type": "motivation_unverified",
+        "severity": "warning",
+        "matched_phrase": "верила в",
+        "context": "атриотка — Валентина искренне верила в идеалы, за которые воевала. Э"
+      }
+    ],
+    "attributions_found": 4,
+    "errors_count": 2,
+    "warnings_count": 2
+  },
+  "critical_errors": 2
+}

@@ -1,0 +1,43 @@
+{
+  "version": "v1",
+  "description": "Generic epilogue auto-rewrite mapping (task 046). Categorical rules — no subject-specific content.",
+  "rules": [
+    {
+      "category": "person_of_their_time",
+      "pattern_regex": "\\b[Бб]ыл\\w*\\s+человек\\w{0,4}\\s+своего\\s+времени[.,]?",
+      "action": "delete_sentence_if_starts_with_match",
+      "reason": "клише обобщения эпохи"
+    },
+    {
+      "category": "path_from_X_to_Y",
+      "pattern_regex": "(прош\\w+|прокат\\w+|преодолел\\w+)\\s+путь\\s+от\\s+\\w+\\s+(до|к)\\s+\\w+",
+      "action": "delete_sentence",
+      "reason": "стандартная риторическая фигура без конкретики"
+    },
+    {
+      "category": "life_filled_with_X",
+      "pattern_regex": "(жизн\\w+|жил\\w+)\\s+был\\w+\\s+наполнен\\w+\\s+\\w+",
+      "action": "delete_sentence",
+      "reason": "пафосное обобщение без конкретики"
+    },
+    {
+      "category": "passed_to_generations",
+      "pattern_regex": "передал\\w+\\s+(следующ\\w+\\s+поколен|следующ\\w+\\s+поколения|потомк)",
+      "action": "delete_sentence",
+      "reason": "клише межпоколенческой передачи"
+    },
+    {
+      "category": "tradition_lives_in_family",
+      "pattern_regex": "(традиция|обычай)\\s+.{0,30}(жив|живёт|остал\\w+)\\s+(в\\s+семье|с\\s+нами|в\\s+памяти)",
+      "action": "delete_sentence",
+      "reason": "часто фантазия про продолжение традиции без подтверждения в источнике"
+    },
+    {
+      "category": "ideals_fought_for",
+      "pattern_regex": "(идеал\\w+|принцип\\w+)\\s+(за\\s+которые?|которым)\\s+(воевал\\w+|бор\\w+|жил\\w+)",
+      "action": "delete_sentence",
+      "reason": "мотивационное приписывание без источника"
+    }
+  ],
+  "applies_to_chapter_ids": ["epilogue"]
+}

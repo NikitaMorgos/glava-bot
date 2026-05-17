@@ -299,8 +299,19 @@ def _render_narrative_chapter(ch: dict, callouts: list, hist_notes: list) -> lis
 # ──────────────────────────────────────────────────────────────────
 
 
-def _build_summary(book: dict) -> list[str]:
-    """Сводная статистика — для быстрого скана."""
+def _build_summary(book: dict, reports: dict | None = None) -> list[str]:
+    """Task 047: расширенная сводка — для быстрого сравнения версий.
+
+    reports: dict с опциональными отчётами:
+        - pin_coverage_json: dict
+        - style_checks_json: dict
+        - chronology_json: dict
+        - discourse_markers_json: dict
+        - timeline_anchors_json: dict
+        - pin_list_depth_json: dict
+    """
+    import re as _re
+    reports = reports or {}
     chapters = book.get("chapters") or []
     callouts = book.get("callouts") or []
     notes = book.get("historical_notes") or []
@@ -310,35 +321,98 @@ def _build_summary(book: dict) -> list[str]:
     for ch in chapters:
         chid = ch.get("id", "?")
         chars = len(ch.get("content") or "")
-        per_chapter.append(f"  - `{chid}` — {chars:,} chars".replace(",", " "))
+        per_chapter.append(f"  - **{chid}:** {chars:,} chars".replace(",", " "))
         total_chars += chars
 
     ch01 = next((c for c in chapters if c.get("id") == "ch_01"), {}) or {}
     bio = ch01.get("bio_data") or {}
     family_count = len(bio.get("family") or [])
     awards_count = len(bio.get("awards") or [])
-    timeline = bio.get("timeline") or ch01.get("timeline") or []
-    timeline_count = len(timeline)
+    timeline_json = bio.get("timeline") or ch01.get("timeline") or []
+    timeline_json_count = len(timeline_json)
+
+    # Detect markdown timeline periods in ch_01 content
+    ch01_content = ch01.get("content") or ""
+    markdown_periods = _re.findall(r'\*\*\d{4}(?:[–\-]\d{4})?\.\s+[^*]+\*\*', ch01_content)
+    timeline_md_count = len(markdown_periods)
+
+    # Count inline historical notes (***...*** pattern)
+    inline_hist = len(_re.findall(r'\*{3}[^*]+\*{3}', ch01_content))
+    for ch in chapters:
+        if ch.get("id") == "ch_01":
+            continue
+        text = ch.get("content") or ""
+        inline_hist += len(_re.findall(r'\*{3}[^*]+\*{3}', text))
+
+    # Subsection counts
+    ch02 = next((c for c in chapters if c.get("id") == "ch_02"), None)
+    ch02_sections = len(_re.findall(r'^##\s+', (ch02 or {}).get("content", ""), _re.MULTILINE)) if ch02 else 0
 
     out = [
         "# Сводка по книге",
         "",
-        f"**Глав:** {len(chapters)}",
-        f"**Объём текста:** {total_chars:,} chars".replace(",", " "),
-        "",
-        "**По главам:**",
+        "## Объём",
+        f"- **Total chars:** {total_chars:,} (target 14-18K)".replace(",", " "),
         *per_chapter,
         "",
-        f"**Callouts:** {len(callouts)}",
-        f"**Historical notes:** {len(notes)}",
+        "## Структура",
+        f"- **Глав:** {len(chapters)} (ch_01..ch_04 + epilogue)",
+        f"- **ch_02 подсекций (## headers):** {ch02_sections}",
         "",
-        f"**bio_data.family:** {family_count} записей",
-        f"**bio_data.awards:** {awards_count} наград",
-        f"**ch_01 timeline:** {timeline_count} этапов",
+        "## Bio_data (паспортичка)",
+        f"- **family:** {family_count} записей",
+        f"- **awards:** {awards_count} наград",
+        f"- **timeline JSON:** {timeline_json_count} периодов" + (" ⚠️ пуст" if timeline_json_count == 0 else ""),
+        f"- **timeline markdown (ch_01 bold):** {timeline_md_count} периодов",
         "",
-        "---",
+        "## Дополнительные элементы",
+        f"- **Callouts:** {len(callouts)}",
+        f"- **Historical notes (field):** {len(notes)}" + (" ⚠️" if len(notes) == 0 else ""),
+        f"- **Historical notes (inline ***):** {inline_hist}",
         "",
     ]
+
+    # Pin-list coverage
+    pin_cov = reports.get("pin_coverage_json") or {}
+    if pin_cov and pin_cov.get("summary"):
+        s = pin_cov["summary"]
+        out += [
+            "## Pin-list coverage",
+            f"- **Episodes full:** {s.get('full',0)} / {s.get('total',0)}",
+            f"- **Episodes partial:** {s.get('partial',0)} / {s.get('total',0)}",
+            f"- **Episodes skipped:** {s.get('skipped',0)} / {s.get('total',0)}",
+            "",
+        ]
+
+    # Quality flags
+    quality_lines = ["## Quality flags"]
+    style = reports.get("style_checks_json") or {}
+    ep_stop = style.get("epilogue_stop_phrases") or {}
+    narr_stop = style.get("narrative_stop_phrases") or {}
+    chron = reports.get("chronology_json") or {}
+    disc = reports.get("discourse_markers_json") or {}
+    ta = reports.get("timeline_anchors_json") or {}
+    depth = reports.get("pin_list_depth_json") or {}
+
+    def _flag(label, val, ok_val=0, ok_sym="✅", fail_sym="⚠️"):
+        sym = ok_sym if val == ok_val else fail_sym
+        return f"- {sym} {label}: {val}"
+
+    quality_lines.append(_flag("Epilogue stop phrases errors", ep_stop.get("errors_count", "?"), ok_sym="✅", fail_sym="❌"))
+    quality_lines.append(_flag("Narrative stop phrases warnings", narr_stop.get("warnings_count", "?"), ok_sym="✅", fail_sym="⚠️"))
+    quality_lines.append(_flag("Chronological consistency errors", chron.get("errors_count", "?"), ok_sym="✅", fail_sym="❌"))
+    if disc.get("markers_found"):
+        ch02_dm = disc["markers_found"].get("ch_02", 0)
+        th_ch02 = disc.get("thresholds", {}).get("ch_02", 8)
+        quality_lines.append(f"- {'✅' if ch02_dm >= th_ch02 else '⚠️'} Discourse markers ch_02: {ch02_dm} (min {th_ch02})")
+    if ta:
+        found = len(ta.get("anchors_found", []))
+        total_a = found + len(ta.get("anchors_missing", []))
+        src = "markdown" if any(p.get("source") == "markdown" for p in ta.get("anchors_found_details", [{}])) else "json/content"
+        quality_lines.append(f"- {'✅' if ta.get('period_count_ok') else '⚠️'} Timeline anchors: {found}/{total_a} found")
+    quality_lines.append(_flag("Pin-list depth errors", depth.get("errors_count", "?"), ok_sym="✅", fail_sym="❌"))
+
+    out += quality_lines + ["", "---", ""]
     return out
 
 
@@ -361,21 +435,22 @@ def _unwrap_book(raw: Any) -> dict:
     return book if isinstance(book, dict) else {}
 
 
-def build_gate1_text(book: dict, fact_map: dict | None = None) -> str:
-    """
-    Основная функция: book_FINAL → Markdown.
+def build_gate1_text(book: dict, fact_map: dict | None = None,
+                     reports: dict | None = None) -> str:
+    """Task 047: book_FINAL → Markdown с расширенной сводкой.
 
     Args:
         book: распакованный book_FINAL (через _unwrap_book)
         fact_map: опционально для fallback bio_data
+        reports: dict с отчётами для сводки (pin_coverage_json, style_checks_json, etc.)
 
     Returns:
         Markdown текст готовый к чтению.
     """
     lines: list[str] = []
 
-    # 1. Сводка
-    lines.extend(_build_summary(book))
+    # 1. Расширенная сводка (task 047)
+    lines.extend(_build_summary(book, reports))
 
     # 2. ch_01 паспорт
     lines.extend(_render_ch01_bio(book, fact_map))
@@ -414,6 +489,14 @@ def main():
         "--output", required=True,
         help="Output Markdown file path"
     )
+    parser.add_argument(
+        "--reports-dir", default=None,
+        help="Task 047: directory with stage3 JSON reports (pin_coverage, style_checks, etc.)"
+    )
+    parser.add_argument(
+        "--prefix", default=None,
+        help="Task 047: filename prefix to auto-locate reports in --reports-dir"
+    )
     args = parser.parse_args()
 
     book_path = Path(args.book_final)
@@ -437,7 +520,29 @@ def main():
         else:
             print(f"[WARN] fact_map not found, skipping: {fm_path}", file=sys.stderr)
 
-    md = build_gate1_text(book, fact_map)
+    # Task 047: load auxiliary reports for extended summary
+    reports: dict = {}
+    if args.reports_dir and args.prefix:
+        _rd = Path(args.reports_dir)
+        _report_keys = {
+            "pin_coverage_json": f"{args.prefix}_pin_coverage_",
+            "style_checks_json": f"{args.prefix}_style_checks_",
+            "chronology_json": f"{args.prefix}_chronology_check_",
+            "discourse_markers_json": f"{args.prefix}_discourse_markers_",
+            "timeline_anchors_json": f"{args.prefix}_timeline_anchors_",
+            "pin_list_depth_json": f"{args.prefix}_pin_list_depth_",
+        }
+        for key, prefix in _report_keys.items():
+            _candidates = sorted(_rd.glob(f"{prefix}*.json"))
+            if _candidates:
+                try:
+                    with open(_candidates[-1], encoding="utf-8") as f:
+                        reports[key] = json.load(f)
+                    print(f"[047] loaded {key}: {_candidates[-1].name}")
+                except Exception as e:
+                    print(f"[WARN] could not load {key}: {e}", file=sys.stderr)
+
+    md = build_gate1_text(book, fact_map, reports)
 
     out_path = Path(args.output)
     out_path.parent.mkdir(parents=True, exist_ok=True)
