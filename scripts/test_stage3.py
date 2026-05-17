@@ -682,9 +682,18 @@ async def main():
         "callouts": pr_result.get("callouts", book_after_le.get("callouts", [])),
         "historical_notes": pr_result.get("historical_notes", book_after_le.get("historical_notes", [])),
     }
-    # Сохраняем bio_data из book_draft — LitEditor/Proofreader его не трогают
-    draft_bio_map = {ch.get("id"): ch.get("bio_data") for ch in book_draft.get("chapters", []) if ch.get("bio_data")}
-    if draft_bio_map:
+    # Сохраняем bio_data из book_after_le (после bio_data integrity) — не из book_draft.
+    # book_after_le содержит уже обогащённые bio_data (enforce + filter + validate),
+    # тогда как book_draft — входной черновик до integrity pipeline.
+    le_bio_map = {ch.get("id"): ch.get("bio_data") for ch in book_after_le.get("chapters", []) if ch.get("bio_data")}
+    if le_bio_map:
+        for ch in book_final["chapters"]:
+            ch_id = ch.get("id")
+            if ch_id in le_bio_map and not ch.get("bio_data"):
+                ch["bio_data"] = le_bio_map[ch_id]
+    elif not le_bio_map:
+        # fallback: book_draft если LE bio_data недоступны
+        draft_bio_map = {ch.get("id"): ch.get("bio_data") for ch in book_draft.get("chapters", []) if ch.get("bio_data")}
         for ch in book_final["chapters"]:
             ch_id = ch.get("id")
             if ch_id in draft_bio_map and not ch.get("bio_data"):
