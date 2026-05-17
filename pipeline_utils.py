@@ -4108,7 +4108,9 @@ def validate_pin_list_depth(book: dict, pin_list: dict) -> dict:
     all_paragraphs = []
     # v60-050b: только нарративные главы, ch_01 (paspart) исключается —
     # краткие справочные записи в paspart не должны триггерить depth errors.
-    NARRATIVE_CHAPTERS = {"ch_02", "ch_03", "ch_04", "epilogue"}
+    # epilogue тоже исключён: там упоминания pin-list событий в перечислительных
+    # фразах (1 предложение = норма для epilogue), а не развёрнутые эпизоды.
+    NARRATIVE_CHAPTERS = {"ch_02", "ch_03", "ch_04"}
     for ch in book.get("chapters", []):
         ch_id = ch.get("id") or ""
         if ch_id not in NARRATIVE_CHAPTERS:
