@@ -67,8 +67,8 @@
     "model": "claude-sonnet-4-20250514",
     "max_tokens": 32000,
     "temperature": 0.4,
-    "prompt_file": "03_ghostwriter_v2.18.md",
-    "_notes": "v2.18 (2026-05-15, task 036, после Дашиного feedback'а v54): 5 изменений. ЗАПРЕТ 8 расширен на ВСЕ абзацы (не только первые). СТОП-ФРАЗЫ +6 эмоциональных преувеличений (болью отозвалось, потрясло, etc). НОВЫЙ ЗАПРЕТ 9: антипаттерн X-по-Y formulation listing. НОВЫЙ ЗАПРЕТ 10: вымышленные временные связки event→event (закрывает «жила одна с 1978» когда фактически с 1996). Правило 2 усилено: characteristic words из transcript ОБЯЗАТЕЛЬНЫ минимум 3 в нарративе. v2.17 base (Этап 1): ЗАПРЕТ 8 первый абзац. v2.16 (волна 1.3.3): SCOPE LOCK. v2.15: ANTI-DELETION. v2.14: СТОП-ФРАЗЫ."
+    "prompt_file": "03_ghostwriter_v2.19.md",
+    "_notes": "v2.19 (2026-05-17, task 041+043, Batch 2): +ЗАПРЕТ 12 паспортичка формат (р.→родился/умерла); +ЗАПРЕТ 13 epilogue антишаблоны (11 стоп-фраз); +ЗАПРЕТ 14 Класс 11 авквард формулировки; +PIN_LIST_EVENTS раздел input — обязательные эпизоды с revision_log.pin_list_coverage. v2.18 (task 036): 5 изменений ЗАПРЕТ 8-10 + characteristic words обязательны."
   },
 
   "fact_checker": {
@@ -155,7 +155,12 @@
     "model": "claude-haiku-4-5-20251001",
     "max_tokens": 32000,
     "temperature": 0.1,
-    "prompt_file": "16_completeness_auditor_v1.2.md",
-    "_notes": "v1.2 (2026-05-15, task 035): pin-list расширен на events (не только persons). Защита от потери эпизодов на combined TR1+TR2 (v54 регрессия: огурцы Молдавия 1990, счётчик 1977, Нинвана Полсачева). Если event с 2+ markers в transcript но отсутствует в fact_map.timeline — Аудитор обязан восстановить. v1.1 base: pin-list persons. v1.0: новый агент задача 014."
-  }
+    "prompt_file": "16_completeness_auditor_v1.3.md",
+    "_notes": "v1.3 (2026-05-17, task 038, Batch 2): ПРАВИЛО 4 strict description (без causal confabulation) + ПРАВИЛО 5 strict relation_to_subject (без ложного родства по обращению). v1.2 (task 035): pin-list расширен на events."
+  },
+
+  "pin_list_diff_baseline_version": "v56",
+  "_pin_list_diff_note": "Task 041: baseline для diff_episodes_between_versions. Обновить на v58 после sign-off.",
+
+  "ghostwriter_v2_19_note": "v2.19 (2026-05-17, Batch 2): +ЗАПРЕТ 12 (паспортичка формат) +ЗАПРЕТ 13 (epilogue антишаблоны) +ЗАПРЕТ 14 (авквард формулировки) +PIN_LIST_EVENTS раздел."
 }

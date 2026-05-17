@@ -1,0 +1,63 @@
+{
+  "subject_id": "karakulina",
+  "version": "v1",
+  "description": "Task 045: mandatory bio_data.timeline periods; any merge of two anchors is a Class 10 regression",
+  "min_periods": 7,
+  "anchors": [
+    {
+      "anchor_id": "childhood",
+      "title_keywords": ["детство", "сиротство", "Мариевка", "голод", "голодомор"],
+      "year_range": "1920-1933",
+      "required_events": ["голод 1933", "детдом", "Полина"],
+      "merge_forbidden_with": []
+    },
+    {
+      "anchor_id": "education",
+      "title_keywords": ["образование", "учёба", "акушерск", "Кировоград", "фельдшерск"],
+      "year_range": "1938-1940",
+      "required_events": ["фельдшерско-акушерская школа"],
+      "merge_forbidden_with": ["war"]
+    },
+    {
+      "anchor_id": "war",
+      "title_keywords": ["война", "военная служба", "госпиталь", "фронт", "1941", "1945"],
+      "year_range": "1941-1945",
+      "required_events": ["призыв 23 июня 1941", "медаль 1943", "Красная Звезда 1945"],
+      "merge_forbidden_with": ["education"]
+    },
+    {
+      "anchor_id": "family_early",
+      "title_keywords": ["замужество", "Германия", "Венгрия", "семья", "1946"],
+      "year_range": "1946-1961",
+      "required_events": ["Дмитрий 1946", "Валерий 1948", "Татьяна 1956", "Венгрия 1958"],
+      "merge_forbidden_with": []
+    },
+    {
+      "anchor_id": "khim_institute",
+      "title_keywords": ["Химинститут", "поликлиник", "Химки", "Калинин", "1962"],
+      "year_range": "1962-1978",
+      "required_events": ["переезд 1962", "Ударник 1965", "брак Татьяны 1977"],
+      "merge_forbidden_with": []
+    },
+    {
+      "anchor_id": "widowhood",
+      "title_keywords": ["вдовство", "пенси", "одна", "вдова", "1978"],
+      "year_range": "1978-1996",
+      "required_events": ["смерть Дмитрия 1978", "пенсия 1994"],
+      "merge_forbidden_with": []
+    },
+    {
+      "anchor_id": "last_years",
+      "title_keywords": ["последние", "Капошвар", "переезд", "1996", "2005"],
+      "year_range": "1996-2005",
+      "required_events": ["Кужба 1996", "перелом 2005"],
+      "merge_forbidden_with": []
+    }
+  ],
+  "antitrigger_merges": [
+    {
+      "description": "Склейка «учёба+война» (1938-1945) — Class 10 regression",
+      "anchor_ids": ["education", "war"]
+    }
+  ]
+}

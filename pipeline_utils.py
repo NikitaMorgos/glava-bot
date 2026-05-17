@@ -1271,14 +1271,15 @@ def run_ghostwriter(client, fact_map: dict, transcripts: list[dict],
                     historical_context: dict | None = None,
                     revision_scope: dict | None = None,
                     version: int = 1,
-                    force_phase: str | None = None) -> dict:
+                    force_phase: str | None = None,
+                    pin_list: dict | None = None) -> dict:
     """
     Запускает Писателя.
     call_type: "initial" (1-й проход) | "revision" (2-й проход с историком)
     force_phase: если задан ("A" или "B"), переопределяет автоматическое определение phase.
-      Используй force_phase="A" для historian_integration (Phase A pass 2 по спеку v2.14):
-      модель обогащает черновик, а не точечно патчит главы (Phase B семантика).
-      Используй force_phase="B" когда historian-интеграция нужна на уже готовой книге.
+      Используй force_phase="A" для historian_integration (Phase A pass 2 по спеку v2.14).
+    pin_list: dict из parse_pin_list_from_markdown() — task 041, Batch 2.
+      Если задан, добавляется в user_message["pin_list"] для GW v2.19.
     Возвращает book_draft (dict).
     """
     if cfg is None:
@@ -1327,6 +1328,12 @@ def run_ghostwriter(client, fact_map: dict, transcripts: list[dict],
             glossary = []
         user_message["historical_context"] = ctx_list
         user_message["era_glossary"] = glossary
+
+    # Task 041 (Batch 2): pin_list — обязательные эпизоды для GW v2.19
+    if pin_list:
+        user_message["pin_list"] = pin_list
+        print(f"[GHOSTWRITER] pin_list: {len(pin_list.get('episodes', []))} эпизодов, "
+              f"{len(pin_list.get('bytovye', []))} бытовых")
 
     # Streaming — обязательно при max_tokens >= 16000
     raw_parts = []
@@ -2407,6 +2414,1077 @@ def run_proofreader(client, book_draft: dict, project_id: str,
     return result
 
 
+# ══════════════════════════════════════════════════════════════════════════════
+# BATCH 2 — Tasks 044, 045, 043, 038, 041
+# ══════════════════════════════════════════════════════════════════════════════
+
+# ─── Task 044: Relation overrides + persona notes preservation ─────────────
+
+def apply_relation_overrides(fact_map: dict, overrides_config: dict) -> tuple:
+    """Task 044: корректировать relation_to_subject в fact_map.persons по ручным overrides.
+
+    Применяется ДО filter_bio_data_family_by_relation_whitelist, чтобы whitelist
+    получил уже скорректированные relation'ы (тётя Маша = соседка → будет отфильтрована).
+
+    Returns (patched_fact_map, corrections_list).
+    """
+    import copy
+    fact_map = copy.deepcopy(fact_map)
+    corrections = []
+
+    overrides = overrides_config.get("overrides", [])
+    if not overrides:
+        return fact_map, corrections
+
+    persons = fact_map.get("persons", [])
+    for person in persons:
+        name = (person.get("name") or "").strip()
+        if not name:
+            continue
+        for override in overrides:
+            canonical_name = override.get("person_name", "")
+            aliases = [canonical_name] + override.get("aliases", [])
+            matched = any(
+                alias.lower() in name.lower() or name.lower() in alias.lower()
+                for alias in aliases
+            )
+            if not matched:
+                continue
+
+            old_relation = person.get("relation_to_subject") or person.get("relation") or ""
+            new_relation = override.get("real_relation", old_relation)
+            in_family = override.get("in_bio_data_family", True)
+
+            if old_relation != new_relation or person.get("in_bio_data_family") != in_family:
+                corrections.append({
+                    "person_name": name,
+                    "ca_relation": old_relation,
+                    "real_relation": new_relation,
+                    "in_bio_data_family": in_family,
+                })
+                person["relation_to_subject"] = new_relation
+                person["relation"] = new_relation
+                person["relation_corrected"] = True
+                person["in_bio_data_family"] = in_family
+                print(
+                    f"[RELATION-OVERRIDE] «{name}»: «{old_relation}» → «{new_relation}» "
+                    f"(in_family={in_family})"
+                )
+
+    print(f"[RELATION-OVERRIDE] Скорректировано {len(corrections)} персон из {len(persons)}.")
+    return fact_map, corrections
+
+
+def enforce_persona_notes(book: dict, persona_notes_config: dict) -> tuple:
+    """Task 044: зафиксировать обязательные notes в bio_data.family и разделить склеенные записи.
+
+    Вызывать ПОСЛЕ enforce_bio_data_completeness и filter_bio_data_family_by_relation_whitelist.
+    Returns (patched_book, enforcement_log).
+    """
+    import copy
+    book = copy.deepcopy(book)
+    log = []
+
+    chapters = book.get("chapters", [])
+    ch01 = next((ch for ch in chapters if ch.get("id") == "ch_01"), None)
+    if ch01 is None:
+        return book, log
+
+    bio_data = ch01.get("bio_data") or {}
+    family = bio_data.get("family")
+    if not family:
+        return book, log
+
+    required_notes = persona_notes_config.get("required_notes", [])
+    separate_required = persona_notes_config.get("separate_entries_required", [])
+
+    # Step 1: enforce required notes
+    for rule in required_notes:
+        label_match = rule.get("label_match", "").lower()
+        required_note = rule.get("note", "")
+        note_keywords = [kw.lower() for kw in rule.get("note_keywords", [])]
+        policy = rule.get("replacement_policy", "replace_if_missing")
+
+        for entry in family:
+            entry_value = (entry.get("value") or "").lower()
+            entry_label = (entry.get("label") or "").lower()
+            if label_match not in entry_value and label_match not in entry_label:
+                continue
+
+            current_note = (entry.get("note") or "").strip()
+            note_present = any(kw in current_note.lower() for kw in note_keywords) if note_keywords else bool(current_note)
+
+            if policy == "replace_if_conflict":
+                if not note_present:
+                    old_note = current_note
+                    entry["note"] = required_note
+                    log.append({
+                        "action": "replaced_note",
+                        "label_match": label_match,
+                        "old_note": old_note,
+                        "new_note": required_note,
+                        "entry_value": entry.get("value", ""),
+                    })
+                    print(f"[PERSONA-NOTES] «{label_match}»: note заменён «{old_note[:40]}» → «{required_note}»")
+            elif policy in ("replace_if_missing", "append_if_missing"):
+                if not note_present:
+                    old_note = current_note
+                    if policy == "append_if_missing" and current_note:
+                        entry["note"] = f"{current_note}; {required_note}"
+                    else:
+                        entry["note"] = required_note
+                    log.append({
+                        "action": "set_note",
+                        "label_match": label_match,
+                        "old_note": old_note,
+                        "new_note": entry["note"],
+                        "entry_value": entry.get("value", ""),
+                    })
+                    print(f"[PERSONA-NOTES] «{label_match}»: note установлен «{entry['note']}»")
+
+    # Step 2: split merged entries (e.g. "Внуки: Никита, Даша" → separate)
+    new_family = []
+    for entry in family:
+        entry_label = (entry.get("label") or "").lower()
+        entry_value = (entry.get("value") or "")
+        split_done = False
+        for sep_rule in separate_required:
+            pattern = sep_rule.get("merged_label_pattern", "").lower()
+            if pattern not in entry_label:
+                continue
+            split_into = sep_rule.get("split_into", [])
+            found_parts = []
+            for part in split_into:
+                kw = part.get("value_keyword", "")
+                if kw.lower() in entry_value.lower():
+                    found_parts.append((part["label"], kw))
+            if len(found_parts) >= 2:
+                for lbl, val in found_parts:
+                    new_entry = dict(entry)
+                    new_entry["label"] = lbl
+                    new_entry["value"] = val
+                    new_family.append(new_entry)
+                log.append({
+                    "action": "split_entry",
+                    "original_label": entry.get("label"),
+                    "original_value": entry_value,
+                    "split_into": [{"label": l, "value": v} for l, v in found_parts],
+                })
+                print(f"[PERSONA-NOTES] Разделена запись «{entry.get('label')}»: {[v for _, v in found_parts]}")
+                split_done = True
+                break
+        if not split_done:
+            new_family.append(entry)
+
+    bio_data["family"] = new_family
+    ch01["bio_data"] = bio_data
+    print(f"[PERSONA-NOTES] Применено {len(log)} изменений. Семья: {len(new_family)} записей.")
+    return book, log
+
+
+# ─── Task 045: Timeline structural anchors ────────────────────────────────
+
+def _extract_bio_data_timeline(book: dict) -> list:
+    """Извлечь периоды из bio_data.timeline или из ch_01.content (markdown)."""
+    import re
+    chapters = book.get("chapters", [])
+    ch01 = next((ch for ch in chapters if ch.get("id") == "ch_01"), None)
+    if ch01 is None:
+        return []
+
+    bio_data = ch01.get("bio_data") or {}
+    timeline = bio_data.get("timeline", [])
+    if timeline:
+        return timeline
+
+    # Fallback: parse markdown periods from ch_01.content
+    content = ch01.get("content") or ""
+    periods = []
+    for match in re.finditer(r"\*\*(\d{4}[–\-–—]\d{4}[^*]*?)\*\*[.\s]*([^\n*]*)", content):
+        title_raw = match.group(1).strip()
+        text_snippet = match.group(2).strip()
+        periods.append({"title": title_raw, "text": text_snippet, "source": "markdown"})
+    return periods
+
+
+def validate_timeline_anchors(book: dict, anchors_config: dict) -> dict:
+    """Task 045: проверить bio_data.timeline на наличие всех обязательных anchor-периодов.
+
+    Returns {anchors_found, anchors_missing, merges, issues_count}.
+    Idempotent — только чтение, не изменяет book.
+    """
+    import re
+    anchors = anchors_config.get("anchors", [])
+    min_periods = anchors_config.get("min_periods", len(anchors))
+
+    periods = _extract_bio_data_timeline(book)
+
+    chapters = book.get("chapters", [])
+    ch01 = next((ch for ch in chapters if ch.get("id") == "ch_01"), None)
+    full_text = ""
+    if ch01:
+        full_text = (ch01.get("content") or "") + " ".join(
+            p.get("text", "") for p in ch01.get("paragraphs", [])
+        )
+
+    found_anchor_ids = []
+    missing_anchor_ids = []
+    merges = []
+
+    for anchor in anchors:
+        anchor_id = anchor["anchor_id"]
+        title_keywords = [kw.lower() for kw in anchor.get("title_keywords", [])]
+
+        matched_period = None
+        for period in periods:
+            period_text = (
+                (period.get("title") or "") + " " + (period.get("text") or "")
+            ).lower()
+            if any(kw in period_text for kw in title_keywords):
+                matched_period = period
+                break
+
+        if matched_period is None:
+            if any(kw in full_text.lower() for kw in title_keywords):
+                matched_period = {"title": "found_in_content", "source": "content_search"}
+
+        if matched_period is not None:
+            found_anchor_ids.append(anchor_id)
+        else:
+            missing_anchor_ids.append(anchor_id)
+            print(f"[TIMELINE-ANCHORS] ⚠️ Anchor отсутствует: {anchor_id} (keywords={title_keywords[:2]})")
+
+    # Detect merges: two merge-forbidden anchors in same period
+    for period in periods:
+        period_text = (
+            (period.get("title") or "") + " " + (period.get("text") or "")
+        ).lower()
+        period_matched_anchors = []
+        for anchor in anchors:
+            title_keywords = [kw.lower() for kw in anchor.get("title_keywords", [])]
+            if any(kw in period_text for kw in title_keywords):
+                period_matched_anchors.append(anchor["anchor_id"])
+
+        if len(period_matched_anchors) >= 2:
+            for a1 in period_matched_anchors:
+                a1_spec = next((a for a in anchors if a["anchor_id"] == a1), {})
+                for a2 in period_matched_anchors:
+                    if a1 >= a2:
+                        continue
+                    if a2 in a1_spec.get("merge_forbidden_with", []):
+                        merges.append({
+                            "period_title": period.get("title", "?"),
+                            "merged_anchor_ids": [a1, a2],
+                            "severity": "error",
+                        })
+                        print(
+                            f"[TIMELINE-ANCHORS] ❌ MERGE: {a1} + {a2} "
+                            f"в периоде «{period.get('title', '?')}»"
+                        )
+
+    total_periods = len(periods)
+    report = {
+        "anchors_found": found_anchor_ids,
+        "anchors_missing": missing_anchor_ids,
+        "merges": merges,
+        "total_periods_found": total_periods,
+        "min_periods_required": min_periods,
+        "issues_count": len(missing_anchor_ids) + len(merges),
+        "period_count_ok": total_periods >= min_periods,
+    }
+    print(
+        f"[TIMELINE-ANCHORS] Found={len(found_anchor_ids)}/{len(anchors)}, "
+        f"Missing={len(missing_anchor_ids)}, Merges={len(merges)}, "
+        f"Periods={total_periods}/{min_periods}"
+    )
+    return report
+
+
+def enforce_timeline_anchors(book: dict, anchors_config: dict, fact_map: dict) -> tuple:
+    """Task 045: автоматически разделить склеенные периоды если оба контента явно присутствуют.
+
+    Auto-split ТОЛЬКО если оба anchor contents явно присутствуют в склеенном периоде.
+    Иначе — flag, не патчить.
+    Returns (patched_book, enforcement_report).
+    """
+    import copy
+    book = copy.deepcopy(book)
+    report = {"actions": [], "skipped": []}
+
+    validation = validate_timeline_anchors(book, anchors_config)
+    if not validation["merges"]:
+        return book, report
+
+    chapters = book.get("chapters", [])
+    ch01 = next((ch for ch in chapters if ch.get("id") == "ch_01"), None)
+    if ch01 is None:
+        return book, report
+
+    bio_data = ch01.get("bio_data") or {}
+    timeline = bio_data.get("timeline", [])
+    if not timeline:
+        report["skipped"].append({
+            "reason": "no_structured_timeline",
+            "detail": "timeline field empty; auto-split requires structured data",
+        })
+        return book, report
+
+    anchors_by_id = {a["anchor_id"]: a for a in anchors_config.get("anchors", [])}
+    new_timeline = []
+
+    for period in timeline:
+        period_text = ((period.get("title") or "") + " " + (period.get("text") or "")).lower()
+        period_matched_anchors = [
+            aid for aid, anchor in anchors_by_id.items()
+            if any(kw.lower() in period_text for kw in anchor.get("title_keywords", []))
+        ]
+
+        split_performed = False
+        for a1 in period_matched_anchors:
+            a1_spec = anchors_by_id.get(a1, {})
+            for a2 in period_matched_anchors:
+                if a1 >= a2 or a2 not in a1_spec.get("merge_forbidden_with", []):
+                    continue
+
+                a1_kws = [kw.lower() for kw in anchors_by_id[a1].get("required_events", [])]
+                a2_kws = [kw.lower() for kw in anchors_by_id[a2].get("required_events", [])]
+                period_text_full = period.get("text") or ""
+                text_lower = period_text_full.lower()
+
+                a1_present = sum(1 for kw in a1_kws if any(w in text_lower for w in kw.split())) >= max(1, len(a1_kws) // 2)
+                a2_present = sum(1 for kw in a2_kws if any(w in text_lower for w in kw.split())) >= max(1, len(a2_kws) // 2)
+
+                if not (a1_present and a2_present):
+                    report["skipped"].append({
+                        "reason": "insufficient_content_for_split",
+                        "period_title": period.get("title"),
+                        "merged_anchors": [a1, a2],
+                        "a1_content_present": a1_present,
+                        "a2_content_present": a2_present,
+                    })
+                    print(
+                        f"[TIMELINE-ANCHORS] ⚠️ Auto-split невозможен для «{period.get('title')}» "
+                        f"— нет контента для {a1 if not a1_present else a2}. Human review needed."
+                    )
+                    new_timeline.append(period)
+                    split_performed = True
+                    break
+
+                a1_anchor = anchors_by_id[a1]
+                a2_anchor = anchors_by_id[a2]
+                period_1 = {
+                    "title": f"{a1_anchor.get('year_range', '')}. {a1_anchor['title_keywords'][0].capitalize()}",
+                    "text": period_text_full,
+                    "source": f"auto-split from: {period.get('title')}",
+                    "anchor_id": a1,
+                }
+                period_2 = {
+                    "title": f"{a2_anchor.get('year_range', '')}. {a2_anchor['title_keywords'][0].capitalize()}",
+                    "text": period_text_full,
+                    "source": f"auto-split from: {period.get('title')}",
+                    "anchor_id": a2,
+                }
+                new_timeline.extend([period_1, period_2])
+                report["actions"].append({
+                    "action": "split",
+                    "original_title": period.get("title"),
+                    "split_into": [period_1["title"], period_2["title"]],
+                    "merged_anchors": [a1, a2],
+                })
+                print(
+                    f"[TIMELINE-ANCHORS] ✅ Auto-split: «{period.get('title')}» → "
+                    f"[«{period_1['title']}», «{period_2['title']}»]"
+                )
+                split_performed = True
+                break
+            if split_performed:
+                break
+
+        if not split_performed:
+            new_timeline.append(period)
+
+    bio_data["timeline"] = new_timeline
+    ch01["bio_data"] = bio_data
+    return book, report
+
+
+# ─── Task 043: Epilogue stop-phrases + paspart format + Class 11 awkward ──
+
+def validate_epilogue_stop_phrases(book: dict, stop_list_config: dict) -> dict:
+    """Task 043: проверить epilogue и нарративные главы на пластиковые шаблонные фразы (Класс 6).
+
+    Returns {issues: [...], errors_count, warnings_count}.
+    Idempotent — только чтение.
+    """
+    phrases = stop_list_config.get("generic_stop_phrases", [])
+    scoped_error = set(stop_list_config.get("scoped_chapter_ids", ["epilogue"]))
+    scoped_warning = set(stop_list_config.get("extra_general_scope", []))
+    severity_map = stop_list_config.get("severity_map", {})
+
+    issues = []
+    chapters = book.get("chapters", [])
+
+    all_scoped = scoped_error | scoped_warning
+    for chapter in chapters:
+        ch_id = chapter.get("id") or ""
+        if ch_id not in all_scoped and "epilogue" not in ch_id.lower():
+            continue
+
+        content = chapter.get("content") or ""
+        paragraphs = chapter.get("paragraphs", [])
+        full_text = content + " " + " ".join(p.get("text", "") for p in paragraphs)
+        full_text_lower = full_text.lower()
+
+        for phrase in phrases:
+            if phrase.lower() in full_text_lower:
+                severity = severity_map.get(
+                    ch_id,
+                    "error" if ch_id in scoped_error else "warning",
+                )
+                idx = full_text_lower.find(phrase.lower())
+                snippet = full_text[max(0, idx - 30): idx + len(phrase) + 30].strip()
+                issues.append({
+                    "phrase": phrase,
+                    "chapter_id": ch_id,
+                    "severity": severity,
+                    "snippet": snippet,
+                })
+
+    errors = sum(1 for i in issues if i["severity"] == "error")
+    warnings = sum(1 for i in issues if i["severity"] == "warning")
+    print(f"[EPILOGUE-STOP] {errors} errors + {warnings} warnings по {len(phrases)} фразам.")
+    return {"issues": issues, "errors_count": errors, "warnings_count": warnings}
+
+
+def validate_awkward_formulation(book: dict) -> dict:
+    """Task 043: Класс 11 — частный пример вместо обобщения.
+
+    Returns {issues: [...], issues_count}.
+    """
+    import re
+    patterns = [
+        r"не\s+любил[аи]?\s+\w+\s+(по|про|о|об|насчёт)\s+\S+\s+(или|и|,)\s+\S+",
+        r"не\s+нравил\w+\s+когда\s+\w+\s+(давал|просил|предлагал)\s+\w+\s+(по|про|о)\s+\S+\s+(или|и)\s+\S+",
+        r"не\s+любил[аи]?,\s+когда\s+\w+\s+давали\s+советы\s+по\s+\S+\s+(или|и)\s+\S+",
+    ]
+
+    issues = []
+    chapters = book.get("chapters", [])
+    for chapter in chapters:
+        ch_id = chapter.get("id") or ""
+        texts = [chapter.get("content") or ""] + [p.get("text", "") for p in chapter.get("paragraphs", [])]
+        for text in texts:
+            for pat in patterns:
+                for match in re.finditer(pat, text, re.IGNORECASE):
+                    issues.append({
+                        "type": "example_instead_of_generalization",
+                        "chapter_id": ch_id,
+                        "severity": "warning",
+                        "matched_text": match.group(0),
+                        "suggestion": "Обобщение первым, затем примеры: «не любил советов; например, по ...»",
+                    })
+
+    print(f"[AWKWARD-FORM] {len(issues)} паттернов «частный пример вместо обобщения».")
+    return {"issues": issues, "issues_count": len(issues)}
+
+
+_FEMALE_RELATIONS = frozenset({
+    "мать", "мама", "мамочка",
+    "дочь", "дочка",
+    "жена", "супруга",
+    "сестра",
+    "бабушка", "бабуля", "баба",
+    "внучка",
+    "тётя",
+    "племянница",
+    "золовка",
+    "свекровь",
+    "тёща",
+    "невестка",
+})
+
+
+def _is_female_relation(label: str) -> bool:
+    label_lower = label.strip().lower()
+    return any(rel in label_lower for rel in _FEMALE_RELATIONS)
+
+
+def enforce_paspart_format(book: dict) -> tuple:
+    """Task 043: заменить «р. YYYY» → «родился/родилась в YYYY году», «ум. YYYY» → «умер/умерла в YYYY году».
+
+    Род определяется по label (relation). Применяется к bio_data.family и ch_01.content.
+    Returns (patched_book, replacements_log).
+    """
+    import copy
+    import re
+    book = copy.deepcopy(book)
+    log = []
+
+    def _gender_birth(label: str) -> str:
+        return "родилась" if _is_female_relation(label) else "родился"
+
+    def _gender_death(label: str) -> str:
+        return "умерла" if _is_female_relation(label) else "умер"
+
+    def _replace_in_text(text: str, label: str) -> tuple:
+        replacements = []
+
+        def sub_born(m):
+            year = m.group(1)
+            r = f"{_gender_birth(label)} в {year} году"
+            replacements.append({"old": m.group(0), "new": r, "label": label})
+            return r
+
+        def sub_died(m):
+            year = m.group(1)
+            r = f"{_gender_death(label)} в {year} году"
+            replacements.append({"old": m.group(0), "new": r, "label": label})
+            return r
+
+        text = re.sub(r"\bр\.\s*(\d{4})\b", sub_born, text)
+        text = re.sub(r"\bум\.\s*(\d{4})\b", sub_died, text)
+        return text, replacements
+
+    chapters = book.get("chapters", [])
+    ch01 = next((ch for ch in chapters if ch.get("id") == "ch_01"), None)
+    if ch01:
+        bio_data = ch01.get("bio_data") or {}
+        family = bio_data.get("family", [])
+        for entry in family:
+            label = entry.get("label") or entry.get("relation") or ""
+            for field in ("value", "note"):
+                val = entry.get(field)
+                if val and isinstance(val, str):
+                    new_val, reps = _replace_in_text(val, label)
+                    if reps:
+                        entry[field] = new_val
+                        log.extend(reps)
+
+        content = ch01.get("content") or ""
+        new_content, reps = _replace_in_text(content, "")
+        if reps:
+            ch01["content"] = new_content
+            log.extend(reps)
+
+        ch01["bio_data"] = bio_data
+
+    print(f"[PASPART-FORMAT] Заменено {len(log)} вхождений «р./ум.» → полная форма.")
+    return book, log
+
+
+# ─── Task 038: CA confabulation guards ────────────────────────────────────
+
+def validate_description_drift(audit_data: dict) -> dict:
+    """Task 038: проверить CA event descriptions на causal/date/motivation confabulation.
+
+    audit_data — fact_map (с .timeline) или список events.
+    Returns {issues: [...], events_checked, events_flagged}.
+    """
+    import re
+
+    CAUSAL_RE = re.compile(
+        r"\b(потому что|поскольку|так как|из-за этого|это произошло|вследствие)\b",
+        re.IGNORECASE,
+    )
+    YEAR_RE = re.compile(r"\b(19|20)\d{2}\b")
+    MOTIVATION_RE = re.compile(
+        r"\b(хотел[аи]?\b|желал[аи]?\b|мечтал[аи]?\b|стремил\w*|верил[аи]? в|решил[аи]? что|думал[аи]? что)\b",
+        re.IGNORECASE,
+    )
+
+    issues = []
+    checked = 0
+
+    events = []
+    if isinstance(audit_data, dict):
+        events = audit_data.get("timeline", audit_data.get("events", []))
+    elif isinstance(audit_data, list):
+        events = audit_data
+
+    for event in events:
+        description = (event.get("description") or "").strip()
+        source_quote = (event.get("source_quote") or event.get("transcript_quote") or "").strip()
+        event_id = event.get("event_id") or event.get("id") or "?"
+
+        if not description or not source_quote:
+            continue
+        checked += 1
+
+        # 1. Causal drift
+        if CAUSAL_RE.search(description) and not CAUSAL_RE.search(source_quote):
+            issues.append({
+                "event_id": event_id,
+                "type": "causal_drift",
+                "description_snippet": description[:120],
+                "source_snippet": source_quote[:120],
+            })
+
+        # 2. Date drift
+        desc_years = set(YEAR_RE.findall(description))
+        src_years = set(YEAR_RE.findall(source_quote))
+        extra_years = desc_years - src_years
+        if extra_years:
+            issues.append({
+                "event_id": event_id,
+                "type": "date_drift",
+                "extra_years": sorted(extra_years),
+                "description_snippet": description[:120],
+                "source_snippet": source_quote[:120],
+            })
+
+        # 3. Motivation drift
+        if MOTIVATION_RE.search(description) and not MOTIVATION_RE.search(source_quote):
+            issues.append({
+                "event_id": event_id,
+                "type": "motivation_drift",
+                "description_snippet": description[:120],
+                "source_snippet": source_quote[:120],
+            })
+
+    flagged = len({i["event_id"] for i in issues})
+    print(f"[CA-DRIFT] Проверено {checked} событий, flags: {len(issues)} в {flagged} событиях.")
+    return {"issues": issues, "events_checked": checked, "events_flagged": flagged}
+
+
+def validate_relation_consistency(fact_map: dict, transcript_text: str) -> dict:
+    """Task 038: проверить relation_to_subject персон на подтверждение в транскрипте.
+
+    Returns {issues: [...], persons_checked, unconfirmed_count}.
+    """
+    import re
+
+    COMPLEX_RELATIONS = frozenset({
+        "тётя", "дядя", "племянник", "племянница",
+        "золовка", "свекровь", "тесть", "тёща",
+        "кум", "кума", "свояк",
+    })
+    CONFIRMATION_RE = re.compile(
+        r"(сестра|брат|мать|отец|мама|папа)\s+(моей|его|её|мужа|жены)"
+        r"|сестра (мужа|жены|мамы|папы|отца|матери)"
+        r"|брат (мужа|жены|мамы|папы|отца|матери)"
+        r"|(тётя|дядя)\s+(со|из)\s+стороны",
+        re.IGNORECASE,
+    )
+
+    issues = []
+    persons = fact_map.get("persons", [])
+    checked = 0
+
+    for person in persons:
+        name = (person.get("name") or "").strip()
+        relation = (
+            person.get("relation_to_subject") or person.get("relation") or ""
+        ).strip().lower()
+
+        if not name or not relation:
+            continue
+        if not any(rel in relation for rel in COMPLEX_RELATIONS):
+            continue
+
+        checked += 1
+        name_lower = name.lower()
+        sentences = [s.strip() for s in re.split(r"[.!?]", transcript_text) if name_lower in s.lower()]
+        confirmed = any(CONFIRMATION_RE.search(s) for s in sentences)
+
+        # Known confirmations from pin-list
+        if "шура" in name_lower and any(r in relation for r in ("золовка", "сестра")):
+            confirmed = True
+
+        if not confirmed:
+            issues.append({
+                "person_name": name,
+                "relation": relation,
+                "type": "unconfirmed_relation",
+                "sentences_checked": len(sentences),
+                "suggested_action": f"Проверить: может быть «знакомый/соседка» вместо «{relation}»",
+            })
+
+    unconfirmed = len(issues)
+    print(f"[RELATION-CONSISTENCY] Проверено {checked} персон, неподтверждённых: {unconfirmed}.")
+    return {"issues": issues, "persons_checked": checked, "unconfirmed_count": unconfirmed}
+
+
+def validate_historical_note_grounding(book: dict, fact_map: dict, transcripts: list) -> dict:
+    """Task 038: проверить historical_notes на generalization без grounding (Класс 1c).
+
+    Returns {issues: [...], notes_checked, errors_count, warnings_count}.
+    """
+    import re
+
+    GENERALIZATION_RE = re.compile(
+        r"\b(многие|обычно|в те годы|в то время|зачастую|нередко|как правило)\b"
+        r"[^.]*\b(пожилые|люди|семьи|женщины|мужчины|все|часто)\b",
+        re.IGNORECASE,
+    )
+    ANTITRIGGERS = [
+        "в 1990-е многие пожилые",
+        "многие пожилые люди оставались одни",
+        "жизнь становилась всё дороже",
+        "1990-е многие пожилые",
+    ]
+
+    issues = []
+    checked = 0
+
+    notes = book.get("historical_notes", [])
+    for note in notes:
+        note_id = note.get("id") or note.get("note_id") or "?"
+        text = (note.get("text") or note.get("content") or "").strip()
+        if not text:
+            continue
+        checked += 1
+        text_lower = text.lower()
+        for antitrigger in ANTITRIGGERS:
+            if antitrigger.lower() in text_lower:
+                issues.append({
+                    "note_id": note_id, "type": "antitrigger_phrase",
+                    "severity": "error", "matched_phrase": antitrigger, "snippet": text[:150],
+                })
+        if GENERALIZATION_RE.search(text):
+            issues.append({
+                "note_id": note_id, "type": "generalization_unverified",
+                "severity": "warning", "snippet": text[:150],
+            })
+
+    chapters = book.get("chapters", [])
+    for chapter in chapters:
+        ch_id = chapter.get("id") or ""
+        content = chapter.get("content") or ""
+        inline_blocks = re.findall(r"\*\*\*(.+?)\*\*\*", content, re.DOTALL)
+        for block in inline_blocks:
+            checked += 1
+            block_lower = block.lower()
+            for antitrigger in ANTITRIGGERS:
+                if antitrigger.lower() in block_lower:
+                    issues.append({
+                        "note_id": f"inline_{ch_id}", "type": "antitrigger_phrase",
+                        "severity": "error", "chapter_id": ch_id,
+                        "matched_phrase": antitrigger, "snippet": block[:150],
+                    })
+            if GENERALIZATION_RE.search(block):
+                issues.append({
+                    "note_id": f"inline_{ch_id}", "type": "generalization_unverified",
+                    "severity": "warning", "chapter_id": ch_id, "snippet": block[:150],
+                })
+
+    errors = sum(1 for i in issues if i.get("severity") == "error")
+    warnings = sum(1 for i in issues if i.get("severity") == "warning")
+    print(f"[HN-GROUNDING] Проверено {checked} заметок, {errors} errors + {warnings} warnings.")
+    return {"issues": issues, "notes_checked": checked, "errors_count": errors, "warnings_count": warnings}
+
+
+def validate_motivation_attributions(book: dict, transcripts: list) -> dict:
+    """Task 038: проверить атрибуции мотивации на подтверждение в транскрипте (Класс 1d).
+
+    Returns {issues: [...], attributions_found, errors_count, warnings_count}.
+    """
+    import re
+
+    MOTIVATION_RE = re.compile(
+        r"\b(верила?\s+в\b|воевала?\s+за\b|хотела?\s+\S+|жила?\s+ради\b|посвятила?\s+себя\b|стремилась?\s+\S+)",
+        re.IGNORECASE,
+    )
+    BAD_ATTRIBUTIONS = [
+        "воевала за идеалы",
+        "верила в идеалы",
+        "идеалы за которые воевала",
+        "идеалы, за которые воевала",
+        "жизнь была наполнена служением",
+    ]
+
+    transcript_combined = " ".join(
+        t.get("text", "") if isinstance(t, dict) else str(t)
+        for t in transcripts
+    ).lower()
+
+    issues = []
+    attributions_found = 0
+
+    chapters = book.get("chapters", [])
+    for chapter in chapters:
+        ch_id = chapter.get("id") or ""
+        texts = [chapter.get("content") or ""] + [p.get("text", "") for p in chapter.get("paragraphs", [])]
+        for text in texts:
+            text_lower = text.lower()
+            for bad in BAD_ATTRIBUTIONS:
+                if bad.lower() in text_lower:
+                    attributions_found += 1
+                    idx = text_lower.find(bad.lower())
+                    issues.append({
+                        "chapter_id": ch_id, "type": "motivation_antitrigger",
+                        "severity": "error", "matched_phrase": bad,
+                        "snippet": text[max(0, idx - 20): idx + len(bad) + 40],
+                    })
+
+            for match in MOTIVATION_RE.finditer(text):
+                phrase = match.group(0)
+                phrase_words = phrase.lower().split()[:2]
+                found_in_tr = all(w in transcript_combined for w in phrase_words if len(w) > 3)
+                if not found_in_tr:
+                    attributions_found += 1
+                    issues.append({
+                        "chapter_id": ch_id, "type": "motivation_unverified",
+                        "severity": "warning", "matched_phrase": phrase,
+                        "context": text[max(0, match.start() - 30): match.end() + 30],
+                    })
+
+    errors = sum(1 for i in issues if i.get("severity") == "error")
+    warnings = sum(1 for i in issues if i.get("severity") == "warning")
+    print(f"[MOTIVATION] {attributions_found} атрибуций, {errors} errors + {warnings} warnings.")
+    return {"issues": issues, "attributions_found": attributions_found, "errors_count": errors, "warnings_count": warnings}
+
+
+# ─── Task 041: Pin-list coverage + episode diff ───────────────────────────
+
+def parse_pin_list_from_markdown(md_path: str) -> dict:
+    """Task 041: парсить known_episodes_*.md → структурированный pin-list для GW input.
+
+    Returns {episodes: [...], bytovye: [...], traits: [...], characteristic_words: [...]}.
+    """
+    import re
+    from pathlib import Path
+
+    path = Path(md_path)
+    if not path.exists():
+        print(f"[PIN-LIST-PARSER] Файл не найден: {md_path}")
+        return {"episodes": [], "bytovye": [], "traits": [], "characteristic_words": []}
+
+    content = path.read_text(encoding="utf-8")
+    lines = content.splitlines()
+
+    episodes = []
+    bytovye = []
+    traits = []
+    char_words = []
+
+    current_table_type = None
+    header_seen = False
+
+    for line in lines:
+        line_stripped = line.strip()
+
+        if "## Хронологические эпизоды" in line_stripped:
+            current_table_type = "episodes"; header_seen = False; continue
+        elif "## Бытовые эпизоды" in line_stripped:
+            current_table_type = "bytovye"; header_seen = False; continue
+        elif "## Характеристики" in line_stripped:
+            current_table_type = "traits"; header_seen = False; continue
+        elif "## Голос рассказчика" in line_stripped:
+            current_table_type = "char_words"; header_seen = False; continue
+        elif line_stripped.startswith("## "):
+            current_table_type = None; header_seen = False; continue
+
+        if current_table_type is None:
+            continue
+
+        if re.match(r"^\|[-|\s]+\|$", line_stripped):
+            header_seen = True
+            continue
+
+        if not (line_stripped.startswith("|") and header_seen):
+            continue
+
+        cells = [c.strip() for c in line_stripped.split("|")[1:-1]]
+        if len(cells) < 2:
+            continue
+
+        def _clean(s):
+            return re.sub(r"\*+", "", s).strip()
+
+        if current_table_type == "episodes":
+            if len(cells) < 4:
+                continue
+            ep_id = cells[1]
+            title = _clean(cells[2])
+            markers_raw = cells[5] if len(cells) > 5 else ""
+            markers = [m.strip() for m in re.split(r"[,;`]", re.sub(r"`", "", markers_raw)) if m.strip()]
+            if ep_id and title and ep_id not in ("#", "episode_id", "ep_id"):
+                episodes.append({"episode_id": ep_id, "title": title, "markers": markers})
+
+        elif current_table_type == "bytovye":
+            byt_id = cells[1]
+            title = _clean(cells[2]) if len(cells) > 2 else _clean(cells[1])
+            markers_raw = cells[3] if len(cells) > 3 else ""
+            markers = [m.strip() for m in re.split(r"[,;`]", re.sub(r"`", "", markers_raw)) if m.strip()]
+            if byt_id and title and byt_id not in ("#", "byt_id"):
+                bytovye.append({"byt_id": byt_id, "title": title, "markers": markers})
+
+        elif current_table_type == "traits":
+            trait_id = cells[1]
+            title = _clean(cells[2]) if len(cells) > 2 else _clean(cells[1])
+            markers_raw = cells[3] if len(cells) > 3 else ""
+            markers = [m.strip() for m in re.split(r"[,;`]", re.sub(r"`", "", markers_raw)) if m.strip()]
+            if trait_id and title and trait_id not in ("#", "trait_id"):
+                traits.append({"trait_id": trait_id, "title": title, "markers": markers})
+
+        elif current_table_type == "char_words":
+            word = _clean(cells[0])
+            if word and word not in ("#", "Слово", "слово"):
+                char_words.append(word)
+
+    print(
+        f"[PIN-LIST-PARSER] Загружено: {len(episodes)} эпизодов, "
+        f"{len(bytovye)} бытовых, {len(traits)} характеристик, {len(char_words)} слов."
+    )
+    return {"episodes": episodes, "bytovye": bytovye, "traits": traits, "characteristic_words": char_words}
+
+
+def validate_pin_list_coverage(book: dict, pin_list: dict) -> dict:
+    """Task 041: проверить покрытие pin-list эпизодов в финальном тексте книги.
+
+    coverage = "full" (≥60% markers), "partial" (≥1), "skipped" (0).
+    Returns {episodes: [...], summary: {full, partial, skipped, total}}.
+    """
+    import re
+    import math
+
+    chapters = book.get("chapters", [])
+    chapter_texts = {}
+    all_text = ""
+    for ch in chapters:
+        ch_id = ch.get("id") or ""
+        text = (ch.get("content") or "") + " ".join(p.get("text", "") for p in ch.get("paragraphs", []))
+        chapter_texts[ch_id] = text.lower()
+        all_text += text.lower() + " "
+
+    results = []
+
+    for category_key, id_field in [("episodes", "episode_id"), ("bytovye", "byt_id"), ("traits", "trait_id")]:
+        for item in pin_list.get(category_key, []):
+            item_id = item.get(id_field) or item.get("id") or "?"
+            title = item.get("title", "")
+            markers = item.get("markers", [])
+            must_include = item.get("must_include", [])
+
+            if not markers:
+                continue
+
+            found_markers = []
+            found_chapter = None
+            for marker in markers:
+                try:
+                    found = bool(re.search(marker, all_text, re.IGNORECASE))
+                except re.error:
+                    found = marker.lower() in all_text
+
+                if found:
+                    found_markers.append(marker)
+                    if found_chapter is None:
+                        for ch_id, ch_text in chapter_texts.items():
+                            try:
+                                if re.search(marker, ch_text, re.IGNORECASE):
+                                    found_chapter = ch_id
+                                    break
+                            except re.error:
+                                if marker.lower() in ch_text:
+                                    found_chapter = ch_id
+                                    break
+
+            threshold_full = math.ceil(len(markers) * 0.6)
+            count_found = len(found_markers)
+            if count_found >= threshold_full:
+                coverage = "full"
+            elif count_found >= 1:
+                coverage = "partial"
+            else:
+                coverage = "skipped"
+
+            must_include_failed = [
+                req for req in must_include
+                if not any(w in all_text for w in req.lower().split()[:3] if len(w) > 3)
+            ]
+
+            results.append({
+                "episode_id": item_id,
+                "category": category_key,
+                "title": title,
+                "coverage": coverage,
+                "markers_found": count_found,
+                "markers_total": len(markers),
+                "chapter_id": found_chapter,
+                "must_include_failed": must_include_failed,
+            })
+
+    char_words = pin_list.get("characteristic_words", [])
+    char_found = [w for w in char_words if w.lower().split()[0] in all_text]
+
+    full_count = sum(1 for r in results if r["coverage"] == "full")
+    partial_count = sum(1 for r in results if r["coverage"] == "partial")
+    skipped_count = sum(1 for r in results if r["coverage"] == "skipped")
+
+    summary = {
+        "full": full_count,
+        "partial": partial_count,
+        "skipped": skipped_count,
+        "total": len(results),
+        "characteristic_words_found": len(char_found),
+        "characteristic_words_total": len(char_words),
+        "must_include_issues": sum(1 for r in results if r["must_include_failed"]),
+    }
+
+    print(
+        f"[PIN-COVERAGE] Full={full_count}, Partial={partial_count}, Skipped={skipped_count} "
+        f"из {len(results)} | char_words={len(char_found)}/{len(char_words)}"
+    )
+    return {"episodes": results, "summary": summary}
+
+
+def diff_episodes_between_versions(
+    book_new: dict,
+    book_old: dict,
+    pin_list: dict,
+    regression_threshold: int = 3,
+) -> dict:
+    """Task 041: сравнить покрытие эпизодов между двумя версиями книги.
+
+    Returns {regressions: [...], improvements: [...], regression_count, improvement_count, verdict}.
+    """
+    coverage_new = validate_pin_list_coverage(book_new, pin_list)
+    coverage_old = validate_pin_list_coverage(book_old, pin_list)
+
+    new_by_id = {r["episode_id"]: r for r in coverage_new["episodes"]}
+    old_by_id = {r["episode_id"]: r for r in coverage_old["episodes"]}
+
+    coverage_rank = {"full": 2, "partial": 1, "skipped": 0}
+    regressions = []
+    improvements = []
+
+    for ep_id, new_r in new_by_id.items():
+        old_r = old_by_id.get(ep_id)
+        if old_r is None:
+            continue
+        new_rank = coverage_rank.get(new_r["coverage"], 0)
+        old_rank = coverage_rank.get(old_r["coverage"], 0)
+        if new_rank < old_rank:
+            regressions.append({
+                "episode_id": ep_id,
+                "title": new_r.get("title", ""),
+                "old_coverage": old_r["coverage"],
+                "new_coverage": new_r["coverage"],
+            })
+        elif new_rank > old_rank:
+            improvements.append({
+                "episode_id": ep_id,
+                "title": new_r.get("title", ""),
+                "old_coverage": old_r["coverage"],
+                "new_coverage": new_r["coverage"],
+            })
+
+    verdict = "regression_detected" if len(regressions) >= regression_threshold else "ok"
+    print(
+        f"[EPISODE-DIFF] Regressions={len(regressions)}, Improvements={len(improvements)}, "
+        f"Verdict={verdict}"
+    )
+    return {
+        "regressions": regressions,
+        "improvements": improvements,
+        "regression_count": len(regressions),
+        "improvement_count": len(improvements),
+        "verdict": verdict,
+        "regression_threshold": regression_threshold,
+        "summary_new": coverage_new["summary"],
+        "summary_old": coverage_old["summary"],
+    }
 def run_proofreader_per_chapter(client, book_draft: dict, project_id: str,
                                 cfg: dict | None = None) -> dict:
     """

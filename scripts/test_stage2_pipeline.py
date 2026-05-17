@@ -51,6 +51,9 @@ from pipeline_utils import (
     save_run_manifest,
     validate_revision_volume,
     merge_revision_out_of_scope_chapters,
+    # Batch 2 — Task 041
+    parse_pin_list_from_markdown,
+    validate_description_drift,
 )
 from pipeline_quality_gates import (
     run_stage2_text_gates, run_stage2_text_gates_variant_b,
@@ -152,6 +155,19 @@ def main():
     print(f"[CONFIG] Писатель: {cfg['ghostwriter']['model']} ({cfg['ghostwriter']['prompt_file']})")
     print(f"[CONFIG] Фактчекер: {cfg['fact_checker']['model']} ({cfg['fact_checker']['prompt_file']})")
 
+    # Task 041 (Batch 2): загрузить pin_list для GW v2.19
+    _prefix = args.fact_map.replace("\\", "/").split("/")[-1].split("_")[0] if args.fact_map else "karakulina"
+    _pin_list_md = ROOT / "collab" / "context" / f"known_episodes_{_prefix}.md"
+    if not _pin_list_md.exists():
+        _pin_list_md = ROOT / "collab" / "context" / "known_episodes_karakulina.md"
+    pin_list_for_gw = None
+    if _pin_list_md.exists():
+        pin_list_for_gw = parse_pin_list_from_markdown(str(_pin_list_md))
+        print(f"[BATCH2-041] pin_list загружен из {_pin_list_md.name}: "
+              f"{len(pin_list_for_gw.get('episodes', []))} эпизодов")
+    else:
+        print(f"[BATCH2-041] pin_list не найден ({_pin_list_md}) — GW будет без pin_list")
+
     client = anthropic.Anthropic(api_key=api_key)
     out_dir = Path(args.output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -184,6 +200,7 @@ def main():
         project_id=PROJECT_ID,
         cfg=cfg,
         call_type="initial",
+        pin_list=pin_list_for_gw,
         version=1,
     )
     draft_v1_path = out_dir / f"karakulina_book_draft_v1_{ts}.json"

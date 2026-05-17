@@ -48,6 +48,24 @@ from pipeline_utils import (
     filter_bio_data_family_by_relation_whitelist,
     validate_bio_data_required_fields,
     normalize_book_topo,
+    # Batch 2 — Task 044
+    apply_relation_overrides,
+    enforce_persona_notes,
+    # Batch 2 — Task 045
+    validate_timeline_anchors,
+    enforce_timeline_anchors,
+    # Batch 2 — Task 043
+    validate_epilogue_stop_phrases,
+    validate_awkward_formulation,
+    enforce_paspart_format,
+    # Batch 2 — Task 038
+    validate_description_drift,
+    validate_historical_note_grounding,
+    validate_motivation_attributions,
+    # Batch 2 — Task 041
+    validate_pin_list_coverage,
+    diff_episodes_between_versions,
+    parse_pin_list_from_markdown,
 )
 from pipeline_quality_gates import (
     run_stage3_text_gates, run_stage3_text_gates_variant_b,
@@ -603,6 +621,65 @@ async def main():
     print(f"[SAVED] bio_data_integrity: {bio_integrity_path.name} "
           f"(filtered={len(bio_filtered)}, issues={len(bio_issues)})")
 
+    # ── Batch 2: Task 044 — Relation overrides + persona notes ──────
+    _rel_overrides_path = ROOT / "collab" / "context" / f"relation_overrides_{args.prefix}.json"
+    _persona_notes_path = ROOT / "collab" / "context" / f"persona_notes_{args.prefix}.json"
+    rel_overrides_report = {"corrections": [], "note": "relation_overrides config not found"}
+    persona_notes_report = {"log": [], "note": "persona_notes config not found"}
+
+    if _rel_overrides_path.exists():
+        with open(_rel_overrides_path, encoding="utf-8") as f:
+            _rel_overrides_cfg = json.load(f)
+        fact_map, rel_corrections = apply_relation_overrides(fact_map, _rel_overrides_cfg)
+        # Re-run filter with corrected relations
+        book_after_le, bio_filtered_2 = filter_bio_data_family_by_relation_whitelist(book_after_le)
+        rel_overrides_report = {
+            "corrections": rel_corrections,
+            "corrections_count": len(rel_corrections),
+            "re_filter_removed": bio_filtered_2,
+        }
+        print(f"[BATCH2-044] Relation overrides: {len(rel_corrections)} коррекций")
+
+    _rel_ov_path = out_dir / f"{args.prefix}_relation_overrides_applied_{ts}.json"
+    with open(_rel_ov_path, "w", encoding="utf-8") as f:
+        json.dump(rel_overrides_report, f, ensure_ascii=False, indent=2)
+    print(f"[SAVED] relation_overrides_applied: {_rel_ov_path.name}")
+
+    if _persona_notes_path.exists():
+        with open(_persona_notes_path, encoding="utf-8") as f:
+            _persona_notes_cfg = json.load(f)
+        book_after_le, persona_log = enforce_persona_notes(book_after_le, _persona_notes_cfg)
+        persona_notes_report = {"log": persona_log, "changes_count": len(persona_log)}
+        print(f"[BATCH2-044] Persona notes enforced: {len(persona_log)} изменений")
+
+    _pn_path = out_dir / f"{args.prefix}_persona_notes_enforced_{ts}.json"
+    with open(_pn_path, "w", encoding="utf-8") as f:
+        json.dump(persona_notes_report, f, ensure_ascii=False, indent=2)
+    print(f"[SAVED] persona_notes_enforced: {_pn_path.name}")
+
+    # ── Batch 2: Task 045 — Timeline structural anchors ─────────────
+    _timeline_anchors_path = ROOT / "collab" / "context" / f"timeline_anchors_{args.prefix}.json"
+    if _timeline_anchors_path.exists():
+        with open(_timeline_anchors_path, encoding="utf-8") as f:
+            _anchors_cfg = json.load(f)
+        _anchor_validation = validate_timeline_anchors(book_after_le, _anchors_cfg)
+        book_after_le, _anchor_enforce = enforce_timeline_anchors(book_after_le, _anchors_cfg, fact_map)
+        _anchor_report = {**_anchor_validation, "enforcement": _anchor_enforce}
+    else:
+        _anchor_report = {"note": "timeline_anchors config not found"}
+
+    _anchor_path = out_dir / f"{args.prefix}_timeline_anchors_{ts}.json"
+    with open(_anchor_path, "w", encoding="utf-8") as f:
+        json.dump(_anchor_report, f, ensure_ascii=False, indent=2)
+    print(f"[SAVED] timeline_anchors: {_anchor_path.name}")
+
+    # ── Batch 2: Task 043 — Paspart format (auto-patch) ─────────────
+    book_after_le, _paspart_log = enforce_paspart_format(book_after_le)
+    _paspart_path = out_dir / f"{args.prefix}_paspart_format_{ts}.json"
+    with open(_paspart_path, "w", encoding="utf-8") as f:
+        json.dump({"replacements": _paspart_log, "count": len(_paspart_log)}, f, ensure_ascii=False, indent=2)
+    print(f"[SAVED] paspart_format: {_paspart_path.name} ({len(_paspart_log)} замен)")
+
     book_le_path = out_dir / f"{args.prefix}_book_stage3_liteditor_{ts}.json"
     with open(book_le_path, "w", encoding="utf-8") as f:
         json.dump({"book_draft": book_after_le}, f, ensure_ascii=False, indent=2)
@@ -724,6 +801,62 @@ async def main():
         with open(topo_report_path, "w", encoding="utf-8") as f:
             json.dump({"replacements": [], "note": "gazeteer not found"}, f, ensure_ascii=False)
 
+    # ── Batch 2: Task 043 — Style checks (stop phrases + awkward) ───
+    _stop_list_path = ROOT / "collab" / "context" / "epilogue_stop_phrases.json"
+    style_checks = {}
+    if _stop_list_path.exists():
+        with open(_stop_list_path, encoding="utf-8") as f:
+            _stop_cfg = json.load(f)
+        _stop_report = validate_epilogue_stop_phrases(book_final, _stop_cfg)
+        _awkward_report = validate_awkward_formulation(book_final)
+        style_checks = {
+            "epilogue_stop_phrases": _stop_report,
+            "awkward_formulation": _awkward_report,
+            "errors_count": _stop_report.get("errors_count", 0),
+            "warnings_count": _stop_report.get("warnings_count", 0) + _awkward_report.get("issues_count", 0),
+        }
+        print(
+            f"[BATCH2-043] Style checks: {_stop_report.get('errors_count', 0)} stop-phrase errors, "
+            f"{_awkward_report.get('issues_count', 0)} awkward warnings"
+        )
+    else:
+        style_checks = {"note": "epilogue_stop_phrases.json not found"}
+    _style_path = out_dir / f"{args.prefix}_style_checks_{ts}.json"
+    with open(_style_path, "w", encoding="utf-8") as f:
+        json.dump(style_checks, f, ensure_ascii=False, indent=2)
+    print(f"[SAVED] style_checks: {_style_path.name}")
+
+    # ── Batch 2: Task 038 — GW grounding checks (post-GW, on final) ─
+    _gw_grounding = validate_historical_note_grounding(book_final, fact_map, [])
+    _gw_motivation = validate_motivation_attributions(book_final, [])
+    gw_grounding_report = {
+        "historical_note_grounding": _gw_grounding,
+        "motivation_attributions": _gw_motivation,
+        "critical_errors": _gw_grounding.get("errors_count", 0) + _gw_motivation.get("errors_count", 0),
+    }
+    _gw_grounding_path = out_dir / f"{args.prefix}_gw_grounding_check_{ts}.json"
+    with open(_gw_grounding_path, "w", encoding="utf-8") as f:
+        json.dump(gw_grounding_report, f, ensure_ascii=False, indent=2)
+    print(f"[SAVED] gw_grounding_check: {_gw_grounding_path.name} "
+          f"(critical_errors={gw_grounding_report['critical_errors']})")
+
+    # ── Batch 2: Task 041 — Pin list coverage ───────────────────────
+    _pin_list_md_path = ROOT / "collab" / "context" / f"known_episodes_{args.prefix}.md"
+    pin_coverage_report = {"note": "pin_list not found"}
+    if _pin_list_md_path.exists():
+        _pin_list = parse_pin_list_from_markdown(str(_pin_list_md_path))
+        pin_coverage_report = validate_pin_list_coverage(book_final, _pin_list)
+        _summary = pin_coverage_report.get("summary", {})
+        print(
+            f"[BATCH2-041] Pin coverage: full={_summary.get('full', 0)}, "
+            f"partial={_summary.get('partial', 0)}, skipped={_summary.get('skipped', 0)} "
+            f"из {_summary.get('total', 0)}"
+        )
+    _pin_cov_path = out_dir / f"{args.prefix}_pin_coverage_{ts}.json"
+    with open(_pin_cov_path, "w", encoding="utf-8") as f:
+        json.dump(pin_coverage_report, f, ensure_ascii=False, indent=2)
+    print(f"[SAVED] pin_coverage: {_pin_cov_path.name}")
+
     final_path = out_dir / f"{args.prefix}_book_FINAL_stage3_{ts}.json"
     with open(final_path, "w", encoding="utf-8") as f:
         json.dump({"book_final": book_final}, f, ensure_ascii=False, indent=2)
@@ -787,6 +920,12 @@ async def main():
             "text_gates_passed": stage3_report.get("passed"),
             "bio_data_integrity_path": str(bio_integrity_path),
             "topo_normalize_report_path": str(topo_report_path),
+            "relation_overrides_applied_path": str(_rel_ov_path),
+            "persona_notes_enforced_path": str(_pn_path),
+            "timeline_anchors_path": str(_anchor_path),
+            "style_checks_path": str(_style_path),
+            "gw_grounding_check_path": str(_gw_grounding_path),
+            "pin_coverage_path": str(_pin_cov_path),
         },
         notes={"strict_gates_enabled": not args.no_strict_gates, "variant_b": args.variant_b},
         checkpoints=fact_checkpoint_meta,
