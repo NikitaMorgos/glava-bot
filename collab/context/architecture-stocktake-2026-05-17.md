@@ -23,19 +23,21 @@
 
 ## 2. Тренды v54 → v55 → v56
 
-| Метрика | v54 | v55 | v56 | v57 | Тренд |
-|---|---|---|---|---|---|
-| Total chars | 17 700 | 14 700 | 16 495 | 17 411 | ↗ |
-| ch_02 chars | ? | ? | 6 278 | 8 006 | ↗ исторический контекст |
-| ch_03 chars | ? | ? | 3 929 | 4 105 | ✅ |
-| ch_04 chars | ? | ? | 1 831 | 1 478 | ❌ потери (огурцы, карты, грибы) |
-| epilogue chars | ? | ? | 939 | 945 | ✅ |
-| bio_data.family JSON | 18 | 23 | 22 | 19 | ❌ потеря тёти Мани, склейка внуков |
-| bio_data.timeline этапов | ? | ? | 7 | 6 | ❌ склейка «учёба+война» |
-| Pin-list эпизодов закрыто (из 9) | 0/9 | 2/9 | 4/9 | 4/9 | ➡ застой |
-| Characteristic words (из 5) | 0/5 | 2/5 | 3/5 | 3/5 | ➡ |
-| FC verdict | — | — | FAIL iter3 | FAIL iter1→финал чист | ↗ |
-| LE structural preservation | 5/5 | 5/5 | 5/5 | 5/5 | ⚠️ код держит, промпт LE v3.1 не выучил |
+| Метрика | v54 | v55 | v56 | v57 | v58c | Тренд |
+|---|---|---|---|---|---|---|
+| Total chars | 17 700 | 14 700 | 16 495 | 17 411 | 16 700 | ➡ |
+| ch_02 chars | ? | ? | 6 278 | 8 006 | ~8 200 | ↗ |
+| ch_03 chars | ? | ? | 3 929 | 4 105 | ~4 000 | ✅ |
+| ch_04 chars | ? | ? | 1 831 | 1 478 | ~1 700 | ↘ потери (огурцы, карты, грибы) |
+| epilogue chars | ? | ? | 939 | 945 | ~900 | ✅ |
+| bio_data.family JSON | 18 | 23 | 22 | 19 | **16** | ❌ потери Марфа+Маня+Римма+Зина |
+| bio_data.timeline этапов | ? | ? | 7 | 6 | **7 (markdown)** | ✅ структурно |
+| Pin-list эпизодов закрыто (из 9 + extensions) | 0/9 | 2/9 | 4/9 | 4/9 | 6 новых ↑, 2 регрессии ↓ | ↗↘ микс |
+| Characteristic words (из 5/6) | 0/5 | 2/5 | 3/5 | 3/5 | **5/6** ⭐ | ↗ |
+| FC verdict | — | — | FAIL iter3 | FAIL iter1→финал чист | iter1 fail (по медалям/огурцы дубль), финал ОК | ↗ |
+| LE structural preservation | 5/5 | 5/5 | 5/5 | 5/5 | 5/5 | ⚠️ код держит, промпт LE v3.1 не выучил |
+| **historical_notes (field)** | ? | ? | 2 | 3 | **0** | ⬇⬇ регрессия v58 |
+| CA auto_enrich timeline events | ? | ? | 12 | ? | **10** (потеряны огурцы/шуба/ложечки) | ⬇ регрессия (CA v1.3 over-strict) |
 
 **Что v56 потерял из v55** (Дашин/Никитин feedback):
 - В паспортичке: год смерти Дмитрия 1978, год пенсии 1994, год рождения Валерия, звание «Ударник» (в паспортичке, в нарративе есть), факт «разные отцы у Валентины и Полины»
@@ -72,8 +74,12 @@
 - Класс 10 (timeline structural regression) — структура паспортички деградирует между прогонами без явного скриптового guarda.
 - Класс 11 (awkward formulation) — стилистический подкласс Класса 1.
 
+**Новые классы из v58c review Никиты + diagnostic:**
+- **Класс 12 — chronological inconsistency**: GW упоминает persons в event period где они ещё не родились или уже умерли. Пример v58: «1946-48 сидела с детьми» (Валерий родился 1948). Универсальный для всех биографий.
+- **Класс 13 — discourse markers regression**: GW при сжатии нарратива убирает упоминания рассказчика («как вспоминает дочь», «по словам Татьяны»), что снижает теплоту/человечность. Каждая биография имеет своего rapporteur'а; markers должны сохраняться.
+
 **Дополнительно — спецификация формата (не баг):**
-- Паспортичка: писать «родился» / «умер» полностью, не «р.» / «ум.». → task 043 + GW input schema.
+- Паспортичка: писать «родился» / «умер» полностью, не «р.» / «ум.». → task 043 + GW input schema. ✅ в v58 работает.
 
 ---
 
@@ -100,21 +106,38 @@
 - task 040 ASR normalize ✅
 - task 039 bio_data integrity — частично (Марфа в render, не в JSON; тётя Маша всё ещё в family)
 
-### Batch 2 — планируется для v58
+### Batch 2 — ⚠️ ЧАСТИЧНО ЗАКРЫТА (v58c verified)
 
-| Task | Класс | Тип | Risk |
+| Task | Класс | Тип | v58 результат |
 |---|---|---|---|
-| **044 — family whitelist hotfix + manual override** | 3 | скрипт | low |
-| **038 — CA strict description + confabulation guards** | 1 | промпт CA + скрипт | medium |
-| **041 — pin-list events для GW + diff-валидация** | 5 | промпт GW + скрипт | medium |
-| **043 — epilogue stop-phrases + format spec («родился»/«умер») + Класс 11 guard** | 6 + 11 + формат | скрипт + минор промпт | low |
-| **045 — bio_data.timeline structural anchor** | 10 | скрипт | low |
+| **044 — family whitelist hotfix + manual override** | 3 | скрипт | ✅ тётя Маша/баба Аня НЕТ; но Марфа/Маня/Римма/Зина отсутствуют |
+| **038 — CA strict description + confabulation guards** | 1 | промпт CA + скрипт | ⚠️ critical=0, но **CA over-strict** — пропустил огурцы/шубу/ложечки auto_enrich |
+| **041 — pin-list events для GW + diff-валидация** | 5 | промпт GW + скрипт | ⚠️ парсер ОК, но Stage 1 runner не подал pin-list в CA → события не extract |
+| **043 — epilogue stop-phrases + format spec («родился»/«умер»)** | 6 + 11 + формат | скрипт + минор промпт | ⚠️ paspart ✅, но detector не ловит падежи; GW v2.19 не выучил ЗАПРЕТЫ |
+| **045 — bio_data.timeline structural anchor** | 10 | скрипт | ⚠️ JSON array пуст; markdown имеет 7 периодов, скрипт смотрит JSON → 0/7 |
 
-Batch 2 финансово: 1 прогон v58 покрывает все 5 (как Batch 1).
+### Batch 2-fix — точечные доработки для v59
 
-### Batch 3 — backlog после v58
+**Главное открытие после v58c diagnostic:** корень регрессий — **CA v1.3 over-strict + Stage 1 runner не подал pin-list в CA**, не парсер pin-list (он работает).
 
-Зависит от того что v58 покажет. Сейчас не финализируем.
+| Task | Что | Тип | Сложность |
+|---|---|---|---|
+| **[041b](../tasks/041b-stage1-pinlist-events-required.md)** | Stage 1 runner: обязательная подача `--known-episodes` в CA | скрипт | `xs` |
+| **[038b](../tasks/038b-ca-strict-bypass-for-pinlist.md)** | CA v1.3 → v1.4: bypass strict для pin-list events (ПРАВИЛО 6) | промпт CA + скрипт | `s` |
+| **[044b](../tasks/044b-ca-required-persons-pinlist.md)** | CA required persons: Марфа, Маня, Римма, Зина — force extract | конфиг + скрипт | `xs` |
+| **[045b](../tasks/045b-timeline-anchors-markdown-parser.md)** | Timeline anchors — парсить markdown ch_01.content (fallback от JSON) | скрипт | `s` |
+| **[043b](../tasks/043b-stop-phrases-lemmatize.md)** | Stop-phrases lemmatize (падежи) + narrative categorical anti-triggers | скрипт + конфиг | `s` |
+| **[046](../tasks/046-epilogue-auto-rewrite.md)** | Epilogue auto-rewrite — generic mapping stop→delete (был мой нерешённый loop в 043) | скрипт | `xs` |
+| **[047](../tasks/047-text-full-summary-header.md)** | Расширенная сводка в text_FULL (Никитин запрос «каждую версию такой сводкой») | скрипт | `s` |
+| **[048](../tasks/048-chronological-consistency-check.md)** | **Класс 12** — chronological inconsistency check (1946 + дети-1948) | скрипт | `m` |
+| **[049](../tasks/049-discourse-markers-preservation.md)** | **Класс 13** — discourse markers preservation (метрика + GW v2.20 ПРАВИЛО 6) | скрипт + минор промпт | `s` |
+| **GW v2.20** | Universal categorical правила (БЕЗ Каракулиноспецифики, placeholder `[рассказчик]`) — мерж в task 043b/049 | промпт | `xs` |
+
+Batch 2-fix финансово: 1 прогон v59 покрывает все 9 (~$2-3).
+
+### Batch 3 — backlog после v59
+
+Зависит от того что v59 покажет. Сейчас не финализируем.
 
 ### Старый план (для истории)
 
