@@ -1,0 +1,180 @@
+{
+  "project_id": "karakulina_stage2_test",
+  "iteration": 1,
+  "verdict": "fail",
+  "errors": [
+    {
+      "id": "err_001",
+      "type": "distortion",
+      "severity": "critical",
+      "chapter_id": "ch_01",
+      "location": "bio_data.awards, медаль 20 лет победы в ВОВ",
+      "what_is_written": "1965 - Медаль 20 лет победы в Великой Отечественной войне",
+      "what_should_be": "1965 - Медаль 20 лет Победы в Великой Отечественной войне (правильное название награды)",
+      "source": {
+        "type": "fact_map",
+        "reference": "Медали юбилейные 20/25/30 лет Победы имеют точные официальные названия"
+      },
+      "fix_instruction": "Исправить название медали на официальное: 'Медаль 20 лет Победы в Великой Отечественной войне 1941-1945 гг.'",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_002",
+      "type": "distortion",
+      "severity": "critical",
+      "chapter_id": "ch_01",
+      "location": "bio_data.awards, медаль 25 лет победы",
+      "what_is_written": "1970 - Медаль 25 лет победы в ВОВ",
+      "what_should_be": "1975 - Медаль 30 лет Победы в Великой Отечественной войне (согласно хронологии)",
+      "source": {
+        "type": "fact_map",
+        "reference": "timeline показывает медали 20/25/30 лет Победы в правильной хронологии"
+      },
+      "fix_instruction": "Исправить год и название: '1975 - Медаль 30 лет Победы в Великой Отечественной войне 1941-1945 гг.'",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_003",
+      "type": "distortion",
+      "severity": "major",
+      "chapter_id": "ch_01",
+      "location": "bio_data.awards, медаль 50 лет ВС СССР",
+      "what_is_written": "1968 - Медаль 50 лет вооруженных сил СССР",
+      "what_should_be": "1968 - Медаль 50 лет Вооружённых Сил СССР (правильное написание)",
+      "source": {
+        "type": "fact_map",
+        "reference": "Официальное название награды с заглавными буквами"
+      },
+      "fix_instruction": "Исправить написание на официальное: 'Медаль 50 лет Вооружённых Сил СССР'",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_004",
+      "type": "omission",
+      "severity": "critical",
+      "chapter_id": "ch_01",
+      "location": "bio_data.awards",
+      "what_is_written": "Отсутствует медаль 25 лет Победы",
+      "what_should_be": "1970 - Медаль 25 лет Победы в Великой Отечественной войне 1941-1945 гг.",
+      "source": {
+        "type": "fact_map",
+        "reference": "fact_map содержит все юбилейные медали Победы: 20, 25, 30 лет"
+      },
+      "fix_instruction": "Добавить пропущенную медаль: '1970 - Медаль 25 лет Победы в Великой Отечественной войне 1941-1945 гг.'",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_005",
+      "type": "distortion",
+      "severity": "major",
+      "chapter_id": "ch_02",
+      "location": "Абзац о фельдшерско-акушерских школах",
+      "what_is_written": "Фельдшерско-акушерские школы в те годы готовили desperately нужных специалистов",
+      "what_should_be": "Фельдшерско-акушерские школы в те годы готовили крайне нужных специалистов",
+      "source": {
+        "type": "historical_context",
+        "reference": "ctx_002 suggested_insertion содержит английское слово 'desperately', что недопустимо в русском тексте"
+      },
+      "fix_instruction": "Заменить английское слово 'desperately' на русское 'крайне' или 'очень'",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_006",
+      "type": "hallucination",
+      "severity": "major",
+      "chapter_id": "ch_02",
+      "location": "Раздел 'Знакомство с мужем и замужество'",
+      "what_is_written": "За ней приехал солдат от Дмитрия и как-то \"выковыривал\" её без документов через все контрольные пункты",
+      "what_should_be": "За ней приехал солдат от Дмитрия и как-то её выковыривал без документов",
+      "source": {
+        "type": "transcript",
+        "reference": "int_001: 'За ней какой-то солдат приезжал от Дмитрия и как-то её выковыривал без документов' - нет упоминания 'контрольных пунктов'"
+      },
+      "fix_instruction": "Убрать добавленную деталь 'через все контрольные пункты' - её нет в источнике",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_007",
+      "type": "framing_distortion",
+      "severity": "major",
+      "chapter_id": "ch_04",
+      "location": "Эпизод об огурцах из Молдавии",
+      "what_is_written": "Владимир Маргось однажды привёз чемодан огурцов из Молдавии в хорошем заграничном чемодане. Огурцы испортились и испортили чемодан. Валентина была недовольна таким подарком, что раздражало Татьяну, которая в итоге выкинула и огурцы, и чемодан.",
+      "what_should_be": "Эпизод уже описан в ch_02 в контексте отношений с зятем",
+      "source": {
+        "type": "fact_map",
+        "reference": "event_auto_009 - один эпизод не должен дублироваться в разных главах"
+      },
+      "fix_instruction": "Удалить дубль эпизода об огурцах из ch_04, оставить в ch_02 в контексте семейных отношений",
+      "legitimate_deletion": true,
+      "evidence_in_other_chapter": {
+        "chapter_id": "ch_02",
+        "quote": "Однажды Валентина сделала ему замечание, сказав, что \"папа так не делал никогда\", когда он залез в электрический счётчик. Это очень не понравилось Владимиру."
+      }
+    }
+  ],
+  "warnings": [
+    {
+      "id": "warn_001",
+      "type": "style_concern",
+      "chapter_id": "ch_02",
+      "description": "Использование кавычек-ёлочек и кавычек-лапок в одном тексте",
+      "recommendation": "Привести к единому стилю кавычек по всему тексту"
+    },
+    {
+      "id": "warn_002",
+      "type": "possible_omission",
+      "chapter_id": "ch_03",
+      "description": "Не упомянуты некоторые характерные черты из fact_map: любовь к вязанию крючком, рассаживанию цветов",
+      "recommendation": "Рассмотреть включение дополнительных деталей быта для полноты портрета"
+    }
+  ],
+  "completeness_check": {
+    "total_facts_in_map": 127,
+    "facts_referenced_in_text": 95,
+    "facts_verified_ok": 88,
+    "facts_with_errors": 7,
+    "facts_missing_from_text": [
+      {
+        "fact_id": "person_013",
+        "fact_description": "Амельченко - сын тёти Поли",
+        "was_in_facts_omitted": true,
+        "omission_justified": true,
+        "recommendation": "Допустимо пропустить - недостаточно материала для развития"
+      },
+      {
+        "fact_id": "person_014",
+        "fact_description": "Толя из Белгорода - племянник",
+        "was_in_facts_omitted": true,
+        "omission_justified": true,
+        "recommendation": "Допустимо пропустить - упомянут вскользь"
+      },
+      {
+        "fact_id": "quote_002",
+        "fact_description": "Цитата 'всё дорого, всё дорого'",
+        "was_in_facts_omitted": true,
+        "omission_justified": true,
+        "recommendation": "Допустимо пропустить - слишком общая"
+      }
+    ]
+  },
+  "regression_check": {
+    "performed": false,
+    "chapters_checked": [],
+    "issues_found": []
+  },
+  "summary": {
+    "critical_errors": 3,
+    "major_errors": 4,
+    "minor_errors": 0,
+    "warnings_count": 2,
+    "overall_assessment": "Текст содержит критические ошибки в названиях наград и хронологии, а также дублирование эпизода между главами. Требуется исправление перед передачей Литредактору."
+  },
+  "stats": {
+    "facts_checked": 95,
+    "facts_passed": 88,
+    "facts_failed": 7,
+    "coverage_percent": 75,
+    "needs_verification_flagged": 0
+  }
+}
