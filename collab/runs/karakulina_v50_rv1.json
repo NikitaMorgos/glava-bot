@@ -1,0 +1,38 @@
+{
+  "chars_before": 15404,
+  "chars_after": 15085,
+  "ratio": 0.9793,
+  "threshold": 0.95,
+  "drop_chars": 319,
+  "legitimate_deletions_count": 1,
+  "legitimate_deletions": [
+    {
+      "id": "err_006",
+      "chapter_id": "ch_04",
+      "type": "framing_distortion",
+      "fix_instruction": "Удалить эпизод из ch_04 как дубль. Эпизод должен остаться только в одной главе — либо в ch_02 как часть хронологии отнош",
+      "evidence_in_other_chapter": {
+        "chapter_id": "ch_02",
+        "quote": "Однажды Валентина сделала ему замечание, когда он работал со счётчиком, сказав: «Папа так не делал никогда». Это очень не понравилось зятю и стало поворотной точкой в их отношениях."
+      }
+    }
+  ],
+  "evidence_failures": [
+    {
+      "error_id": "err_006",
+      "reason": "FC error err_006: evidence quote семантически не покрывает удаляемый фрагмент (topic-overlap 0.083 < 0.25). Общих значимых слов: 1 из мин(12, 24). Возможно FC галлюцинирует семантическое тождество разных эпизодов одной темы (см. v49 регрессия про огурцы vs счётчик).",
+      "topic_overlap": {
+        "evidence_tokens_count": 12,
+        "written_tokens_count": 24,
+        "shared_count": 1,
+        "shared": [
+          "валентина"
+        ],
+        "overlap_ratio": 0.083,
+        "passed": false
+      }
+    }
+  ],
+  "verdict": "blocked_phantom_evidence",
+  "reason": "1 legitimate_deletion-flag(s) не подтверждены: либо evidence quote отсутствует в book_after, либо topic-overlap с удаляемым фрагментом ниже 0.25. FC v2.12 требует не только наличие quote, но и совпадение по конкретному эпизоду (волна 1.3.1: защита от семантического тождества разных эпизодов одной темы, v49 регрессия)."
+}

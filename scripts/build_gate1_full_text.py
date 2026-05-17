@@ -36,6 +36,15 @@ import sys
 from pathlib import Path
 from typing import Any
 
+ROOT_DIR = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT_DIR))
+
+try:
+    from pipeline_utils import append_contributors_section
+except ImportError:
+    def append_contributors_section(text_full, contributors_config):
+        return text_full
+
 
 # ──────────────────────────────────────────────────────────────────
 # Helpers — раскрытие bio_data в Markdown
@@ -497,6 +506,10 @@ def main():
         "--prefix", default=None,
         help="Task 047: filename prefix to auto-locate reports in --reports-dir"
     )
+    parser.add_argument(
+        "--contributors", default=None,
+        help="Task 052: JSON file with contributors config {contributors: [{role, name}]}"
+    )
     args = parser.parse_args()
 
     book_path = Path(args.book_final)
@@ -543,6 +556,24 @@ def main():
                     print(f"[WARN] could not load {key}: {e}", file=sys.stderr)
 
     md = build_gate1_text(book, fact_map, reports)
+
+    # Task 052 / Класс 16: добавить раздел Contributors
+    contributors_cfg = {}
+    if args.contributors:
+        _contr_path = Path(args.contributors)
+        if _contr_path.exists():
+            with open(_contr_path, encoding="utf-8") as f:
+                contributors_cfg = json.load(f)
+        else:
+            print(f"[WARN] contributors config not found: {_contr_path}", file=sys.stderr)
+    else:
+        # Попытка авто-поиска рядом с book_final
+        _auto_contr = book_path.parent / "contributors.json"
+        if _auto_contr.exists():
+            with open(_auto_contr, encoding="utf-8") as f:
+                contributors_cfg = json.load(f)
+    if contributors_cfg:
+        md = append_contributors_section(md, contributors_cfg)
 
     out_path = Path(args.output)
     out_path.parent.mkdir(parents=True, exist_ok=True)

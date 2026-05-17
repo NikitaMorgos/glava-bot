@@ -232,3 +232,49 @@ Batch 2 финансово: 1 прогон v58 покрывает все 5 (ка
 | Версия | Дата | Изменение | Кто |
 |---|---|---|---|
 | v1 | 2026-05-17 | Создание после v56 + Никитин feedback + TR1 verify | Опус |
+| **v2** | **2026-05-17** | **v60 sprint: +Класс 15 temporal place names, +Класс 16 contributors, 4 extension'а существующих классов, Universality findings** | **Cursor (v60 sprint)** |
+
+---
+
+## v60 sprint — Раздел обновлений (2026-05-17)
+
+### Новые классы
+
+| Класс | Название | Задача | Решение |
+|---|---|---|---|
+| **Класс 15** | Temporal place names | 051 | `temporal_place_names_karakulina.json` + `validate/enforce_temporal_place_names()` + GW v2.21 ПРАВИЛО 9 |
+| **Класс 16** | Contributors section | 052 | `contributors_karakulina.json` + `append_contributors_section()` + GW v2.21 ПРАВИЛО 10 |
+
+### Extensions существующих классов
+
+| Класс | Extension | Задача | Решение |
+|---|---|---|---|
+| Класс 6 (stop phrases) | +4 новые фразы | 043c | `epilogue_stop_phrases.json` v2 + `epilogue_rewrite_mapping.json` +5 правил |
+| Класс 10 (chapter anchors) | Обязательные подразделы глав | 045c | `chapter_sections_anchors_karakulina.json` + `validate_chapter_sections_anchors()` + GW v2.21 ПРАВИЛО 11 |
+| Класс 12 (chronology) | Grandchildren без birth_year | 048b | `validate_chronological_consistency()` — grandchild_before_inferred_birth warning |
+| Класс 13 (topo normalize) | Морфологические варианты | 040b | `gazeteer_karakulina.json` v2: +5 форм Сапоново/* |
+
+### Фиксы пайплайна (не классы)
+
+| Задача | Исправлено |
+|---|---|
+| 046b | `test_stage3.py`: enforce_epilogue_stop_phrases ПЕРЕМЕЩЁН перед style_checks |
+| 044c | `remove_excluded_bio_data_family()` — явное удаление персон с `in_bio_data_family=false` |
+| 049b | `test_stage2_pipeline.py`: `ghostwriter_version` + `completeness_auditor_version` в manifest notes |
+| 050b | `validate_pin_list_depth()`: NARRATIVE_CHAPTERS фильтр (ch_01 paspart исключён) |
+
+### Universality findings v60
+
+Все 10 задач прошли Universality check (4 вопроса + trap warning):
+1. ✅ Промпты universal categorical (GW v2.21 ПРАВИЛА 9/10/11 — без Каракулиноспецифики)
+2. ✅ Subject-specific данные в JSON конфигах per subject
+3. ✅ Алгоритмы generic (используют fact_map.persons/timeline + конфиги)
+4. ✅ Subject-replacement test пройден: для Корольковой/Дмитриева — свои конфиги, без правок кода
+
+### Промпты v60
+
+| Промпт | Версия | Задача |
+|---|---|---|
+| GW | **v2.21** | +ПРАВИЛО 9 (temporal place names) +ПРАВИЛО 10 (no contributors) +ПРАВИЛО 11 (chapter anchors) |
+| CA | v1.4 | без изменений в v60 |
+

@@ -74,6 +74,12 @@ from pipeline_utils import (
     validate_pin_list_depth,                 # task 050
     validate_chronological_consistency,      # task 048
     enforce_bio_data_required_persons,       # task 044b
+    # v60 sprint
+    remove_excluded_bio_data_family,         # task 044c
+    validate_temporal_place_names,           # task 051
+    enforce_temporal_place_names,            # task 051
+    append_contributors_section,             # task 052
+    validate_chapter_sections_anchors,       # task 045c
 )
 from pipeline_quality_gates import (
     run_stage3_text_gates, run_stage3_text_gates_variant_b,
@@ -644,10 +650,13 @@ async def main():
         fact_map, rel_corrections = apply_relation_overrides(fact_map, _rel_overrides_cfg)
         # Re-run filter with corrected relations
         book_after_le, bio_filtered_2 = filter_bio_data_family_by_relation_whitelist(book_after_le)
+        # v60-044c: явно удаляем персон с in_bio_data_family=false из bio_data.family
+        book_after_le, bio_excluded_overrides = remove_excluded_bio_data_family(book_after_le, fact_map)
         rel_overrides_report = {
             "corrections": rel_corrections,
             "corrections_count": len(rel_corrections),
             "re_filter_removed": bio_filtered_2,
+            "excluded_by_override": bio_excluded_overrides,
         }
         print(f"[BATCH2-044] Relation overrides: {len(rel_corrections)} коррекций")
 
@@ -812,7 +821,28 @@ async def main():
         with open(topo_report_path, "w", encoding="utf-8") as f:
             json.dump({"replacements": [], "note": "gazeteer not found"}, f, ensure_ascii=False)
 
+    # ── v60-046b: Epilogue auto-rewrite ПЕРВЫМ (до style checks) ────
+    # task 046b fix: enforce_epilogue_stop_phrases должен работать ДО
+    # validate_epilogue_stop_phrases, чтобы style_checks.json показывал
+    # ошибки только в финальном тексте, не в удалённых предложениях.
+    _epilogue_mapping_path = ROOT / "collab" / "context" / "epilogue_rewrite_mapping.json"
+    if _epilogue_mapping_path.exists():
+        with open(_epilogue_mapping_path, encoding="utf-8") as f:
+            _ep_mapping = json.load(f)
+        book_final, _ep_rewrite_log = enforce_epilogue_stop_phrases(book_final, _ep_mapping)
+        _ep_rewrite_path = out_dir / f"{args.prefix}_epilogue_rewrite_log_{ts}.json"
+        with open(_ep_rewrite_path, "w", encoding="utf-8") as f:
+            json.dump(_ep_rewrite_log, f, ensure_ascii=False, indent=2)
+        print(f"[v60-046b] Epilogue rewrite: {sum(1 for r in _ep_rewrite_log if r.get('action')=='deleted')} удалено. Saved: {_ep_rewrite_path.name}")
+    else:
+        _ep_rewrite_log = []
+        _ep_rewrite_path = out_dir / f"{args.prefix}_epilogue_rewrite_log_{ts}.json"
+        with open(_ep_rewrite_path, "w", encoding="utf-8") as f:
+            json.dump({"note": "epilogue_rewrite_mapping.json not found"}, f, ensure_ascii=False)
+        print(f"[v60-046b] epilogue_rewrite_mapping.json не найден — пропуск")
+
     # ── Batch 2: Task 043 — Style checks (stop phrases + awkward) ───
+    # Работает на уже-очищенном тексте (после enforce_epilogue выше).
     _stop_list_path = ROOT / "collab" / "context" / "epilogue_stop_phrases.json"
     style_checks = {}
     if _stop_list_path.exists():
@@ -868,18 +898,7 @@ async def main():
         json.dump(pin_coverage_report, f, ensure_ascii=False, indent=2)
     print(f"[SAVED] pin_coverage: {_pin_cov_path.name}")
 
-    # ── Batch 2-fix: Task 046 — Epilogue auto-rewrite ───────────────
-    _epilogue_mapping_path = ROOT / "collab" / "context" / "epilogue_rewrite_mapping.json"
-    if _epilogue_mapping_path.exists():
-        with open(_epilogue_mapping_path, encoding="utf-8") as f:
-            _ep_mapping = json.load(f)
-        book_final, _ep_rewrite_log = enforce_epilogue_stop_phrases(book_final, _ep_mapping)
-        _ep_rewrite_path = out_dir / f"{args.prefix}_epilogue_rewrite_log_{ts}.json"
-        with open(_ep_rewrite_path, "w", encoding="utf-8") as f:
-            json.dump(_ep_rewrite_log, f, ensure_ascii=False, indent=2)
-        print(f"[BATCH2FIX-046] Epilogue rewrite: {sum(1 for r in _ep_rewrite_log if r.get('action')=='deleted')} удалено. Saved: {_ep_rewrite_path.name}")
-    else:
-        print(f"[BATCH2FIX-046] epilogue_rewrite_mapping.json не найден — пропуск")
+    # task 046 epilogue rewrite перемещён выше (v60-046b) — до style checks
 
     # ── Batch 2-fix: Task 043b — Narrative stop phrases ─────────────
     _narr_stop_path = ROOT / "collab" / "context" / "narrative_stop_phrases.json"
@@ -948,6 +967,40 @@ async def main():
     with open(_compliance_path, "w", encoding="utf-8") as f:
         json.dump(pin_compliance_report, f, ensure_ascii=False, indent=2)
 
+    # ── v60 sprint: Task 051 — Temporal place names (Класс 15) ──────
+    _temporal_topo_path = ROOT / "collab" / "context" / f"temporal_place_names_{_subject_name}.json"
+    temporal_place_report = {"note": "temporal_place_names config not found"}
+    if _temporal_topo_path.exists():
+        with open(_temporal_topo_path, encoding="utf-8") as f:
+            _temporal_cfg = json.load(f)
+        book_final, _temporal_reps = enforce_temporal_place_names(book_final, _temporal_cfg)
+        temporal_place_report = validate_temporal_place_names(book_final, _temporal_cfg)
+        temporal_place_report["replacements"] = _temporal_reps
+        print(
+            f"[v60-051] Temporal place names: {len(_temporal_reps)} замен, "
+            f"{temporal_place_report.get('errors_count',0)} remaining errors"
+        )
+    _temporal_path = out_dir / f"{args.prefix}_temporal_place_naming_{ts}.json"
+    with open(_temporal_path, "w", encoding="utf-8") as f:
+        json.dump(temporal_place_report, f, ensure_ascii=False, indent=2)
+    print(f"[SAVED] temporal_place_naming: {_temporal_path.name}")
+
+    # ── v60 sprint: Task 045c — Chapter sections anchors (Класс 10 ext) ─
+    _ch_anchors_path = ROOT / "collab" / "context" / f"chapter_sections_anchors_{_subject_name}.json"
+    chapter_anchors_report = {"note": "chapter_sections_anchors config not found"}
+    if _ch_anchors_path.exists():
+        with open(_ch_anchors_path, encoding="utf-8") as f:
+            _ch_anchors_cfg = json.load(f)
+        chapter_anchors_report = validate_chapter_sections_anchors(book_final, _ch_anchors_cfg)
+        print(
+            f"[v60-045c] Chapter anchors: {chapter_anchors_report.get('errors_count',0)} errors, "
+            f"{chapter_anchors_report.get('warnings_count',0)} warnings"
+        )
+    _ch_anchors_report_path = out_dir / f"{args.prefix}_chapter_sections_anchors_{ts}.json"
+    with open(_ch_anchors_report_path, "w", encoding="utf-8") as f:
+        json.dump(chapter_anchors_report, f, ensure_ascii=False, indent=2)
+    print(f"[SAVED] chapter_sections_anchors: {_ch_anchors_report_path.name}")
+
     final_path = out_dir / f"{args.prefix}_book_FINAL_stage3_{ts}.json"
     with open(final_path, "w", encoding="utf-8") as f:
         json.dump({"book_final": book_final}, f, ensure_ascii=False, indent=2)
@@ -996,6 +1049,12 @@ async def main():
             "pin_list_depth_json": pin_depth_report,
         }
         _gate1_text = build_gate1_text(book_final, fact_map, _gate1_reports)
+        # v60-052: добавить раздел Contributors
+        _contr_cfg_path = ROOT / "collab" / "context" / f"contributors_{_subject_name}.json"
+        if _contr_cfg_path.exists():
+            with open(_contr_cfg_path, encoding="utf-8") as f:
+                _contr_cfg = json.load(f)
+            _gate1_text = append_contributors_section(_gate1_text, _contr_cfg)
         _text_full_path = out_dir / f"{args.prefix}_text_FULL_{ts}.md"
         with open(_text_full_path, "w", encoding="utf-8") as f:
             f.write(_gate1_text)
@@ -1052,6 +1111,9 @@ async def main():
             "discourse_markers_path": str(_discourse_path),
             "pin_list_depth_path": str(_pin_depth_path),
             "pin_list_compliance_path": str(_compliance_path),
+            # v60 sprint
+            "temporal_place_naming_path": str(_temporal_path),
+            "chapter_sections_anchors_path": str(_ch_anchors_report_path),
         },
         notes={"strict_gates_enabled": not args.no_strict_gates, "variant_b": args.variant_b},
         checkpoints=fact_checkpoint_meta,

@@ -67,8 +67,8 @@
     "model": "claude-sonnet-4-20250514",
     "max_tokens": 32000,
     "temperature": 0.4,
-    "prompt_file": "03_ghostwriter_v2.20.md",
-    "_notes": "v2.19 (2026-05-17, task 041+043, Batch 2): +ЗАПРЕТ 12 паспортичка формат (р.→родился/умерла); +ЗАПРЕТ 13 epilogue антишаблоны (11 стоп-фраз); +ЗАПРЕТ 14 Класс 11 авквард формулировки; +PIN_LIST_EVENTS раздел input — обязательные эпизоды с revision_log.pin_list_coverage. v2.18 (task 036): 5 изменений ЗАПРЕТ 8-10 + characteristic words обязательны."
+    "prompt_file": "03_ghostwriter_v2.21.md",
+    "_notes": "v2.21 (2026-05-17, v60 sprint): +ПРАВИЛО 9 (temporal place names — исторические топонимы по периоду) +ПРАВИЛО 10 (НЕ генерировать contributors section) +ПРАВИЛО 11 (обязательные тематические разделы глав из chapter_sections_anchors). v2.20 base."
   },
 
   "fact_checker": {
@@ -164,5 +164,6 @@
 
   "ghostwriter_v2_19_note": "v2.19 (2026-05-17, Batch 2): +ЗАПРЕТ 12 (паспортичка формат) +ЗАПРЕТ 13 (epilogue антишаблоны) +ЗАПРЕТ 14 (авквард формулировки) +PIN_LIST_EVENTS раздел.",
   "ghostwriter_v2_20_note": "v2.20 (2026-05-17, Batch 2-fix): +ПРАВИЛО 6 (discourse markers) +ПРАВИЛО 7 (subject_age) +ПРАВИЛО 8 (pin-list min depth) +ЗАПРЕТ 15 (narrative антишаблоны). CA v1.4.",
+  "ghostwriter_v2_21_note": "v2.21 (2026-05-17, v60 sprint): +ПРАВИЛО 9 (temporal place names) +ПРАВИЛО 10 (no contributors section) +ПРАВИЛО 11 (chapter sections anchors). Config: temporal_place_names_karakulina.json, chapter_sections_anchors_karakulina.json.",
   "completeness_auditor_v1_4_note": "v1.4 (2026-05-17, Batch 2-fix task 038b): ПРАВИЛО 6 — pin-list bypass strict (pin-list events not blocked by ПРАВИЛО 4)."
 }

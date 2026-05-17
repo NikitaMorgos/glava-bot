@@ -2443,6 +2443,73 @@ def run_proofreader(client, book_draft: dict, project_id: str,
 
 # ─── Task 044: Relation overrides + persona notes preservation ─────────────
 
+def remove_excluded_bio_data_family(book: dict, fact_map: dict) -> tuple:
+    """Task 044c: явно удалить из bio_data.family записи, соответствующие персонам
+    с in_bio_data_family=false в fact_map.persons (после apply_relation_overrides).
+
+    filter_bio_data_family_by_relation_whitelist не ловит случаи, когда label записи
+    («Свекровь») формально в whitelist, но override явно исключает персону.
+
+    Returns (patched_book, excluded_list).
+    """
+    import copy
+    book = copy.deepcopy(book)
+    excluded = []
+
+    excluded_persons = [
+        p for p in fact_map.get("persons", [])
+        if p.get("in_bio_data_family") is False
+    ]
+    if not excluded_persons:
+        return book, excluded
+
+    chapters = book.get("chapters", [])
+    ch01 = next((ch for ch in chapters if ch.get("id") == "ch_01"), None)
+    if ch01 is None:
+        return book, excluded
+
+    bio_data = ch01.get("bio_data") or {}
+    family = bio_data.get("family")
+    if not family:
+        return book, excluded
+
+    def _name_matches(entry_text: str, person: dict) -> bool:
+        name = (person.get("name") or "").lower().strip()
+        aliases = [a.lower() for a in person.get("aliases", [])]
+        text_lower = entry_text.lower()
+        all_names = [name] + aliases
+        return any(n and n in text_lower for n in all_names)
+
+    kept = []
+    for entry in family:
+        entry_text = " ".join([
+            entry.get("label") or "",
+            entry.get("value") or "",
+            entry.get("note") or "",
+        ])
+        match = next(
+            (p for p in excluded_persons if _name_matches(entry_text, p)), None
+        )
+        if match:
+            excluded.append({
+                "label": entry.get("label", ""),
+                "value": entry.get("value", ""),
+                "matched_person": match.get("name", ""),
+                "reason": "in_bio_data_family=false",
+            })
+            print(
+                f"[v60-044c] Удалён из bio_data.family: «{entry.get('label', '')}» "
+                f"({entry.get('value', '')}) → matched «{match.get('name', '')}»"
+            )
+        else:
+            kept.append(entry)
+
+    bio_data["family"] = kept
+    ch01["bio_data"] = bio_data
+    print(f"[v60-044c] bio_data.family: удалено {len(excluded)}, оставлено {len(kept)}.")
+    return book, excluded
+
+
 def apply_relation_overrides(fact_map: dict, overrides_config: dict) -> tuple:
     """Task 044: корректировать relation_to_subject в fact_map.persons по ручным overrides.
 
@@ -4039,8 +4106,13 @@ def validate_pin_list_depth(book: dict, pin_list: dict) -> dict:
         return max(1, len([p for p in SENT_RE.split(clean) if p.strip()]))
 
     all_paragraphs = []
+    # v60-050b: только нарративные главы, ch_01 (paspart) исключается —
+    # краткие справочные записи в paspart не должны триггерить depth errors.
+    NARRATIVE_CHAPTERS = {"ch_02", "ch_03", "ch_04", "epilogue"}
     for ch in book.get("chapters", []):
         ch_id = ch.get("id") or ""
+        if ch_id not in NARRATIVE_CHAPTERS:
+            continue
         paras = ch.get("paragraphs", [])
         if paras:
             all_paragraphs.extend((p.get("text", ""), ch_id) for p in paras)
@@ -4154,6 +4226,54 @@ def validate_chronological_consistency(book: dict, fact_map: dict) -> dict:
                         "event_year_range": str(min_year), "snippet": para[:200], "severity": "warning",
                     })
 
+    # v60-048b: grandchild check — внуки без birth_year, min год инфера через parent
+    # Логика: grandchild не мог упоминаться в событии до parent_birth + 15 лет
+    grandchild_persons = [
+        p for p in fact_map.get("persons", [])
+        if "внук" in (p.get("relation_to_subject") or "").lower()
+        and not (p.get("birth_year") or p.get("born"))
+    ]
+    if grandchild_persons:
+        # Берём минимальный birth_year среди детей субъекта
+        child_births = [
+            int(p["birth_year"]) for p in fact_map.get("persons", [])
+            if (p.get("birth_year") or p.get("born"))
+            and any(kw in (p.get("relation_to_subject") or "").lower() for kw in ("сын", "дочь"))
+        ]
+        parent_birth = min(child_births) if child_births else None
+        if parent_birth is not None:
+            min_gc_birth = parent_birth + 15
+            for gc in grandchild_persons:
+                gc_name = (gc.get("name") or "").lower().strip()
+                gc_aliases = [(a or "").lower().strip() for a in gc.get("aliases", [])]
+                gc_names = [gc_name] + gc_aliases
+                for chapter in book.get("chapters", []):
+                    ch_id = chapter.get("id") or ""
+                    paras = chapter.get("paragraphs", [])
+                    para_texts = [p.get("text", "") for p in paras] if paras else re.split(
+                        r"\n\n+", chapter.get("content", "") or ""
+                    )
+                    for para in para_texts:
+                        if not para.strip():
+                            continue
+                        para_lower = para.lower()
+                        if not any(n and n in para_lower for n in gc_names if len(n) >= 4):
+                            continue
+                        para_years = [int(m) for m in YEAR_RE.findall(para)]
+                        if not para_years:
+                            continue
+                        if min(para_years) < min_gc_birth:
+                            issues.append({
+                                "chapter_id": ch_id,
+                                "type": "grandchild_before_inferred_birth",
+                                "person_name": gc.get("name", gc_name),
+                                "inferred_min_birth": min_gc_birth,
+                                "parent_birth": parent_birth,
+                                "event_year_range": str(min(para_years)),
+                                "snippet": para[:200],
+                                "severity": "warning",
+                            })
+
     seen, deduped = set(), []
     for iss in issues:
         key = (iss.get("chapter_id"), iss.get("person_name"), iss.get("snippet", "")[:60])
@@ -4200,3 +4320,214 @@ def enforce_bio_data_required_persons(book_final: dict, required_persons: list) 
         bio_data["family"] = family
     print(f"[REQUIRED-PERSONS] Добавлено {len(added)} required_persons.")
     return book_out
+
+
+def validate_temporal_place_names(book: dict, temporal_config: dict) -> dict:
+    """Task 051 / Класс 15: проверить корректность исторических топонимов.
+
+    Для каждого абзаца с явным годом — проверяет соответствие old_name/new_name
+    периоду события. Возвращает {issues: [...], errors_count, warnings_count}.
+    Idempotent.
+    """
+    import re
+    import copy
+
+    YEAR_RE = re.compile(r'\b((?:19|20)\d{2})\b')
+    rules = temporal_config.get("temporal_place_names", [])
+    issues = []
+
+    for chapter in book.get("chapters", []):
+        ch_id = chapter.get("id") or ""
+        paras = chapter.get("paragraphs", [])
+        para_texts = [p.get("text", "") for p in paras] if paras else re.split(
+            r"\n\n+", chapter.get("content", "") or ""
+        )
+        for para in para_texts:
+            if not para.strip():
+                continue
+            para_years = [int(m) for m in YEAR_RE.findall(para)]
+            if not para_years:
+                continue
+            min_year = min(para_years)
+            for rule in rules:
+                transition = rule.get("transition_year", 9999)
+                old_vars = rule.get("old_name_variants", [rule.get("old_name", "")])
+                new_vars = rule.get("new_name_variants", [rule.get("new_name", "")])
+                # Событие до перехода — должен быть old_name, не new_name
+                if min_year < transition:
+                    for nv in new_vars:
+                        if nv and nv.lower() in para.lower():
+                            issues.append({
+                                "chapter_id": ch_id,
+                                "type": "wrong_toponym_for_period",
+                                "wrong_name": nv,
+                                "correct_name": rule["old_name"],
+                                "event_year": min_year,
+                                "transition_year": transition,
+                                "note": f"до {transition} надо «{rule['old_name']}», не «{nv}»",
+                                "snippet": para[:150],
+                                "severity": "error",
+                            })
+                # Событие после перехода — должен быть new_name, не old_name
+                elif min_year >= transition:
+                    for ov in old_vars:
+                        if ov and ov.lower() in para.lower():
+                            issues.append({
+                                "chapter_id": ch_id,
+                                "type": "wrong_toponym_for_period",
+                                "wrong_name": ov,
+                                "correct_name": rule["new_name"],
+                                "event_year": min_year,
+                                "transition_year": transition,
+                                "note": f"с {transition} надо «{rule['new_name']}», не «{ov}»",
+                                "snippet": para[:150],
+                                "severity": "warning",
+                            })
+
+    errors = sum(1 for i in issues if i["severity"] == "error")
+    warnings = sum(1 for i in issues if i["severity"] == "warning")
+    print(f"[TEMPORAL-TOPO] {errors} errors + {warnings} warnings.")
+    return {"issues": issues, "errors_count": errors, "warnings_count": warnings}
+
+
+def enforce_temporal_place_names(book: dict, temporal_config: dict) -> tuple:
+    """Task 051 / Класс 15: заменить некорректные исторические топонимы.
+
+    Returns (patched_book, replacements_list).
+    Применяется ПОСЛЕ normalize_book_topo (gazeteer), ДО style_checks.
+    """
+    import re
+    import copy
+
+    YEAR_RE = re.compile(r'\b((?:19|20)\d{2})\b')
+    rules = temporal_config.get("temporal_place_names", [])
+    book = copy.deepcopy(book)
+    replacements = []
+
+    def _replace_variants(text: str, variants: list, correct: str) -> tuple:
+        replaced = []
+        for v in variants:
+            if v and v in text and v.lower() != correct.lower():
+                new_text = text.replace(v, correct)
+                if new_text != text:
+                    replaced.append({"from": v, "to": correct})
+                    text = new_text
+        return text, replaced
+
+    for chapter in book.get("chapters", []):
+        ch_id = chapter.get("id") or ""
+        paras = chapter.get("paragraphs", [])
+        if paras:
+            for p in paras:
+                text = p.get("text", "")
+                if not text:
+                    continue
+                para_years = [int(m) for m in YEAR_RE.findall(text)]
+                if not para_years:
+                    continue
+                min_year = min(para_years)
+                for rule in rules:
+                    transition = rule.get("transition_year", 9999)
+                    if min_year < transition:
+                        text, reps = _replace_variants(text, rule.get("new_name_variants", []), rule["old_name"])
+                    else:
+                        text, reps = _replace_variants(text, rule.get("old_name_variants", []), rule["new_name"])
+                    for r in reps:
+                        replacements.append({**r, "chapter_id": ch_id, "year": min_year})
+                p["text"] = text
+        else:
+            content = chapter.get("content", "") or ""
+            para_years = [int(m) for m in YEAR_RE.findall(content)]
+            if para_years:
+                min_year = min(para_years)
+                for rule in rules:
+                    transition = rule.get("transition_year", 9999)
+                    if min_year < transition:
+                        content, reps = _replace_variants(content, rule.get("new_name_variants", []), rule["old_name"])
+                    else:
+                        content, reps = _replace_variants(content, rule.get("old_name_variants", []), rule["new_name"])
+                    for r in reps:
+                        replacements.append({**r, "chapter_id": ch_id, "year": min_year})
+            chapter["content"] = content
+
+    print(f"[TEMPORAL-TOPO] Enforce: {len(replacements)} замен.")
+    return book, replacements
+
+
+def append_contributors_section(text_full: str, contributors_config: dict) -> str:
+    """Task 052 / Класс 16: добавить раздел «Кто работал над этой Главой» в конец text_full.
+
+    contributors_config = {
+        "contributors": [{"role": "Голос", "name": "..."}, ...]
+    }
+    Idempotent: если раздел уже есть — возвращает без изменений.
+    """
+    SECTION_MARKER = "Кто работал над этой Главой"
+    if SECTION_MARKER in text_full:
+        print(f"[CONTRIBUTORS] Раздел уже присутствует — пропуск.")
+        return text_full
+
+    contributors = contributors_config.get("contributors", [])
+    if not contributors:
+        print(f"[CONTRIBUTORS] Нет данных contributors — раздел не добавлен.")
+        return text_full
+
+    lines = ["\n\n---\n", f"**{SECTION_MARKER}**\n"]
+    for c in contributors:
+        role = c.get("role", "")
+        name = c.get("name", "")
+        if role and name:
+            lines.append(f"{role}: {name}")
+    section = "\n".join(lines)
+    print(f"[CONTRIBUTORS] Добавлен раздел с {len(contributors)} контрибьюторами.")
+    return text_full.rstrip() + "\n" + section + "\n"
+
+
+def validate_chapter_sections_anchors(book: dict, anchors_config: dict) -> dict:
+    """Task 045c / Класс 10 ext: проверить наличие обязательных тематических разделов в главах.
+
+    anchors_config = {
+        "chapter_sections_anchors": {
+            "ch_03": [{"anchor_id": "...", "heading": "...", "required": true}]
+        }
+    }
+    Returns {issues: [...], errors_count, warnings_count}.
+    Idempotent.
+    """
+    anchors_map = anchors_config.get("chapter_sections_anchors", {})
+    issues = []
+
+    for ch in book.get("chapters", []):
+        ch_id = ch.get("id") or ""
+        required_anchors = anchors_map.get(ch_id, [])
+        if not required_anchors:
+            continue
+
+        # Собираем весь текст главы для поиска заголовков
+        ch_text = ch.get("content", "") or ""
+        paras = ch.get("paragraphs", [])
+        if paras:
+            ch_text = " ".join(p.get("text", "") for p in paras)
+
+        for anchor in required_anchors:
+            heading = anchor.get("heading", "")
+            required = anchor.get("required", False)
+            if not heading:
+                continue
+            if heading.lower() not in ch_text.lower():
+                sev = "error" if required else "warning"
+                issues.append({
+                    "chapter_id": ch_id,
+                    "anchor_id": anchor.get("anchor_id", ""),
+                    "missing_heading": heading,
+                    "required": required,
+                    "severity": sev,
+                    "fallback_action": anchor.get("fallback_action", "warn"),
+                })
+                print(f"[CHAPTER-ANCHORS] {sev.upper()}: в {ch_id} отсутствует раздел «{heading}»")
+
+    errors = sum(1 for i in issues if i["severity"] == "error")
+    warnings = sum(1 for i in issues if i["severity"] == "warning")
+    print(f"[CHAPTER-ANCHORS] {errors} errors + {warnings} warnings.")
+    return {"issues": issues, "errors_count": errors, "warnings_count": warnings}
+

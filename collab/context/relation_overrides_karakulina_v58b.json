@@ -1,0 +1,33 @@
+{
+  "subject_id": "karakulina",
+  "version": "v1",
+  "description": "Task 044: manual overrides for relation_to_subject where CA misclassifies based on colloquial address",
+  "overrides": [
+    {
+      "person_name": "тётя Маша",
+      "aliases": ["Маша", "Маша соседка", "тётя Маши"],
+      "ca_relation": "тётя",
+      "real_relation": "соседка",
+      "in_bio_data_family": false,
+      "narrative_context": "соседка, любила ходить по грибы и ягоды (TR1); повлияла на продажу дачи (TR2)",
+      "source_quote": "это в основном тётя Маша и её соседка любителем была"
+    },
+    {
+      "person_name": "Баба Аня",
+      "aliases": ["баба Аня", "Ани"],
+      "ca_relation": "свекровь или родственница зятя",
+      "real_relation": "свекровь рассказчика (мать Владимира Маргось)",
+      "in_bio_data_family": false,
+      "narrative_context": "контекст «французская бабушка» comparison в ch_03 — сравнение с бабой Аней как с другим типом бабушки",
+      "source_quote": "сравнить отношения бабы Ани, да, к тебе"
+    },
+    {
+      "person_name": "Нинвана Полсачева",
+      "aliases": ["Нинвана", "Полсачева"],
+      "ca_relation": "знакомая",
+      "real_relation": "врач, авторитет",
+      "in_bio_data_family": false,
+      "narrative_context": "врач, постоянный авторитет в вопросах здоровья (ch_03/ch_04)"
+    }
+  ]
+}

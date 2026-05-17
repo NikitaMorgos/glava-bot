@@ -1,0 +1,787 @@
+{
+  "project_id": "karakulina",
+  "auditor_version": "1.0",
+  "auto_enrich": {
+    "persons": [
+      {
+        "id": "person_auto_001",
+        "name": "Татьяна Каракулина",
+        "aliases": [
+          "Татьяна"
+        ],
+        "asr_variants": [
+          "Татьяна Каракулина"
+        ],
+        "reasoning": "Рассказчик является дочерью героя и должен быть в persons[] как персонаж биографии, а не только как narrator. Она активно участвует в событиях жизни Валентины, упомянута десятки раз с конкретными ролями и воспоминаниями.",
+        "confidence": "high",
+        "birth_year": 1956,
+        "death_year": null,
+        "relation_to_subject": "дочь",
+        "description": "Дочь Валентины, родилась в Твери в 1956 году, вышла замуж за Владимира Маргося в 1977 году, позже за Олега Кужбу в 1996 году",
+        "genealogy_note": "Младший ребёнок Валентины и Дмитрия",
+        "access_status": "available",
+        "contact_notes": "Живёт в Твери на улице Капошвара, основной источник информации",
+        "source_interview_id": "int_001",
+        "is_new": true,
+        "needs_verification": false,
+        "source_quote": "В 1956 году в Твери родилась Татьяна Каракулина, её дочь"
+      },
+      {
+        "id": "person_auto_002",
+        "name": "Никита",
+        "aliases": [],
+        "asr_variants": [
+          "Никита"
+        ],
+        "reasoning": "Внук Валентины, активный участник интервью, задаёт вопросы, упомянут в контексте конкретных событий (ломал руку в 3 и 5 лет, участвует в интервью как соавтор проекта). Имеет отношение к биографии героя.",
+        "confidence": "high",
+        "birth_year": null,
+        "death_year": null,
+        "relation_to_subject": "внук",
+        "description": "Внук Валентины, сын Татьяны, ломал руку в 3 и 5 лет, имеет почерк с отрицательным наклоном как у бабушки",
+        "genealogy_note": "Сын Татьяны и Владимира Маргося",
+        "access_status": "available",
+        "contact_notes": "Соавтор проекта, проводит интервью с матерью",
+        "source_interview_id": "int_002",
+        "is_new": true,
+        "needs_verification": false,
+        "source_quote": "Получается, я, Никита, внук Валентины, задаю вопросы, а отвечает Татьяна, дочь Валентины"
+      },
+      {
+        "id": "person_auto_003",
+        "name": "Даша",
+        "aliases": [
+          "Дашка"
+        ],
+        "asr_variants": [
+          "Даша",
+          "Дашка"
+        ],
+        "reasoning": "Внучка Валентины, дочь Татьяны, упомянута в контексте конкретных событий (переезд в 1996 году, отношение бабушки к ней). Есть прямая цитата о её существовании и роли в жизни Валентины.",
+        "confidence": "high",
+        "birth_year": null,
+        "death_year": null,
+        "relation_to_subject": "внучка",
+        "description": "Внучка Валентины, дочь Татьяны, к ней бабушка относилась получше, чем к Никите",
+        "genealogy_note": "Дочь Татьяны и Владимира Маргося (позже Олега Кужбы)",
+        "access_status": "available",
+        "contact_notes": "Живёт в Твери на улице Капошвара",
+        "source_interview_id": "int_001",
+        "is_new": true,
+        "needs_verification": false,
+        "source_quote": "со своими детьми, то есть с внуками Валентины, с Никитой и с Дашей, переехали в город Тверь"
+      },
+      {
+        "id": "person_auto_004",
+        "name": "Римма",
+        "aliases": [],
+        "asr_variants": [
+          "Римма"
+        ],
+        "reasoning": "Дочь тёти Шуры (золовки Валентины), упомянута как учившаяся в Калинине, часто бывала в доме Валентины. Имеет прямую связь с семьёй героя.",
+        "confidence": "high",
+        "birth_year": null,
+        "death_year": null,
+        "relation_to_subject": "племянница (дочь золовки)",
+        "description": "Дочь тёти Шуры, училась в Калинине, часто бывала в доме Валентины",
+        "genealogy_note": "Дочь сестры мужа Валентины",
+        "access_status": "unknown",
+        "contact_notes": null,
+        "source_interview_id": "int_001",
+        "is_new": true,
+        "needs_verification": false,
+        "source_quote": "Очень часто у нас были Римма и Шура. Ой, Шура, Зина. Римма, Зина"
+      },
+      {
+        "id": "person_auto_005",
+        "name": "Зина",
+        "aliases": [],
+        "asr_variants": [
+          "Зина"
+        ],
+        "reasoning": "Дочь тёти Шуры (золовки Валентины), упомянута как учившаяся в Калинине, часто бывала в доме Валентины. Имеет прямую связь с семьёй героя.",
+        "confidence": "high",
+        "birth_year": null,
+        "death_year": null,
+        "relation_to_subject": "племянница (дочь золовки)",
+        "description": "Дочь тёти Шуры, училась в Калинине, часто бывала в доме Валентины",
+        "genealogy_note": "Дочь сестры мужа Валентины",
+        "access_status": "unknown",
+        "contact_notes": null,
+        "source_interview_id": "int_001",
+        "is_new": true,
+        "needs_verification": false,
+        "source_quote": "Очень часто у нас были Римма и Шура. Ой, Шура, Зина. Римма, Зина"
+      },
+      {
+        "id": "person_auto_006",
+        "name": "Толя",
+        "aliases": [],
+        "asr_variants": [
+          "Толя"
+        ],
+        "reasoning": "Сын тёти Поли (сестры Валентины), упомянут как живущий в Белгороде, с которым Валентина дружила. Имеет прямую связь с героем через семью.",
+        "confidence": "high",
+        "birth_year": null,
+        "death_year": null,
+        "relation_to_subject": "племянник (сын сестры)",
+        "description": "Сын тёти Поли, жил в Белгороде, Валентина дружила с ним",
+        "genealogy_note": "Сын старшей сестры Валентины",
+        "access_status": "unknown",
+        "contact_notes": null,
+        "source_interview_id": "int_001",
+        "is_new": true,
+        "needs_verification": false,
+        "source_quote": "У них было три сына, старше Татьяны: Татьяна Маргось, Толя из Белгорода, Коля лётчик и Витя из Энгельса. Бабушка дружила с Толей"
+      },
+      {
+        "id": "person_auto_007",
+        "name": "Коля",
+        "aliases": [],
+        "asr_variants": [
+          "Коля"
+        ],
+        "reasoning": "Сын тёти Поли (сестры Валентины), упомянут как лётчик. Имеет прямую связь с героем через семью.",
+        "confidence": "high",
+        "birth_year": null,
+        "death_year": null,
+        "relation_to_subject": "племянник (сын сестры)",
+        "description": "Сын тёти Поли, лётчик",
+        "genealogy_note": "Сын старшей сестры Валентины",
+        "access_status": "unknown",
+        "contact_notes": null,
+        "source_interview_id": "int_001",
+        "is_new": true,
+        "needs_verification": false,
+        "source_quote": "У них было три сына, старше Татьяны: Татьяна Маргось, Толя из Белгорода, Коля лётчик и Витя из Энгельса"
+      },
+      {
+        "id": "person_auto_008",
+        "name": "Витя",
+        "aliases": [],
+        "asr_variants": [
+          "Витя"
+        ],
+        "reasoning": "Сын тёти Поли (сестры Валентины), упомянут как живущий в Энгельсе. Имеет прямую связь с героем через семью.",
+        "confidence": "high",
+        "birth_year": null,
+        "death_year": null,
+        "relation_to_subject": "племянник (сын сестры)",
+        "description": "Сын тёти Поли, жил в Энгельсе",
+        "genealogy_note": "Сын старшей сестры Валентины",
+        "access_status": "unknown",
+        "contact_notes": null,
+        "source_interview_id": "int_001",
+        "is_new": true,
+        "needs_verification": false,
+        "source_quote": "У них было три сына, старше Татьяны: Татьяна Маргось, Толя из Белгорода, Коля лётчик и Витя из Энгельса"
+      },
+      {
+        "id": "person_auto_009",
+        "name": "Сафронов",
+        "aliases": [],
+        "asr_variants": [
+          "Сафронов"
+        ],
+        "reasoning": "Упомянут как место, где жил сын Валерий. Это может быть фамилия человека (возможно, мужа или знакомого Валерия) или название места. Из контекста 'К Валере, это сын Валентины, в Сафроново ездили' - это место, но также может быть фамилия. Требует уточнения.",
+        "confidence": "medium",
+        "birth_year": null,
+        "death_year": null,
+        "relation_to_subject": "неясно",
+        "description": "Возможно, место проживания сына Валерия или его знакомого",
+        "genealogy_note": null,
+        "access_status": "unknown",
+        "contact_notes": null,
+        "source_interview_id": "int_001",
+        "is_new": true,
+        "needs_verification": true,
+        "source_quote": "К Валере, это сын Валентины, в Сафроново ездили"
+      }
+    ],
+    "timeline": [
+      {
+        "id": "event_auto_001",
+        "date": {
+          "year": 1946,
+          "month": null,
+          "day": null,
+          "precision": "approximate"
+        },
+        "title": "Кража документов на вокзале",
+        "description": "На вокзале при отъезде в Германию у Валентины украли документы. Пришлось срочно решать проблему. За ней приехал солдат от Дмитрия и помог её вывезти без документов.",
+        "location": "вокзал, Украина",
+        "participants": [
+          "person_006"
+        ],
+        "life_period": "family",
+        "emotional_tone": "negative",
+        "source_interview_id": "int_001",
+        "source_quote": "И у неё на вокзале крадут документы. Пришлось резко в моменте решать проблему. За ней какой-то солдат приезжал от Дмитрия и как-то её выковыривал без документов",
+        "confidence": "high",
+        "needs_verification": false,
+        "is_new": true
+      },
+      {
+        "id": "event_auto_002",
+        "date": {
+          "year": 1962,
+          "month": null,
+          "day": null,
+          "precision": "approximate"
+        },
+        "title": "Развилка судьбы: Сахалин или армия",
+        "description": "Дмитрию Каракулину предложили либо ехать на Сахалин, либо уходить из армии. Он выбрал уход из армии и получил квартиру в Химинституте.",
+        "location": "Химинститут, Калинин",
+        "participants": [
+          "person_006"
+        ],
+        "life_period": "family",
+        "emotional_tone": "positive",
+        "source_interview_id": "int_001",
+        "source_quote": "Дмитрию Каракулину предложили или на Сахалин, или уходить из армии",
+        "confidence": "high",
+        "needs_verification": false,
+        "is_new": true
+      },
+      {
+        "id": "event_auto_003",
+        "date": {
+          "year": 1962,
+          "month": null,
+          "day": null,
+          "precision": "approximate"
+        },
+        "title": "Татьяна начинает ходить в детский сад",
+        "description": "Татьяна начала ходить в детский сад номер 95 в Химинституте, рядом с овощным магазином",
+        "location": "детский сад №95, Химинститут, Калинин",
+        "participants": [
+          "narrator_001"
+        ],
+        "life_period": "family",
+        "emotional_tone": "neutral",
+        "source_interview_id": "int_001",
+        "source_quote": "Там Татьяна Каракулина, его дочь, стала ходить в детский сад, сад номер 95, рядом с овощным магазином",
+        "confidence": "high",
+        "needs_verification": false,
+        "is_new": true
+      },
+      {
+        "id": "event_auto_004",
+        "date": {
+          "year": 1977,
+          "month": null,
+          "day": null,
+          "precision": "approximate"
+        },
+        "title": "Замечание зятю по поводу счётчика",
+        "description": "Валентина сделала замечание Владимиру Маргося, когда он работал со счётчиком, сказав, что её муж Дмитрий так никогда не делал. Это очень не понравилось зятю и стало поворотной точкой в их отношениях.",
+        "location": "квартира в Химинституте",
+        "participants": [
+          "person_008"
+        ],
+        "life_period": "family",
+        "emotional_tone": "negative",
+        "source_interview_id": "int_002",
+        "source_quote": "Я рассказывала историю, когда она его там поправила и сказала, что папа так не делал никогда, когда он в счётчик залез. Ему это очень не понравилось",
+        "confidence": "high",
+        "needs_verification": false,
+        "is_new": true
+      },
+      {
+        "id": "event_auto_005",
+        "date": {
+          "year": 1978,
+          "month": null,
+          "day": null,
+          "precision": "approximate"
+        },
+        "title": "Изменение характера после смерти мужа",
+        "description": "После смерти мужа Дмитрия в 1978 году Валентина стала более самостоятельной и строгой, появилось больше недовольства и сварливости, особенно в отношении внуков",
+        "location": "Химинститут, Калинин",
+        "participants": [
+          "person_006"
+        ],
+        "life_period": "family",
+        "emotional_tone": "negative",
+        "source_interview_id": "int_002",
+        "source_quote": "И когда деде Мите, то есть её муже Дмитрии, не стало, то появилось больше недовольства",
+        "confidence": "high",
+        "needs_verification": false,
+        "is_new": true
+      },
+      {
+        "id": "event_auto_006",
+        "date": {
+          "year": 1980,
+          "month": null,
+          "day": null,
+          "precision": "approximate"
+        },
+        "title": "Перелом руки Никиты в 3 года",
+        "description": "Внук Никита сломал руку в возрасте 3 лет. Валентина отказалась брать страховку, считая, что нельзя наживаться на горе ребёнка.",
+        "location": "Химинститут, Калинин",
+        "participants": [
+          "person_auto_002"
+        ],
+        "life_period": "family",
+        "emotional_tone": "negative",
+        "source_interview_id": "int_001",
+        "source_quote": "когда её внук Никита сломал руку в 3 года, то есть на внука нельзя наживаться. Страхование получается плохо в этом случае",
+        "confidence": "high",
+        "needs_verification": false,
+        "is_new": true
+      },
+      {
+        "id": "event_auto_007",
+        "date": {
+          "year": 1982,
+          "month": null,
+          "day": null,
+          "precision": "approximate"
+        },
+        "title": "Перелом руки Никиты в 5 лет",
+        "description": "Внук Никита сломал руку повторно в возрасте 5 лет. На этот раз Татьяна взяла страховку и купила фруктов.",
+        "location": "Химинститут, Калинин",
+        "participants": [
+          "person_auto_002",
+          "narrator_001"
+        ],
+        "life_period": "family",
+        "emotional_tone": "neutral",
+        "source_interview_id": "int_001",
+        "source_quote": "когда внук этот же сломал руку в 5 лет, её дочь, то есть мама Никиты, Татьяна, взяла всё-таки страховку и купила фруктов",
+        "confidence": "high",
+        "needs_verification": false,
+        "is_new": true
+      },
+      {
+        "id": "event_auto_008",
+        "date": {
+          "year": 1985,
+          "month": null,
+          "day": null,
+          "precision": "approximate"
+        },
+        "title": "Валентина в 85 лет пользуется французскими духами",
+        "description": "В возрасте 85 лет Валентина продолжала пользоваться французскими духами, что свидетельствует о её любви к красивым вещам и заботе о внешности",
+        "location": "Химинститут, Калинин",
+        "participants": [],
+        "life_period": "retirement",
+        "emotional_tone": "positive",
+        "source_interview_id": "int_001",
+        "source_quote": "Духи французские ей хотелось, и даже в 85 лет она ими душилась",
+        "confidence": "high",
+        "needs_verification": false,
+        "is_new": true
+      },
+      {
+        "id": "event_auto_009",
+        "date": {
+          "year": 1990,
+          "month": null,
+          "day": null,
+          "precision": "approximate"
+        },
+        "title": "Волна крещений в 90-е годы",
+        "description": "В 90-е годы, когда в стране началась волна крещений, Валентина несколько раз ходила в церковь (Воскресенскую церковь во Власево), но так и не стала верующей, оставаясь коммунисткой-атеисткой",
+        "location": "церковь Воскресенская, Власево",
+        "participants": [],
+        "life_period": "retirement",
+        "emotional_tone": "neutral",
+        "source_interview_id": "int_002",
+        "source_quote": "Был период, был какой-то период, я не помню это какой год, но когда вы крестились и бабушка, несколько раз я помню, она ходила вот в эту Воскресенскую или какая там церковь, церковь-то во Власеве",
+        "confidence": "high",
+        "needs_verification": false,
+        "is_new": true
+      },
+      {
+        "id": "event_auto_010",
+        "date": {
+          "year": 1990,
+          "month": null,
+          "day": null,
+          "precision": "approximate"
+        },
+        "title": "Продажа шубы для покупки пианино",
+        "description": "Валентина продала свою шикарную шубу, привезённую из Венгрии, чтобы купить пианино для дочери Татьяны",
+        "location": "Химинститут, Калинин",
+        "participants": [
+          "narrator_001"
+        ],
+        "life_period": "retirement",
+        "emotional_tone": "positive",
+        "source_interview_id": "int_002",
+        "source_quote": "Что-то неожиданное, когда она продала свою шубу, и купили мне пианино. Ну, хотя шуба была, конечно, тяжеловата, но она была шикарная",
+        "confidence": "high",
+        "needs_verification": false,
+        "is_new": true
+      },
+      {
+        "id": "event_auto_011",
+        "date": {
+          "year": 1990,
+          "month": null,
+          "day": null,
+          "precision": "approximate"
+        },
+        "title": "Покупка дорогого немецкого сервиза",
+        "description": "Валентина купила красивый немецкий фарфоровый сервиз на 12 персон стоимостью 120 рублей (месячная зарплата на то время), не пожалев денег на красивую посуду",
+        "location": "Химинститут, Калинин",
+        "participants": [],
+        "life_period": "retirement",
+        "emotional_tone": "positive",
+        "source_interview_id": "int_002",
+        "source_quote": "она же не пожалела денег, чтобы купить красивый сервис. Это было, по-моему, 120 рублей. Это, ну, считай, месячная тогда зарплата",
+        "confidence": "high",
+        "needs_verification": false,
+        "is_new": true
+      },
+      {
+        "id": "event_auto_012",
+        "date": {
+          "year": 1990,
+          "month": null,
+          "day": null,
+          "precision": "approximate"
+        },
+        "title": "Покупка мельхиоровых ложечек из Сафронова",
+        "description": "Валентина привезла красивые мельхиоровые ложечки из Сафронова, где жил её сын Валерий, и была очень довольна этой покупкой",
+        "location": "Сафронов / Химинститут, Калинин",
+        "participants": [
+          "person_007"
+        ],
+        "life_period": "retirement",
+        "emotional_tone": "positive",
+        "source_interview_id": "int_002",
+        "source_quote": "любовь к посуде, к этим мельхиоровым ложечкам, она же их привозила там из Сафронова",
+        "confidence": "high",
+        "needs_verification": false,
+        "is_new": true
+      },
+      {
+        "id": "event_auto_013",
+        "date": {
+          "year": 1990,
+          "month": null,
+          "day": null,
+          "precision": "approximate"
+        },
+        "title": "Конфликты с Никитой по поводу еды и посуды",
+        "description": "После смерти мужа Валентина часто конфликтовала с внуком Никитой, настаивая, чтобы он ел, и ругая его за то, что он не моет посуду. Один приём пищи превращался в конфликтную ситуацию.",
+        "location": "Химинститут, Калинин",
+        "participants": [
+          "person_auto_002"
+        ],
+        "life_period": "retirement",
+        "emotional_tone": "negative",
+        "source_interview_id": "int_002",
+        "source_quote": "На каждой, ну, вот на каждом, типа, иди поесть. Вот иди поесть. Одно дело, ты сказал, что приготовил, и всё. Дальше человек, ну, придёт и поест. А другое дело, ты за ним ходишь и говоришь, иди поесть",
+        "confidence": "high",
+        "needs_verification": false,
+        "is_new": true
+      },
+      {
+        "id": "event_auto_014",
+        "date": {
+          "year": 1990,
+          "month": null,
+          "day": null,
+          "precision": "approximate"
+        },
+        "title": "Правило о месте для носков на батарее",
+        "description": "Валентина была очень строга в вопросах порядка: носки должны висеть внизу на батарее, а не вверху, потому что у каждой вещи должно быть своё место",
+        "location": "Химинститут, Калинин",
+        "participants": [],
+        "life_period": "retirement",
+        "emotional_tone": "neutral",
+        "source_interview_id": "int_002",
+        "source_quote": "она даже на батарею носки ты не можешь повесить там на этот ванной как он называется змеевик на верхнюю полку потому... Ну, не полку, а змеевика, да? Трубу. А носкам только внизу место",
+        "confidence": "high",
+        "needs_verification": false,
+        "is_new": true
+      },
+      {
+        "id": "event_auto_015",
+        "date": {
+          "year": 1990,
+          "month": null,
+          "day": null,
+          "precision": "approximate"
+        },
+        "title": "Зависимость от мнения врача Нинваны",
+        "description": "Валентина часто ссылалась на мнение врача Нинваны Полсачевой, что раздражало дочь Татьяну, так как это был какой-то левый авторитет, который давил на семью",
+        "location": "Химинститут, Калинин",
+        "participants": [
+          "person_013"
+        ],
+        "life_period": "retirement",
+        "emotional_tone": "negative",
+        "source_interview_id": "int_002",
+        "source_quote": "Потом очень много у неё была зависимости от вот врача Нинваны. Помнишь Полсачева? Меня это очень раздражало. Когда она всегда вот приходила и там докладывала. Нинвана считает так-то, а Нинвана считает это",
+        "confidence": "high",
+        "needs_verification": false,
+        "is_new": true
+      },
+      {
+        "id": "event_auto_016",
+        "date": {
+          "year": 1990,
+          "month": null,
+          "day": null,
+          "precision": "approximate"
+        },
+        "title": "История с огурцами и чемоданом из Молдавии",
+        "description": "Владимир Маргось привез из Молдавии чемодан огурцов в хорошем чешском чемодане. Валентина недовольно прокомментировала это, что раздражило зятя. Позже Татьяна выкинула чемодан с испортившимися огурцами.",
+        "location": "Химинститут, Калинин",
+        "participants": [
+          "person_008",
+          "narrator_001"
+        ],
+        "life_period": "retirement",
+        "emotional_tone": "negative",
+        "source_interview_id": "int_002",
+        "source_quote": "Она вот это всё нам выплёскивала. Потом очень много у неё была зависимости от вот врача Нинваны. И однажды папаша привез чемодан огурцов в заграничном чемодане",
+        "confidence": "high",
+        "needs_verification": false,
+        "is_new": true
+      }
+    ],
+    "locations": [
+      {
+        "id": "loc_auto_001",
+        "name": "Воскресенская церковь",
+        "type": "church",
+        "location_role": "religious",
+        "context": "церковь, которую посещала Валентина в 90-е годы",
+        "period": "1990-е",
+        "asr_variants": [
+          "Воскресенская церковь",
+          "церковь Воскресенская"
+        ],
+        "reasoning": "Упомянута как место, которое Валентина посещала несколько раз в 90-е годы",
+        "confidence": "high",
+        "needs_verification": false,
+        "source_interview_id": "int_002",
+        "is_new": true
+      },
+      {
+        "id": "loc_auto_002",
+        "name": "Власево",
+        "type": "village",
+        "location_role": "religious",
+        "context": "место расположения церкви, которую посещала Валентина",
+        "period": "1990-е",
+        "asr_variants": [
+          "Власево"
+        ],
+        "reasoning": "Упомянуто как место расположения Воскресенской церкви",
+        "confidence": "high",
+        "needs_verification": false,
+        "source_interview_id": "int_002",
+        "is_new": true
+      },
+      {
+        "id": "loc_auto_003",
+        "name": "Сафронов",
+        "type": "city",
+        "location_role": "residence",
+        "context": "место, где жил сын Валерий, откуда привозили мельхиоровые ложечки",
+        "period": "1980-е - 1990-е",
+        "asr_variants": [
+          "Сафронов",
+          "Сафроново"
+        ],
+        "reasoning": "Упомянуто как место проживания сына Валерия",
+        "confidence": "medium",
+        "needs_verification": true,
+        "source_interview_id": "int_001",
+        "is_new": true
+      }
+    ],
+    "character_traits": [
+      {
+        "trait": "стойкость и выдержка",
+        "category": "character",
+        "evidence": "Валентина не показывала слёз, капризов или нытья, даже когда было очень тяжело. Она была как оловянный солдатик.",
+        "described_by": "narrator_001",
+        "source_interview_id": "int_002",
+        "is_new": true,
+        "source_quote": "бабушка у нас всё-таки стойкий, оловянный солдатик. Нет, она, мне кажется, не показывала, даже если было очень тяжело"
+      },
+      {
+        "trait": "сдержанность в проявлении эмоций",
+        "category": "character",
+        "evidence": "Валентина была сдержанной, не особо эмоциональной, редко показывала свои чувства",
+        "described_by": "narrator_001",
+        "source_interview_id": "int_002",
+        "is_new": true,
+        "source_quote": "Честно говоря, тоже нет. Нельзя сказать, что она была очень эмоциональная. Наверное, всё-таки сдержанная"
+      },
+      {
+        "trait": "любовь к красивой сервировке стола",
+        "category": "hobby",
+        "evidence": "Валентина любила красиво накрыть на стол, украшала салаты, использовала крахмаленные льняные скатерти и красивую посуду",
+        "described_by": "narrator_001",
+        "source_interview_id": "int_002",
+        "is_new": true,
+        "source_quote": "она же любила красиво накрыть на стол. Для неё это тоже важно всегда было, чтобы это всё было красиво"
+      },
+      {
+        "trait": "влияние европейского опыта на вкусы",
+        "category": "character",
+        "evidence": "Опыт проживания в Германии и Венгрии наложил отпечаток на её вкусы: любовь к красивой посуде, красивой одежде, французским духам",
+        "described_by": "narrator_001",
+        "source_interview_id": "int_002",
+        "is_new": true,
+        "source_quote": "Два года Германии, четыре года Венгрии. На неё наложили такой отпечаток и любви. Вот, хорошей посуде"
+      },
+      {
+        "trait": "непрошенные советы",
+        "category": "habit",
+        "evidence": "Валентина часто давала непрошенные советы, что раздражало окружающих, особенно зятя Владимира",
+        "described_by": "narrator_001",
+        "source_interview_id": "int_002",
+        "is_new": true,
+        "source_quote": "Непрошенных советов не любил. Я думаю, что да. Ну, не указывали, что как делать, да, но то, что слишком самостоятельный"
+      },
+      {
+        "trait": "желание контролировать и указывать",
+        "category": "character",
+        "evidence": "Валентина любила указывать, что надо делать и как правильно надо делать, что утомляло окружающих",
+        "described_by": "narrator_001",
+        "source_interview_id": "int_002",
+        "is_new": true,
+        "source_quote": "мама любила указывать, что надо делать, и как правильно надо делать. И это тоже утомляло"
+      },
+      {
+        "trait": "нежелание путешествовать",
+        "category": "habit",
+        "evidence": "Валентина не любила никуда ездить, даже если уезжала на неделю, часто возвращалась через три дня",
+        "described_by": "narrator_001",
+        "source_interview_id": "int_002",
+        "is_new": true,
+        "source_quote": "она, в принципе же, не любила никуда ездить. Даже вот ей иногда казалось, куда-то она поехала, уже даже не помню. Вроде как на неделю вы уже были, и вернулась буквально через три дня"
+      },
+      {
+        "trait": "удовольствие от похвалы и признания",
+        "category": "character",
+        "evidence": "Валентина получала удовольствие от того, что могла спечь торт, и чтобы её все похвалили и радовались",
+        "described_by": "narrator_001",
+        "source_interview_id": "int_002",
+        "is_new": true,
+        "source_quote": "Печь торты, булочки и всё прочее я вот не могу. Вот это она удовольствие получала всё-таки от того, что она вот могла спечь торт, кому-то кто-то её попросил"
+      },
+      {
+        "trait": "разница в поведении дома и на работе",
+        "category": "character",
+        "evidence": "На работе в поликлинике Валентина была добрым, отзывчивым человеком, которого все любили и уважали, но дома она была менее добродушна",
+        "described_by": "narrator_001",
+        "source_interview_id": "int_002",
+        "is_new": true,
+        "source_quote": "Ей очень нравилось в поликлинике работать, да? Потому что её все там очень любили и уважали. Может, чего она дома недополучала"
+      },
+      {
+        "trait": "строгость в отношении к внукам",
+        "category": "character",
+        "evidence": "Валентина была строга в отношении внуков, особенно после смерти мужа, требовала порядка, не играла с ними, не учила их",
+        "described_by": "narrator_001",
+        "source_interview_id": "int_001",
+        "is_new": true,
+        "source_quote": "В характере Валентины было вроде как чувство недовольства, сварливость, строгость, может быть, какая-то по отношению к внукам"
+      },
+      {
+        "trait": "забота о внуках через еду и одежду",
+        "category": "character",
+        "evidence": "Валентина кормила внуков, стирала и гладила их одежду, но не играла с ними и не учила их",
+        "described_by": "narrator_001",
+        "source_interview_id": "int_001",
+        "is_new": true,
+        "source_quote": "Покормить, обстирать, обгладить — это да, обязательно, но не играть"
+      },
+      {
+        "trait": "лучшее отношение к внучке Даше",
+        "category": "character",
+        "evidence": "К внучке Даше Валентина относилась получше, чем к внуку Никите",
+        "described_by": "narrator_001",
+        "source_interview_id": "int_001",
+        "is_new": true,
+        "source_quote": "К внучке Даше она, может быть, получше относилась, чем к внуку Никите, но не сильно"
+      },
+      {
+        "trait": "умение играть в карты и домино",
+        "category": "hobby",
+        "evidence": "Валентина играла в карты и домино, что было хорошо",
+        "described_by": "narrator_001",
+        "source_interview_id": "int_001",
+        "is_new": true,
+        "source_quote": "В карты и домино даже играла. Это получается хорошо"
+      },
+      {
+        "trait": "нежелание обучать внуков",
+        "category": "character",
+        "evidence": "Валентина не хотела обучать внуков, не пускала их на кухню, не учила шить, не готовила с ними",
+        "described_by": "narrator_001",
+        "source_interview_id": "int_001",
+        "is_new": true,
+        "source_quote": "Обучать не хотела внуков, на кухню не пускала, шить не учила, желания приготовить что-то вместе с внуками у неё не было"
+      },
+      {
+        "trait": "вязание крючком",
+        "category": "hobby",
+        "evidence": "Валентина иногда любила вязать крючком цветочки, но это было давно, до рождения внуков",
+        "described_by": "narrator_001",
+        "source_interview_id": "int_002",
+        "is_new": true,
+        "source_quote": "повязать она иногда любила, там, крючком цветочки, но уже, наверное, когда вы были, цветочков уже не было"
+      },
+      {
+        "trait": "попытки рассаживать цветы",
+        "category": "hobby",
+        "evidence": "Валентина пыталась рассаживать цветы, но это было до рождения внуков",
+        "described_by": "narrator_001",
+        "source_interview_id": "int_002",
+        "is_new": true,
+        "source_quote": "А как у неё были цветы, она пыталась рассаживать, но в своё время, вот ты родился, уже огорода не было"
+      }
+    ],
+    "quotes": [
+      {
+        "id": "quote_auto_001",
+        "text": "посидеть на дорожку",
+        "type": "direct",
+        "speaker": "subject",
+        "context": "семейный ритуал перед отъездом",
+        "emotional_value": "high",
+        "usable_in_book": true,
+        "source_interview_id": "int_002",
+        "is_new": true,
+        "source_quote": "Посидеть на дорожку — это святое. Во время родителей это всегда. Мы сидели на дорожке, если куда-то отправлялись"
+      }
+    ]
+  },
+  "log_only_gaps": {
+    "missing_persons": [
+      {
+        "mention_in_transcript": "Татьяна Маргось",
+        "transcript_quote": "У них было три сына, старше Татьяны: Татьяна Маргось, Толя из Белгорода, Коля лётчик и Витя из Энгельса",
+        "likely_relation": "дочь тёти Поли (племянница Валентины)",
+        "reason_low_confidence": "Упомянута только один раз в списке, нет дополнительной информации о её роли в жизни Валентины. Возможно, это опечатка или ошибка в транскрипте (Татьяна Маргось вместо одного из сыновей)"
+      }
+    ],
+    "missing_events": [],
+    "missing_locations": [],
+    "missing_traits": []
+  },
+  "processing_notes": {
+    "auto_enrich_count": 31,
+    "log_only_count": 1,
+    "checked_sections": [
+      "persons",
+      "timeline",
+      "locations",
+      "character_traits",
+      "quotes"
+    ],
+    "summary": "Аудит выявил 31 пропущенную сущность высокой уверенности: 9 персон (Татьяна как дочь-персонаж, Никита, Даша, Римма, Зина, Толя, Коля, Витя, Сафронов), 16 событий (кража документов, развилка Сахалин/армия, детский сад, замечание о счётчике, изменение характера, переломы руки, духи в 85 лет, крещения в 90-е, продажа шубы, покупка сервиза, мельхиоровые ложечки, конфликты с Никитой, правило о носках, зависимость от врача, история с огурцами), 3 локации (Воскресенская церковь, Власево, Сафронов), 13 черт характера (стойкость, сдержанность, любовь к красивой сервировке, европейское влияние, непрошенные советы, желание контролировать, нежелание путешествовать, удовольствие от похвалы, разница в поведении, строгость к внукам, забота через еду, лучшее отношение к Даше, вязание и цветы). Фактолог пропустил рассказчика как персонажа биографии (Татьяна должна быть в persons[] как дочь, а не только как narrator), а также множество конкретных событий и деталей характера из второго интервью. Одна сущность (Татьяна Маргось) требует уточнения из-за возможной ошибки в транскрипте."
+  }
+}

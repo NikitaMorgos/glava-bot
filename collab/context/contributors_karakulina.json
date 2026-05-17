@@ -1,0 +1,24 @@
+{
+  "subject_id": "karakulina",
+  "version": "v1",
+  "created": "2026-05-17",
+  "description": "Task 052 / Класс 16: Contributors для раздела «Кто работал над этой Главой».",
+  "contributors": [
+    {
+      "role": "Голос (рассказчик)",
+      "name": "Наталья Каракулина"
+    },
+    {
+      "role": "Интервьюер",
+      "name": "Никита Моргос"
+    },
+    {
+      "role": "Транскрипция",
+      "name": "AssemblyAI (автоматически) + ручная правка"
+    },
+    {
+      "role": "AI-Ghostwriter",
+      "name": "GLAVA AI Pipeline"
+    }
+  ]
+}

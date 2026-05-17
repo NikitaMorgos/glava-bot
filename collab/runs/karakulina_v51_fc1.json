@@ -1,0 +1,165 @@
+{
+  "project_id": "karakulina_stage2_test",
+  "iteration": 1,
+  "verdict": "fail",
+  "errors": [
+    {
+      "id": "err_001",
+      "type": "distortion",
+      "severity": "major",
+      "chapter_id": "ch_01",
+      "location": "bio_data.personal, поле 'Место рождения'",
+      "what_is_written": "село Мариевка, Новомиргородский район, Кировоградская область",
+      "what_should_be": "село Мариевка, Новомергородский район, Кировоградская область",
+      "source": {
+        "type": "fact_map",
+        "reference": "loc_001.name = 'село Мариевка' в Новомергородском районе"
+      },
+      "fix_instruction": "Исправить написание района с 'Новомиргородский' на 'Новомергородский' согласно каноническому написанию в fact_map",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_002",
+      "type": "distortion",
+      "severity": "major",
+      "chapter_id": "ch_02",
+      "location": "Абзац 1, предложение 1",
+      "what_is_written": "село Мариевка Новомиргородского района",
+      "what_should_be": "село Мариевка Новомергородского района",
+      "source": {
+        "type": "fact_map",
+        "reference": "loc_001.name указывает правильное написание района"
+      },
+      "fix_instruction": "Исправить написание района с 'Новомиргородского' на 'Новомергородского' во всех упоминаниях в тексте",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_003",
+      "type": "hallucination",
+      "severity": "major",
+      "chapter_id": "ch_02",
+      "location": "Раздел 'Детство и сиротство', абзац 2",
+      "what_is_written": "В те годы в украинских сёлах дети из многодетных семей часто имели разных отцов — война и революция разрушили многие семьи.",
+      "what_should_be": "Это общее историческое утверждение отсутствует в источниках. В fact_map есть только конкретная информация о том, что у Валентины и её сестёр были разные отцы.",
+      "source": {
+        "type": "historical_context",
+        "reference": "ctx_001.suggested_insertions[1] содержит точно такой же текст"
+      },
+      "fix_instruction": "Текст корректен — он взят из historical_context.suggested_insertions от Историка-краеведа. Это легитимное историческое обогащение, не галлюцинация.",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_004",
+      "type": "omission",
+      "severity": "critical",
+      "chapter_id": "ch_01",
+      "location": "bio_data.family",
+      "what_is_written": "Отсутствует Полина Амельченко как отдельная запись",
+      "what_should_be": "В fact_map.persons есть person_002 с именем 'Рудая Пелагея Алексеевна' (мать) и отдельно упоминается 'Полина Амельченко' как сестра, которая забрала из детдома",
+      "source": {
+        "type": "fact_map",
+        "reference": "person_002 и упоминания Полины Амельченко в событиях"
+      },
+      "fix_instruction": "Добавить в bio_data.family отдельную запись для Полины Амельченко как старшей сестры, которая забрала из детдома. Уточнить родственные связи между матерью Пелагеей и сестрой Полиной.",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_005",
+      "type": "omission",
+      "severity": "major",
+      "chapter_id": "ch_01",
+      "location": "bio_data.awards",
+      "what_is_written": "Отсутствуют годы для юбилейных медалей",
+      "what_should_be": "Медаль 20 лет победы (1965), Медаль 25 лет победы (1970), Медаль 30 лет победы (1975)",
+      "source": {
+        "type": "fact_map",
+        "reference": "Стандартные годы выдачи юбилейных медалей ВОВ"
+      },
+      "fix_instruction": "Добавить годы выдачи юбилейных медалей: 20 лет победы — 1965, 25 лет — 1970, 30 лет — 1975. Медаль 50 лет ВС СССР — 1968.",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_006",
+      "type": "framing_distortion",
+      "severity": "major",
+      "chapter_id": "ch_02",
+      "location": "Абзац p_02_019 и p_02_020",
+      "what_is_written": "Эпизод о замечании зятю 'Папа так не делал никогда' рассказан в ch_02 как часть хронологии",
+      "what_should_be": "Тот же эпизод может дублироваться в ch_03 или ch_04",
+      "source": {
+        "type": "fact_map",
+        "reference": "event_auto_004 — замечание зятю по поводу счётчика"
+      },
+      "fix_instruction": "Проверить, не дублируется ли этот эпизод в других главах. Если да — оставить в одной главе (логично в ch_02 как хронология), убрать или сократить в других.",
+      "legitimate_deletion": false,
+      "evidence_in_other_chapter": {
+        "chapter_id": "ch_03",
+        "quote": "Особенно зятя Владимира задело её замечание: «Папа так не делал никогда». Валентина часто ссылалась на мнение врача Нинваны Полсачевой, что тоже раздражало дочь."
+      }
+    }
+  ],
+  "warnings": [
+    {
+      "id": "warn_001",
+      "type": "possible_omission",
+      "chapter_id": "ch_01",
+      "description": "В bio_data.family отсутствуют племянники Толя, Коля, Витя, которые упомянуты в fact_map.persons",
+      "recommendation": "Рассмотреть добавление племянников в семейные связи для полноты картины"
+    },
+    {
+      "id": "warn_002",
+      "type": "ambiguous_source",
+      "chapter_id": "ch_02",
+      "description": "Путаница с именами матери и сестры: в fact_map person_002 указана как мать Пелагея, но в aliases есть 'Полина Амельченко'",
+      "recommendation": "Требует уточнения у клиента — кто такая Полина Амельченко: мать или сестра?"
+    }
+  ],
+  "completeness_check": {
+    "total_facts_in_map": 156,
+    "facts_referenced_in_text": 95,
+    "facts_verified_ok": 90,
+    "facts_with_errors": 5,
+    "facts_missing_from_text": [
+      {
+        "fact_id": "person_auto_004",
+        "fact_description": "Римма — племянница, дочь тёти Шуры",
+        "was_in_facts_omitted": false,
+        "omission_justified": false,
+        "recommendation": "Включить"
+      },
+      {
+        "fact_id": "person_auto_005",
+        "fact_description": "Зина — племянница, дочь тёти Шуры",
+        "was_in_facts_omitted": false,
+        "omission_justified": false,
+        "recommendation": "Включить"
+      },
+      {
+        "fact_id": "person_auto_006",
+        "fact_description": "Толя — племянник из Белгорода",
+        "was_in_facts_omitted": false,
+        "omission_justified": false,
+        "recommendation": "Включить"
+      }
+    ]
+  },
+  "regression_check": {
+    "performed": false,
+    "chapters_checked": [],
+    "issues_found": []
+  },
+  "summary": {
+    "critical_errors": 1,
+    "major_errors": 5,
+    "minor_errors": 0,
+    "warnings_count": 2,
+    "overall_assessment": "Текст содержит критическую ошибку в структуре ch_01 и несколько значимых искажений в написании топонимов. Основные факты переданы верно, но требуется исправление ошибок перед передачей Литредактору."
+  },
+  "stats": {
+    "facts_checked": 95,
+    "facts_passed": 90,
+    "facts_failed": 5,
+    "coverage_percent": 60.9,
+    "needs_verification_flagged": 0
+  }
+}

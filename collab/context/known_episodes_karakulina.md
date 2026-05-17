@@ -249,3 +249,19 @@ GW v57 потерял следующие notes (Класс 2). task 044 + spec �
 |---|---|---|---|
 | v1 | 2026-05-15 | Создание из Дашиного feedback'а v54 + grep TR1/TR2 | Опус |
 | **v2** | **2026-05-17** | **Расширение после Никитиного review v56 + v57: +6 эпизодов, +2 бытовых, +bio_data.timeline anchors, +historical_notes anchors, +relation overrides, +persona notes, +epilogue антитриггеры** | **Опус (роль архитектор+продакт)** |
+| **v3** | **2026-05-17** | **v60 sprint: +Contributors раздел (task 052 / Класс 16)** | **Cursor (v60 sprint)** |
+
+---
+
+## Contributors
+
+Раздел для task 052 / Класс 16. Данные для скрипта `append_contributors_section`.
+
+Основной источник: `collab/context/contributors_karakulina.json`.
+
+| Роль | Имя |
+|---|---|
+| Голос (рассказчик) | Наталья Каракулина |
+| Интервьюер | Никита Моргос |
+| Транскрипция | AssemblyAI (автоматически) + ручная правка |
+| AI-Ghostwriter | GLAVA AI Pipeline |

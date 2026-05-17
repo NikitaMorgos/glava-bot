@@ -1,6 +1,6 @@
 {
-  "version": "v1",
-  "description": "Task 043: stop-phrases for epilogue (Class 6) and general narrative. Extension of GW v2.18 СТОП-ФРАЗЫ.",
+  "version": "v2",
+  "description": "Task 043 + v60-043c: stop-phrases for epilogue (Class 6) and general narrative. Extension of GW v2.18 СТОП-ФРАЗЫ.",
   "generic_stop_phrases": [
     "человек своего времени",
     "история обычной советской женщины",
@@ -32,7 +32,14 @@
     "простая советская женщина",
     "обычная советская женщина",
     "женщина своего времени",
-    "1990-е многие пожилые"
+    "1990-е многие пожилые",
+    "верила в идеалы",
+    "не сломленная",
+    "не сломил",
+    "такой ушла",
+    "такой и осталась",
+    "сохранившая до конца",
+    "сохранив до конца"
   ],
   "scoped_chapter_ids": ["epilogue"],
   "extra_general_scope": ["ch_01", "ch_02", "ch_03", "ch_04"],

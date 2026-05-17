@@ -37,6 +37,30 @@
       "pattern_regex": "(идеал\\w+|принцип\\w+)\\s+(за\\s+которые?|которым)\\s+(воевал\\w+|бор\\w+|жил\\w+)",
       "action": "delete_sentence",
       "reason": "мотивационное приписывание без источника"
+    },
+    {
+      "category": "believed_in_ideals",
+      "pattern_regex": "верил\\w*\\s+в\\s+идеал\\w+",
+      "action": "delete_sentence",
+      "reason": "v60-043c: обобщённое мотивационное приписывание без источника"
+    },
+    {
+      "category": "unbroken_person",
+      "pattern_regex": "не\\s+сломл?ен\\w*",
+      "action": "delete_sentence",
+      "reason": "v60-043c: пафосный эпитет без конкретики"
+    },
+    {
+      "category": "left_like_that",
+      "pattern_regex": "(такой\\s+ушл\\w+|такой\\s+и\\s+остал\\w+)",
+      "action": "delete_sentence",
+      "reason": "v60-043c: патетический финал без содержания"
+    },
+    {
+      "category": "kept_until_end",
+      "pattern_regex": "сохранив\\w*\\s+(до\\s+конца|до\\s+последн)",
+      "action": "delete_sentence",
+      "reason": "v60-043c: пафосная формула без конкретики"
     }
   ],
   "applies_to_chapter_ids": ["epilogue"]

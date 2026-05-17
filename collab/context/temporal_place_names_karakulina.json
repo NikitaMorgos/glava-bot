@@ -1,0 +1,16 @@
+{
+  "subject_id": "karakulina",
+  "version": "v1",
+  "created": "2026-05-17",
+  "description": "Класс 15 — исторические топонимы с датами переименования. Task 051 (v60 sprint). Generic-алгоритм в pipeline_utils; этот конфиг — subject-specific.",
+  "temporal_place_names": [
+    {
+      "old_name": "Калинин",
+      "new_name": "Тверь",
+      "old_name_variants": ["Калинин", "Калинина", "Калинине", "Калинином", "Калинину"],
+      "new_name_variants": ["Тверь", "Твери", "Тверью", "Тверь"],
+      "transition_year": 1991,
+      "note": "Тверь переименована обратно из Калинина в 1990/1991. Для событий до 1991 — Калинин; с 1991 — Тверь."
+    }
+  ]
+}

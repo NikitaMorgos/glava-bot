@@ -1,0 +1,17 @@
+{
+  "subject_id": "karakulina",
+  "version": "v1",
+  "created": "2026-05-17",
+  "description": "Класс 10 ext — обязательные тематические разделы глав. Task 045c (v60 sprint). Generic-алгоритм в pipeline_utils; этот конфиг — subject-specific.",
+  "chapter_sections_anchors": {
+    "ch_03": [
+      {
+        "anchor_id": "hospitality_cuisine",
+        "heading": "Гостеприимство и кулинария",
+        "required": true,
+        "fallback_action": "warn",
+        "note": "Тематический раздел о гостеприимстве Валентины Ивановны. Стабильно присутствовал в v58, но исчез в v59."
+      }
+    ]
+  }
+}

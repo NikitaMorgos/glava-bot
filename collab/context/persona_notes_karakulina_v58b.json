@@ -1,0 +1,71 @@
+{
+  "subject_id": "karakulina",
+  "version": "v1",
+  "description": "Task 044: required notes for bio_data.family entries; enforced post-LE to prevent GW note volatility (Class 2)",
+  "required_notes": [
+    {
+      "label_match": "Полина",
+      "note": "забрала из детдома",
+      "note_keywords": ["забрал", "детдом"],
+      "replacement_policy": "replace_if_conflict",
+      "rationale": "v57 regression: note changed to «жила в Старобельске», losing the rescue act"
+    },
+    {
+      "label_match": "Татьяна",
+      "note": "рассказчик интервью",
+      "note_keywords": ["рассказчик", "интервью"],
+      "replacement_policy": "append_if_missing"
+    },
+    {
+      "label_match": "тётя Шура",
+      "note": "сестра мужа, жила в Кирсанове Тамбовской области",
+      "note_keywords": ["сестра мужа", "Кирсанов"],
+      "replacement_policy": "replace_if_missing"
+    },
+    {
+      "label_match": "Амельченко",
+      "note": "сын тёти Поли",
+      "note_keywords": ["сын тёти Поли", "тётя Поля"],
+      "replacement_policy": "replace_if_missing"
+    },
+    {
+      "label_match": "Толя",
+      "note": "из Белгорода, сын тёти Поли",
+      "note_keywords": ["Белгород", "сын тёти Поли"],
+      "replacement_policy": "replace_if_missing"
+    },
+    {
+      "label_match": "Коля",
+      "note": "лётчик, сын тёти Поли",
+      "note_keywords": ["лётчик", "сын тёти Поли"],
+      "replacement_policy": "replace_if_missing"
+    },
+    {
+      "label_match": "Витя",
+      "note": "из Энгельса, сын тёти Поли",
+      "note_keywords": ["Энгельс", "сын тёти Поли"],
+      "replacement_policy": "replace_if_missing"
+    },
+    {
+      "label_match": "Римма",
+      "note": "дочь тёти Шуры",
+      "note_keywords": ["дочь тёти Шуры", "тётя Шура"],
+      "replacement_policy": "replace_if_missing"
+    },
+    {
+      "label_match": "Зина",
+      "note": "дочь тёти Шуры",
+      "note_keywords": ["дочь тёти Шуры", "тётя Шура"],
+      "replacement_policy": "replace_if_missing"
+    }
+  ],
+  "separate_entries_required": [
+    {
+      "merged_label_pattern": "Внуки",
+      "split_into": [
+        {"label": "Внук", "value_keyword": "Никита"},
+        {"label": "Внучка", "value_keyword": "Даша"}
+      ]
+    }
+  ]
+}

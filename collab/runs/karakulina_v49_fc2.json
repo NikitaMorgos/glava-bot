@@ -1,0 +1,153 @@
+{
+  "project_id": "karakulina_stage2_test",
+  "iteration": 2,
+  "verdict": "fail",
+  "errors": [
+    {
+      "id": "err_001",
+      "type": "distortion",
+      "severity": "critical",
+      "chapter_id": "ch_01",
+      "location": "bio_data.personal, место рождения",
+      "what_is_written": "село Мариевка, Новомергородский район, Кировоградская область",
+      "what_should_be": "село Мариевка, Новомиргородский район, Кировоградская область",
+      "source": {
+        "type": "fact_map",
+        "reference": "subject.birth_place: 'село Мариевка, Новомиргородский район, Кировоградская область'"
+      },
+      "fix_instruction": "В bio_data.personal исправить написание района с 'Новомергородский' на 'Новомиргородский' согласно fact_map.subject.birth_place",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_002",
+      "type": "omission",
+      "severity": "critical",
+      "chapter_id": "ch_01",
+      "location": "bio_data.family",
+      "what_is_written": "Отсутствуют племянники Толя, Коля, Витя из fact_map.persons",
+      "what_should_be": "Все родственники из fact_map.persons должны быть включены в bio_data.family",
+      "source": {
+        "type": "fact_map",
+        "reference": "person_auto_006 (Толя), person_auto_007 (Коля), person_auto_008 (Витя)"
+      },
+      "fix_instruction": "Добавить в bio_data.family недостающих племянников: Толя (сын тёти Поли, жил в Белгороде), Коля (сын тёти Поли, лётчик), Витя (сын тёти Поли, жил в Энгельсе)",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_003",
+      "type": "omission",
+      "severity": "critical",
+      "chapter_id": "ch_01",
+      "location": "bio_data.awards",
+      "what_is_written": "Отсутствуют годы для медалей: 25 лет победы, 30 лет победы, 50 лет ВС СССР",
+      "what_should_be": "Все награды должны иметь годы получения",
+      "source": {
+        "type": "fact_map",
+        "reference": "Из автобиографии: медаль 25 лет победы (1970), медаль 30 лет победы (1975), медаль 50 лет ВС СССР (1968)"
+      },
+      "fix_instruction": "Добавить годы для наград: медаль 25 лет победы в ВОВ (1970), медаль 30 лет победы в ВОВ (1975), медаль 50 лет вооруженных сил СССР (1968)",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_004",
+      "type": "distortion",
+      "severity": "major",
+      "chapter_id": "ch_02",
+      "location": "p_02_001, первое предложение",
+      "what_is_written": "село Мариевка Новомергородского района",
+      "what_should_be": "село Мариевка Новомиргородского района",
+      "source": {
+        "type": "fact_map",
+        "reference": "subject.birth_place и loc_001.name содержат 'Новомиргородский'"
+      },
+      "fix_instruction": "Исправить написание района с 'Новомергородский' на 'Новомиргородский' в p_02_001",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_005",
+      "type": "framing_distortion",
+      "severity": "major",
+      "chapter_id": "ch_04",
+      "location": "p_04_002, история с огурцами",
+      "what_is_written": "История с огурцами стала семейной легендой. Зять Владимир Маргось привёз из Молдавии целый чемодан огурцов — в хорошем чешском чемодане. Валентина недовольно прокомментировала это, что очень раздражило зятя. Позже Татьяна выкинула чемодан с испортившимися огурцами — жалко было и чемодан, и отношения.",
+      "what_should_be": "Эпизод уже описан в ch_02 как часть конфликта с зятем",
+      "source": {
+        "type": "fact_map",
+        "reference": "event_auto_016 - дублирование между главами нарушает правило 'один эпизод - одна глава'"
+      },
+      "fix_instruction": "Удалить дублирующий эпизод об огурцах из ch_04, так как конфликт с зятем уже описан в ch_02. Заменить другим интересным фактом или объединить с соседним абзацем",
+      "legitimate_deletion": true,
+      "evidence_in_other_chapter": {
+        "chapter_id": "ch_02",
+        "quote": "Однажды Валентина сделала ему замечание, когда он работал со счётчиком, сказав: «Папа так не делал никогда». Это очень не понравилось зятю и стало поворотной точкой в их отношениях."
+      }
+    }
+  ],
+  "warnings": [
+    {
+      "id": "warn_001",
+      "type": "possible_omission",
+      "chapter_id": "ch_02",
+      "description": "В тексте упоминается 'младший брат, который умер в детстве', но имя не указано",
+      "recommendation": "Рассмотреть добавление уточнения 'имя не сохранилось' для полноты информации"
+    },
+    {
+      "id": "warn_002",
+      "type": "style_concern",
+      "chapter_id": "ch_03",
+      "description": "Некоторые характеристики даны без прямых цитат из источников",
+      "recommendation": "Проверить, все ли оценочные суждения имеют основание в fact_map или transcript"
+    }
+  ],
+  "completeness_check": {
+    "total_facts_in_map": 156,
+    "facts_referenced_in_text": 95,
+    "facts_verified_ok": 92,
+    "facts_with_errors": 3,
+    "facts_missing_from_text": [
+      {
+        "fact_id": "person_auto_006",
+        "fact_description": "Племянник Толя (сын тёти Поли, жил в Белгороде)",
+        "was_in_facts_omitted": false,
+        "omission_justified": false,
+        "recommendation": "Включить в bio_data.family"
+      },
+      {
+        "fact_id": "person_auto_007",
+        "fact_description": "Племянник Коля (сын тёти Поли, лётчик)",
+        "was_in_facts_omitted": false,
+        "omission_justified": false,
+        "recommendation": "Включить в bio_data.family"
+      },
+      {
+        "fact_id": "person_auto_008",
+        "fact_description": "Племянник Витя (сын тёти Поли, жил в Энгельсе)",
+        "was_in_facts_omitted": false,
+        "omission_justified": false,
+        "recommendation": "Включить в bio_data.family"
+      }
+    ]
+  },
+  "regression_check": {
+    "performed": true,
+    "chapters_checked": [
+      "ch_01",
+      "ch_02"
+    ],
+    "issues_found": []
+  },
+  "summary": {
+    "critical_errors": 3,
+    "major_errors": 2,
+    "minor_errors": 0,
+    "warnings_count": 2,
+    "overall_assessment": "Обнаружены критические ошибки в ch_01 (неправильное написание района, отсутствие родственников и годов наград) и дублирование эпизода между главами. Требуется исправление перед передачей Литредактору."
+  },
+  "stats": {
+    "facts_checked": 95,
+    "facts_passed": 92,
+    "facts_failed": 3,
+    "coverage_percent": 60.9,
+    "needs_verification_flagged": 0
+  }
+}

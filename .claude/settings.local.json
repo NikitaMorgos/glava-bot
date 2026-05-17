@@ -27,7 +27,9 @@
       "Bash(xargs grep *)",
       "Bash(\"/c/Program Files/Google/Chrome/Application/chrome.exe\" --headless --disable-gpu --no-pdf-header-footer --print-to-pdf=\"C:\\\\Users\\\\user\\\\Downloads\\\\Результаты 1Q 2026 \\(2\\).pdf\" \"file:///C:/Users/user/Downloads/Результаты 1Q 2026 \\(2\\).html\")",
       "Bash(rm \"C:\\\\Users\\\\user\\\\Downloads\\\\Результаты 1Q 2026 \\(2\\)_converted.pdf\")",
-      "Read(//c/Users/user/Downloads/**)"
+      "Read(//c/Users/user/Downloads/**)",
+      "Bash(mkdir -p \"C:/Users/user/Dropbox/GLAVA/prompts_snapshot_20260515\")",
+      "Bash(cp 01_cleaner_v1.md 02_fact_extractor_v3.4.md 12_historian_v3.md 03_ghostwriter_v2.18.md 04_fact_checker_v2.13.md 05_literary_editor_v3.1.md 06_proofreader_v1.md 07_photo_editor_v1.md 08_layout_designer_v3.22.md 09_qa_layout_v1.md 13_cover_designer_v2.6.md 15_layout_art_director_v1.8.md 11_interview_architect_v4.1.md 16_completeness_auditor_v1.2.md \"C:/Users/user/Dropbox/GLAVA/prompts_snapshot_20260515/\")"
     ]
   }
 }

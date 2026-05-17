@@ -1,0 +1,158 @@
+{
+  "project_id": "karakulina_stage2_test",
+  "iteration": 1,
+  "verdict": "fail",
+  "errors": [
+    {
+      "id": "err_001",
+      "type": "distortion",
+      "severity": "major",
+      "chapter_id": "ch_01",
+      "location": "bio_data.awards, запись '1965-1975'",
+      "what_is_written": "медаль 20 лет победы в Великой Отечественной войне",
+      "what_should_be": "медаль 20 лет победы в ВОВ (1965), медаль 25 лет победы в ВОВ (1970), медаль 30 лет победы в ВОВ (1975) — три отдельные награды",
+      "source": {
+        "type": "transcript",
+        "reference": "int_001: 'Медаль 20 лет победы в Великой Отечественной войне, Медаль 25 лет победы в ВОВ, Медаль 30 лет победы в ВОВ'"
+      },
+      "fix_instruction": "Разделить на три отдельные записи: '1965' — 'медаль 20 лет победы в ВОВ', '1970' — 'медаль 25 лет победы в ВОВ', '1975' — 'медаль 30 лет победы в ВОВ'. Убрать некорректную запись '1965-1975'.",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_002",
+      "type": "distortion",
+      "severity": "major",
+      "chapter_id": "ch_01",
+      "location": "bio_data.awards, запись '1975'",
+      "what_is_written": "медаль 25 лет победы в ВОВ (1975), медаль 30 лет победы в ВОВ (1975)",
+      "what_should_be": "медаль 25 лет победы в ВОВ (1970), медаль 30 лет победы в ВОВ (1975)",
+      "source": {
+        "type": "fact_map",
+        "reference": "Юбилейные медали выдавались в годы юбилеев: 20 лет (1965), 25 лет (1970), 30 лет (1975)"
+      },
+      "fix_instruction": "Исправить год для медали 25 лет победы с 1975 на 1970. Медаль 30 лет победы оставить в 1975 году.",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_003",
+      "type": "distortion",
+      "severity": "major",
+      "chapter_id": "ch_01",
+      "location": "bio_data.family, запись о старшей сестре",
+      "what_is_written": "Старшая сестра: Мария",
+      "what_should_be": "Старшая сестра: Полина (тётя Поля)",
+      "source": {
+        "type": "fact_map",
+        "reference": "person_002: старшая сестра Полина забрала из детдома в Старобельск"
+      },
+      "fix_instruction": "Заменить 'Мария' на 'Полина (тётя Поля)' — именно Полина забрала Валентину из детдома. Мария — другая сестра.",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_004",
+      "type": "omission",
+      "severity": "major",
+      "chapter_id": "ch_01",
+      "location": "bio_data.family",
+      "what_is_written": "Отсутствует запись о сестре Марии",
+      "what_should_be": "Добавить запись: 'Старшая сестра: Мария, любила ходить по грибы и ягоды'",
+      "source": {
+        "type": "fact_map",
+        "reference": "person_005: Мария, старшая сестра, любила ходить по грибы и ягоды"
+      },
+      "fix_instruction": "Добавить в bio_data.family отдельную запись о сестре Марии с указанием её характерной особенности.",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_005",
+      "type": "distortion",
+      "severity": "major",
+      "chapter_id": "ch_02",
+      "location": "Абзац о сестре Полине",
+      "what_is_written": "старшая сестра Полина не оставила её в беде — забрала из детдома и увезла к себе в Старобельск",
+      "what_should_be": "старшая сестра Полина не оставила её в беде — забрала из детдома и увезла к себе в Старобельск",
+      "source": {
+        "type": "fact_map",
+        "reference": "event_003: сестра Полина забрала из детдома"
+      },
+      "fix_instruction": "Текст корректен, но нужно согласовать с исправлением в ch_01 — убедиться, что везде используется имя 'Полина', а не 'Мария'.",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_006",
+      "type": "framing_distortion",
+      "severity": "major",
+      "chapter_id": "ch_04",
+      "location": "Эпизод 'История с огурцами в чешском чемодане'",
+      "what_is_written": "Владимир Маргось, зять Валентины, однажды привёз из Молдавии чемодан огурцов в хорошем чешском чемодане. Валентина недовольно прокомментировала это, что очень раздражало зятя. Позже Татьяна выкинула чемодан с испортившимися огурцами — жалко было хороший заграничный чемодан.",
+      "what_should_be": "Эпизод уже описан в ch_02 в контексте отношений с зятем",
+      "source": {
+        "type": "fact_map",
+        "reference": "event_auto_016: тот же эпизод с огурцами"
+      },
+      "fix_instruction": "Удалить эпизод из ch_04 как дубль. Эпизод должен остаться только в одной главе — либо в ch_02 как часть хронологии отношений с зятем, либо в ch_04 как интересный факт, но не в обеих.",
+      "legitimate_deletion": true,
+      "evidence_in_other_chapter": {
+        "chapter_id": "ch_02",
+        "quote": "Однажды Валентина сделала ему замечание, когда он работал со счётчиком, сказав: «Папа так не делал никогда». Это очень не понравилось зятю и стало поворотной точкой в их отношениях."
+      }
+    }
+  ],
+  "warnings": [
+    {
+      "id": "warn_001",
+      "type": "possible_omission",
+      "chapter_id": "ch_01",
+      "description": "В bio_data.awards отсутствует медаль 50 лет вооружённых сил СССР (1968), которая упомянута в транскрипте",
+      "recommendation": "Добавить запись '1968' — 'медаль 50 лет вооружённых сил СССР' в bio_data.awards"
+    },
+    {
+      "id": "warn_002",
+      "type": "ambiguous_source",
+      "chapter_id": "ch_02",
+      "description": "Хронология пребывания в Германии неясна: в тексте указано 1946-1948, но в транскрипте упомянут период 1946-1961",
+      "recommendation": "Уточнить точные даты пребывания в Германии и Венгрии"
+    }
+  ],
+  "completeness_check": {
+    "total_facts_in_map": 156,
+    "facts_referenced_in_text": 95,
+    "facts_verified_ok": 89,
+    "facts_with_errors": 6,
+    "facts_missing_from_text": [
+      {
+        "fact_id": "person_005",
+        "fact_description": "Сестра Мария, любила ходить по грибы и ягоды",
+        "was_in_facts_omitted": false,
+        "omission_justified": false,
+        "recommendation": "Включить"
+      },
+      {
+        "fact_id": "character_trait_019",
+        "fact_description": "Вязание крючком",
+        "was_in_facts_omitted": true,
+        "omission_justified": true,
+        "recommendation": "Допустимо пропустить"
+      }
+    ]
+  },
+  "regression_check": {
+    "performed": false,
+    "chapters_checked": [],
+    "issues_found": []
+  },
+  "summary": {
+    "critical_errors": 0,
+    "major_errors": 6,
+    "minor_errors": 0,
+    "warnings_count": 2,
+    "overall_assessment": "Обнаружены значительные ошибки в структурированных данных ch_01 и дублирование контента между главами. Основные проблемы: неправильные даты юбилейных медалей, путаница с именами сестёр, дублирование эпизода об огурцах в ch_02 и ch_04."
+  },
+  "stats": {
+    "facts_checked": 95,
+    "facts_passed": 89,
+    "facts_failed": 6,
+    "coverage_percent": 61,
+    "needs_verification_flagged": 0
+  }
+}

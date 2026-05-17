@@ -1,0 +1,22 @@
+{
+  "chars_before": 13293,
+  "chars_after": 12990,
+  "ratio": 0.9772,
+  "threshold": 0.95,
+  "drop_chars": 303,
+  "legitimate_deletions_count": 1,
+  "legitimate_deletions": [
+    {
+      "id": "err_005",
+      "chapter_id": "ch_04",
+      "type": "framing_distortion",
+      "fix_instruction": "Удалить дублирующий эпизод об огурцах из ch_04, так как конфликт с зятем уже описан в ch_02. Заменить другим интересным ",
+      "evidence_in_other_chapter": {
+        "chapter_id": "ch_02",
+        "quote": "Однажды Валентина сделала ему замечание, когда он работал со счётчиком, сказав: «Папа так не делал никогда». Это очень не понравилось зятю и стало поворотной точкой в их отношениях."
+      }
+    }
+  ],
+  "evidence_failures": [],
+  "verdict": "ok_within_threshold"
+}
