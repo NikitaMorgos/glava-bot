@@ -1,0 +1,14 @@
+{
+  "issues": [
+    {
+      "chapter_id": "ch_03",
+      "anchor_id": "hospitality_cuisine",
+      "missing_heading": "Гостеприимство и кулинария",
+      "required": true,
+      "severity": "error",
+      "fallback_action": "warn"
+    }
+  ],
+  "errors_count": 1,
+  "warnings_count": 0
+}

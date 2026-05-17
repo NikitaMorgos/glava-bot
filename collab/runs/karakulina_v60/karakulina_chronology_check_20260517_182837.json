@@ -1,0 +1,15 @@
+{
+  "issues": [
+    {
+      "chapter_id": "ch_02",
+      "type": "person_mentioned_before_birth",
+      "person_name": "сын...",
+      "person_birth_year_min": 1948,
+      "event_year_range": "1946",
+      "snippet": "С 1946 по 1948 год семья жила в Германии. Валентина не работала. В 1948 году вернулись в СССР, в Вышний Волочёк, где родился сын Валерий.",
+      "severity": "error"
+    }
+  ],
+  "errors_count": 1,
+  "warnings_count": 0
+}
