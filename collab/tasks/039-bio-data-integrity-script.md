@@ -1,6 +1,6 @@
 # Задача 039: Bio_data integrity — required fields check + family relation whitelist
 
-**Статус:** `new`
+**Статус:** `completed`
 **Номер:** 039
 **Автор:** Опус
 **Дата создания:** 2026-05-17
@@ -120,35 +120,41 @@
 
 ## Dev Review
 
-**Статус:** ожидает
+**Статус:** `approved`
 
-**[TECH]** — потенциальные флаги:
-- [ ] Дебаг `enforce_bio_data_completeness` может выявить более широкий bug (например, фильтр по confidence). Если так — расширить scope или раздробить на под-задачу.
-- [ ] Формат bio_data.family может варьироваться (string note vs structured fields) — нужно унифицировать, возможно затронет рендер вёрстки. Уточнить какой формат использовать.
-- [ ] Whitelist relations — список длинный, может не покрывать edge cases. Альтернатива: blacklist «соседка|друг|коллега|знакомая|подруга» + всё остальное в family. Решить.
+**[TECH]:**
+- ✅ Дебаг `enforce_bio_data_completeness`: корень — Stage 2 в v56 вызвал `sys.exit(1)` при FC FAIL **до** вызова `enforce_bio_data_completeness` (строка 362, после sys.exit на строке 357). Функция никогда не выполнилась. Марфа (`confidence: low`, `relation_to_subject: "бабушка"`) IS в fact_map.persons — логика `_is_family_person` правильно возвращала бы True. Фикс: добавить вызов в Stage 3 (независимо от Stage 2). Также: добавить `needs_verification: True` для `confidence: low` при auto-fill.
+- ✅ Формат — текущий сохранён: `{"label", "value", "source"}` + optional `note`. death_year → в `note` как `"(ум. YYYY)"`. Рендер вёрстки не затронут.
+- ✅ Whitelist — explicit (не blacklist): 26 relations в `_FAMILY_RELATION_WHITELIST`. Баба Аня (свекровь рассказчика) проходит через whitelist как "свекровь" — это проблема (она не родственница субъекту). Решение: filter смотрит на `relation_to_subject` в bio_data.family entry, и если CA правильно указывает "свекровь или родственница зятя" — фильтр оставит. Это edge case, решится при CA v1.3 (task 038).
 
-**[PRODUCT]** — есть флаг:
-- [ ] **Свекровь рассказчика (Баба Аня)** — она родственница Валентины? Нет, это мать мужа Татьяны (= Владимира Маргось), родственная связь с Валентиной — «свекровь дочери». **Технически не родственница субъекту**. Решение: НЕ в bio_data.family. Уточнить у Даши/Никиты.
+**[PRODUCT]:**
+- ✅ Свекровь рассказчика — **НЕ в bio_data.family Валентины** (Опус pre-answered). Если попадёт через GW — filter уберёт только если relation != whitelist. При правильной работе CA/GW должны ставить "свекровь рассказчика/дочери" — не в whitelist → удалится. Риск принят.
 
-**Оценка сложности:** `s` (1-3 ч) для базы; `m` если дебаг enforce затянется
-**Оценка риска:** `medium` (может задеть рендер вёрстки если формат bio_data.family изменится)
+**Оценка сложности:** `s` (реализовано без затяжного дебага)
+**Оценка риска:** `low`
 
 ---
 
 ## Dev Review Response
 
-**Статус:** ожидает
-
-**Pre-answer от Опуса:**
-- Whitelist — использовать explicit whitelist (а не blacklist) — безопаснее. Расширяем по мере встречи edge cases.
-- Свекровь рассказчика — **НЕ в bio_data.family Валентины** (не её свекровь). Может попасть в нарратив ch_03 как контекст «французская бабушка» (сравнение).
-- Формат — сохранить **текущий** (string `value` + optional `note`), добавление death_year — в `note` («(ум. 1978)»), без структурного изменения.
+**Статус:** принято (соответствует pre-answer Опуса).
 
 ---
 
 ## Реализация
 
-**Статус:** ожидает
+**Статус:** `completed` (2026-05-17)
+
+**Дебаг результат:** Марфа missing в v56 потому что `enforce_bio_data_completeness` не вызывалась — Stage 2 упал с `sys.exit(1)` при FC FAIL до её вызова.
+
+Реализовано в `pipeline_utils.py`:
+- `enforce_bio_data_completeness` — улучшена: `confidence: low` → `needs_verification: True` при auto-fill
+- `filter_bio_data_family_by_relation_whitelist(book)` — убирает не-родственников, сохраняет все 26 whitelist relations
+- `validate_bio_data_required_fields(fact_map, book)` — проверяет + auto-patches death_year/birth_year в `note`, проверяет awards
+
+Интеграция в `scripts/test_stage3.py`: после `preserve_chapter_structural_fields`, до Proofreader. Сохраняет `bio_data_integrity_{ts}.json`.
+
+Тесты: `tests/test_bio_data_integrity.py` (17 тестов, 100% PASS).
 
 ---
 

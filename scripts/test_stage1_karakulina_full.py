@@ -18,8 +18,11 @@ from pipeline_utils import (
     load_config, run_cleaner, run_fact_extractor, save_run_manifest,
     clean_fact_map_for_downstream, run_completeness_auditor,
     apply_completeness_enrichment, merge_fact_maps,
+    enrich_timeline_with_subject_age, normalize_fact_map_topo,
 )
 from scripts.normalize_named_entities import normalize_named_entities
+
+GAZETEER_PATH = ROOT / "collab" / "context" / "gazeteer_karakulina.json"
 
 CHARACTER_NAME   = "Каракулина Валентина Ивановна"
 NARRATOR_NAME    = "Татьяна Каракулина"
@@ -256,6 +259,33 @@ def main():
         fm_path = out_dir / f"karakulina_fact_map_full_{ts}.json"
         fm_path.write_text(json.dumps(fact_map, ensure_ascii=False, indent=2), encoding="utf-8")
         print(f"[SAVED] {fm_path.name}")
+
+    # Task 042: subject_age enrichment
+    print(f"\n>>> ШАГ 2.5: SUBJECT AGE ENRICHMENT (task 042)")
+    fact_map = enrich_timeline_with_subject_age(fact_map)
+
+    # Task 040: gazeteer topo normalize на fact_map
+    gazeteer: dict = {}
+    if GAZETEER_PATH.exists():
+        with open(GAZETEER_PATH, encoding="utf-8") as _gf:
+            gazeteer = json.load(_gf)
+        print(f"[TOPO-NORMALIZE] gazeteer загружен: {GAZETEER_PATH.name} "
+              f"({len(gazeteer.get('topo_corrections', {}))} замен)")
+        fact_map, _topo_reps = normalize_fact_map_topo(fact_map, gazeteer)
+        topo_norm_path = out_dir / f"karakulina_topo_normalize_factmap_{ts}.json"
+        topo_norm_path.write_text(
+            json.dumps({"replacements": _topo_reps, "gazeteer_version": gazeteer.get("version", "?")},
+                       ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+        print(f"[SAVED] {topo_norm_path.name}")
+    else:
+        print(f"[TOPO-NORMALIZE] gazeteer не найден ({GAZETEER_PATH}) — пропускаем.")
+
+    # Сохраняем enriched fact_map (до CA) для диагностики
+    fm_enriched_path = out_dir / f"karakulina_fact_map_enriched_{ts}.json"
+    fm_enriched_path.write_text(json.dumps(fact_map, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"[SAVED] {fm_enriched_path.name} (enriched fact_map: subject_age + topo normalize)")
 
     # Completeness Auditor (агент 16)
     print(f"\n>>> ШАГ 3: COMPLETENESS AUDITOR {cfg.get('completeness_auditor', {}).get('prompt_file', 'N/A')}")

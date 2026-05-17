@@ -220,13 +220,340 @@ def enforce_bio_data_completeness(book_final: dict, fact_map: dict, strict: bool
             person.get("relation_to_subject") or person.get("relation") or ""
         ).strip()
         label = relation if relation and relation not in _UNKNOWN_RELATIONS else "родственник"
-        family.append({"label": label, "value": name, "source": "auto-filled"})
+        confidence = (person.get("confidence") or "").lower()
+        entry: dict = {"label": label, "value": name, "source": "auto-filled"}
+        if confidence == "low":
+            entry["needs_verification"] = True
+        family.append(entry)
 
     print(
         f"[BIO-COMPLETENESS] auto-filled {len(missing)} персон в bio_data.family: "
         f"{missing_names}"
     )
     return book_final
+
+
+# ─────────────────────────────────────────────────────────────────
+# Task 042: Subject age enrichment
+# ─────────────────────────────────────────────────────────────────
+
+def enrich_timeline_with_subject_age(fact_map: dict) -> dict:
+    """Task 042: добавить subject_age к каждому event в fact_map.timeline.
+
+    subject_age = year − birth_year.
+    Для precision="decade": mid-decade (1960 → 1965).
+    Идемпотентна: пропускает уже обогащённые events.
+    Персоны с отсутствующим birth_year → предупреждение, fact_map без изменений.
+    """
+    import copy
+    fact_map = copy.deepcopy(fact_map)
+
+    birth_year = (fact_map.get("subject") or {}).get("birth_year")
+    if birth_year is None:
+        print("[AGE-ENRICH] subject.birth_year отсутствует — пропускаем обогащение возрастом.")
+        return fact_map
+
+    timeline = fact_map.get("timeline", [])
+    enriched = 0
+    skipped = 0
+
+    for event in timeline:
+        if "subject_age" in event:
+            continue  # idempotent
+
+        date = event.get("date") or {}
+        year = date.get("year")
+        precision = (date.get("precision") or "").lower()
+
+        if year is None:
+            skipped += 1
+            continue
+
+        if precision == "decade":
+            event_year = year + 5  # середина декады: 1960 → 1965
+        else:
+            event_year = year
+
+        event["subject_age"] = event_year - birth_year
+        enriched += 1
+
+    print(
+        f"[AGE-ENRICH] subject_age добавлен для {enriched} events; "
+        f"пропущено {skipped} (год не задан)."
+    )
+    return fact_map
+
+
+# ─────────────────────────────────────────────────────────────────
+# Task 040: ASR normalize gazeteer
+# ─────────────────────────────────────────────────────────────────
+
+_TOPO_SKIP_FIELDS = frozenset({
+    "source_quote", "evidence", "transcript_quote", "asr_variants", "reasoning",
+})
+
+
+def normalize_topo_via_gazeteer(text: str, gazeteer: dict) -> tuple:
+    """Task 040: нормализация ASR-искажений топонимов по словарю gazeteer.
+
+    Case-preserving, word-boundary aware, idempotent.
+    Не трогает source_quote / evidence / transcript_quote (внешняя логика caller'а).
+    Returns (normalized_text, list_of_replacements).
+    """
+    topo_corrections = gazeteer.get("topo_corrections", {})
+    replacements = []
+
+    for wrong, correct in topo_corrections.items():
+        pattern = r'\b' + re.escape(wrong) + r'\b'
+
+        def _make_replacer(c: str):
+            def _replacer(m: re.Match) -> str:
+                orig = m.group(0)
+                if orig.isupper():
+                    return c.upper()
+                if orig[0].isupper():
+                    return c[0].upper() + c[1:]
+                return c.lower()
+            return _replacer
+
+        new_text, count = re.subn(pattern, _make_replacer(correct), text, flags=re.IGNORECASE)
+        if count > 0:
+            replacements.append({"wrong": wrong, "correct": correct, "count": count})
+            text = new_text
+
+    return text, replacements
+
+
+def _normalize_topo_value(value: object, gazeteer: dict, acc: list) -> object:
+    """Рекурсивно нормализует строки в dict/list, пропуская protected поля."""
+    if isinstance(value, str):
+        normalized, reps = normalize_topo_via_gazeteer(value, gazeteer)
+        acc.extend(reps)
+        return normalized
+    if isinstance(value, list):
+        return [_normalize_topo_value(item, gazeteer, acc) for item in value]
+    if isinstance(value, dict):
+        return {
+            k: (v if k in _TOPO_SKIP_FIELDS else _normalize_topo_value(v, gazeteer, acc))
+            for k, v in value.items()
+        }
+    return value
+
+
+def normalize_fact_map_topo(fact_map: dict, gazeteer: dict) -> tuple:
+    """Task 040: применить gazeteer normalize к fact_map (кроме protected полей).
+
+    Returns (normalized_fact_map, replacements_list).
+    """
+    import copy
+    fact_map = copy.deepcopy(fact_map)
+    replacements: list = []
+
+    for key in list(fact_map.keys()):
+        if key in _TOPO_SKIP_FIELDS:
+            continue
+        fact_map[key] = _normalize_topo_value(fact_map[key], gazeteer, replacements)
+
+    total = sum(r["count"] for r in replacements)
+    print(f"[TOPO-NORMALIZE fact_map] {len(replacements)} видов замен, {total} вхождений.")
+    return fact_map, replacements
+
+
+def normalize_book_topo(book: dict, gazeteer: dict) -> tuple:
+    """Task 040: применить gazeteer normalize к book JSON (кроме protected полей).
+
+    Returns (normalized_book, replacements_list).
+    """
+    import copy
+    book = copy.deepcopy(book)
+    replacements: list = []
+
+    for key in list(book.keys()):
+        if key in _TOPO_SKIP_FIELDS:
+            continue
+        book[key] = _normalize_topo_value(book[key], gazeteer, replacements)
+
+    total = sum(r["count"] for r in replacements)
+    print(f"[TOPO-NORMALIZE book] {len(replacements)} видов замен, {total} вхождений.")
+    return book, replacements
+
+
+# ─────────────────────────────────────────────────────────────────
+# Task 039: Bio_data integrity — required fields + relation whitelist
+# ─────────────────────────────────────────────────────────────────
+
+_FAMILY_RELATION_WHITELIST = frozenset({
+    "отец", "мать", "муж", "жена", "сын", "дочь",
+    "брат", "сестра", "бабушка", "дедушка",
+    "прабабушка", "прадедушка",
+    "внук", "внучка",
+    "тётя", "дядя",
+    "племянник", "племянница",
+    "золовка", "свекровь", "свёкор", "свёкр",
+    "тесть", "тёща",
+    "зять", "невестка",
+    "кум", "кума",
+    "сват", "сватья",
+})
+
+
+def _relation_in_whitelist(relation: str) -> bool:
+    rel = relation.strip().lower()
+    for r in _FAMILY_RELATION_WHITELIST:
+        if r in rel:
+            return True
+    return False
+
+
+def filter_bio_data_family_by_relation_whitelist(book: dict) -> tuple:
+    """Task 039: удалить из bio_data.family персон с relation НЕ в whitelist.
+
+    Whitelist включает все стандартные родственные отношения.
+    Соседи, подруги, коллеги, знакомые — удаляются.
+    Returns (patched_book, removed_entries_list).
+    """
+    import copy
+    book = copy.deepcopy(book)
+    removed = []
+
+    chapters = book.get("chapters", [])
+    ch01 = next((ch for ch in chapters if ch.get("id") == "ch_01"), None)
+    if ch01 is None:
+        return book, removed
+
+    bio_data = ch01.get("bio_data") or {}
+    family = bio_data.get("family")
+    if not family:
+        return book, removed
+
+    kept = []
+    for entry in family:
+        label = (entry.get("label") or entry.get("relation") or "").strip()
+        if not label or _relation_in_whitelist(label):
+            kept.append(entry)
+        else:
+            removed.append({
+                "label": label,
+                "value": entry.get("value", "?"),
+                "source": entry.get("source", ""),
+            })
+            print(
+                f"[BIO-WHITELIST] Убрана не-родственник из family: "
+                f"«{label}» ({entry.get('value', '?')})"
+            )
+
+    bio_data["family"] = kept
+    ch01["bio_data"] = bio_data
+    print(f"[BIO-WHITELIST] Оставлено {len(kept)} из {len(family)}, удалено {len(removed)}.")
+    return book, removed
+
+
+def validate_bio_data_required_fields(fact_map: dict, book: dict) -> tuple:
+    """Task 039: проверить и авто-патч bio_data.family required fields.
+
+    Проверяет:
+    - Для spouse / детей в fact_map.persons: если есть death_year / birth_year,
+      они должны быть в bio_data.family (в note-поле).
+    - bio_data.awards должны покрывать ключевые звания из fact_map.
+
+    Auto-patch: добавляет missing years в note ("(ум. YYYY)" или "(р. YYYY)").
+    Returns (patched_book, issues_list).
+    """
+    import copy
+    book = copy.deepcopy(book)
+    issues: list = []
+
+    chapters = book.get("chapters", [])
+    ch01 = next((ch for ch in chapters if ch.get("id") == "ch_01"), None)
+    if ch01 is None:
+        return book, issues
+
+    bio_data = ch01.get("bio_data") or {}
+    family = bio_data.get("family", [])
+
+    persons = fact_map.get("persons", [])
+    for person in persons:
+        name = (person.get("name") or "").strip()
+        relation = (
+            person.get("relation_to_subject") or person.get("relation") or ""
+        ).strip().lower()
+        if not name or not relation:
+            continue
+
+        death_year = person.get("death_year")
+        birth_year = person.get("birth_year")
+        if death_year is None and birth_year is None:
+            continue
+
+        matching = [
+            e for e in family
+            if name.lower() in (e.get("value") or "").lower()
+            or (e.get("value") or "").lower() in name.lower()
+        ]
+
+        for entry in matching:
+            entry_note = entry.get("note") or ""
+            entry_value = entry.get("value") or ""
+            combined = entry_note + " " + entry_value
+
+            if death_year and str(death_year) not in combined:
+                issues.append({
+                    "type": "missing_field",
+                    "entity": name,
+                    "relation": relation,
+                    "field": "death_year",
+                    "expected": death_year,
+                    "source": person.get("id", "?"),
+                    "action": "auto-patched",
+                })
+                entry["note"] = (entry_note + f" (ум. {death_year})").strip()
+                print(f"[BIO-INTEGRITY] {name}: добавлен death_year {death_year} в note.")
+
+            if birth_year and str(birth_year) not in combined:
+                if relation in {"сын", "дочь", "муж", "жена"}:
+                    issues.append({
+                        "type": "missing_field",
+                        "entity": name,
+                        "relation": relation,
+                        "field": "birth_year",
+                        "expected": birth_year,
+                        "source": person.get("id", "?"),
+                        "action": "auto-patched",
+                    })
+                    entry["note"] = (entry.get("note") or "" + f" (р. {birth_year})").strip()
+                    print(f"[BIO-INTEGRITY] {name}: добавлен birth_year {birth_year} в note.")
+
+    # Проверка bio_data.awards
+    fm_award_events = [
+        e for e in fact_map.get("timeline", [])
+        if "удар" in (e.get("title") or "").lower()
+        or "award" in (e.get("event_type") or e.get("type") or "").lower()
+    ]
+    bio_awards_raw = bio_data.get("awards", [])
+    bio_awards_text = " ".join(
+        (a.get("value") or a) if isinstance(a, dict) else str(a)
+        for a in bio_awards_raw
+    ).lower()
+
+    for event in fm_award_events:
+        title = event.get("title", "")
+        if title and len(title) > 5 and title.lower() not in bio_awards_text:
+            issues.append({
+                "type": "missing_award",
+                "entity": title,
+                "source": event.get("id", "fact_map"),
+            })
+            print(f"[BIO-INTEGRITY] Звание «{title}» из fact_map отсутствует в bio_data.awards.")
+
+    bio_data["family"] = family
+    ch01["bio_data"] = bio_data
+
+    patched_count = len([i for i in issues if i.get("action") == "auto-patched"])
+    print(
+        f"[BIO-INTEGRITY] validate_required_fields: {len(issues)} проблем, "
+        f"{patched_count} авто-патчем."
+    )
+    return book, issues
 
 
 def load_config() -> dict:

@@ -44,6 +44,10 @@ from pipeline_utils import (
     save_run_manifest,
     run_proofreader_per_chapter,
     preserve_chapter_structural_fields,
+    enforce_bio_data_completeness,
+    filter_bio_data_family_by_relation_whitelist,
+    validate_bio_data_required_fields,
+    normalize_book_topo,
 )
 from pipeline_quality_gates import (
     run_stage3_text_gates, run_stage3_text_gates_variant_b,
@@ -580,6 +584,25 @@ async def main():
         print(f"[STRUCTURAL_PRESERVE] ✅ LE вернул все структурные поля. "
               f"{preserve_path.name}")
 
+    # ── Task 039: Bio_data integrity pipeline ───────────────────────
+    # enforce_bio_data_completeness (recall: добавить недостающих из fact_map)
+    book_after_le = enforce_bio_data_completeness(book_after_le, fact_map, strict=False)
+    # filter (precision: убрать не-родственников из bio_data.family)
+    book_after_le, bio_filtered = filter_bio_data_family_by_relation_whitelist(book_after_le)
+    # validate + auto-patch required fields (death_year, birth_year, awards)
+    book_after_le, bio_issues = validate_bio_data_required_fields(fact_map, book_after_le)
+    bio_integrity_report = {
+        "filtered_non_family": bio_filtered,
+        "required_field_issues": bio_issues,
+        "issues_count": len(bio_issues),
+        "filtered_count": len(bio_filtered),
+    }
+    bio_integrity_path = out_dir / f"{args.prefix}_bio_data_integrity_{ts}.json"
+    with open(bio_integrity_path, "w", encoding="utf-8") as f:
+        json.dump(bio_integrity_report, f, ensure_ascii=False, indent=2)
+    print(f"[SAVED] bio_data_integrity: {bio_integrity_path.name} "
+          f"(filtered={len(bio_filtered)}, issues={len(bio_issues)})")
+
     book_le_path = out_dir / f"{args.prefix}_book_stage3_liteditor_{ts}.json"
     with open(book_le_path, "w", encoding="utf-8") as f:
         json.dump({"book_draft": book_after_le}, f, ensure_ascii=False, indent=2)
@@ -670,6 +693,28 @@ async def main():
     if ch01_filled:
         print("[PATCH] ch_01 была пустой — добавлен минимальный биографический блок из fact_map")
         pr_result["chapters"] = book_final["chapters"]
+    # ── Task 040: Gazeteer topo normalize на финальном book ─────────
+    _gazeteer_path = ROOT / "collab" / "context" / f"gazeteer_{args.prefix}.json"
+    topo_report_path = out_dir / f"{args.prefix}_topo_normalize_report_{ts}.json"
+    if _gazeteer_path.exists():
+        import json as _json_mod
+        with open(_gazeteer_path, encoding="utf-8") as _gf:
+            _gazeteer = _json_mod.load(_gf)
+        book_final, _topo_reps = normalize_book_topo(book_final, _gazeteer)
+        with open(topo_report_path, "w", encoding="utf-8") as f:
+            json.dump(
+                {"replacements": _topo_reps,
+                 "total_replacements": sum(r["count"] for r in _topo_reps),
+                 "gazeteer_version": _gazeteer.get("version", "?")},
+                f, ensure_ascii=False, indent=2,
+            )
+        print(f"[SAVED] topo_normalize_report: {topo_report_path.name} "
+              f"({len(_topo_reps)} видов замен)")
+    else:
+        print(f"[TOPO-NORMALIZE] gazeteer не найден ({_gazeteer_path}) — пропускаем.")
+        with open(topo_report_path, "w", encoding="utf-8") as f:
+            json.dump({"replacements": [], "note": "gazeteer not found"}, f, ensure_ascii=False)
+
     final_path = out_dir / f"{args.prefix}_book_FINAL_stage3_{ts}.json"
     with open(final_path, "w", encoding="utf-8") as f:
         json.dump({"book_final": book_final}, f, ensure_ascii=False, indent=2)
@@ -731,6 +776,8 @@ async def main():
             "ready_for_layout": pr_result.get("summary", {}).get("clean_text_ready"),
             "text_gates_path": str(stage3_gate_path),
             "text_gates_passed": stage3_report.get("passed"),
+            "bio_data_integrity_path": str(bio_integrity_path),
+            "topo_normalize_report_path": str(topo_report_path),
         },
         notes={"strict_gates_enabled": not args.no_strict_gates, "variant_b": args.variant_b},
         checkpoints=fact_checkpoint_meta,
