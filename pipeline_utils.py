@@ -3938,7 +3938,7 @@ def validate_narrative_stop_phrases(book: dict, config: dict) -> dict:
         is_epilogue = "epilogue" in ch_id.lower()
         paras = chapter.get("paragraphs", [])
         texts = [p.get("text", "") for p in paras] if paras else [
-            t.strip() for t in re.split(r"\n\n+", chapter.get("content", "")) if t.strip()
+            t.strip() for t in re.split(r"\n\n+", chapter.get("content") or "") if t.strip()
         ]
         for pat_entry in patterns:
             category = pat_entry.get("category", "?")
