@@ -2,6 +2,19 @@
 import json, sys, os, glob
 from datetime import datetime
 sys.path.insert(0, '/opt/glava')
+
+# Load .env if ANTHROPIC_API_KEY not set
+if not os.environ.get('ANTHROPIC_API_KEY'):
+    try:
+        with open('/opt/glava/.env', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#') and '=' in line:
+                    k, v = line.split('=', 1)
+                    os.environ.setdefault(k.strip(), v.strip())
+        print('Loaded .env')
+    except FileNotFoundError:
+        pass
 from pipeline_utils import (
     load_config, load_prompt, parse_pin_list_from_markdown, audit_revision_diff
 )
