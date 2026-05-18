@@ -466,15 +466,38 @@ Same as v56:
 - Mixed picture: structural improvements (timeline anchors 7/7, family clean, manifest tracking) + content regressions (Власьево, разные отцы, Маня, и т.д.)
 - **PASS Ворот 1: НЕ достигнут. Требуется v61 sprint.**
 
-### План v61 sprint (минорные fixes — не новые классы)
+### План v61 sprint — ИЗМЕНЁН (Вариант 1: Hybrid rollback, Никитино решение 2026-05-17)
 
-| Task | Что | Сложность |
-|---|---|---|
-| 052b | Contributors из pin-list v3 (Татьяна/Никита/Даша/Кужба полные имена) | `xs` |
-| 051b | Temporal place names multi-rename history (Тверь→Калинин 1931→Тверь 1990) | `s` |
-| 046c | Epilogue rewrite regex с intermediate words | `xs` |
-| 045d | Chapter sections anchors передать в GW Stage 2 input | `xs` |
-| GW v2.22 | Усилить ПРАВИЛА 6/8 + ЗАПРЕТ 12 anti-regression на v59 эпизоды | `s` |
+**Стратегия:** branch off v59 + cherry-pick ТОЛЬКО проверенные scripted fixes из v60. Никитины 3 features отложены в backlog после RP-1, добавляем **по одному**.
+
+**Baseline для diff v61: v59** (изменено с v56 — Никитино решение «v59 — самый удачный бенч»).
+
+#### Cherry-pick из v60 (8 scripted fixes)
+
+| Task | Что |
+|---|---|
+| 044c | `remove_excluded_bio_data_family` |
+| 045b | `validate_timeline_anchors` markdown parser |
+| 046b | Stage 3 runner reorder |
+| 049b | `_extract_prompt_version` + manifest tracking |
+| 050b | `NARRATIVE_CHAPTERS` excludes epilogue |
+| 040b | Gazeteer морфо падежи |
+| 043c | epilogue_stop_phrases v2 + 4 категории |
+| 048b | chronology check grandchildren |
+
+#### Plus 1 минор fix
+- **046c** — epilogue rewrite regex с intermediate words («путь от X ИЗ ... до Y»)
+
+#### НЕ берём
+- **GW v2.21** → откат к v2.20
+- task 051 (temporal — wrong direction)
+- task 052 (contributors — галлюцинация)
+- task 045c (chapter sections — config not in GW input)
+
+#### Backlog после v61 PASS (по одному за раз!)
+- Contributors как чистый скрипт
+- Temporal place names с multi-rename history
+- Chapter sections (GW prompt-bump только эта 1 правка)
 
 Финансово v61: $2-3.
 
@@ -517,8 +540,81 @@ Generic:
 
 ---
 
+---
+
+## v61 (PENDING — Вариант 1 Hybrid rollback)
+
+**Branch + commit:** TBD (Курсор делает branch off v59 `26ce5cc` + cherry-pick из v60 `1e13dec`)
+**Status:** pending — Курсор реализует v61 sprint
+
+### Components
+- Cleaner: v1, FE: v3.4, Historian: v3
+- CA: v1.4 (как в v59 — pin-list bypass strict)
+- **GW: v2.20** (откат от v2.21; battle-tested в v59)
+- FC: v2.13, LE: v3.1, PR: v1
+
+### Configs (per subject)
+- known_episodes_karakulina.md: v3 (без изменений)
+- **gazeteer_karakulina.json: v2** (cherry-pick 040b морфо)
+- relation_overrides_karakulina.json: v1
+- timeline_anchors_karakulina.json: v1
+- discourse_markers_karakulina.json: v1
+- persona_notes_karakulina.json: v1
+- ❌ chapter_sections_anchors_karakulina.json — НЕ применяется (config not in GW input — backlog)
+- ❌ temporal_place_names_karakulina.json — НЕ применяется (broken — backlog)
+- ❌ contributors_karakulina.json — НЕ применяется (галлюцинация — backlog)
+
+### Configs (generic)
+- **epilogue_stop_phrases.json: v2** (cherry-pick 043c — generic stop phrases расширены)
+- **epilogue_rewrite_mapping.json: v2 + 046c fix** (intermediate words в pattern)
+- narrative_stop_phrases.json: v1
+
+### Pipeline code (cherry-pick из v60)
+- `pipeline_utils.py`:
+  - + `remove_excluded_bio_data_family` (044c)
+  - + `validate_timeline_anchors` markdown parser (045b)
+  - + `validate_chronological_consistency` grandchildren (048b)
+  - + `validate_pin_list_depth` NARRATIVE_CHAPTERS excludes epilogue (050b)
+  - + `normalize_topo_via_gazeteer` морфо (040b)
+  - ❌ НЕ применяется: `validate_temporal_place_names` / `enforce_temporal_place_names` (051 broken)
+  - ❌ НЕ применяется: `validate_chapter_sections_anchors` (045c not effective)
+- `scripts/test_stage3.py`: reorder auto_rewrite ДО validators (046b)
+- `scripts/test_stage2_pipeline.py`: + `_extract_prompt_version` manifest tracking (049b)
+- `scripts/build_gate1_full_text.py`: ❌ append_contributors_section НЕ применяется (052 broken)
+
+### Inputs
+- Transcripts: TR1+TR2 split-extract
+- Pin-list: yes (v3)
+- `--known-episodes=collab/context/known_episodes_karakulina.md`
+- **Diff baseline: v59** (Никитино решение «v59 — самый удачный бенч»)
+
+### Outputs (PENDING)
+- Expected:
+  - Content quality v59 восстановлен (Власьево / разные отцы / Маня / French бабушка / детский сад / огурцы развёрнуто / шуба / Хрущёвское сокращение)
+  - timeline anchors 7/7 ✅ (cherry-pick 045b)
+  - bio_data.family clean (баба Аня / тётя Маша excluded) ✅ (cherry-pick 044c)
+  - epilogue без «путь от сироты ИЗ X до Y» ✅ (046c regex fix)
+  - epilogue stop phrases ≤1 error ✅ (cherry-pick 043c + 046c)
+  - chronology check grandchildren ✅ (cherry-pick 048b)
+  - Manifest показывает `ghostwriter_version: v2.20` (cherry-pick 049b)
+  - Pin-list depth scope только narrative ✅ (cherry-pick 050b)
+  - Сафронова/Сафронове ✅ (cherry-pick 040b)
+
+### Verification — PENDING
+
+### Notes
+- v61 sprint = Вариант 1 Hybrid rollback (Никитино решение)
+- Backlog после v61 PASS:
+  - Contributors (чистый скрипт, без GW промпт)
+  - Temporal place names (multi-rename history)
+  - Chapter sections (GW prompt-bump только эта 1 правка)
+- Lesson learned: Правило 6 архитектора (prompt engineering discipline) — не bundle 3+ правил в GW
+
+---
+
 ## История версий этого документа
 
 | Версия | Дата | Изменение | Кто |
 |---|---|---|---|
 | v1 | 2026-05-17 | Создание ретроспективно для v54-v60 после Никитиного вопроса «ведёшь ли четкий реестр?» — признан пробел в дисциплине, восстановлено из git log + tasks + памяти | Опус |
+| v2 | 2026-05-17 | + v60 outputs/verification (НЕ PASS, 5 блокеров); + план v61 (Вариант 1 Hybrid rollback после Никитиного решения); baseline для diff изменён v56→v59 | Опус |

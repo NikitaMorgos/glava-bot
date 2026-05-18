@@ -179,6 +179,66 @@
 - Этап 2 (Proofreader scripted, task 030)
 - Phase B механика (корректировки от клиента)
 
+### v61 sprint — Hybrid rollback (Вариант 1) после v60 регрессии
+
+**Решение:** v60 регрессировал content (5+ Никитиных favorites потеряны) из-за **GW v2.21 cognitive overhead** (3 новых ПРАВИЛА одним bump). Diagnostic: Stage 1 (CA v1.4) данные сохранил — GW не использовал.
+
+**Стратегия:** branch off v59 + cherry-pick ТОЛЬКО проверенные scripted fixes из v60. Никитины 3 features (contributors / temporal / chapter sections) — отложены в backlog после RP-1, добавляем **по одному**.
+
+**Baseline для diff v61: v59** (не v56). Никитино решение «v59 — самый удачный бенч».
+
+#### Cherry-pick из v60 (8 scripted fixes, все `low` risk)
+
+| Task | Что |
+|---|---|
+| 044c | `remove_excluded_bio_data_family` |
+| 045b | `validate_timeline_anchors` markdown parser |
+| 046b | Stage 3 runner reorder (auto_rewrite ДО validators) |
+| 049b | `_extract_prompt_version` + manifest tracking |
+| 050b | `NARRATIVE_CHAPTERS` excludes epilogue |
+| 040b | Gazeteer морфо падежи |
+| 043c | epilogue_stop_phrases v2 + 4 категории stop |
+| 048b | chronology check grandchildren (parent_birth + 15) |
+
+#### Plus 1 минор fix
+
+| Task | Что |
+|---|---|
+| [046c](../tasks/046c-epilogue-regex-intermediate-words.md) | Epilogue rewrite regex с intermediate words («путь от сироты ИЗ X до Y») |
+
+#### НЕ берём из v60
+
+- **GW v2.21 промпт** — откат к v2.20 (battle-tested в v59)
+- task 051 temporal_place_names (wrong direction, multi-rename history not supported)
+- task 052 contributors (галлюцинация «Наталья» + только 2/4 контрибьюторов)
+- task 045c chapter_sections_anchors (config не передан в GW input)
+
+#### Отложено в backlog после v61 PASS (по одному за раз!)
+
+| Feature | Реализация | Когда |
+|---|---|---|
+| Contributors раздел | Чистый скрипт из pin-list v3 (без GW v2.X+1) | После RP-1 |
+| Temporal place naming | Скрипт с multi-rename history (Тверь→Калинин 1931→Тверь 1990) | После RP-1 |
+| Chapter sections (ch_03 кулинария) | GW prompt-bump **только эта 1 правка** + config в Stage 2 system context | После RP-1 |
+
+**Финансово v61:** 1 прогон $2-3.
+
+**Ожидаемый результат v61:**
+- ✅ Content quality v59 восстановлен (Власьево, разные отцы, Маня, French бабушка, детский сад, ...)
+- ✅ Все 8 scripted fixes v60 работают (timeline anchors 7/7, family clean, manifest tracking, depth scope, морфо)
+- ✅ Epilogue без «путь от сироты ИЗ X до Y» (task 046c regex)
+- ✅ Baseline v59 для diff
+- ⚠️ Contributors / temporal / кулинария ch_03 — пока **отсутствуют** (backlog после RP-1)
+
+### Принципы команды (зафиксированы 2026-05-17, постоянно держим в голове)
+
+1. **Лес/деревья** — не устранять конкретные баги в ущерб общей картине; класс ≠ симптом
+2. **Универсальность** — не Каракулино-специфика, а универсальное решение для любого subject
+3. **Класс багов, не симптом** — лечим класс целиком, а не конкретный эпизод
+4. **Скрипт-first** — максимум в скрипты, минимум в промпты
+5. **Логирование** — каждое изменение промптов / спеков / прогонов фиксируется (run_registry + Правило 5)
+6. **Медленные шаги без откатов** — лучше медленно, но без регрессий; backlog features добавляем по одному, отдельные verify-прогоны (Правило 6)
+
 Batch 2-fix финансово: 1 прогон v59 покрывает все 9 (~$2-3).
 
 ### Batch 3 — backlog после v59
