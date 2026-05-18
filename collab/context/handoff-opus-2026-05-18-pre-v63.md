@@ -137,13 +137,19 @@
 | 7 | **043e-2** | Epilogue overcrowded quotes detection (>5 cited phrases в epilogue) | scripted warning |
 | 8 | **044g** | Bio_data.family format consistency: «Родство: Имя (note)» формат | scripted post-process |
 | 9 | **052d** | Contributors simplify: только ФИО + родство | scripted |
-| **10** | **GW v2.21 rule 12** | **«Narrative depth + voice»**: pin-list events ≥3 sentences + ≥5 discourse markers ch_02 + ≥3 ch_03/ch_04 | **GW prompt-bump (1 rule)** |
+| **10** | **GW v2.21 rule 12** | **«Narrative depth + voice + объём»**: explicit target в промпте: «Целевой объём book content **≥20K chars** (ch_02 ≥8K / ch_03 ≥4K / ch_04 ≥2.5K / epilogue 800-1500). Не сжимай narrative. Pin-list events развёрнуто (≥3 sentences с конкретикой). Сохраняй discourse markers рассказчика (≥5 в ch_02, ≥3 в ch_03/ch_04 «как вспоминает дочь / по словам Татьяны»).» | **GW prompt-bump (1 rule, шире scope)** |
 
-**Per Правило 6:** GW rule 12 — **одно** новое правило, шире scope (2 metrics: depth + voice). Не bundle 2+ независимых rules.
+**Per Правило 6:** GW rule 12 — **одно** новое правило, шире scope (3 metrics: depth + voice + объём). Не bundle 2+ независимых rules.
 
-**v63 — combined sprint** (Опция X). Альтернатива — Опция Y split v63a (9 scripted) → v63b (1 GW rule) = 2 прогона $4-6.
+**Никитино решение 2026-05-18: Опция X** (combined sprint).
 
-**Финансово:** Опция X $2-3, Опция Y $4-6.
+**Финансово:** $2-3 один прогон v63.
+
+**Drivers объёма в v63:**
+- GW rule 12 — direct target ≥20K (главный driver)
+- 9 scripted fixes — все либо **flag-only** (chronology, awkward formulation, Class 6 pафос), либо **format-only** (render bug, bio_data format), либо **add small content** (Contributors simplify ничего не сокращает). НЕ сокращают объём.
+
+**Risk объёма:** stochastic LLM variance может дать <20K даже с rule 12 (v62a показала 17K vs v61 20K без изменений). Mitigation: explicit chars target в промпте + monitor. **Если v63 даст <20K** — backlog v64 = GW revision loop (volume-based revision).
 
 ---
 
