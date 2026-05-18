@@ -542,10 +542,10 @@ Generic:
 
 ---
 
-## v61 (PENDING — Вариант 1 Hybrid rollback)
+## v61 (2026-05-18) — Вариант 1 Hybrid rollback — verified, близко к PASS
 
-**Branch + commit:** TBD (Курсор делает branch off v59 `26ce5cc` + cherry-pick из v60 `1e13dec`)
-**Status:** pending — Курсор реализует v61 sprint
+**Branch + commit:** `feat/v61-hybrid-rollback` @ `a8809aa`; артефакты `runs/karakulina-v61-artifacts` @ `df6f3f3`
+**Status:** verified, БЛИЗКО К PASS Ворот 1 (3 серьёзных + 2 минор блокера для v62 sprint)
 
 ### Components
 - Cleaner: v1, FE: v3.4, Historian: v3
@@ -588,27 +588,60 @@ Generic:
 - `--known-episodes=collab/context/known_episodes_karakulina.md`
 - **Diff baseline: v59** (Никитино решение «v59 — самый удачный бенч»)
 
-### Outputs (PENDING)
-- Expected:
-  - Content quality v59 восстановлен (Власьево / разные отцы / Маня / French бабушка / детский сад / огурцы развёрнуто / шуба / Хрущёвское сокращение)
-  - timeline anchors 7/7 ✅ (cherry-pick 045b)
-  - bio_data.family clean (баба Аня / тётя Маша excluded) ✅ (cherry-pick 044c)
-  - epilogue без «путь от сироты ИЗ X до Y» ✅ (046c regex fix)
-  - epilogue stop phrases ≤1 error ✅ (cherry-pick 043c + 046c)
-  - chronology check grandchildren ✅ (cherry-pick 048b)
-  - Manifest показывает `ghostwriter_version: v2.20` (cherry-pick 049b)
-  - Pin-list depth scope только narrative ✅ (cherry-pick 050b)
-  - Сафронова/Сафронове ✅ (cherry-pick 040b)
+### Outputs
+- Run artifacts: `runs/karakulina-v61-artifacts` @ `df6f3f3` (10 файлов)
+- text_FULL.md: **20 272 chars** (рекорд) — ch_01=3245 / ch_02=8359 / ch_03=5358 / ch_04=2634 / epilogue=676
+- bio_data.family: 22 (Марфа отсутствует ⚠️; Мария есть)
+- callouts: 9 (vs v59 ?)
+- historical_notes: 2 field + 0 inline ⚠️
+- Pin-list: full 14, partial 8, skipped 45 / 67
+- Stage 2 manifest: `ghostwriter_version: v2.20` ✅
+- FC verdict: PASS iter2
 
-### Verification — PENDING
+### Verification — БЛИЗКО К PASS, 5 точечных блокеров
+
+**Восстановлено vs v60 (контент v59):**
+- ✅ Власьево / Воскресенская: 1+2 hits
+- ✅ Детский сад № 95: 1
+- ✅ Разные отцы у В/П: 1
+- ✅ Полина (включая «забрала из детдома»): 3
+- ✅ Мария (старшая сестра): 1
+- ✅ Французская бабушка (3 hits — comparison)
+- ✅ Огурцы развёрнуто, чемодан, Молдавия
+- ✅ Карты + домино
+- ✅ Шуба + тяжеловат
+- ✅ Сервиз + 120 рубл
+- ✅ Сафроново (морфо падежи task 040b)
+- ✅ Калинин в нарративе, 0 Тверь
+- ✅ Почерк, Синтетик, мельхиор
+- ✅ Племянницы Римма + Зина в family
+
+**Все 8 cherry-pick fixes работают:**
+- 044c family clean (баба Аня excluded ✅)
+- 045b timeline anchors 7/7 ✅
+- 046b runner order ✅
+- 049b manifest tracking (GW v2.20 зафиксирован) ✅
+- 050b NARRATIVE_CHAPTERS depth scope ✅
+- 040b gazeteer морфо (0 «Сапон» в тексте) ✅
+- 043c epilogue stop phrases 0 errors ✅
+- 046c epilogue intermediate words ✅
+- 048b chronology grandchildren — детектор реализован, не сработал (GW не написал галлюцинацию)
+
+**5 блокеров для PASS:**
+1. ❌ Серьёзно: **Бабушка Марфа отсутствует** в bio_data.family (регрессия vs v59 render) — task 044b required persons cherry-pick неполный
+2. ❌ Серьёзно: **Render bug `?: ?`** в bio_data.family для тёти Маши / бабы Ани / Нинваны (override entries показываются без имени)
+3. ❌ Серьёзно: **«родилась в 1956 году в Твери»** в paspart Татьяны (должно быть «в Калинине»). Task 051 не cherry-picked, paspart-only fix нужен
+4. ⚠️ Минор: Внук Никита / Внучка Даша БЕЗ note «сын/дочь Татьяны» (потеряно из v59)
+5. ⚠️ Минор: **Discourse markers validator = 0** при реально 10 hits ручного grep + 13 mentions Татьяны (validator overstrict, требует точное имя из rapporteurs config)
 
 ### Notes
-- v61 sprint = Вариант 1 Hybrid rollback (Никитино решение)
-- Backlog после v61 PASS:
-  - Contributors (чистый скрипт, без GW промпт)
-  - Temporal place names (multi-rename history)
-  - Chapter sections (GW prompt-bump только эта 1 правка)
-- Lesson learned: Правило 6 архитектора (prompt engineering discipline) — не bundle 3+ правил в GW
+- v61 sprint = Вариант 1 Hybrid rollback (Никитино решение) — успешно восстановлено 90% content v59 + scripted fixes v60
+- v60 GW v2.21 cognitive overhead подтверждён: v61 GW v2.20 (откат) восстановил content
+- **Решение по PASS Ворот 1 — ждёт Никитино go:**
+  - Опция А: PASS RC (3 минор блокера в build_gate1/bio_data validators — отдельная волна без re-run)
+  - Опция Б: **v62 sprint** 5 точечных fixes ($2-3) → чистый PASS — **моя рекомендация**
+  - Опция В: отложить точечные fixes на backlog после RP-1
+- Lessons learned зафиксированы: Правило 5 (run_registry), Правило 6 (prompt engineering discipline), Universality check построчно
 
 ---
 
