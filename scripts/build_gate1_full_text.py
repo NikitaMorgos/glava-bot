@@ -149,23 +149,43 @@ def _format_awards(awards: list | None) -> list[str]:
 
 
 def _format_family(family: list | None) -> list[str]:
-    """bio_data.family → Markdown."""
+    """bio_data.family → Markdown.
+
+    Supports both entry formats:
+    - pipeline_utils.enforce_bio_data_completeness: {label, value, note, source}
+    - pipeline_utils.enforce_bio_data_required_persons: {name, relation, note}
+
+    v62a-044d: skip entries marked in_bio_data_family=False (override entries);
+    skip entries where both name/value are empty or label/relation is "?".
+    """
     if not family or not isinstance(family, list):
         return []
     lines = []
+    seen = set()
     for f in family:
         if isinstance(f, str):
             lines.append(_bullet(f))
             continue
         if not isinstance(f, dict):
             continue
-        relation = f.get("relation") or f.get("role") or ""
-        name = f.get("name") or ""
+        if f.get("in_bio_data_family") is False:
+            continue
+        # Support both field-name conventions
+        relation = f.get("label") or f.get("relation") or f.get("role") or ""
+        name = f.get("value") or f.get("name") or ""
         note = f.get("note") or f.get("detail")
-        relation_label = relation.capitalize() if relation else "Родственник"
-        if name and note:
+        if not name or not name.strip():
+            continue
+        if relation.strip() in ("?", "", "-"):
+            continue
+        relation_label = relation.strip().capitalize() if relation.strip() else "Родственник"
+        dedup_key = (relation_label.lower(), name.lower())
+        if dedup_key in seen:
+            continue
+        seen.add(dedup_key)
+        if note:
             lines.append(_bullet(f"**{relation_label}** — {name}  _({note})_"))
-        elif name:
+        else:
             lines.append(_bullet(f"**{relation_label}** — {name}"))
     return _md_section("Семья", lines)
 
@@ -219,9 +239,16 @@ def _render_ch01_bio(book: dict, fact_map: dict | None) -> list[str]:
     out.extend(_format_timeline(timeline))
 
     # Если есть content (старый формат) — добавляем как note
+    # v62a-044d: strip duplicate "## Основные даты жизни" heading from content
     content = (ch01.get("content") or "").strip()
     if content:
-        out.extend(["### Дополнительный текст ch_01", "", content, ""])
+        # Remove a leading ## heading that duplicates the section title already rendered above
+        import re as _re
+        content_clean = _re.sub(
+            r'^##\s+(?:Основные\s+даты\s+жизни|[^\n]+)\n*', '', content, count=1
+        ).strip()
+        if content_clean:
+            out.extend(["### Дополнительный текст ch_01", "", content_clean, ""])
 
     return out
 
@@ -352,7 +379,7 @@ def _build_summary(book: dict, reports: dict | None = None) -> list[str]:
         "# Сводка по книге",
         "",
         "## Объём",
-        f"- **Total chars:** {total_chars:,} (target 14-18K)".replace(",", " "),
+        f"- **Total chars:** {total_chars:,} (target 20K+)".replace(",", " "),
         *per_chapter,
         "",
         "## Структура",
@@ -417,7 +444,106 @@ def _build_summary(book: dict, reports: dict | None = None) -> list[str]:
 
 
 # ──────────────────────────────────────────────────────────────────
-# Main
+# Task 052c — Contributors section (v62a scripted, pin-list source)
+# ──────────────────────────────────────────────────────────────────
+
+
+def _parse_contributors_from_pin_list(pin_list_path: str | None) -> list[dict]:
+    """Parse Contributors table from known_episodes_<subject>.md.
+
+    Reads the markdown table under '## Contributors' section.
+    Returns list of {full_name, relation_to_subject, interview_role, notes}.
+    """
+    if not pin_list_path:
+        return []
+    import re as _re
+    path = Path(pin_list_path)
+    if not path.exists():
+        print(f"[CONTRIBUTORS] ⚠️ pin-list not found: {pin_list_path}", file=sys.stderr)
+        return []
+
+    text = path.read_text(encoding="utf-8")
+    # Find the Contributors section
+    sec_match = _re.search(
+        r'##\s+Contributors.*?\n(.*?)(?=\n##\s|\Z)', text, _re.DOTALL | _re.IGNORECASE
+    )
+    if not sec_match:
+        print("[CONTRIBUTORS] ⚠️ Contributors section not found in pin-list", file=sys.stderr)
+        return []
+
+    section_text = sec_match.group(1)
+    # Parse markdown table rows: | col1 | col2 | ... |
+    rows = []
+    header_seen = False
+    col_names = []
+    for line in section_text.splitlines():
+        line = line.strip()
+        if not line.startswith("|"):
+            continue
+        cells = [c.strip() for c in line.strip("|").split("|")]
+        if not header_seen:
+            # First row = header
+            col_names = [c.lower().replace(" ", "_") for c in cells]
+            header_seen = True
+            continue
+        if all(set(c) <= set("|-: ") for c in cells):
+            continue  # separator row
+        if len(cells) < 2:
+            continue
+        row = {}
+        for i, name in enumerate(col_names):
+            row[name] = cells[i] if i < len(cells) else ""
+        rows.append(row)
+
+    contributors = []
+    for row in rows:
+        full_name = row.get("full_name") or row.get("name") or ""
+        if not full_name or full_name == "?":
+            continue
+        contributors.append({
+            "full_name": full_name,
+            "relation_to_subject": row.get("relation_to_subject") or row.get("relation") or "",
+            "interview_role": row.get("interview_role") or row.get("role") or "",
+            "notes": row.get("notes") or "",
+        })
+    return contributors
+
+
+def append_contributors_section(lines: list[str], pin_list_path: str | None) -> list[str]:
+    """Task 052c: append 'Кто работал над этой Главой' section from pin-list Contributors.
+
+    Pure scripted — no GW involvement. Reads pin-list, renders clean section.
+    Returns new list of lines with section appended.
+    """
+    contributors = _parse_contributors_from_pin_list(pin_list_path)
+    if not contributors:
+        print("[CONTRIBUTORS] ⚠️ No contributors found — section skipped", file=sys.stderr)
+        return lines
+
+    section = [
+        "",
+        "---",
+        "",
+        "## Кто работал над этой Главой",
+        "",
+    ]
+    for c in contributors:
+        name = c["full_name"]
+        parts = []
+        if c["relation_to_subject"]:
+            parts.append(c["relation_to_subject"])
+        if c["interview_role"]:
+            parts.append(c["interview_role"])
+        detail = ", ".join(parts) if parts else ""
+        if detail:
+            section.append(f"- **{name}** — {detail}")
+        else:
+            section.append(f"- **{name}**")
+    section.append("")
+    print(f"[CONTRIBUTORS] Appended {len(contributors)} contributors from pin-list")
+    return lines + section
+
+
 # ──────────────────────────────────────────────────────────────────
 
 
@@ -436,13 +562,15 @@ def _unwrap_book(raw: Any) -> dict:
 
 
 def build_gate1_text(book: dict, fact_map: dict | None = None,
-                     reports: dict | None = None) -> str:
+                     reports: dict | None = None,
+                     pin_list_path: str | None = None) -> str:
     """Task 047: book_FINAL → Markdown с расширенной сводкой.
 
     Args:
         book: распакованный book_FINAL (через _unwrap_book)
         fact_map: опционально для fallback bio_data
         reports: dict с отчётами для сводки (pin_coverage_json, style_checks_json, etc.)
+        pin_list_path: путь к known_episodes_<subject>.md для Contributors секции (task 052c)
 
     Returns:
         Markdown текст готовый к чтению.
@@ -468,6 +596,9 @@ def build_gate1_text(book: dict, fact_map: dict | None = None,
         lines.extend(_render_narrative_chapter(ch, callouts, notes))
         lines.append("---")
         lines.append("")
+
+    # 4. Contributors section (task 052c — scripted from pin-list)
+    lines = append_contributors_section(lines, pin_list_path)
 
     return "\n".join(lines)
 
@@ -496,6 +627,10 @@ def main():
     parser.add_argument(
         "--prefix", default=None,
         help="Task 047: filename prefix to auto-locate reports in --reports-dir"
+    )
+    parser.add_argument(
+        "--pin-list", default=None,
+        help="Task 052c: path to known_episodes_<subject>.md for Contributors section"
     )
     args = parser.parse_args()
 
@@ -542,7 +677,7 @@ def main():
                 except Exception as e:
                     print(f"[WARN] could not load {key}: {e}", file=sys.stderr)
 
-    md = build_gate1_text(book, fact_map, reports)
+    md = build_gate1_text(book, fact_map, reports, pin_list_path=args.pin_list)
 
     out_path = Path(args.output)
     out_path.parent.mkdir(parents=True, exist_ok=True)

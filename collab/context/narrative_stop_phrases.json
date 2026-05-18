@@ -1,6 +1,6 @@
 {
-  "version": "v2",
-  "description": "Generic categorical patterns for narrative anti-triggers (task 043b). Universal — no subject-specific content.",
+  "version": "v3",
+  "description": "Generic categorical patterns for narrative anti-triggers (task 043b/043d). Universal — no subject-specific content.",
   "generic_categorical_patterns": [
     {
       "category": "metaphor_bonds",
@@ -37,8 +37,26 @@
     {
       "category": "person_of_their_time",
       "pattern": "человек\\w{0,4}\\s+своего\\s+времени"
+    },
+    {
+      "category": "speciality_defined_life",
+      "pattern": "(специальност\\w+|профессия|обучение)\\s+.{0,30}(определ\\w+|стал\\w+).{0,20}(всю|её|его|их)?\\s*(дальнейш\\w+|жизн\\w+|карьер\\w+|судьб\\w+)",
+      "scope": ["epilogue", "ch_02"],
+      "severity": "warning",
+      "rationale": "v62a-043d Class 1: акушерство ≠ «определило всю жизнь»; образование ≠ профессия"
+    },
+    {
+      "category": "helping_at_important_moments",
+      "pattern": "(помога\\w+|оказыва\\w+\\s+помощ\\w+)\\s+\\w+\\s+в\\s+(самы\\w+\\s+)?важн\\w+\\s+момент\\w+\\s+\\w+\\s+жизн\\w+",
+      "scope": ["ch_02", "ch_03"],
+      "severity": "error",
+      "rationale": "v62a-043d Class 1: в TR нет данных о работе акушеркой; pattern = confabulation"
     }
   ],
   "scoped_to_epilogue_only": ["epilogue_path_X_to_Y", "filled_with_X", "passed_to_generations", "person_of_their_time"],
-  "scoped_to_narrative_and_epilogue": ["metaphor_bonds", "lifedefining_speciality", "could_X_any_Y_but_actually_Z"]
+  "scoped_to_narrative_and_epilogue": ["metaphor_bonds", "lifedefining_speciality", "could_X_any_Y_but_actually_Z"],
+  "scoped_to_chapters": {
+    "speciality_defined_life": ["epilogue", "ch_02"],
+    "helping_at_important_moments": ["ch_02", "ch_03"]
+  }
 }

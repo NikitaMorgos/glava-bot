@@ -1,8 +1,8 @@
 {
   "subject_id": "karakulina",
-  "version": "v2",
+  "version": "v3",
   "created": "2026-05-17",
-  "description": "Gazeteer канонических топонимов для Каракулиной. v2 (v61-040b): добавлены морфологические варианты для Сафроново.",
+  "description": "Gazeteer канонических топонимов для Каракулиной. v3 (v62a-051c): добавлен temporal_place_names для paspart-only rename (Тверь↔Калинин).",
   "topo_corrections": {
     "Новомергородский": "Новомиргородский",
     "Новомергородского": "Новомиргородского",
@@ -22,5 +22,15 @@
     "Сапонову": "Сафронову",
     "Мариевке": "Мариевке"
   },
-  "notes": "v2 (v61-040b): добавлены падежные формы Сапоново/* → Сафроново/*. Краткая форма «Сапон» не добавлена — substring-замена опасна (например «Сапоновы» как фамилия)."
+  "temporal_place_names": [
+    {
+      "modern_name": "Тверь",
+      "historical_name": "Калинин",
+      "historical_from_year": 1931,
+      "historical_to_year": 1990,
+      "note": "Тверь переименована в Калинин в 1931, обратно в Тверь в 1990. В 1956 (рождение Татьяны) — Калинин.",
+      "apply_to_paspart_only": true
+    }
+  ],
+  "notes": "v2 (v61-040b): добавлены падежные формы Сапоново/* → Сафроново/*. v3 (v62a-051c): добавлен temporal_place_names для paspart-only применения (bio_data.family + bio_data.timeline). НЕ применять к narrative chapters."
 }

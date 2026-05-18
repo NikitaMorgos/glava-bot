@@ -1,6 +1,6 @@
 {
   "subject_id": "karakulina",
-  "version": "v1",
+  "version": "v2",
   "description": "Task 044: required notes for bio_data.family entries; enforced post-LE to prevent GW note volatility (Class 2)",
   "required_notes": [
     {
@@ -57,6 +57,20 @@
       "note": "дочь тёти Шуры",
       "note_keywords": ["дочь тёти Шуры", "тётя Шура"],
       "replacement_policy": "replace_if_missing"
+    },
+    {
+      "label_match": "Никита",
+      "note": "сын Татьяны",
+      "note_keywords": ["сын Татьяны"],
+      "replacement_policy": "replace_if_missing",
+      "rationale": "v62a-044f: note lost in v61 cherry-pick; required for family context clarity"
+    },
+    {
+      "label_match": "Даша",
+      "note": "дочь Татьяны",
+      "note_keywords": ["дочь Татьяны"],
+      "replacement_policy": "replace_if_missing",
+      "rationale": "v62a-044f: note lost in v61 cherry-pick; required for family context clarity"
     }
   ],
   "separate_entries_required": [
