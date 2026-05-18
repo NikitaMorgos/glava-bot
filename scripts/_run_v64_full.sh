@@ -25,6 +25,11 @@
 set -e
 cd /opt/glava
 
+# Load environment variables from .env
+set -a
+source .env
+set +a
+
 ARTIFACTS_DIR="collab/runs/karakulina-v64-artifacts"
 
 echo "=== v64: git pull ==="
