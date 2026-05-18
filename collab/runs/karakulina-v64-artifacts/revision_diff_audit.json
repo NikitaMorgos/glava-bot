@@ -1,0 +1,19 @@
+{
+  "hints_count": 1,
+  "applied": [],
+  "skipped": [
+    {
+      "hint_id": "h_001",
+      "reason": "not_in_writing_notes"
+    }
+  ],
+  "unauthorized_changes": [
+    {
+      "chapter_id": "ch_02",
+      "diff_snippet": "В те годы жёны военных, как правило, не работали — считалось, что их главная задача воспитание детей и ведение домашнего хозяйства."
+    }
+  ],
+  "unauthorized_changes_count": 1,
+  "writing_notes_proof": [],
+  "revision_failed": false
+}

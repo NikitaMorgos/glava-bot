@@ -1,0 +1,44 @@
+{
+  "epilogue_stop_phrases": {
+    "issues": [
+      {
+        "phrase": "жизнь налаживалась",
+        "chapter_id": "ch_02",
+        "severity": "warning"
+      },
+      {
+        "phrase": "интересно, что",
+        "chapter_id": "ch_02",
+        "severity": "warning"
+      },
+      {
+        "phrase": "история обычной советской женщины",
+        "chapter_id": "epilogue",
+        "severity": "error"
+      },
+      {
+        "phrase": "прошла через испытания XX века",
+        "chapter_id": "epilogue",
+        "severity": "error"
+      },
+      {
+        "phrase": "сохранила достоинство",
+        "chapter_id": "epilogue",
+        "severity": "error"
+      }
+    ],
+    "errors_count": 3,
+    "warnings_count": 2
+  },
+  "awkward_formulation": {
+    "issues": [],
+    "issues_count": 0
+  },
+  "errors_count": 3,
+  "warnings_count": 2,
+  "narrative_stop_phrases": {
+    "issues": [],
+    "errors_count": 0,
+    "warnings_count": 0
+  }
+}

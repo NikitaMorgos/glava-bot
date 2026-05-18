@@ -1,0 +1,92 @@
+{
+  "chronology_check": {
+    "issues": [
+      {
+        "chapter_id": "ch_02",
+        "type": "named_child_before_birth",
+        "child_stem": "валери",
+        "child_birth_year": 1948,
+        "event_year": 1946,
+        "snippet": "Жёны советских военных в послевоенной Германии имели право жить с мужьями — это была привилегия, недоступная гражданским семьям. В Германии жили с 1946 по 1948 год. В те годы жёны военных, как правило",
+        "severity": "error"
+      }
+    ],
+    "errors_count": 1,
+    "warnings_count": 0
+  },
+  "narrative_truism": {
+    "issues": [],
+    "errors_count": 0,
+    "warnings_count": 0
+  },
+  "narrative_stop_phrases": {
+    "issues": [],
+    "errors_count": 0,
+    "warnings_count": 0
+  },
+  "personal_historical_voice": {
+    "markers_found_per_chapter": {
+      "ch_02": 0,
+      "ch_03": 0,
+      "ch_04": 0,
+      "epilogue": 0
+    },
+    "thresholds": {
+      "ch_02": 3,
+      "ch_03": 2,
+      "ch_04": 1,
+      "epilogue": 0
+    },
+    "issues": [
+      {
+        "type": "personal_historical_voice",
+        "category": "below_threshold",
+        "chapter_id": "ch_02",
+        "found": 0,
+        "expected": 3,
+        "severity": "warning",
+        "suggestion": "Добавить ≥3 personal-historical voice markers в ch_02. Examples: 'как [rapporteur] помнит, в [период]...', 'тогда у нас в семье...', 'когда [rapporteur] был ребёнком, ...'. Использовать narrator_voice_anchors из pin-list.",
+        "reason": "Class 18 personal-historical voice — рассказчик помещает личную память в исторический контекст"
+      },
+      {
+        "type": "personal_historical_voice",
+        "category": "below_threshold",
+        "chapter_id": "ch_03",
+        "found": 0,
+        "expected": 2,
+        "severity": "warning",
+        "suggestion": "Добавить ≥2 personal-historical voice markers в ch_03. Examples: 'как [rapporteur] помнит, в [период]...', 'тогда у нас в семье...', 'когда [rapporteur] был ребёнком, ...'. Использовать narrator_voice_anchors из pin-list.",
+        "reason": "Class 18 personal-historical voice — рассказчик помещает личную память в исторический контекст"
+      },
+      {
+        "type": "personal_historical_voice",
+        "category": "below_threshold",
+        "chapter_id": "ch_04",
+        "found": 0,
+        "expected": 1,
+        "severity": "warning",
+        "suggestion": "Добавить ≥1 personal-historical voice markers в ch_04. Examples: 'как [rapporteur] помнит, в [период]...', 'тогда у нас в семье...', 'когда [rapporteur] был ребёнком, ...'. Использовать narrator_voice_anchors из pin-list.",
+        "reason": "Class 18 personal-historical voice — рассказчик помещает личную память в исторический контекст"
+      }
+    ],
+    "errors_count": 0,
+    "warnings_count": 3
+  },
+  "epilogue_quote_density": {
+    "ok": false,
+    "quote_count": 1,
+    "total_sentences": 11,
+    "generic_pct": 0.909,
+    "issues": [
+      {
+        "type": "epilogue_too_many_generic",
+        "generic_pct": 0.91,
+        "severity": "warning"
+      }
+    ]
+  },
+  "entity_substitution": {
+    "ok": true,
+    "issues": []
+  }
+}
