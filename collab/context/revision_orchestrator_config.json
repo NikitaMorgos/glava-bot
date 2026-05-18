@@ -1,0 +1,14 @@
+{
+  "version": "v1",
+  "description": "Config for revision_hints orchestrator (task 049f). Generic — controls revision loop behavior. Subject content comes from validator outputs per-run.",
+  "_updated": "2026-05-18",
+  "max_revision_passes": 1,
+  "stop_on_revision_failed": true,
+  "audit_unauthorized_changes_warn_threshold": 5,
+  "skip_validators": [],
+  "severity_filter": {
+    "must_apply_levels": ["error"],
+    "optional_levels": ["warning"]
+  },
+  "_notes": "Max 1 revision pass in v64. If revision_failed=true → stop, Opus review. unauthorized_changes > 5 → warning logged. v65 backlog: max 2 passes."
+}

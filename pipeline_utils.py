@@ -3964,6 +3964,23 @@ def validate_narrative_stop_phrases(book: dict, config: dict) -> dict:
                         issues.append({"chapter_id": ch_id, "category": category,
                                        "severity": sev, "match_type": "pair", "snippet": para[:150]})
                 continue
+            # pattern_options: any match in the list triggers a flag (043f-2)
+            pattern_options = pat_entry.get("pattern_options")
+            if pattern_options:
+                compiled_options = []
+                for p in pattern_options:
+                    try:
+                        compiled_options.append(re.compile(p, re.IGNORECASE))
+                    except re.error:
+                        pass
+                sev_override = pat_entry.get("severity")
+                for para in texts:
+                    matched = any(rx.search(para) for rx in compiled_options)
+                    if matched:
+                        sev = sev_override or ("error" if is_epilogue else "warning")
+                        issues.append({"chapter_id": ch_id, "category": category,
+                                       "severity": sev, "match_type": "pattern_options", "snippet": para[:150]})
+                continue
             pattern = pat_entry.get("pattern") or pat_entry.get("pattern_regex")
             if not pattern:
                 continue
@@ -3971,9 +3988,10 @@ def validate_narrative_stop_phrases(book: dict, config: dict) -> dict:
                 pat_re = re.compile(pattern, re.IGNORECASE)
             except re.error:
                 continue
+            sev_override = pat_entry.get("severity")
             for para in texts:
                 if pat_re.search(para):
-                    sev = "error" if is_epilogue else "warning"
+                    sev = sev_override or ("error" if is_epilogue else "warning")
                     issues.append({"chapter_id": ch_id, "category": category,
                                    "severity": sev, "snippet": para[:150]})
 
@@ -4978,3 +4996,488 @@ def validate_bio_data_family_format(bio_data: dict, config: dict = None) -> dict
     else:
         print("[BIO-FAMILY-FORMAT] OK — all family entries valid.")
     return {"ok": ok, "issues": issues, "malformed_count": malformed}
+
+
+# ============================================================
+# v64 VALIDATORS — task 043h, 046e, 049f (revision orchestrator)
+# 046d (historical notes enrichment)
+# ============================================================
+
+def validate_narrative_truism(book: dict, config: dict | None = None) -> dict:
+    """Detect Class 17 narrative truism patterns in narrative chapters (task 043h).
+
+    Checks: obvious_responsibility_constatation, everything_fell_on_shoulders,
+    accepted_calmly, required_strength_and_character, was_not_easy_in_those_years,
+    this_required_dedication, had_to_show_X.
+
+    Returns dict with issues list, errors_count, warnings_count.
+    """
+    import re, json, os
+
+    if config is None:
+        cfg_path = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            "collab", "context", "narrative_stop_phrases.json",
+        )
+        if not os.path.exists(cfg_path):
+            cfg_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                    "narrative_stop_phrases.json")
+        try:
+            with open(cfg_path, encoding="utf-8") as f:
+                config = json.load(f)
+        except Exception:
+            config = {}
+
+    truism_cat_names = set(
+        config.get("narrative_truism", {}).get("category_names", [
+            "obvious_responsibility_constatation", "everything_fell_on_shoulders",
+            "accepted_calmly", "required_strength_and_character",
+            "was_not_easy_in_those_years", "this_required_dedication", "had_to_show_X",
+        ])
+    )
+
+    all_patterns = {
+        p["category"]: p
+        for p in config.get("generic_categorical_patterns", [])
+        if p.get("category") in truism_cat_names and "pattern" in p
+    }
+
+    def _is_quoted(sentence: str) -> bool:
+        return bool(re.search(r'«[^»]*' + re.escape(sentence[:20]), sentence) or
+                    sentence.strip().startswith('«'))
+
+    issues = []
+    for ch in book.get("chapters", []):
+        chid = ch.get("id")
+        if chid == "ch_01":
+            continue
+        content = ch.get("content", "") or ""
+        sentences = re.split(r'(?<=[.!?])\s+', content)
+        for sent in sentences:
+            if _is_quoted(sent):
+                continue
+            for cat_name, pat_obj in all_patterns.items():
+                pat = pat_obj.get("pattern", "")
+                if not pat:
+                    continue
+                if re.search(pat, sent, re.IGNORECASE):
+                    issues.append({
+                        "type": "narrative_truism",
+                        "category": cat_name,
+                        "chapter_id": chid,
+                        "snippet": sent.strip(),
+                        "severity": pat_obj.get("severity", "warning"),
+                        "suggestion": pat_obj.get("suggestion", "delete_sentence"),
+                        "reason": pat_obj.get("reason", "narrative truism"),
+                    })
+
+    return {
+        "issues": issues,
+        "errors_count": sum(1 for i in issues if i["severity"] == "error"),
+        "warnings_count": sum(1 for i in issues if i["severity"] == "warning"),
+    }
+
+
+def validate_personal_historical_voice(
+    book: dict,
+    config: dict | None = None,
+    pin_list_anchors: list | None = None,
+) -> dict:
+    """Detect Class 18 personal-historical voice patterns in narrative chapters (task 046e).
+
+    Returns dict with markers_found_per_chapter, thresholds, issues, errors_count, warnings_count.
+    """
+    import re
+
+    thresholds = (config or {}).get("thresholds_per_chapter", {
+        "ch_02": 3,
+        "ch_03": 2,
+        "ch_04": 1,
+        "epilogue": 0,
+    })
+
+    patterns = [
+        r'\bкак\s+(я|мы)\s+помн\w+',
+        r'\bтогда\s+(в|у)\s+(нашей|нас)',
+        r'\bкогда\s+(я|мы)\s+(был\w+|жил\w+|росл\w+)',
+        r'\bпомн\w+,\s+(в|на)\s+\w+\s+(я|мы)',
+        r'\bв\s+(советск\w+|те)\s+\w*\s*врем[еяё]\w*',
+        r'\bпо\s+(тем|советск\w+|нашим)\s+\w*\s*времен\w*',
+        r'\bу\s+нас\s+в\s+(семь\w+|доме|городе|посёлке|институте)',
+    ]
+
+    counts = {}
+    for ch in book.get("chapters", []):
+        chid = ch.get("id")
+        if chid == "ch_01":
+            continue
+        content = ch.get("content", "") or ""
+        total = 0
+        for pat in patterns:
+            total += len(re.findall(pat, content, re.IGNORECASE))
+        counts[chid] = total
+
+    issues = []
+    for chid, expected in thresholds.items():
+        if expected == 0:
+            continue
+        found = counts.get(chid, 0)
+        if found < expected:
+            issues.append({
+                "type": "personal_historical_voice",
+                "category": "below_threshold",
+                "chapter_id": chid,
+                "found": found,
+                "expected": expected,
+                "severity": "warning",
+                "suggestion": (
+                    f"Добавить \u2265{expected - found} personal-historical voice "
+                    f"markers в {chid}. Examples: 'как [rapporteur] помнит, в [период]...', "
+                    f"'\u0442\u043e\u0433\u0434\u0430 у нас в семье...', 'когда [rapporteur] был ребёнком, ...'. "
+                    f"Использовать narrator_voice_anchors из pin-list."
+                ),
+                "reason": "Class 18 personal-historical voice — рассказчик помещает личную память в исторический контекст",
+            })
+
+    return {
+        "markers_found_per_chapter": counts,
+        "thresholds": thresholds,
+        "issues": issues,
+        "errors_count": sum(1 for i in issues if i["severity"] == "error"),
+        "warnings_count": sum(1 for i in issues if i["severity"] == "warning"),
+    }
+
+
+def collect_revision_hints(
+    book_draft: dict,
+    validator_outputs: dict,
+    config: dict | None = None,
+) -> list:
+    """Collect revision_hints from validator outputs for GW revision pass (task 049f).
+
+    validator_outputs: dict of {validator_name: output_dict}
+    Each output_dict should have "issues" list.
+    Returns list of hint dicts in GW ПРАВИЛО 13 format.
+    """
+    hints = []
+    hint_counter = 0
+
+    for validator_name, output in validator_outputs.items():
+        if not isinstance(output, dict):
+            continue
+        issues = output.get("issues", [])
+        for issue in issues:
+            hint_counter += 1
+            hint = _build_revision_hint(
+                hint_id=f"h_{hint_counter:03d}",
+                validator=validator_name,
+                issue=issue,
+                book_draft=book_draft,
+            )
+            if hint:
+                hints.append(hint)
+
+    return hints
+
+
+def _build_revision_hint(hint_id: str, validator: str, issue: dict, book_draft: dict) -> dict | None:
+    """Convert single validator issue to GW revision_hint format (task 049f internal)."""
+    snippet = issue.get("snippet") or _extract_snippet_from_book(book_draft, issue)
+    if not snippet:
+        return None
+
+    hint = {
+        "hint_id": hint_id,
+        "validator": validator,
+        "category": issue.get("category") or issue.get("type") or "unknown",
+        "chapter_id": issue.get("chapter_id"),
+        "severity": issue.get("severity", "warning"),
+        "snippet": snippet,
+        "reason": _build_revision_reason(validator, issue),
+        "suggestion": issue.get("suggestion") or _build_revision_suggestion(validator, issue),
+        "must_apply": issue.get("severity") == "error",
+    }
+    return hint
+
+
+def _extract_snippet_from_book(book_draft: dict, issue: dict) -> str | None:
+    """Try to find snippet in book_draft by chapter + keyword match."""
+    import re
+    chid = issue.get("chapter_id")
+    for ch in book_draft.get("chapters", []):
+        if ch.get("id") != chid:
+            continue
+        content = ch.get("content", "") or ""
+        # Try to find sentence containing key terms from issue
+        key = issue.get("pattern_matched") or issue.get("episode_id") or issue.get("person_name")
+        if key:
+            for sent in re.split(r'(?<=[.!?])\s+', content):
+                if key.lower() in sent.lower():
+                    return sent.strip()[:300]
+    return None
+
+
+def _build_revision_reason(validator: str, issue: dict) -> str:
+    """Generate human-readable reason for hint."""
+    cat = issue.get("category") or issue.get("type") or "unknown"
+    severity = issue.get("severity", "warning")
+    reason_detail = issue.get("reason", "")
+    if reason_detail:
+        return f"{validator}/{cat} ({severity}): {reason_detail}"
+    return f"{validator}/{cat} ({severity})"
+
+
+def _build_revision_suggestion(validator: str, issue: dict) -> str:
+    """Generate concrete suggestion per validator category."""
+    cat = issue.get("category") or issue.get("type") or ""
+
+    if validator == "chronology_check":
+        if cat in ("person_mentioned_before_birth", "children_mentioned_before_first_child_birth"):
+            person = issue.get("person_name", "[ребёнок]")
+            year = issue.get("event_year_range") or issue.get("first_child_birth", "")
+            return (
+                f"Удалить упоминание [{person}] в этом контексте. "
+                f"Период предшествует рождению ({year}). "
+                f"Заменить на 'занималась домом' / 'вела хозяйство'."
+            )
+
+    if validator == "narrative_truism":
+        return "delete_sentence"
+
+    if validator in ("narrative_stop_phrases", "style_checks"):
+        if "speciality_defined_life" in cat:
+            return ("Удалить causal claim (часть про 'определила жизнь/карьеру'). "
+                    "Оставить factual content (год обучения, специальность).")
+        if "episode_especially_remembered" in cat:
+            return "Удалить subjective claim о memorability. Оставить factual content."
+        if "motivation_attribution_seemed" in cat:
+            return "Удалить attribution мотивации без источника в TR."
+        if "typical_for_generation" in cat:
+            return "delete_sentence (целиком, без замены)"
+        if "class11_not_loved" in cat:
+            return ("Переписать обобщённо: «не любил советов» / «не любил [X]», "
+                    "без перечисления частных категорий.")
+
+    if validator == "pin_list_depth":
+        ep_id = issue.get("episode_id", "")
+        actual = issue.get("actual_sentences", "?")
+        return (
+            f"Развернуть эпизод [{ep_id}] на \u22653 sentences per ПРАВИЛО 12. "
+            f"Текущая глубина: {actual} sent. "
+            f"Добавить: setup год+место+кто / детали действия / последствие."
+        )
+
+    if validator == "anti_facts":
+        a = issue.get("item_A", "[A]")
+        b = issue.get("item_B", "[B]")
+        return (f"Не объединять [{a}] с [{b}] в одном предложении. "
+                f"В источнике это отдельные позиции.")
+
+    if validator == "discourse_markers":
+        if cat == "below_threshold":
+            expected = issue.get("expected", 8)
+            found = issue.get("found", 0)
+            chid = issue.get("chapter_id", "")
+            return (
+                f"Добавить \u2265{expected - found} discourse markers в {chid}. "
+                f"Pattern: '[rapporteur] вспоминает' / 'по словам [rapporteur]' / "
+                f"'как помнит [родственное_отношение]'."
+            )
+
+    if validator == "personal_historical_voice":
+        if cat == "below_threshold":
+            expected = issue.get("expected", 3)
+            found = issue.get("found", 0)
+            chid = issue.get("chapter_id", "")
+            return (
+                f"Добавить \u2265{expected - found} personal-historical voice anchors в {chid}. "
+                f"'[rapporteur] помнит как в [период] ...' / 'тогда в нашей семье ...' / "
+                f"'когда [rapporteur] был ребёнком, в [период], ...'. "
+                f"Использовать narrator_voice_anchors из pin-list."
+            )
+
+    return issue.get("suggestion") or "Переписать или удалить flagged sentence."
+
+
+def audit_revision_diff(
+    book_draft: dict,
+    book_after_revision: dict,
+    revision_hints: list,
+) -> dict:
+    """Sanity check: revision pass changed only flagged sentences (task 049f).
+
+    Returns dict with hints_count, applied, skipped, unauthorized_changes,
+    writing_notes_proof.
+    """
+    import difflib, re
+
+    def _extract_text(book: dict) -> dict:
+        """Extract chapter_id -> content text."""
+        return {
+            ch["id"]: (ch.get("content") or "")
+            for ch in book.get("chapters", [])
+        }
+
+    draft_texts = _extract_text(book_draft)
+    revised_texts = _extract_text(book_after_revision)
+
+    # Gather all flagged snippets
+    flagged_snippets = {h["snippet"][:80].lower() for h in revision_hints if h.get("snippet")}
+
+    unauthorized_changes = []
+    applied = []
+    skipped = []
+
+    for chid in draft_texts:
+        draft_sents = re.split(r'(?<=[.!?])\s+', draft_texts.get(chid, ""))
+        revised_sents = re.split(r'(?<=[.!?])\s+', revised_texts.get(chid, ""))
+
+        diff = list(difflib.unified_diff(draft_sents, revised_sents, lineterm=""))
+        changed_lines = [l[1:].strip() for l in diff if l.startswith(("+", "-")) and not l.startswith(("+++", "---"))]
+
+        for line in changed_lines:
+            if not line:
+                continue
+            line_lower = line.lower()
+            is_flagged = any(
+                snip in line_lower or line_lower in snip
+                for snip in flagged_snippets
+            )
+            if not is_flagged and len(line) > 15:
+                unauthorized_changes.append({
+                    "chapter_id": chid,
+                    "diff_snippet": line[:200],
+                })
+
+    # Map writing_notes
+    writing_notes = (
+        book_after_revision.get("writing_notes") or
+        book_after_revision.get("book_draft", {}).get("writing_notes") or {}
+    )
+    rule13_applied = writing_notes.get("rule13_revision_applied", [])
+
+    for hint in revision_hints:
+        hid = hint["hint_id"]
+        match = next((a for a in rule13_applied if a.get("hint_id") == hid), None)
+        if match:
+            applied.append({"hint_id": hid, "action": match.get("action")})
+        else:
+            skipped.append({"hint_id": hid, "reason": "not_in_writing_notes"})
+
+    return {
+        "hints_count": len(revision_hints),
+        "applied": applied,
+        "skipped": skipped,
+        "unauthorized_changes": unauthorized_changes,
+        "unauthorized_changes_count": len(unauthorized_changes),
+        "writing_notes_proof": rule13_applied,
+        "revision_failed": writing_notes.get("rule13_revision_failed", False),
+    }
+
+
+def _count_inline_historical_notes(book: dict) -> int:
+    """Count ***...*** inline historical notes across all chapters (task 046d)."""
+    import re
+    count = 0
+    for ch in book.get("chapters", []):
+        content = ch.get("content", "") or ""
+        count += len(re.findall(r'\*{3}[^*]+\*{3}', content))
+    return count
+
+
+def enrich_historical_notes_inline(
+    book: dict,
+    fact_map: dict,
+    pin_list_historical_anchors: list | None = None,
+    config: dict | None = None,
+) -> dict:
+    """Post-Stage 2 enrichment: add inline historical_notes until minimum (task 046d).
+
+    If current inline count < min_inline_notes: identify slots in ch_02/ch_03
+    paragraphs with year mentions that match timeline events, then insert
+    placeholder *** historical context *** notes. Actual LLM call for context
+    happens in stage2 runner (historian agent reuse). This function provides
+    the slot-detection + insertion scaffold.
+
+    Returns modified book (or original if already sufficient).
+    """
+    import re
+
+    cfg = config or {}
+    min_inline = cfg.get("min_inline_notes", 5)
+    max_inline = cfg.get("max_inline_notes", 12)
+    skip_chapters = cfg.get("skip_chapters", ["ch_01"])
+
+    current = _count_inline_historical_notes(book)
+    if current >= min_inline:
+        return book
+
+    # Build year→event map from fact_map
+    year_events = {}
+    for ev in fact_map.get("timeline", []):
+        yr = ev.get("year")
+        if yr and isinstance(yr, (int, str)):
+            try:
+                y = int(str(yr)[:4])
+                if y not in year_events:
+                    year_events[y] = []
+                year_events[y].append(ev.get("title", "") or ev.get("description", ""))
+            except ValueError:
+                pass
+
+    # If pin-list anchors provided, also use those
+    if pin_list_historical_anchors:
+        for anchor in pin_list_historical_anchors:
+            yr = anchor.get("year")
+            if yr:
+                try:
+                    y = int(str(yr)[:4])
+                    if y not in year_events:
+                        year_events[y] = []
+                    year_events[y].append(anchor.get("context", ""))
+                except ValueError:
+                    pass
+
+    slots_filled = 0
+    last_insert_paragraph_idx = -3  # tracking distance between notes
+
+    for ch in book.get("chapters", []):
+        chid = ch.get("id")
+        if chid in skip_chapters:
+            continue
+        content = ch.get("content") or ""
+        paragraphs = content.split("\n\n")
+        new_paragraphs = []
+        for pidx, para in enumerate(paragraphs):
+            new_paragraphs.append(para)
+            if current + slots_filled >= min_inline:
+                continue
+            if (pidx - last_insert_paragraph_idx) < 2:
+                continue
+            # Check if paragraph has a year mention
+            year_mentions = re.findall(r'\b(1[89]\d{2}|20[012]\d)\b', para)
+            if not year_mentions:
+                continue
+            # Find best year with event context
+            for yr_str in year_mentions:
+                yr = int(yr_str)
+                events_for_year = (
+                    year_events.get(yr) or
+                    year_events.get(yr - 1) or
+                    year_events.get(yr + 1)
+                )
+                if not events_for_year:
+                    continue
+                # Insert placeholder note (actual text filled by historian in runner)
+                note_placeholder = (
+                    f"***[Исторический контекст {yr}: {events_for_year[0][:80]}...]***"
+                )
+                new_paragraphs.append(note_placeholder)
+                slots_filled += 1
+                last_insert_paragraph_idx = pidx
+                break
+
+        ch["content"] = "\n\n".join(new_paragraphs)
+
+    return book
+

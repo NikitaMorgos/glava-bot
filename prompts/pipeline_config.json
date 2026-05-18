@@ -67,8 +67,8 @@
     "model": "claude-sonnet-4-20250514",
     "max_tokens": 32000,
     "temperature": 0.4,
-    "prompt_file": "03_ghostwriter_v2.22.md",
-    "_notes": "v2.22 (2026-05-18, task 049d, v63 sprint): +ПРАВИЛО 12 NARRATIVE DEPTH+VOICE+ОБЪЁМ. v2.20 (Batch 2-fix): +ПРАВИЛО 6 discourse markers +ПРАВИЛО 7 subject_age +ПРАВИЛО 8 pin-list min depth +ЗАПРЕТ 15 narrative антишаблоны."
+    "prompt_file": "03_ghostwriter_v2.23.md",
+    "_notes": "v2.23 (2026-05-18, task 049e, v64 sprint): +ПРАВИЛО 13 REVISION COMPLIANCE — при revision pass с revision_hints из validators GW обязан переписать flagged sentences. Архитектурный ход закрывающий класс «validators detect, GW игнорирует» (5 sprints v60-v63 recurring). Per Правило 6 — одно правило per bump. v2.22 (2026-05-18, task 049d, v63): +ПРАВИЛО 12 NARRATIVE DEPTH+VOICE+ОБЪЁМ."
   },
 
   "fact_checker": {

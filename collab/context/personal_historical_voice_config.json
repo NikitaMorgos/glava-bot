@@ -1,0 +1,26 @@
+{
+  "version": "v1",
+  "description": "Thresholds and patterns for Class 18 personal-historical voice validator (task 046e). Generic — no subject-specific content. Subject-specific examples in known_episodes_<subject>.md narrator_voice_anchors.",
+  "_updated": "2026-05-18",
+  "thresholds_per_chapter": {
+    "ch_02": 3,
+    "ch_03": 2,
+    "ch_04": 1,
+    "epilogue": 0
+  },
+  "_notes": "Defaults для 90-минутного интервью с 2 rapporteurs (parent + grandchild). Calibrate per subject если интервью только с одним rapporteur (снизить ch_02 до 2, ch_03 до 1). epilogue=0: personal voice в эпилоге не обязателен.",
+  "generic_patterns": [
+    "\\bкак\\s+(я|мы)\\s+помн\\w+",
+    "\\bтогда\\s+(в|у)\\s+(нашей|нас)",
+    "\\bкогда\\s+(я|мы)\\s+(был\\w+|жил\\w+|росл\\w+)",
+    "\\bпомн\\w+,\\s+(в|на)\\s+\\w+\\s+(я|мы)",
+    "\\bв\\s+(советск\\w+|те)\\s+\\w*\\s*време\\w*",
+    "\\bпо\\s+(тем|советск\\w+|нашим)\\s+\\w*\\s*времен\\w*",
+    "\\bу\\s+нас\\s+в\\s+(семь\\w+|доме|городе|посёлке|институте)"
+  ],
+  "anti_patterns": [
+    "^[А-ЯЁ][^.!?]*вспоминает[^.!?]*$",
+    "^В \\d{4}",
+    "^По словам"
+  ]
+}

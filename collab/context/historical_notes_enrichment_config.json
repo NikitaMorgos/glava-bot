@@ -1,0 +1,13 @@
+{
+  "version": "v1",
+  "description": "Config for post-Stage 2 historical_notes inline enrichment (task 046d). Restores v62a level: ≥5 inline ***...*** notes. Generic — subject content from fact_map.timeline + pin-list anchors.",
+  "_updated": "2026-05-18",
+  "min_inline_notes": 5,
+  "min_field_notes": 3,
+  "max_inline_notes": 12,
+  "historian_prompt_version": "12_historian_v3",
+  "skip_chapters": ["ch_01"],
+  "min_distance_between_inline": 2,
+  "anchor_year_tolerance": 2,
+  "_notes": "If inline count already ≥ min_inline_notes — enrichment skipped (idempotent). Max cap prevents over-clustering. Historian agent reused (no new prompt)."
+}
