@@ -645,9 +645,80 @@ Generic:
 
 ---
 
+## v62a (PENDING — 10 точечных scripted fixes, NO GW change)
+
+**Branch + commit:** TBD (Курсор реализует на feat/v62a-pointed-fixes branch off v61 `a8809aa`)
+**Status:** pending — Курсор реализует v62a sprint
+
+### Components
+- Cleaner: v1, FE: v3.4, Historian: v3
+- CA: v1.4
+- **GW: v2.20** (NO change — per Правилу 6 «не bundle prompt правил»)
+- FC: v2.13, LE: v3.1, PR: v1
+
+### Configs (per subject)
+- **known_episodes_karakulina.md: v4** (+ Anti-facts секция task 043e, + persona_notes для Никита/Даша task 044f)
+- gazeteer_karakulina.json: **v2 + paspart-only temporal_place_names** (task 051c — minor subset task 051, только bio_data)
+- relation_overrides_karakulina.json: v1
+- timeline_anchors_karakulina.json: v1 + widowhood strict separation (task 045e)
+- discourse_markers_karakulina.json: v1
+- persona_notes_karakulina.json: v1 + Никита/Даша entries (task 044f)
+
+### Configs (generic)
+- epilogue_stop_phrases.json: v2 (как v61)
+- epilogue_rewrite_mapping.json: v2 + 046c fix (как v61)
+- **narrative_stop_phrases.json: v2** (task 043d — +2 categories: speciality_defined_life, helping_at_important_moments)
+
+### Pipeline code (additions/fixes к v61 base)
+- `pipeline_utils.py`:
+  - + `validate_anti_facts` (task 043e — scripted check pin-list anti_facts pairs)
+  - + `apply_temporal_naming_to_paspart_only` (task 051c — minor temporal fix только bio_data)
+  - + расширение `validate_chronological_consistency` для grandchildren patterns (task 048c)
+  - + `validate_timeline_anchors` strict period separation (task 045e — widowhood)
+  - + fix `validate_discourse_markers` rapporteurs config (task 049c)
+- `scripts/build_gate1_full_text.py`:
+  - + skip `?: ?` override entries (task 044d)
+  - + remove duplicate «Основные даты жизни» рендер (task 044d)
+  - + append_contributors_section из pin-list v4 (task 052c — clean rewrite)
+- `enforce_persona_notes` (task 044f) — read persona_notes_karakulina.json updated с Никита/Даша
+
+### Inputs
+- Transcripts: TR1+TR2 split-extract
+- Pin-list: yes (v4)
+- `--known-episodes=collab/context/known_episodes_karakulina.md`
+- **Diff baseline: v59** (Никитино решение от v61 sprint)
+
+### Outputs (PENDING)
+- Expected (11 verifications):
+  - Render text_FULL чистый (без `?: ?`, без дубля «Основные даты»)
+  - Бабушка Марфа в bio_data.family
+  - Дочь Татьяна «в Калинине» (paspart)
+  - Внук/Внучка с notes «сын/дочь Татьяны»
+  - Contributors раздел в конце (4 имени из pin-list v4)
+  - Chronology errors включают «1973 + внучка Даша»
+  - narrative_stop_phrases ловит «определило жизнь» + «помогая в важные моменты»
+  - timeline anchors включает widowhood (1978-1996) as separate
+  - anti_facts validator: warning на «варенье+салат» combine (если GW снова напишет)
+  - discourse markers validator показывает реальный count (не false 0)
+  - gate1 target 20K+ обновлён в checklist
+
+### Verification — PENDING
+
+### Notes
+- v62a sprint: 10 scripted + 1 meta, NO GW change (per Правило 6 — медленно без откатов)
+- Backlog после v62a PASS:
+  - v63: ch_03 «Гостеприимство и кулинария» (GW prompt-bump, 1 правило)
+  - v64: Epilogue extend 676→~900 (GW prompt-bump, 1 правило)
+  - v65: historical_notes inline restoration (investigation)
+  - v66+: task 053 generic runners → подключение Корольковой
+- Target 20K+ обновлён в gate1_product_checklist (вместо 14-18K)
+
+---
+
 ## История версий этого документа
 
 | Версия | Дата | Изменение | Кто |
 |---|---|---|---|
 | v1 | 2026-05-17 | Создание ретроспективно для v54-v60 после Никитиного вопроса «ведёшь ли четкий реестр?» — признан пробел в дисциплине, восстановлено из git log + tasks + памяти | Опус |
 | v2 | 2026-05-17 | + v60 outputs/verification (НЕ PASS, 5 блокеров); + план v61 (Вариант 1 Hybrid rollback после Никитиного решения); baseline для diff изменён v56→v59 | Опус |
+| **v3** | **2026-05-18** | **+ v61 verification (близко к PASS, 5 блокеров); + план v62a sprint (10 точечных scripted fixes NO GW change + 11 meta); + backlog v63-v66 (по одной GW правке за раз); target 20K+** | **Опус** |

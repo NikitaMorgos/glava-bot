@@ -179,6 +179,39 @@
 - Этап 2 (Proofreader scripted, task 030)
 - Phase B механика (корректировки от клиента)
 
+### v62a sprint — 10 точечных scripted fixes (NO GW change) после v61 review
+
+**Триггер:** v61 verified — content quality v59 восстановлен, но Никитин review дал 13 замечаний + 5 моих блокеров. После verify + дедуп = 14 unique → 10 точечных + 1 meta (per Правилу 6 «медленно без откатов»).
+
+**Подход:** все 10 fixes — scripted (NO GW prompt change). Никитины 2 features (ch_03 кулинария, epilogue extend) и historical_notes inline restoration отложены в backlog **по одной prompt-bump за раз** (v63/v64/v65).
+
+| Task | Что |
+|---|---|
+| 044d | Render bug `?: ?` в bio_data.family (build_gate1 skip override entries) |
+| 044e | Бабушка Марфа force-add в bio_data.family (debug task 044b cherry-pick) |
+| 044f | Внук/Внучка notes preservation («сын/дочь Татьяны») |
+| 049c | Discourse markers validator fix (rapporteurs config + aliases) |
+| 051c | Paspart-only temporal name (Тверь→Калинин в bio_data только, не narrative) |
+| 048c | Chronology check grandchildren (Class 12 false negative «1973 + Даша») |
+| 052c | Contributors раздел как **чистый скрипт** из pin-list v4 (4 имени) |
+| 043d | narrative_stop_phrases расширение (Class 1 «определило жизнь», «помогая в важные моменты») |
+| 045e | Timeline anchors widowhood enforce as separate period (1978-1996 от khim_institute 1962-1978) |
+| 043e | Anti_facts pin-list секция + scripted check (Class 1 predicate-object confabulation: варенье+салат, акушерство+«определило») |
+| meta | gate1_product_checklist target 14-18K → **20K+** (Никитино решение) |
+
+Spec: [v62a-pointed-fixes-sprint.md](../tasks/v62a-pointed-fixes-sprint.md)
+
+Финансово v62a: 1 прогон $2-3. NO GW change = safe per Правило 6.
+
+### Backlog после v62a (по одной GW prompt-bump за раз)
+
+| v63 | ch_03 «Гостеприимство и кулинария» раздел | GW prompt-bump (1 правило) |
+| v64 | Epilogue expand 676 → ~900 без stop phrases | GW prompt-bump (1 правило) |
+| v65 | historical_notes inline restoration (vs v59 9 inline) | scripted reclassify ИЛИ GW prompt-bump |
+| v66+ | task 053 generic Stage runners → подключение Корольковой | refactor scripts (NO GW) |
+
+Каждая = $2-3 один прогон verify. Per Правилу 6 — нельзя bundle, нужно verify что предыдущие правила не деteriorировали.
+
 ### v61 sprint — Hybrid rollback (Вариант 1) после v60 регрессии
 
 **Решение:** v60 регрессировал content (5+ Никитиных favorites потеряны) из-за **GW v2.21 cognitive overhead** (3 новых ПРАВИЛА одним bump). Diagnostic: Stage 1 (CA v1.4) данные сохранил — GW не использовал.
