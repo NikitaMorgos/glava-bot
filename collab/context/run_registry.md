@@ -17,7 +17,7 @@
 **Branch + commit:** <branch> @ <sha>
 **Status:** pending / verified / regression / superseded
 
-### Components
+### Components (LLM agents в пайплайне Glava)
 - Cleaner: vX
 - Fact Extractor: vX
 - Historian: vX
@@ -26,6 +26,11 @@
 - Fact Checker (FC): vX
 - Literary Editor (LE): vX
 - Proofreader (PR): vX
+
+### Environment (IDE + LLM для разработки/реализации)
+- Cursor agent: chat / Composer 1 / Composer 2 / другое
+- Cursor model: Sonnet / Opus / Haiku / другое
+- Note: смена model или agent режима → **отдельная** строка в registry (новая переменная, может влиять на quality)
 
 ### Configs (per subject)
 - known_episodes_<subject>.md: vN
@@ -36,6 +41,7 @@
 - chapter_sections_anchors_<subject>.json: vN
 - temporal_place_names_<subject>.json: vN
 - contributors_<subject>.json: vN
+- persona_notes_<subject>.json: vN
 
 ### Configs (generic)
 - epilogue_stop_phrases.json: vN
@@ -71,6 +77,17 @@
 - Регрессии vs предыдущая
 - Improvements vs предыдущая
 ```
+
+## Политика выбора Cursor agent / model
+
+**Текущая (с 2026-05-18):** Cursor Sonnet до финальной вёрстки (Ворота 4). После — обсуждаем эксперимент с Composer 2 или cheap моделями.
+
+**Изменение Cursor agent/model = новая строка в registry.** При смене:
+- Зафиксировать **в каком прогоне** произошла смена
+- Verify quality на 1 простой task **до** применения на всём sprint
+- Если regression — return предыдущий agent/model + lesson learned
+
+**Прецедент v54-v61:** все прогоны Cursor Sonnet (chat mode). Регрессии (v60 «Наталья», temporal wrong direction) — **не от Cursor model**, а от пробелов в spec'ах (мои) + GW pipeline prompt issues. Sonnet делал свою часть качественно.
 
 ---
 
