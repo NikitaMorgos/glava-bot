@@ -1,0 +1,159 @@
+{
+  "project_id": "karakulina_stage2_test",
+  "iteration": 2,
+  "verdict": "fail",
+  "errors": [
+    {
+      "id": "err_001",
+      "type": "distortion",
+      "severity": "critical",
+      "chapter_id": "ch_01",
+      "location": "bio_data.awards, медаль '25 лет победы в ВОВ' указана с годом 1970",
+      "what_is_written": "медаль «25 лет победы в ВОВ» — 1970 год",
+      "what_should_be": "медаль «25 лет победы в ВОВ» — 1970 год (правильно)",
+      "source": {
+        "type": "fact_map",
+        "reference": "event_025: медаль за доблестный труд в ознаменование столетия со дня рождения В.И. Ленина, 22 апреля 1970 года"
+      },
+      "fix_instruction": "Проверить соответствие наград в bio_data.awards с fact_map. В fact_map нет медали '25 лет победы в ВОВ' — есть только медаль за доблестный труд 1970 года. Либо добавить недостающую награду в fact_map, либо исправить в bio_data",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_002",
+      "type": "omission",
+      "severity": "critical",
+      "chapter_id": "ch_01",
+      "location": "bio_data.family отсутствует тётя Шура",
+      "what_is_written": "В family нет записи о тёте Шуре",
+      "what_should_be": "Должна быть запись: 'Тётя Шура — сестра мужа, жила в Кирсанове'",
+      "source": {
+        "type": "fact_map",
+        "reference": "person_008: тётя Шура, сестра Дмитрия Каракулина, жила в городе Кирсанов"
+      },
+      "fix_instruction": "Добавить в bio_data.family запись о тёте Шуре перед упоминанием её дочерей Риммы и Зины. Указать: 'Тётя Шура — сестра мужа, жила в Кирсанове'",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_003",
+      "type": "framing_distortion",
+      "severity": "major",
+      "chapter_id": "ch_04",
+      "location": "p_04_009: 'В 1990-е годы, когда в стране началась волна крещений, Валентина несколько раз ходила в Воскресенскую церковь во Власево. Но это была дань моде времени, а не истинная вера — в душе она оставалась убеждённой атеисткой и коммунисткой.'",
+      "what_is_written": "Эпизод о посещении церкви в ch_04",
+      "what_should_be": "Тот же эпизод уже описан в ch_02, p_02_019",
+      "source": {
+        "type": "fact_map",
+        "reference": "event_auto_002: волна крещений в 90-е годы"
+      },
+      "fix_instruction": "Удалить дубль эпизода о посещении церкви из ch_04. Эпизод уже подробно описан в ch_02 как часть хронологии последних лет жизни. В ch_04 оставить только краткое упоминание или заменить другим интересным фактом",
+      "legitimate_deletion": true,
+      "evidence_in_other_chapter": {
+        "chapter_id": "ch_02",
+        "quote": "В 1990-е годы, когда началась волна крещений, Валентина несколько раз ходила в Воскресенскую церковь во Власево. В 1990-е годы многие пожилые люди ходили в церковь — не столько от веры, сколько в поисках духовной опоры в разрушающемся мире. Но это была скорее дань традиции и веянию времени — в душе она оставалась атеисткой и коммунисткой."
+      }
+    },
+    {
+      "id": "err_004",
+      "type": "distortion",
+      "severity": "major",
+      "chapter_id": "ch_02",
+      "location": "p_02_016: 'Первый серьёзный конфликт произошёл, когда она поправила его во время работы со счётчиком, сказав: «папа так не делал никогда»'",
+      "what_is_written": "Конфликт произошёл в 1977 году (дата свадьбы Татьяны)",
+      "what_should_be": "Конфликт произошёл в 1977 году, но это не обязательно сразу после свадьбы",
+      "source": {
+        "type": "fact_map",
+        "reference": "event_auto_001: замечание про счётчик в 1977 году"
+      },
+      "fix_instruction": "Уточнить хронологию: конфликт со счётчиком произошёл в 1977 году, но не обязательно сразу после свадьбы. Возможно, стоит разделить описание свадьбы и первого конфликта",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_005",
+      "type": "omission",
+      "severity": "major",
+      "chapter_id": "ch_01",
+      "location": "bio_data.family неполный состав племянников",
+      "what_is_written": "Указаны только 4 племянника от тёти Поли",
+      "what_should_be": "Должны быть все племянники из fact_map: Амельченко, Толя из Белгорода, Коля-лётчик, Витя из Энгельса, Римма, Зина",
+      "source": {
+        "type": "fact_map",
+        "reference": "persons: person_013, person_014, person_015, person_016, person_022, person_023"
+      },
+      "fix_instruction": "Проверить полноту списка племянников в bio_data.family. Добавить недостающих: все сыновья тёти Поли и дочери тёти Шуры (Римма и Зина)",
+      "legitimate_deletion": false
+    }
+  ],
+  "warnings": [
+    {
+      "id": "warn_001",
+      "type": "possible_omission",
+      "chapter_id": "ch_02",
+      "description": "В тексте не упоминается работа в Старобельске после войны",
+      "recommendation": "Рассмотреть включение информации о работе в санэпидемстанции в Старобельске (из автобиографии)"
+    },
+    {
+      "id": "warn_002",
+      "type": "style_concern",
+      "chapter_id": "ch_03",
+      "description": "Некоторые характеристики могут показаться слишком критичными",
+      "recommendation": "Проверить баланс между честностью и деликатностью в описании характера"
+    }
+  ],
+  "completeness_check": {
+    "total_facts_in_map": 156,
+    "facts_referenced_in_text": 142,
+    "facts_verified_ok": 137,
+    "facts_with_errors": 5,
+    "facts_missing_from_text": [
+      {
+        "fact_id": "person_017",
+        "fact_description": "тётя Маша — соседка/знакомая",
+        "was_in_facts_omitted": true,
+        "omission_justified": true,
+        "recommendation": "Допустимо пропустить — недостаточно материала"
+      },
+      {
+        "fact_id": "person_020",
+        "fact_description": "Марфа/Дуня — бабушка Валентины",
+        "was_in_facts_omitted": true,
+        "omission_justified": true,
+        "recommendation": "Требует верификации у клиента"
+      },
+      {
+        "fact_id": "person_021",
+        "fact_description": "врач Нинвана Полсачева",
+        "was_in_facts_omitted": true,
+        "omission_justified": true,
+        "recommendation": "Упомянута в контексте зависимости от авторитета"
+      }
+    ]
+  },
+  "regression_check": {
+    "performed": true,
+    "chapters_checked": [
+      "ch_01",
+      "ch_02",
+      "ch_04"
+    ],
+    "issues_found": [
+      {
+        "chapter_id": "ch_04",
+        "description": "Дублирование эпизода о посещении церкви между ch_02 и ch_04 нарушает правило 'один эпизод — одна глава'"
+      }
+    ]
+  },
+  "summary": {
+    "critical_errors": 2,
+    "major_errors": 3,
+    "minor_errors": 0,
+    "warnings_count": 2,
+    "overall_assessment": "Текст содержит критические ошибки в структуре ch_01 (неполные данные о семье, проблемы с наградами) и нарушение принципа распределения контента между главами. Требуется доработка перед передачей Литредактору."
+  },
+  "stats": {
+    "facts_checked": 142,
+    "facts_passed": 137,
+    "facts_failed": 5,
+    "coverage_percent": 91,
+    "needs_verification_flagged": 3
+  }
+}

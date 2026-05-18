@@ -1,0 +1,146 @@
+{
+  "stage": "stage2",
+  "passed": true,
+  "gates": [
+    {
+      "gate": "required_entities",
+      "passed": true,
+      "required_total": 26,
+      "critical_total": 12,
+      "critical_matched_total": 12,
+      "critical_matched": [
+        {
+          "label": "Каракулина Валентина Ивановна",
+          "found_in": "narrative"
+        },
+        {
+          "label": "Рудай Иван Андреевич",
+          "found_in": "narrative"
+        },
+        {
+          "label": "Рудая Пелагея Алексеевна",
+          "found_in": "narrative"
+        },
+        {
+          "label": "младший брат",
+          "found_in": "narrative"
+        },
+        {
+          "label": "Полина",
+          "found_in": "narrative"
+        },
+        {
+          "label": "Каракулин Дмитрий",
+          "found_in": "narrative"
+        },
+        {
+          "label": "Каракулин Валерий",
+          "found_in": "narrative"
+        },
+        {
+          "label": "Амельченко Полина",
+          "found_in": "narrative"
+        },
+        {
+          "label": "тётя Маня",
+          "found_in": "bio_data"
+        },
+        {
+          "label": "Марфа",
+          "found_in": "bio_data"
+        },
+        {
+          "label": "Татьяна Каракулина",
+          "found_in": "narrative"
+        },
+        {
+          "label": "баба Аня",
+          "found_in": "narrative"
+        }
+      ],
+      "critical_missing_total": 0,
+      "critical_missing": [],
+      "optional_total": 14,
+      "optional_matched_total": 14,
+      "optional_matched": [
+        {
+          "label": "старшие сёстры",
+          "found_in": "narrative"
+        },
+        {
+          "label": "тётя Шура",
+          "found_in": "bio_data"
+        },
+        {
+          "label": "Маргось Владимир",
+          "found_in": "narrative"
+        },
+        {
+          "label": "Кужба Олег",
+          "found_in": "narrative"
+        },
+        {
+          "label": "Никита",
+          "found_in": "narrative"
+        },
+        {
+          "label": "Даша",
+          "found_in": "bio_data"
+        },
+        {
+          "label": "Амельченко",
+          "found_in": "bio_data"
+        },
+        {
+          "label": "Толя из Белгорода",
+          "found_in": "bio_data"
+        },
+        {
+          "label": "Коля-лётчик",
+          "found_in": "bio_data"
+        },
+        {
+          "label": "Витя из Энгельса",
+          "found_in": "bio_data"
+        },
+        {
+          "label": "тётя Маша",
+          "found_in": "bio_data"
+        },
+        {
+          "label": "Нинвана Полсачева",
+          "found_in": "narrative"
+        },
+        {
+          "label": "Римма",
+          "found_in": "bio_data"
+        },
+        {
+          "label": "Зина",
+          "found_in": "bio_data"
+        }
+      ],
+      "optional_missing_total": 0,
+      "optional_missing": []
+    },
+    {
+      "gate": "cross_chapter_repetition",
+      "passed": true,
+      "ngram_size": 5,
+      "threshold": 0.2,
+      "violations": []
+    },
+    {
+      "gate": "ch01_bio",
+      "passed": true,
+      "min_chars": 300,
+      "actual_chars": 0,
+      "has_bio_struct": true,
+      "checks": {
+        "content_len_ok": true,
+        "has_birth_year": true,
+        "has_birth_place": true
+      }
+    }
+  ]
+}

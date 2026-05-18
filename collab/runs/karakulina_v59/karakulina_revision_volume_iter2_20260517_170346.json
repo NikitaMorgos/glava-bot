@@ -1,0 +1,39 @@
+{
+  "chars_before": 15335,
+  "chars_after": 15084,
+  "ratio": 0.9836,
+  "threshold": 0.95,
+  "drop_chars": 251,
+  "legitimate_deletions_count": 1,
+  "legitimate_deletions": [
+    {
+      "id": "err_003",
+      "chapter_id": "ch_04",
+      "type": "framing_distortion",
+      "fix_instruction": "Удалить дубль эпизода о посещении церкви из ch_04. Эпизод уже подробно описан в ch_02 как часть хронологии последних лет",
+      "evidence_in_other_chapter": {
+        "chapter_id": "ch_02",
+        "quote": "В 1990-е годы, когда началась волна крещений, Валентина несколько раз ходила в Воскресенскую церковь во Власево. В 1990-е годы многие пожилые люди ходили в церковь — не столько от веры, сколько в поисках духовной опоры в разрушающемся мире. Но это была скорее дань традиции и веянию времени — в душе она оставалась атеисткой и коммунисткой."
+      }
+    }
+  ],
+  "evidence_failures": [
+    {
+      "error_id": "err_003",
+      "reason": "FC error err_003: evidence quote семантически не покрывает удаляемый фрагмент: и ratio (0.0 < 0.25), и абсолютное число общих токенов (0 < 2) — оба условия провалились. Shared tokens: []. Возможно FC галлюцинирует семантическое тождество разных эпизодов одной темы (v49: огурцы vs счётчик; v50: один общий токен «валентина»).",
+      "topic_overlap": {
+        "evidence_tokens_count": 31,
+        "written_tokens_count": 2,
+        "shared_count": 0,
+        "shared": [],
+        "overlap_ratio": 0.0,
+        "min_shared_tokens": 2,
+        "ratio_check_passed": false,
+        "abs_check_passed": false,
+        "passed": false
+      }
+    }
+  ],
+  "verdict": "blocked_phantom_evidence",
+  "reason": "1 legitimate_deletion-flag(s) не подтверждены: либо evidence quote отсутствует в book_after, либо topic-overlap с удаляемым фрагментом ниже 0.25. FC v2.12 требует не только наличие quote, но и совпадение по конкретному эпизоду (волна 1.3.1: защита от семантического тождества разных эпизодов одной темы, v49 регрессия)."
+}

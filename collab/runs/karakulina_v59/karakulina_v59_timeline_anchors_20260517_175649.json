@@ -1,0 +1,21 @@
+{
+  "anchors_found": [],
+  "anchors_missing": [
+    "childhood",
+    "education",
+    "war",
+    "family_early",
+    "khim_institute",
+    "widowhood",
+    "last_years"
+  ],
+  "merges": [],
+  "total_periods_found": 0,
+  "min_periods_required": 7,
+  "issues_count": 7,
+  "period_count_ok": false,
+  "enforcement": {
+    "actions": [],
+    "skipped": []
+  }
+}

@@ -1,6 +1,6 @@
 # Задача 040: Post-FC нормализация ASR-искажений топонимов (gazeteer per subject)
 
-**Статус:** `new`
+**Статус:** `completed`
 **Номер:** 040
 **Автор:** Опус
 **Дата создания:** 2026-05-17
@@ -113,33 +113,41 @@ Fact Checker iter3 v57 → 0 critical (или ≤1, если останется 
 
 ## Dev Review
 
-**Статус:** ожидает
+**Статус:** `approved`
 
-**[TECH]** — потенциальные флаги:
-- [ ] Type correction («улица → площадь Капошвара») сложнее чем просто string replace — нужна grammar-aware замена. Возможные альтернативы: (a) генерировать regex per type («(улица|улицы|улицу|на улице) Капошвара» → «площадь Капошвара» + согласовать предлог), (b) оставить только string replace топонима, type correction backlog
-- [ ] Не нормализовать `source_quote` — нужна явная whitelist полей, на которые применяется normalize
+**[TECH]:**
+- ✅ Type correction («улица → площадь Капошвара») — **отложена** в следующую волну (Batch 2). В Batch 1 — только string replace топонима.
+- ✅ Protected fields: реализован `_TOPO_SKIP_FIELDS = {source_quote, evidence, transcript_quote, asr_variants, reasoning}` — рекурсивный обход словарей пропускает эти ключи.
 
-**[PRODUCT]** — нет
+**[PRODUCT]** — флагов нет.
 
-**Оценка сложности:** `s` (1-3 ч; type correction может вытянуть до `m`)
-**Оценка риска:** `low` для базового normalize, `medium` для type correction (false positives)
+**Оценка сложности:** `s` (реализована базовая версия без type correction)
+**Оценка риска:** `low`
 
 ---
 
 ## Dev Review Response
 
-**Статус:** ожидает
-
-**Pre-answer от Опуса (можно использовать для self-resolve [TECH]):**
-- Базовый normalize (string replace + case preserve) — реализуем сейчас.
-- Type correction («улица → площадь») — **отдельной волной**, после v57. В Batch 1 — только string replace.
-- Whitelist полей: применять normalize к `paragraphs[].text`, `callouts[].text`, `historical_notes[].text`, `bio_data` values (кроме `source_quote` если оно где-то есть). НЕ применять к `*.source_quote`, `*.evidence`, `*.transcript_quote` — это сохраняемые ASR-цитаты.
+**Статус:** N/A — Опус pre-answered.
 
 ---
 
 ## Реализация
 
-**Статус:** ожидает
+**Статус:** `completed` (2026-05-17)
+
+Реализовано в `pipeline_utils.py`:
+- `normalize_topo_via_gazeteer(text, gazeteer)` — case-insensitive matching + case-preserving replacement, word-boundary aware, idempotent
+- `normalize_fact_map_topo(fact_map, gazeteer)` — рекурсивно обходит fact_map, пропускает protected поля
+- `normalize_book_topo(book, gazeteer)` — то же для book JSON
+
+Gazeteer: `collab/context/gazeteer_karakulina.json` (12 замен: Новомергородский, Керсанов, Капашвара, родительные падежи).
+
+Вызовы:
+- Stage 1 (`test_stage1_karakulina_full.py`): шаг 2.5, применяется к fact_map после age enrichment, сохраняет `topo_normalize_factmap_{ts}.json`
+- Stage 3 (`test_stage3.py`): применяется к `book_final` после Proofreader, сохраняет `topo_normalize_report_{ts}.json`
+
+Тесты: `tests/test_topo_normalize.py` (18 тестов, 100% PASS).
 
 ---
 

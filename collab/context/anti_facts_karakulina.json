@@ -1,0 +1,49 @@
+{
+  "subject_id": "karakulina",
+  "version": "v1",
+  "created": "2026-05-18",
+  "description": "Anti-facts: pairs that MUST NOT be combined in narrative (task 043e, Class 1 predicate-object confabulation). Generic mechanism — per-subject config.",
+  "anti_facts": [
+    {
+      "anti_fact_id": "af_001",
+      "item_A": "салаты",
+      "item_A_patterns": ["салат\\w*"],
+      "item_B": "варень",
+      "item_B_patterns": ["варень\\w*"],
+      "reason": "в TR2 упомянуты как отдельные блюда: «салаты делала + варенья всякие» — две позиции, не «украшение салата вареньем»",
+      "source": "TR2",
+      "severity": "warning"
+    },
+    {
+      "anti_fact_id": "af_002",
+      "item_A": "акушерка",
+      "item_A_patterns": ["акушерк\\w*", "акушерств\\w*"],
+      "item_B": "определила всю жизнь",
+      "item_B_patterns": ["определил\\w+.{0,30}(всю|жизн)\\w*", "стал\\w+.{0,30}(всю|жизн|карьер)\\w*"],
+      "reason": "акушерство — образование, не профессия по жизни; работала медсестрой в госпитале и поликлинике",
+      "source": "TR1",
+      "severity": "warning"
+    },
+    {
+      "anti_fact_id": "af_003",
+      "item_A": "акушерка",
+      "item_A_patterns": ["акушерк\\w*", "акушерств\\w*"],
+      "item_B": "помогая женщинам",
+      "item_B_patterns": ["помога\\w+.{0,40}женщин\\w*", "оказыва\\w+\\s+помощ\\w+.{0,40}женщин\\w*"],
+      "reason": "в TR нет данных о работе акушеркой; направлена в Глинск 1940, война 1941 — ушла в госпиталь медсестрой",
+      "source": "TR1",
+      "severity": "warning"
+    },
+    {
+      "anti_fact_id": "af_004",
+      "item_A": "бабушка Валентины",
+      "item_A_patterns": ["бабушк\\w+\\s+(Валентин|субъект\\w*)"],
+      "item_B": "свекровь",
+      "item_B_patterns": ["свекров\\w*"],
+      "reason": "Никита в feedback v61 использовал «свекровь», но имел в виду Марфу (бабушку Валентины). Избегать ошибочной семантической связки.",
+      "source": "meta (v61 feedback)",
+      "severity": "warning"
+    }
+  ],
+  "usage": "validate_anti_facts(book, anti_facts_config): для каждой пары item_A/item_B grep в одном paragraph (≤2 sentences). Если оба совпали — flag warning. Не enforce (риск false positive)."
+}
