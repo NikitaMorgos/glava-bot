@@ -67,15 +67,25 @@ print(f'class11_extended: {len(c11_ext[\"pattern_options\"])} pattern_options OK
 print('OK: narrative_stop_phrases v6')
 "
 
-echo "=== v64: STAGE 1 (split-extract + known-episodes v6 + prev-fact-map v63) ==="
-V63_FM="collab/runs/karakulina_v63/karakulina_fact_map_full_*.json"
+echo "=== v64: STAGE 1 (split-extract + known-episodes v6 + prev-fact-map v63 or v62) ==="
+# Use v63 fact_map if available, fall back to v62
+V63_FM_DIR="collab/runs/karakulina_v63"
+V62_FM_DIR="collab/runs/karakulina_v62"
+if ls ${V63_FM_DIR}/karakulina_fact_map_full_*.json 2>/dev/null | head -1 | grep -q .; then
+    PREV_FM=$(ls -t ${V63_FM_DIR}/karakulina_fact_map_full_*.json | head -1)
+    echo "Using v63 fact_map: $PREV_FM"
+else
+    PREV_FM=$(ls -t ${V62_FM_DIR}/karakulina_fact_map_full_*.json | head -1)
+    echo "v63 not found, using v62 fact_map: $PREV_FM"
+fi
+
 mkdir -p exports/karakulina_v64
 
 python scripts/test_stage1_karakulina_full.py \
   --transcript1 collab/transcripts/01_karakulina_original_assemblyai_20260326.txt \
   --transcript2 collab/transcripts/02_karakulina_nikita_tatyana_interview.txt \
   --split-extract \
-  --prev-fact-map $(ls -t $V63_FM | head -1) \
+  --prev-fact-map "$PREV_FM" \
   --known-episodes collab/context/known_episodes_karakulina.md \
   --output-dir exports/karakulina_v64
 
