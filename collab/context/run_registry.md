@@ -773,4 +773,138 @@ Lesson: при measuring chars target — что именно меряем? Buil
 |---|---|---|---|
 | v1 | 2026-05-17 | Создание ретроспективно для v54-v60 после Никитиного вопроса «ведёшь ли четкий реестр?» — признан пробел в дисциплине, восстановлено из git log + tasks + памяти | Опус |
 | v2 | 2026-05-17 | + v60 outputs/verification (НЕ PASS, 5 блокеров); + план v61 (Вариант 1 Hybrid rollback после Никитиного решения); baseline для diff изменён v56→v59 | Опус |
-| **v3** | **2026-05-18** | **+ v61 verification (близко к PASS, 5 блокеров); + план v62a sprint (10 точечных scripted fixes NO GW change + 11 meta); + backlog v63-v66 (по одной GW правке за раз); target 20K+** | **Опус** |
+| v3 | 2026-05-18 | + v61 verification (близко к PASS, 5 блокеров); + план v62a sprint (10 точечных scripted fixes NO GW change + 11 meta); + backlog v63-v66 (по одной GW правке за раз); target 20K+ | Опус |
+| **v4** | **2026-05-18** | **+ v63 verification (НЕ PASS, 4 блокера: Total 18 372<20K, pin-list depth 3 err, discourse markers ch_02/ch_04, Class 5 regression Мария+баба Аня); + lessons (GW v2.22 ПРАВИЛО 12 частично — ch_03/epilogue выросли, ch_02 не сдвинулся; Class 1 confabulation на огурцах новая форма motivation вместо location; чистый narrative ≤17K — рекорд v61); + lesson: VERIFIED_ON_RUN Курсора может содержать self-report ошибки (Татьяна «1952 estimated» — в config реально 1956 high) — cross-check артефактом обязателен** | **Опус** |
+
+---
+
+## v63 (2026-05-18) — combined sprint (9 scripted + 1 CA + 1 GW prompt-bump) — НЕ PASS
+
+**Branch + commit:** `feat/v63-combined-sprint` @ `84a145d`; артефакты `runs/karakulina-v63-artifacts` @ `7f03452`
+**Status:** verified, **НЕ PASS Ворот 1** (4 блокера + 3 минор регрессии)
+
+### Components
+- Cleaner: v1, FE: v3.4, Historian: v3
+- **CA: v1.5** (task 038c — ПРАВИЛО 7 named entity preservation: location/name/year/characteristic-word)
+- **GW: v2.22** (task 049d — ПРАВИЛО 12 narrative depth + voice + объём ≥20K, per-chapter floors, proof-of-attention writing_notes; per Правилу 6 одно правило per bump с 3 metrics одной семьи; **skip v2.21** collision с откатанной v60 версией)
+- FC: v2.13, LE: v3.1, PR: v1
+
+### Environment
+- Cursor agent: Cursor Agent (chat)
+- Cursor model: Sonnet 4
+- Без смены vs v62a → не отдельная переменная в registry
+
+### Configs (per subject)
+- known_episodes_karakulina.md: **v5** (ep_029 продажа дачи year=unknown, year_confidence=low; task 051d)
+- gazeteer_karakulina.json: v2
+- relation_overrides_karakulina.json: v1
+- timeline_anchors_karakulina.json: v1
+- discourse_markers_karakulina.json: v1
+- persona_notes_karakulina.json: v1 (+ Никита/Даша)
+- **chronology_periods_karakulina.json: v1** (новый, task 048d) — содержит `daughter_tatyana_birth.year=1956 (high)` ✅. NB: в VERIFIED_ON_RUN_v63 Курсор ошибочно написал «1952 (estimated)» — это **bug в self-report**, не в config'е. Reality: config корректен. Lesson: cross-check VERIFIED отчёт с реальным артефактом (Правило 2 архитектора)
+- **bio_data_format_config.json: v1** (новый, task 044g) — generic для всех subjects
+
+### Configs (generic)
+- **narrative_stop_phrases.json: v3** (task 043g — +event_that_changed_life, typical_for_generation, in_this_typicality_uniqueness, class11_not_loved_x_by_y_and_z)
+- **epilogue_rewrite_mapping.json: v3** (task 043g — +typical_for_generation, in_this_typicality_uniqueness rewrite rules)
+- epilogue_stop_phrases.json: v2
+
+### Pipeline code
+- `pipeline_utils.py`:
+  - + `validate_children_before_birth` (task 048d Class 12 extend)
+  - + `validate_epilogue_quote_density` (task 043e-2 Class 6 density)
+  - + `validate_entity_substitution` stem regex inflection-aware (task 038c scripted defense)
+  - + `validate_bio_data_family_format` + locative case check (task 044g)
+  - + `parse_pin_list_year_field` поддержка `unknown` / `~1990-е` / `year_confidence` (task 051d)
+- `scripts/build_gate1_full_text.py`:
+  - + skip empty `### Дополнительный текст ch_01` heading (task 044d-2)
+  - + skip malformed override entries в bio_data.family render (task 044d-2)
+  - + Contributors render ФИО+родство only (task 052d — `interview_role` + `notes` в data, но не рендерятся)
+- `scripts/_run_v63_full.sh` — новый run script (Option X combined sprint)
+- `tests/test_v63_sprint.py` — **35/35 snapshot tests** PASS
+
+### Inputs
+- Transcripts: TR1+TR2 split-extract
+- Pin-list: v5 (with year_confidence support)
+- `--known-episodes=collab/context/known_episodes_karakulina.md` (обязателен)
+- **Diff baseline: v62a** (incremental); reference: v59 (Никитин «удачный бенч»)
+
+### Outputs
+- Run artifacts: `runs/karakulina-v63-artifacts` (21 файл, включая VERIFIED_ON_RUN_v63.md)
+- text_FULL.md: **18 372 chars Total** (build_gate1 own counter)
+  - ch_01 (паспортичка-в-тексте): 3 249
+  - ch_02 (хронология): 6 872 (target ≥8K — **fail**, +38 vs v62a — ≈ноль роста на главной главе)
+  - ch_03 (портрет): 5 053 (target ≥4K — pass, +603 vs v62a)
+  - ch_04 (эпизоды): 2 230 (target ≥2.5K — **fail**, −97 vs v62a)
+  - epilogue: 968 (target 800-1500 — pass, +183 vs v62a)
+- text_FULL.md file_size: 38 308 chars (не gate metric, lesson v62a applied)
+- bio_data.family: 21 (**Мария и баба Аня выпали** vs v62a 23 — Class 5 regression; Марфа есть)
+- historical_notes: 3 field + 0 inline (vs v62a 10+10 — большая регрессия)
+- callouts: 6
+- Pin-list: full 15, partial 7, skipped 45 / 67 (same as v62a)
+- Timeline anchors: 7/7 ✅
+- Stage 1 manifest: `ghostwriter_version: v2.22`, `completeness_auditor_version: v1.5` ✅
+- FC verdict: не зафиксировано явно в artifacts (нужно уточнить у Курсора)
+
+### Verification — НЕ PASS, 4 блокера + 3 минор регрессии
+
+**Закрытые tasks по форме (11/11 PASS code-side):**
+- 048d chronology «1946 + дети» flagged error ✅
+- 044d-2 render bug → 0 malformed, empty heading скрыт ✅
+- 043g «событие изменило» + «типичной для поколения» → 0 в narrative ✅
+- 051d ep_029 year=unknown + parser ✅
+- 043f Class 11 awkward → 0 в тексте + snapshot test ✅
+- 043e-2 epilogue density → 0 quotes в epilogue ✅
+- 044g bio_data единый формат ✅ (минор: «Калинин» в дочери Татьяны без locative case)
+- 052d Contributors ФИО+родство only ✅
+- 038c CA v1.5 ПРАВИЛО 7 → «из Молдавии» preserved в description ✅
+- 049d GW v2.22 ПРАВИЛО 12 → активен ✅ (target effect не достигнут)
+- configs v3/v1 ✅
+
+**4 блокера для PASS:**
+1. ❌ **Объём Total 18 372 < 20 000 target** (Никита confirmed metric = Total chars build_gate1, не file_size). Дефицит 1 628 chars. ch_02 +38 chars vs v62a (≈ноль роста на главной хронологической главе)
+2. ❌ **Pin-list depth 3 errors:** ep_003 призыв 1941 (2 предл.), ep_027 пенсия 1994 (1 предл!), ep_028 свадьба Татьяны 1996 (2 предл.), ep_030 перелом 2005. Прогресс vs v62a 5→3, но не 0
+3. ❌ **Discourse markers ch_02=2/8, ch_04=0/3** (ch_03=5/5 pass ✅). GW v2.22 ПРАВИЛО 12 не убедило писать rapporteur attribution в хронологии и эпизодах
+4. ❌ **Class 5 regression: Мария + баба Аня выпали** из bio_data.family (были в v59/v61/v62a; 21 vs 23). Курсор сам отчитал «Кандидаты для pin_list v6 / required_persons»
+
+**3 минор регрессии:**
+1. ⚠️ **Огурцы — новая Class 1 confabulation:** v62a «не привозит подарки из командировок» (location generalisation), v63 «ей казалось, что родственники мужа должны присылать больше подарков» (motivation confabulation). Task 038c защитил location ✅, но не закрыл causal mechanism
+2. ⚠️ **Epilogue — новые Class 6 клише:** «принадлежала к поколению, которое строило советскую страну, воевало за неё и верило в её идеалы», «человек долга, который всегда знал, что правильно». Task 043g закрыл 2 конкретных pattern'а, GW нашёл аналогичные для заполнения объёма
+3. ⚠️ **historical_notes 0 inline + 3 field** (vs v62a 10+10). Не блокер v63, но потенциально критично для содержательности
+
+**Style checks (other warnings):**
+- 1 warning «определило жизнь» в ch_02 (`speciality_defined_life`, не закрыто из v62a)
+- 1 warning «судьба распорядилась» в ch_02 (новое клише — кандидат для расширения patterns)
+
+### Lesson learned v63
+
+1. **GW v2.22 ПРАВИЛО 12 (3 metrics одной семьи) — частично сработало:**
+   - ch_03 +603 chars + discourse markers 0→5 (target ✅)
+   - epilogue +183 chars, без overcrowded quotes ✅
+   - **НО:** ch_02 +38 chars (main chapter), pin-list depth ep_003/027/028/030 не развёрнуты, ch_02 markers 0→2 (target 8)
+   - Гипотеза: на ch_02 пересекается max-density существующих правил (ЗАПРЕТЫ 8/9/10/11/12 + ПРАВИЛА 5/6/7/8/12) → cognitive overload именно на главной главе. ПРАВИЛО 12 повысило depth где было свободнее (ch_03/epilogue), не там где плотнее (ch_02)
+   - **Триггер task 037 (GW prompt refactor) сработал давно** (GW v2.22 ≈2200 строк), пора рассматривать
+
+2. **Recurring patterns Class 1 продолжают возвращаться в новых формах:**
+   - v56 → v60 → v62a → v63 — каждый раз GW находит новую форму причинно-следственного confabulation на огурцах
+   - Lesson v62a (snapshot tests mandatory) применён в v63 (043f Class 11 поймал), но Class 1 на огурцах **по форме** не fit любому из current patterns
+   - Backlog: расширить snapshot tests для Class 1 на новые формы (motivation confabulation, не только location)
+
+3. **«Чистый narrative» (без ch_01) рекорд = 17K, никогда не было 20K:**
+   - v59 ≈16K, v61 = 17 027, v62a = 14 396, v63 = 15 123
+   - Target 20K Total включает ch_01.content (паспортичка-в-тексте ≈3.2K chars). Никита confirmed metric = Total build_gate1 (Вариант А)
+   - На метрике «чисто narrative ch_02..epilogue» рекорд = v61 17K — для 90-минутного интервью без выдумывания может быть физический потолок
+
+4. **VERIFIED_ON_RUN Курсора может содержать self-report ошибки:**
+   - В v63 VERIFIED Курсор написал «daughter_tatyana_birth.year=1952 (estimated)», но в реальном config 1956 (high)
+   - Lesson: при verified-on-run review — cross-check VERIFIED отчёт с реальными артефактами (Правило 2 архитектора). Курсорский self-report — proxy, не факт
+
+### Notes
+
+- 11/11 tasks PASS code-side, но 4 блокера на effect → НЕ PASS Ворот 1
+- v63 sprint = первый combined (Опция X) — scripted + CA minor + GW prompt-bump в одном прогоне
+- **Решение по v64 — ждёт Никитино go (Опции A/B/C/D):**
+  - A: stochastic rerun v63 (same code, $2-3) — проверить variance гипотезу
+  - B: v64 GW revision loop volume-based (1 правило prompt-bump, $4-6 за 2 LLM-passes)
+  - C: pin-list v6 (Мария + баба Аня в required_persons, $2-3) — закрывает Class 5 regression, не решает M1 объём
+  - D: tag RP-1 на v63 как-есть, items в backlog после RP-1
