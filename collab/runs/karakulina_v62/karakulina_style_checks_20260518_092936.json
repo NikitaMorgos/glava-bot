@@ -1,0 +1,24 @@
+{
+  "epilogue_stop_phrases": {
+    "issues": [
+      {
+        "phrase": "интересно, что",
+        "chapter_id": "ch_04",
+        "severity": "warning"
+      }
+    ],
+    "errors_count": 0,
+    "warnings_count": 1
+  },
+  "awkward_formulation": {
+    "issues": [],
+    "issues_count": 0
+  },
+  "errors_count": 0,
+  "warnings_count": 1,
+  "narrative_stop_phrases": {
+    "issues": [],
+    "errors_count": 0,
+    "warnings_count": 0
+  }
+}

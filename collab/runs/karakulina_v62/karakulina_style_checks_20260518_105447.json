@@ -1,0 +1,49 @@
+{
+  "epilogue_stop_phrases": {
+    "issues": [
+      {
+        "phrase": "жизнь налаживалась",
+        "chapter_id": "ch_02",
+        "severity": "warning"
+      },
+      {
+        "phrase": "интересно, что",
+        "chapter_id": "ch_02",
+        "severity": "warning"
+      },
+      {
+        "phrase": "жизнь налаживалась",
+        "chapter_id": "ch_03",
+        "severity": "warning"
+      }
+    ],
+    "errors_count": 0,
+    "warnings_count": 3
+  },
+  "awkward_formulation": {
+    "issues": [
+      {
+        "type": "example_instead_of_generalization",
+        "chapter_id": "ch_04",
+        "severity": "warning",
+        "matched_text": "не любила ходить по грибы и ягоды,",
+        "suggestion": "Обобщение первым, затем примеры: «не любил советов; например, по ...»"
+      }
+    ],
+    "issues_count": 1
+  },
+  "errors_count": 0,
+  "warnings_count": 5,
+  "narrative_stop_phrases": {
+    "issues": [
+      {
+        "chapter_id": "ch_02",
+        "category": "speciality_defined_life",
+        "severity": "warning",
+        "snippet": "В 1938 году Валентина поступила в Кировоградскую фельдшерско-акушерскую школу. ***В те годы медицинское образование было особенно престижным — стране "
+      }
+    ],
+    "errors_count": 0,
+    "warnings_count": 1
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "issues": [
+    {
+      "chapter_id": "epilogue",
+      "type": "grandchild_before_inferred_birth",
+      "person_name": "Никита",
+      "inferred_min_birth": 1964,
+      "parent_birth_used": 1948,
+      "parent_marriage_used": null,
+      "event_year_range": "1933",
+      "snippet": "Голод 1933 года, война, послевоенные переезды, работа, семья — каждый этап требовал стойкости и умения приспосабливаться к обстоятельствам. Она воспитала двоих детей, дождалась внуков, проработала в м",
+      "severity": "error"
+    }
+  ],
+  "errors_count": 1,
+  "warnings_count": 0
+}

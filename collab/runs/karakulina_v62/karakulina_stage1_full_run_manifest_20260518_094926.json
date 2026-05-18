@@ -1,0 +1,230 @@
+{
+  "project_id": "karakulina",
+  "stage": "stage1_full",
+  "timestamp": "20260518_094926",
+  "generated_at": "2026-05-18T10:03:19.165041Z",
+  "git_sha": "1b5139d",
+  "config_file": "/opt/glava/prompts/pipeline_config.json",
+  "config_sha256": "d9e14f9911c457116451c240651a1941f4198a7ee91aaed3934374e6cc1da316",
+  "active_prompts": {
+    "cleaner": {
+      "prompt_file": "01_cleaner_v1.md",
+      "prompt_exists": true,
+      "prompt_sha256": "bcdb4a845744438ee931e5557c8d30e3eaa0dbeec2b4ee158aeb89337147e1fc",
+      "model": "claude-haiku-4-5-20251001",
+      "max_tokens": 32000,
+      "temperature": 0.1
+    },
+    "fact_extractor": {
+      "prompt_file": "02_fact_extractor_v3.4.md",
+      "prompt_exists": true,
+      "prompt_sha256": "a863422a7676dab7ce098b2a7cf6fa4ec7dfc9a6cb17197a4e201b4210ddf26f",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 32000,
+      "temperature": 0.15
+    },
+    "historian": {
+      "prompt_file": "12_historian_v3.md",
+      "prompt_exists": true,
+      "prompt_sha256": "3e316c1468738ceb22b4f8ce2cea1defd7918ac04180b2551b3e59f0f8a76a22",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 64000,
+      "temperature": 0.3
+    },
+    "ghostwriter": {
+      "prompt_file": "03_ghostwriter_v2.20.md",
+      "prompt_exists": true,
+      "prompt_sha256": "7fc96ec55eca9190128ad02fb8d2a06acf1e7ac5c7067a418ccb36bfe73e28be",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 32000,
+      "temperature": 0.4
+    },
+    "fact_checker": {
+      "prompt_file": "04_fact_checker_v2.13.md",
+      "prompt_exists": true,
+      "prompt_sha256": "efec0625f4ae6f71bb3920f93615f1150a681b2609a34ceb69e0d32fa61acd3d",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 64000,
+      "temperature": 0.1
+    },
+    "literary_editor": {
+      "prompt_file": "05_literary_editor_v3.1.md",
+      "prompt_exists": true,
+      "prompt_sha256": "544582a54c287aaeff44be3826c00276d063b4ce915d29c02dd5ebfdd3f90485",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 32000,
+      "temperature": 0.5
+    },
+    "proofreader": {
+      "prompt_file": "06_proofreader_v1.md",
+      "prompt_exists": true,
+      "prompt_sha256": "5c600132d206cdc62876661662b917b17922e3779047de366485a78703758d79",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 32000,
+      "temperature": 0.0
+    },
+    "photo_editor": {
+      "prompt_file": "07_photo_editor_v1.md",
+      "prompt_exists": true,
+      "prompt_sha256": "0d55f58677f5c2568566b4cff82d0faccf9cea6af0d6f413830fa86a363a4179",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 32000,
+      "temperature": 0.25
+    },
+    "layout_designer": {
+      "prompt_file": "08_layout_designer_v3.22.md",
+      "prompt_exists": true,
+      "prompt_sha256": "d328e96f13fea1f2f692af68db8c1d055c62a029e70bebc339646f206f3f79ff",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 64000,
+      "temperature": 0.25
+    },
+    "qa_layout": {
+      "prompt_file": "09_qa_layout_v1.md",
+      "prompt_exists": true,
+      "prompt_sha256": "04a0b4137d947ef287a3e78de08f8dd0e024c3da836a3bafb8ab9bb08e1a4c92",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 32000,
+      "temperature": 0.05
+    },
+    "cover_designer": {
+      "prompt_file": "13_cover_designer_v2.6.md",
+      "prompt_exists": true,
+      "prompt_sha256": "38c4330f89f693ca8928b75e5a43822a9b64223238d0a3eaabac1df1199bdcf4",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 32000,
+      "temperature": 0.65
+    },
+    "layout_art_director": {
+      "prompt_file": "15_layout_art_director_v1.8.md",
+      "prompt_exists": true,
+      "prompt_sha256": "f04d0ab80ad4c86298503cd38b23e32f9608613957b79fa04c37dd2e2b6d49ea",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 64000,
+      "temperature": 0.45
+    },
+    "interview_architect": {
+      "prompt_file": "11_interview_architect_v4.1.md",
+      "prompt_exists": true,
+      "prompt_sha256": "b5d627abeca38235a963a2f1efa44d17ed5bc22c37aacf7115834d205f54ded2",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 32000,
+      "temperature": 0.5
+    },
+    "completeness_auditor": {
+      "prompt_file": "16_completeness_auditor_v1.4.md",
+      "prompt_exists": true,
+      "prompt_sha256": "413d5093e49759e2027ed80ae98118c919e793646026c06c08792e97e3f5918f",
+      "model": "claude-haiku-4-5-20251001",
+      "max_tokens": 32000,
+      "temperature": 0.1
+    }
+  },
+  "inputs": {
+    "transcript1": "collab/transcripts/01_karakulina_original_assemblyai_20260326.txt",
+    "transcript2": "collab/transcripts/02_karakulina_nikita_tatyana_interview.txt",
+    "pin_list_used": "collab/context/known_episodes_karakulina.md",
+    "pin_list_episodes_count": 35,
+    "pin_list_required_persons_count": 3
+  },
+  "inputs_sha256": {
+    "transcript1": "sha256:3555b3d0cb4da1ea",
+    "transcript2": "sha256:e5a1c8e149ed51c7",
+    "pin_list_used": "sha256:d03137c061250e43"
+  },
+  "outputs": {
+    "cleaned": "exports/karakulina_v62/karakulina_combined_cleaned_20260518_094926.txt",
+    "fact_map_full": "exports/karakulina_v62/karakulina_fact_map_full_20260518_094926.json",
+    "fact_map_clean": "exports/karakulina_v62/karakulina_fact_map_20260518_094926.json",
+    "completeness_audit": "exports/karakulina_v62/karakulina_completeness_audit_20260518_094926.json",
+    "normalization_log": "exports/karakulina_v62/karakulina_normalization_log_20260518_094926.json"
+  },
+  "checkpoints": {},
+  "notes": {
+    "completeness_audit": {
+      "completeness_status": "incomplete",
+      "auto_enriched": {
+        "persons": 3,
+        "events": 6,
+        "locations": 1,
+        "traits": 3
+      },
+      "log_only_gaps": {
+        "missing_persons": [
+          {
+            "mention_in_transcript": "соседка, любила ходить по грибы и ягоды",
+            "transcript_quote": "Не особо любила ходить по грибы и ягоды. Это в основном тётя Маша и её соседка были любителями",
+            "likely_relation": "соседка",
+            "reason_low_confidence": "Упомянута вскользь без имени, только как 'соседка' тёти Маши. Неясно, была ли она значимой фигурой в жизни Валентины или просто упоминается в контексте хобби.",
+            "was_in_pin_list": false
+          }
+        ],
+        "missing_events": [],
+        "missing_locations": [],
+        "missing_traits": []
+      }
+    },
+    "name_normalization": {
+      "merged_pairs": [
+        {
+          "status": "merged",
+          "field": "persons",
+          "canonical": "Полсачева Нинвана",
+          "canonical_id": "person_auto_002",
+          "merged": "Нинвана Полсачева",
+          "merged_id": "person_022",
+          "overlap": 0.75,
+          "shared_variants": [
+            "нинвана",
+            "нинвана полсачева",
+            "полсачева"
+          ]
+        },
+        {
+          "status": "merged",
+          "field": "locations",
+          "canonical": "село Мариевка, Новомиргородский район, Кировоградская область",
+          "canonical_id": "loc_001",
+          "merged": "село Глинск, Светловолодский район, Кировоградская область",
+          "merged_id": "loc_004",
+          "overlap": 0.909,
+          "shared_variants": [
+            "кировоградская",
+            "район,"
+          ]
+        }
+      ],
+      "rejected_pairs": [
+        {
+          "status": "rejected",
+          "field": "persons",
+          "candidate_a": "Рудая Пелагея Алексеевна",
+          "candidate_id_a": "person_002",
+          "candidate_b": "Полина",
+          "candidate_id_b": "person_004",
+          "shared_variants": [
+            "пелагея",
+            "полина",
+            "поля"
+          ],
+          "blocked_reason": "relation_group_mismatch (parent:'мать' vs sibling:'старшая сестра')"
+        },
+        {
+          "status": "rejected",
+          "field": "persons",
+          "candidate_a": "тётя Маша",
+          "candidate_id_a": "person_017",
+          "candidate_b": "Мария",
+          "candidate_id_b": "person_018",
+          "shared_variants": [
+            "маня",
+            "мария",
+            "маша"
+          ],
+          "blocked_reason": "unknown_relation ('знакомая' vs 'старшая сестра')"
+        }
+      ],
+      "normalized_count": 2
+    }
+  }
+}

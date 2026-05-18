@@ -1,0 +1,32 @@
+{
+  "corrections": [
+    {
+      "person_name": "тётя Маша",
+      "ca_relation": "знакомая",
+      "real_relation": "соседка",
+      "in_bio_data_family": false
+    },
+    {
+      "person_name": "Полсачева",
+      "ca_relation": "врач",
+      "real_relation": "врач, авторитет",
+      "in_bio_data_family": false
+    },
+    {
+      "person_name": "баба Аня",
+      "ca_relation": "свекровь рассказчика (не прямая родственница Валентины)",
+      "real_relation": "свекровь рассказчика (мать Владимира Маргось)",
+      "in_bio_data_family": false
+    }
+  ],
+  "corrections_count": 3,
+  "re_filter_removed": [],
+  "excluded_by_override": [
+    {
+      "label": "свекровь рассказчика (не прямая родственница Валентины)",
+      "value": "баба Аня",
+      "matched_person": "баба Аня",
+      "reason": "in_bio_data_family=false"
+    }
+  ]
+}
