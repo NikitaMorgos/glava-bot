@@ -1,0 +1,56 @@
+{
+  "version": "v1",
+  "description": "Normalisation rules for bio_data.family entries (task 044g). Universal — subject-independent.",
+  "_updated": "2026-05-18",
+
+  "family_entry_format": {
+    "description": "Each family entry must follow <Relation>: <ФИО> format with optional parenthetical note.",
+    "required_fields": ["relation_term", "full_name"],
+    "optional_fields": ["birth_year", "note"],
+    "canonical_format": "{relation_term}: {full_name}",
+    "canonical_format_with_note": "{relation_term}: {full_name} ({note})"
+  },
+
+  "relation_terms": {
+    "description": "Canonical Russian relation terms in именительный падеж (nominative).",
+    "terms": [
+      "Муж", "Жена",
+      "Отец", "Мать",
+      "Сын", "Дочь",
+      "Внук", "Внучка",
+      "Правнук", "Правнучка",
+      "Брат", "Сестра",
+      "Дедушка", "Бабушка",
+      "Свёкор", "Свекровь",
+      "Тесть", "Тёща",
+      "Зять", "Невестка",
+      "Племянник", "Племянница",
+      "Дядя", "Тётя",
+      "Крёстный", "Крёстная",
+      "Отчим", "Мачеха",
+      "Пасынок", "Падчерица"
+    ],
+    "note": "Add двоюродный/троюродный modifier before term as needed, e.g. «Двоюродная сестра»"
+  },
+
+  "locative_case_note": {
+    "description": "Cities named in bio_data fields (birth_place, death_place, lived_in) must use prepositional (locative) case — «в Калинине», not «в Калинин».",
+    "applies_to": ["birth_place", "death_place", "lived_in"],
+    "rule": "Use standard Russian prepositional case for city names; do NOT use nominative/accusative after «в».",
+    "examples": {
+      "correct": ["в Калинине", "в Москве", "в Ленинграде", "в Тбилиси", "в Кишинёве"],
+      "incorrect": ["в Калинин", "в Москва", "в Ленинград"]
+    }
+  },
+
+  "malformed_entry_handling": {
+    "description": "Entries that cannot be parsed into relation_term + full_name are flagged.",
+    "action": "log_warning_skip_render",
+    "examples_malformed": [
+      "?: ? (сын)",
+      "Сын: (неизвестно)",
+      ": Иван Иванович"
+    ],
+    "fix": "If relation_term is empty/unknown, skip entry in rendering; log to validation report."
+  }
+}

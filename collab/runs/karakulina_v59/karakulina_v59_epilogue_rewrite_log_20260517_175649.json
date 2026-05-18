@@ -1,0 +1,16 @@
+[
+  {
+    "chapter_id": "epilogue",
+    "action": "deleted",
+    "category": "person_of_their_time",
+    "reason": "клише обобщения эпохи",
+    "deleted_sentence": "Она была человеком своего времени и своих убеждений."
+  },
+  {
+    "chapter_id": "epilogue",
+    "action": "deleted",
+    "category": "life_filled_with_X",
+    "reason": "пафосное обобщение без конкретики",
+    "deleted_sentence": "Её жизнь была наполнена трудом и служением людям — сначала раненым воинам в госпиталях, потом пациентам поликлиники, всегда — своей семье."
+  }
+]

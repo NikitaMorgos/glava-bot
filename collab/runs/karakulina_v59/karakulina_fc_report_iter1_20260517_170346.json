@@ -1,0 +1,169 @@
+{
+  "project_id": "karakulina_stage2_test",
+  "iteration": 1,
+  "verdict": "fail",
+  "errors": [
+    {
+      "id": "err_001",
+      "type": "distortion",
+      "severity": "major",
+      "chapter_id": "ch_02",
+      "location": "Глава 2, абзац p_02_008: «Там, в Вышнем Волочке, куда они вернулись, родился первенец — сын Валерий»",
+      "what_is_written": "В Вышнем Волочке родился сын Валерий",
+      "what_should_be": "Согласно fact_map event_016, Валерий родился в Вышнем Волочке в 1948 году, но семья вернулась туда из Германии. Формулировка создаёт впечатление, что он родился в Германии.",
+      "source": {
+        "type": "fact_map",
+        "reference": "event_015: возвращение из Германии в Вышний Волочёк в 1948 году; event_016: рождение Валерия в Вышнем Волочке"
+      },
+      "fix_instruction": "Исправить формулировку: «В 1948 году семья вернулась из Германии в Вышний Волочёк, где родился первенец — сын Валерий»",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_002",
+      "type": "distortion",
+      "severity": "major",
+      "chapter_id": "ch_01",
+      "location": "bio_data.awards: медаль «25 лет победы в ВОВ» указана с годом 1965",
+      "what_is_written": "1965 — медаль «25 лет победы в ВОВ»",
+      "what_should_be": "Медаль «25 лет победы в ВОВ» была учреждена и вручалась в 1970 году (25 лет после окончания войны в 1945 году)",
+      "source": {
+        "type": "fact_map",
+        "reference": "Логическая ошибка: 1945 + 25 = 1970, не 1965"
+      },
+      "fix_instruction": "Исправить год с 1965 на 1970 для медали «25 лет победы в ВОВ»",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_003",
+      "type": "distortion",
+      "severity": "major",
+      "chapter_id": "ch_01",
+      "location": "bio_data.awards: медаль «30 лет победы в ВОВ» указана с годом 1975",
+      "what_is_written": "1975 — медаль «30 лет победы в ВОВ»",
+      "what_should_be": "Медаль «30 лет победы в ВОВ» была учреждена и вручалась в 1975 году, но в fact_map нет подтверждения получения этой награды Валентиной",
+      "source": {
+        "type": "fact_map",
+        "reference": "В fact_map.timeline нет события о получении медали «30 лет победы в ВОВ»"
+      },
+      "fix_instruction": "Удалить медаль «30 лет победы в ВОВ» из списка наград или найти подтверждение в источниках",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_004",
+      "type": "distortion",
+      "severity": "major",
+      "chapter_id": "ch_01",
+      "location": "bio_data.awards: медаль «50 лет вооружённых сил СССР» указана с годом 1968",
+      "what_is_written": "1968 — медаль «50 лет вооружённых сил СССР»",
+      "what_should_be": "Медаль «50 лет вооружённых сил СССР» была учреждена в 1968 году, но в fact_map нет подтверждения получения этой награды Валентиной",
+      "source": {
+        "type": "fact_map",
+        "reference": "В fact_map.timeline нет события о получении медали «50 лет вооружённых сил СССР»"
+      },
+      "fix_instruction": "Удалить медаль «50 лет вооружённых сил СССР» из списка наград или найти подтверждение в источниках",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_005",
+      "type": "omission",
+      "severity": "major",
+      "chapter_id": "ch_01",
+      "location": "bio_data.family: отсутствует тётя Шура",
+      "what_is_written": "В family нет записи о тёте Шуре",
+      "what_should_be": "Тётя Шура (person_008) — важный родственник, у которой жил сын Валерий в Кирсанове",
+      "source": {
+        "type": "fact_map",
+        "reference": "person_008: тётя Шура, сестра Дмитрия Каракулина; event_021: Валерий остался с тётей Шурой"
+      },
+      "fix_instruction": "Добавить в bio_data.family запись: «Тётя Шура — сестра мужа, жила в Кирсанове»",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_006",
+      "type": "omission",
+      "severity": "major",
+      "chapter_id": "ch_01",
+      "location": "bio_data.family: племянницы Римма и Зина указаны как дочери тёти Шуры, но тётя Шура отсутствует",
+      "what_is_written": "Римма и Зина указаны как дочери тёти Шуры, но сама тётя Шура не упомянута",
+      "what_should_be": "Если упоминаются дочери тёти Шуры, должна быть указана и сама тётя Шура",
+      "source": {
+        "type": "fact_map",
+        "reference": "person_022, person_023: дочери тёти Шуры; person_008: тётя Шура"
+      },
+      "fix_instruction": "Добавить тётю Шуру в family перед упоминанием её дочерей",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_007",
+      "type": "hallucination",
+      "severity": "major",
+      "chapter_id": "ch_04",
+      "location": "Абзац p_04_001: «В 1962 году Валентина продала шикарную немецкую шубу»",
+      "what_is_written": "Продажа шубы произошла в 1962 году",
+      "what_should_be": "В fact_map event_auto_009 нет точной даты, указан только период «1990-е годы, приблизительно»",
+      "source": {
+        "type": "fact_map",
+        "reference": "event_auto_009: дата указана как «1990, приблизительно», не 1962 год"
+      },
+      "fix_instruction": "Убрать конкретную дату 1962 год, заменить на неопределённую формулировку: «Валентина продала шикарную немецкую шубу»",
+      "legitimate_deletion": false
+    }
+  ],
+  "warnings": [
+    {
+      "id": "warn_001",
+      "type": "possible_omission",
+      "chapter_id": "ch_02",
+      "description": "В главе 2 не упомянута работа в Старобельске в санэпидемстанции после войны",
+      "recommendation": "Рассмотреть включение информации о работе заведующей малярийным пунктом в Старобельске (из автобиографии)"
+    },
+    {
+      "id": "warn_002",
+      "type": "ambiguous_source",
+      "chapter_id": "ch_02",
+      "description": "Хронологическая нестыковка: в тексте семья жила в Германии 1946-1948, но в интервью упомянуто «с 1946 по 1961 год не работала»",
+      "recommendation": "Уточнить у клиента точные периоды проживания в Германии и Венгрии"
+    }
+  ],
+  "completeness_check": {
+    "total_facts_in_map": 156,
+    "facts_referenced_in_text": 142,
+    "facts_verified_ok": 135,
+    "facts_with_errors": 7,
+    "facts_missing_from_text": [
+      {
+        "fact_id": "person_008",
+        "fact_description": "Тётя Шура — сестра мужа, жила в Кирсанове",
+        "was_in_facts_omitted": true,
+        "omission_justified": false,
+        "recommendation": "Включить — важный родственник"
+      },
+      {
+        "fact_id": "event_006",
+        "fact_description": "Направление на работу в село Глинск после училища",
+        "was_in_facts_omitted": true,
+        "omission_justified": true,
+        "recommendation": "Допустимо пропустить — краткий период"
+      }
+    ]
+  },
+  "regression_check": {
+    "performed": false,
+    "chapters_checked": [],
+    "issues_found": []
+  },
+  "summary": {
+    "critical_errors": 0,
+    "major_errors": 7,
+    "minor_errors": 0,
+    "warnings_count": 2,
+    "overall_assessment": "Обнаружены серьёзные фактические ошибки в датировке наград и событий, а также пропуски важных родственников в bio_data. Требуется исправление перед передачей Литредактору."
+  },
+  "stats": {
+    "facts_checked": 142,
+    "facts_passed": 135,
+    "facts_failed": 7,
+    "coverage_percent": 91,
+    "needs_verification_flagged": 0
+  }
+}

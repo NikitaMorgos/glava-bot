@@ -1,0 +1,25 @@
+{
+  "replacements": [
+    {
+      "wrong": "Капашвара",
+      "correct": "Капошвара",
+      "count": 1
+    },
+    {
+      "wrong": "Капашвара",
+      "correct": "Капошвара",
+      "count": 1
+    },
+    {
+      "wrong": "Капашвара",
+      "correct": "Капошвара",
+      "count": 1
+    },
+    {
+      "wrong": "Капашвара",
+      "correct": "Капошвара",
+      "count": 1
+    }
+  ],
+  "gazeteer_version": "v1"
+}

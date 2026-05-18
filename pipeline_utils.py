@@ -220,13 +220,340 @@ def enforce_bio_data_completeness(book_final: dict, fact_map: dict, strict: bool
             person.get("relation_to_subject") or person.get("relation") or ""
         ).strip()
         label = relation if relation and relation not in _UNKNOWN_RELATIONS else "родственник"
-        family.append({"label": label, "value": name, "source": "auto-filled"})
+        confidence = (person.get("confidence") or "").lower()
+        entry: dict = {"label": label, "value": name, "source": "auto-filled"}
+        if confidence == "low":
+            entry["needs_verification"] = True
+        family.append(entry)
 
     print(
         f"[BIO-COMPLETENESS] auto-filled {len(missing)} персон в bio_data.family: "
         f"{missing_names}"
     )
     return book_final
+
+
+# ─────────────────────────────────────────────────────────────────
+# Task 042: Subject age enrichment
+# ─────────────────────────────────────────────────────────────────
+
+def enrich_timeline_with_subject_age(fact_map: dict) -> dict:
+    """Task 042: добавить subject_age к каждому event в fact_map.timeline.
+
+    subject_age = year − birth_year.
+    Для precision="decade": mid-decade (1960 → 1965).
+    Идемпотентна: пропускает уже обогащённые events.
+    Персоны с отсутствующим birth_year → предупреждение, fact_map без изменений.
+    """
+    import copy
+    fact_map = copy.deepcopy(fact_map)
+
+    birth_year = (fact_map.get("subject") or {}).get("birth_year")
+    if birth_year is None:
+        print("[AGE-ENRICH] subject.birth_year отсутствует — пропускаем обогащение возрастом.")
+        return fact_map
+
+    timeline = fact_map.get("timeline", [])
+    enriched = 0
+    skipped = 0
+
+    for event in timeline:
+        if "subject_age" in event:
+            continue  # idempotent
+
+        date = event.get("date") or {}
+        year = date.get("year")
+        precision = (date.get("precision") or "").lower()
+
+        if year is None:
+            skipped += 1
+            continue
+
+        if precision == "decade":
+            event_year = year + 5  # середина декады: 1960 → 1965
+        else:
+            event_year = year
+
+        event["subject_age"] = event_year - birth_year
+        enriched += 1
+
+    print(
+        f"[AGE-ENRICH] subject_age добавлен для {enriched} events; "
+        f"пропущено {skipped} (год не задан)."
+    )
+    return fact_map
+
+
+# ─────────────────────────────────────────────────────────────────
+# Task 040: ASR normalize gazeteer
+# ─────────────────────────────────────────────────────────────────
+
+_TOPO_SKIP_FIELDS = frozenset({
+    "source_quote", "evidence", "transcript_quote", "asr_variants", "reasoning",
+})
+
+
+def normalize_topo_via_gazeteer(text: str, gazeteer: dict) -> tuple:
+    """Task 040: нормализация ASR-искажений топонимов по словарю gazeteer.
+
+    Case-preserving, word-boundary aware, idempotent.
+    Не трогает source_quote / evidence / transcript_quote (внешняя логика caller'а).
+    Returns (normalized_text, list_of_replacements).
+    """
+    topo_corrections = gazeteer.get("topo_corrections", {})
+    replacements = []
+
+    for wrong, correct in topo_corrections.items():
+        pattern = r'\b' + re.escape(wrong) + r'\b'
+
+        def _make_replacer(c: str):
+            def _replacer(m: re.Match) -> str:
+                orig = m.group(0)
+                if orig.isupper():
+                    return c.upper()
+                if orig[0].isupper():
+                    return c[0].upper() + c[1:]
+                return c.lower()
+            return _replacer
+
+        new_text, count = re.subn(pattern, _make_replacer(correct), text, flags=re.IGNORECASE)
+        if count > 0:
+            replacements.append({"wrong": wrong, "correct": correct, "count": count})
+            text = new_text
+
+    return text, replacements
+
+
+def _normalize_topo_value(value: object, gazeteer: dict, acc: list) -> object:
+    """Рекурсивно нормализует строки в dict/list, пропуская protected поля."""
+    if isinstance(value, str):
+        normalized, reps = normalize_topo_via_gazeteer(value, gazeteer)
+        acc.extend(reps)
+        return normalized
+    if isinstance(value, list):
+        return [_normalize_topo_value(item, gazeteer, acc) for item in value]
+    if isinstance(value, dict):
+        return {
+            k: (v if k in _TOPO_SKIP_FIELDS else _normalize_topo_value(v, gazeteer, acc))
+            for k, v in value.items()
+        }
+    return value
+
+
+def normalize_fact_map_topo(fact_map: dict, gazeteer: dict) -> tuple:
+    """Task 040: применить gazeteer normalize к fact_map (кроме protected полей).
+
+    Returns (normalized_fact_map, replacements_list).
+    """
+    import copy
+    fact_map = copy.deepcopy(fact_map)
+    replacements: list = []
+
+    for key in list(fact_map.keys()):
+        if key in _TOPO_SKIP_FIELDS:
+            continue
+        fact_map[key] = _normalize_topo_value(fact_map[key], gazeteer, replacements)
+
+    total = sum(r["count"] for r in replacements)
+    print(f"[TOPO-NORMALIZE fact_map] {len(replacements)} видов замен, {total} вхождений.")
+    return fact_map, replacements
+
+
+def normalize_book_topo(book: dict, gazeteer: dict) -> tuple:
+    """Task 040: применить gazeteer normalize к book JSON (кроме protected полей).
+
+    Returns (normalized_book, replacements_list).
+    """
+    import copy
+    book = copy.deepcopy(book)
+    replacements: list = []
+
+    for key in list(book.keys()):
+        if key in _TOPO_SKIP_FIELDS:
+            continue
+        book[key] = _normalize_topo_value(book[key], gazeteer, replacements)
+
+    total = sum(r["count"] for r in replacements)
+    print(f"[TOPO-NORMALIZE book] {len(replacements)} видов замен, {total} вхождений.")
+    return book, replacements
+
+
+# ─────────────────────────────────────────────────────────────────
+# Task 039: Bio_data integrity — required fields + relation whitelist
+# ─────────────────────────────────────────────────────────────────
+
+_FAMILY_RELATION_WHITELIST = frozenset({
+    "отец", "мать", "муж", "жена", "сын", "дочь",
+    "брат", "сестра", "бабушка", "дедушка",
+    "прабабушка", "прадедушка",
+    "внук", "внучка",
+    "тётя", "дядя",
+    "племянник", "племянница",
+    "золовка", "свекровь", "свёкор", "свёкр",
+    "тесть", "тёща",
+    "зять", "невестка",
+    "кум", "кума",
+    "сват", "сватья",
+})
+
+
+def _relation_in_whitelist(relation: str) -> bool:
+    rel = relation.strip().lower()
+    for r in _FAMILY_RELATION_WHITELIST:
+        if r in rel:
+            return True
+    return False
+
+
+def filter_bio_data_family_by_relation_whitelist(book: dict) -> tuple:
+    """Task 039: удалить из bio_data.family персон с relation НЕ в whitelist.
+
+    Whitelist включает все стандартные родственные отношения.
+    Соседи, подруги, коллеги, знакомые — удаляются.
+    Returns (patched_book, removed_entries_list).
+    """
+    import copy
+    book = copy.deepcopy(book)
+    removed = []
+
+    chapters = book.get("chapters", [])
+    ch01 = next((ch for ch in chapters if ch.get("id") == "ch_01"), None)
+    if ch01 is None:
+        return book, removed
+
+    bio_data = ch01.get("bio_data") or {}
+    family = bio_data.get("family")
+    if not family:
+        return book, removed
+
+    kept = []
+    for entry in family:
+        label = (entry.get("label") or entry.get("relation") or "").strip()
+        if not label or _relation_in_whitelist(label):
+            kept.append(entry)
+        else:
+            removed.append({
+                "label": label,
+                "value": entry.get("value", "?"),
+                "source": entry.get("source", ""),
+            })
+            print(
+                f"[BIO-WHITELIST] Убрана не-родственник из family: "
+                f"«{label}» ({entry.get('value', '?')})"
+            )
+
+    bio_data["family"] = kept
+    ch01["bio_data"] = bio_data
+    print(f"[BIO-WHITELIST] Оставлено {len(kept)} из {len(family)}, удалено {len(removed)}.")
+    return book, removed
+
+
+def validate_bio_data_required_fields(fact_map: dict, book: dict) -> tuple:
+    """Task 039: проверить и авто-патч bio_data.family required fields.
+
+    Проверяет:
+    - Для spouse / детей в fact_map.persons: если есть death_year / birth_year,
+      они должны быть в bio_data.family (в note-поле).
+    - bio_data.awards должны покрывать ключевые звания из fact_map.
+
+    Auto-patch: добавляет missing years в note ("(ум. YYYY)" или "(р. YYYY)").
+    Returns (patched_book, issues_list).
+    """
+    import copy
+    book = copy.deepcopy(book)
+    issues: list = []
+
+    chapters = book.get("chapters", [])
+    ch01 = next((ch for ch in chapters if ch.get("id") == "ch_01"), None)
+    if ch01 is None:
+        return book, issues
+
+    bio_data = ch01.get("bio_data") or {}
+    family = bio_data.get("family", [])
+
+    persons = fact_map.get("persons", [])
+    for person in persons:
+        name = (person.get("name") or "").strip()
+        relation = (
+            person.get("relation_to_subject") or person.get("relation") or ""
+        ).strip().lower()
+        if not name or not relation:
+            continue
+
+        death_year = person.get("death_year")
+        birth_year = person.get("birth_year")
+        if death_year is None and birth_year is None:
+            continue
+
+        matching = [
+            e for e in family
+            if name.lower() in (e.get("value") or "").lower()
+            or (e.get("value") or "").lower() in name.lower()
+        ]
+
+        for entry in matching:
+            entry_note = entry.get("note") or ""
+            entry_value = entry.get("value") or ""
+            combined = entry_note + " " + entry_value
+
+            if death_year and str(death_year) not in combined:
+                issues.append({
+                    "type": "missing_field",
+                    "entity": name,
+                    "relation": relation,
+                    "field": "death_year",
+                    "expected": death_year,
+                    "source": person.get("id", "?"),
+                    "action": "auto-patched",
+                })
+                entry["note"] = (entry_note + f" (ум. {death_year})").strip()
+                print(f"[BIO-INTEGRITY] {name}: добавлен death_year {death_year} в note.")
+
+            if birth_year and str(birth_year) not in combined:
+                if relation in {"сын", "дочь", "муж", "жена"}:
+                    issues.append({
+                        "type": "missing_field",
+                        "entity": name,
+                        "relation": relation,
+                        "field": "birth_year",
+                        "expected": birth_year,
+                        "source": person.get("id", "?"),
+                        "action": "auto-patched",
+                    })
+                    entry["note"] = (entry.get("note") or "" + f" (р. {birth_year})").strip()
+                    print(f"[BIO-INTEGRITY] {name}: добавлен birth_year {birth_year} в note.")
+
+    # Проверка bio_data.awards
+    fm_award_events = [
+        e for e in fact_map.get("timeline", [])
+        if "удар" in (e.get("title") or "").lower()
+        or "award" in (e.get("event_type") or e.get("type") or "").lower()
+    ]
+    bio_awards_raw = bio_data.get("awards", [])
+    bio_awards_text = " ".join(
+        (a.get("value") or a) if isinstance(a, dict) else str(a)
+        for a in bio_awards_raw
+    ).lower()
+
+    for event in fm_award_events:
+        title = event.get("title", "")
+        if title and len(title) > 5 and title.lower() not in bio_awards_text:
+            issues.append({
+                "type": "missing_award",
+                "entity": title,
+                "source": event.get("id", "fact_map"),
+            })
+            print(f"[BIO-INTEGRITY] Звание «{title}» из fact_map отсутствует в bio_data.awards.")
+
+    bio_data["family"] = family
+    ch01["bio_data"] = bio_data
+
+    patched_count = len([i for i in issues if i.get("action") == "auto-patched"])
+    print(
+        f"[BIO-INTEGRITY] validate_required_fields: {len(issues)} проблем, "
+        f"{patched_count} авто-патчем."
+    )
+    return book, issues
 
 
 def load_config() -> dict:
@@ -661,6 +988,7 @@ def run_completeness_auditor(
     narrator_relation: str,
     project_id: str,
     pin_list_fact_map: dict | None = None,
+    pin_list_episodes: dict | None = None,
     cfg: dict | None = None,
 ) -> dict:
     """
@@ -747,6 +1075,28 @@ def run_completeness_auditor(
                 "events": pin_events,
             }
             print(f"[COMPLETENESS AUDITOR] Pin-list: {len(pin_list)} персон + {len(pin_events)} events из предыдущего прогона")
+
+    # Task 041b/038b: known_episodes pin_list с bypass strict для CA v1.4
+    if pin_list_episodes:
+        ep_list = pin_list_episodes.get("episodes", [])
+        req_persons = pin_list_episodes.get("required_persons", [])
+        # Добавляем is_pin_list_required: true для всех элементов
+        ep_with_flag = [{**ep, "is_pin_list_required": True} for ep in ep_list]
+        rp_with_flag = [{**rp, "is_pin_list_required": True} for rp in req_persons]
+
+        existing_pinlist = user_message.get("pin_list", {})
+        user_message["pin_list"] = {
+            **existing_pinlist,
+            "source": "known_episodes_file",
+            "description": (
+                "Pin-list эпизодов из known_episodes файла. "
+                "Элементы с is_pin_list_required=true: ПРАВИЛО 4 (strict description) НЕ применяется. "
+                "Обязательно добавить в auto_enrich с was_in_pin_list=true, даже если confidence=low."
+            ),
+            "episodes": ep_with_flag,
+            "required_persons": rp_with_flag,
+        }
+        print(f"[COMPLETENESS AUDITOR] Pin-list episodes: {len(ep_with_flag)} эпизодов + {len(rp_with_flag)} required_persons (bypass strict)")
 
     raw_chunks = []
     with client.messages.stream(
@@ -944,14 +1294,15 @@ def run_ghostwriter(client, fact_map: dict, transcripts: list[dict],
                     historical_context: dict | None = None,
                     revision_scope: dict | None = None,
                     version: int = 1,
-                    force_phase: str | None = None) -> dict:
+                    force_phase: str | None = None,
+                    pin_list: dict | None = None) -> dict:
     """
     Запускает Писателя.
     call_type: "initial" (1-й проход) | "revision" (2-й проход с историком)
     force_phase: если задан ("A" или "B"), переопределяет автоматическое определение phase.
-      Используй force_phase="A" для historian_integration (Phase A pass 2 по спеку v2.14):
-      модель обогащает черновик, а не точечно патчит главы (Phase B семантика).
-      Используй force_phase="B" когда historian-интеграция нужна на уже готовой книге.
+      Используй force_phase="A" для historian_integration (Phase A pass 2 по спеку v2.14).
+    pin_list: dict из parse_pin_list_from_markdown() — task 041, Batch 2.
+      Если задан, добавляется в user_message["pin_list"] для GW v2.19.
     Возвращает book_draft (dict).
     """
     if cfg is None:
@@ -1000,6 +1351,12 @@ def run_ghostwriter(client, fact_map: dict, transcripts: list[dict],
             glossary = []
         user_message["historical_context"] = ctx_list
         user_message["era_glossary"] = glossary
+
+    # Task 041 (Batch 2): pin_list — обязательные эпизоды для GW v2.19
+    if pin_list:
+        user_message["pin_list"] = pin_list
+        print(f"[GHOSTWRITER] pin_list: {len(pin_list.get('episodes', []))} эпизодов, "
+              f"{len(pin_list.get('bytovye', []))} бытовых")
 
     # Streaming — обязательно при max_tokens >= 16000
     raw_parts = []
@@ -2080,6 +2437,1257 @@ def run_proofreader(client, book_draft: dict, project_id: str,
     return result
 
 
+# ══════════════════════════════════════════════════════════════════════════════
+# BATCH 2 — Tasks 044, 045, 043, 038, 041
+# ══════════════════════════════════════════════════════════════════════════════
+
+# ─── Task 044: Relation overrides + persona notes preservation ─────────────
+
+def apply_relation_overrides(fact_map: dict, overrides_config: dict) -> tuple:
+    """Task 044: корректировать relation_to_subject в fact_map.persons по ручным overrides.
+
+    Применяется ДО filter_bio_data_family_by_relation_whitelist, чтобы whitelist
+    получил уже скорректированные relation'ы (тётя Маша = соседка → будет отфильтрована).
+
+    Returns (patched_fact_map, corrections_list).
+    """
+    import copy
+    fact_map = copy.deepcopy(fact_map)
+    corrections = []
+
+    overrides = overrides_config.get("overrides", [])
+    if not overrides:
+        return fact_map, corrections
+
+    persons = fact_map.get("persons", [])
+    for person in persons:
+        name = (person.get("name") or "").strip()
+        if not name:
+            continue
+        for override in overrides:
+            canonical_name = override.get("person_name", "")
+            aliases = [canonical_name] + override.get("aliases", [])
+            matched = any(
+                alias.lower() in name.lower() or name.lower() in alias.lower()
+                for alias in aliases
+            )
+            if not matched:
+                continue
+
+            old_relation = person.get("relation_to_subject") or person.get("relation") or ""
+            new_relation = override.get("real_relation", old_relation)
+            in_family = override.get("in_bio_data_family", True)
+
+            if old_relation != new_relation or person.get("in_bio_data_family") != in_family:
+                corrections.append({
+                    "person_name": name,
+                    "ca_relation": old_relation,
+                    "real_relation": new_relation,
+                    "in_bio_data_family": in_family,
+                })
+                person["relation_to_subject"] = new_relation
+                person["relation"] = new_relation
+                person["relation_corrected"] = True
+                person["in_bio_data_family"] = in_family
+                print(
+                    f"[RELATION-OVERRIDE] «{name}»: «{old_relation}» → «{new_relation}» "
+                    f"(in_family={in_family})"
+                )
+
+    print(f"[RELATION-OVERRIDE] Скорректировано {len(corrections)} персон из {len(persons)}.")
+    return fact_map, corrections
+
+
+def enforce_persona_notes(book: dict, persona_notes_config: dict) -> tuple:
+    """Task 044: зафиксировать обязательные notes в bio_data.family и разделить склеенные записи.
+
+    Вызывать ПОСЛЕ enforce_bio_data_completeness и filter_bio_data_family_by_relation_whitelist.
+    Returns (patched_book, enforcement_log).
+    """
+    import copy
+    book = copy.deepcopy(book)
+    log = []
+
+    chapters = book.get("chapters", [])
+    ch01 = next((ch for ch in chapters if ch.get("id") == "ch_01"), None)
+    if ch01 is None:
+        return book, log
+
+    bio_data = ch01.get("bio_data") or {}
+    family = bio_data.get("family")
+    if not family:
+        return book, log
+
+    required_notes = persona_notes_config.get("required_notes", [])
+    separate_required = persona_notes_config.get("separate_entries_required", [])
+
+    # Step 1: enforce required notes
+    for rule in required_notes:
+        label_match = rule.get("label_match", "").lower()
+        required_note = rule.get("note", "")
+        note_keywords = [kw.lower() for kw in rule.get("note_keywords", [])]
+        policy = rule.get("replacement_policy", "replace_if_missing")
+
+        for entry in family:
+            entry_value = (entry.get("value") or "").lower()
+            entry_label = (entry.get("label") or "").lower()
+            if label_match not in entry_value and label_match not in entry_label:
+                continue
+
+            current_note = (entry.get("note") or "").strip()
+            note_present = any(kw in current_note.lower() for kw in note_keywords) if note_keywords else bool(current_note)
+
+            if policy == "replace_if_conflict":
+                if not note_present:
+                    old_note = current_note
+                    entry["note"] = required_note
+                    log.append({
+                        "action": "replaced_note",
+                        "label_match": label_match,
+                        "old_note": old_note,
+                        "new_note": required_note,
+                        "entry_value": entry.get("value", ""),
+                    })
+                    print(f"[PERSONA-NOTES] «{label_match}»: note заменён «{old_note[:40]}» → «{required_note}»")
+            elif policy in ("replace_if_missing", "append_if_missing"):
+                if not note_present:
+                    old_note = current_note
+                    if policy == "append_if_missing" and current_note:
+                        entry["note"] = f"{current_note}; {required_note}"
+                    else:
+                        entry["note"] = required_note
+                    log.append({
+                        "action": "set_note",
+                        "label_match": label_match,
+                        "old_note": old_note,
+                        "new_note": entry["note"],
+                        "entry_value": entry.get("value", ""),
+                    })
+                    print(f"[PERSONA-NOTES] «{label_match}»: note установлен «{entry['note']}»")
+
+    # Step 2: split merged entries (e.g. "Внуки: Никита, Даша" → separate)
+    new_family = []
+    for entry in family:
+        entry_label = (entry.get("label") or "").lower()
+        entry_value = (entry.get("value") or "")
+        split_done = False
+        for sep_rule in separate_required:
+            pattern = sep_rule.get("merged_label_pattern", "").lower()
+            if pattern not in entry_label:
+                continue
+            split_into = sep_rule.get("split_into", [])
+            found_parts = []
+            for part in split_into:
+                kw = part.get("value_keyword", "")
+                if kw.lower() in entry_value.lower():
+                    found_parts.append((part["label"], kw))
+            if len(found_parts) >= 2:
+                for lbl, val in found_parts:
+                    new_entry = dict(entry)
+                    new_entry["label"] = lbl
+                    new_entry["value"] = val
+                    new_family.append(new_entry)
+                log.append({
+                    "action": "split_entry",
+                    "original_label": entry.get("label"),
+                    "original_value": entry_value,
+                    "split_into": [{"label": l, "value": v} for l, v in found_parts],
+                })
+                print(f"[PERSONA-NOTES] Разделена запись «{entry.get('label')}»: {[v for _, v in found_parts]}")
+                split_done = True
+                break
+        if not split_done:
+            new_family.append(entry)
+
+    bio_data["family"] = new_family
+    ch01["bio_data"] = bio_data
+    print(f"[PERSONA-NOTES] Применено {len(log)} изменений. Семья: {len(new_family)} записей.")
+    return book, log
+
+
+# ─── Task 045: Timeline structural anchors ────────────────────────────────
+
+def _extract_bio_data_timeline(book: dict) -> list:
+    """Извлечь периоды из bio_data.timeline или из ch_01.content (markdown)."""
+    import re
+    chapters = book.get("chapters", [])
+    ch01 = next((ch for ch in chapters if ch.get("id") == "ch_01"), None)
+    if ch01 is None:
+        return []
+
+    bio_data = ch01.get("bio_data") or {}
+    timeline = bio_data.get("timeline", [])
+    if timeline:
+        return timeline
+
+    # Fallback: parse markdown periods from ch_01.content
+    content = ch01.get("content") or ""
+    periods = []
+    for match in re.finditer(r"\*\*(\d{4}[–\-–—]\d{4}[^*]*?)\*\*[.\s]*([^\n*]*)", content):
+        title_raw = match.group(1).strip()
+        text_snippet = match.group(2).strip()
+        periods.append({"title": title_raw, "text": text_snippet, "source": "markdown"})
+    return periods
+
+
+def _parse_markdown_timeline_periods(ch01_content: str) -> list:
+    """Task 045b: извлечь периоды биографии из markdown **YYYY[-YYYY]. Title** в ch_01.content."""
+    import re
+    if not ch01_content:
+        return []
+    # Match **1920–1933. Детство и сиротство** or **1962. Работа** etc.
+    PERIOD_RE = re.compile(
+        r"\*\*(\d{4}(?:[–\-]\d{4})?)[.\s]+([^*\n]+)\*\*",
+        re.MULTILINE,
+    )
+    periods = []
+    for m in PERIOD_RE.finditer(ch01_content):
+        year_range = m.group(1).strip()
+        title = m.group(2).strip()
+        periods.append({"title": f"{year_range}. {title}", "year_range": year_range, "source": "markdown"})
+    return periods
+
+
+def validate_timeline_anchors(book: dict, anchors_config: dict) -> dict:
+    """Task 045/045b: проверить bio_data.timeline на наличие всех обязательных anchor-периодов.
+
+    Falls back to parsing **YYYY. Title** markdown in ch_01.content if JSON array is empty.
+    Returns {anchors_found, anchors_missing, merges, issues_count}.
+    Idempotent — только чтение, не изменяет book.
+    """
+    import re
+    anchors = anchors_config.get("anchors", [])
+    min_periods = anchors_config.get("min_periods", len(anchors))
+
+    periods = _extract_bio_data_timeline(book)
+
+    chapters = book.get("chapters", [])
+    ch01 = next((ch for ch in chapters if ch.get("id") == "ch_01"), None)
+    ch01_content = ""
+    if ch01:
+        ch01_content = (ch01.get("content") or "") + " ".join(
+            p.get("text", "") for p in ch01.get("paragraphs", [])
+        )
+
+    # Task 045b: fallback to markdown parsing if JSON array is empty or too small
+    markdown_periods = _parse_markdown_timeline_periods(ch01_content)
+    if len(periods) < min_periods and len(markdown_periods) >= len(periods):
+        print(f"[TIMELINE-ANCHORS] JSON array={len(periods)} < min={min_periods}, "
+              f"fallback → markdown parsing ({len(markdown_periods)} periods found)")
+        periods = markdown_periods
+
+    full_text = ch01_content
+
+    found_anchor_ids = []
+    missing_anchor_ids = []
+    merges = []
+
+    for anchor in anchors:
+        anchor_id = anchor["anchor_id"]
+        title_keywords = [kw.lower() for kw in anchor.get("title_keywords", [])]
+
+        matched_period = None
+        for period in periods:
+            period_text = (
+                (period.get("title") or "") + " " + (period.get("text") or "")
+            ).lower()
+            if any(kw in period_text for kw in title_keywords):
+                matched_period = period
+                break
+
+        if matched_period is None:
+            if any(kw in full_text.lower() for kw in title_keywords):
+                matched_period = {"title": "found_in_content", "source": "content_search"}
+
+        if matched_period is not None:
+            found_anchor_ids.append(anchor_id)
+        else:
+            missing_anchor_ids.append(anchor_id)
+            print(f"[TIMELINE-ANCHORS] ⚠️ Anchor отсутствует: {anchor_id} (keywords={title_keywords[:2]})")
+
+    # Detect merges: two merge-forbidden anchors in same period
+    for period in periods:
+        period_text = (
+            (period.get("title") or "") + " " + (period.get("text") or "")
+        ).lower()
+        period_matched_anchors = []
+        for anchor in anchors:
+            title_keywords = [kw.lower() for kw in anchor.get("title_keywords", [])]
+            if any(kw in period_text for kw in title_keywords):
+                period_matched_anchors.append(anchor["anchor_id"])
+
+        if len(period_matched_anchors) >= 2:
+            for a1 in period_matched_anchors:
+                a1_spec = next((a for a in anchors if a["anchor_id"] == a1), {})
+                for a2 in period_matched_anchors:
+                    if a1 >= a2:
+                        continue
+                    if a2 in a1_spec.get("merge_forbidden_with", []):
+                        merges.append({
+                            "period_title": period.get("title", "?"),
+                            "merged_anchor_ids": [a1, a2],
+                            "severity": "error",
+                        })
+                        print(
+                            f"[TIMELINE-ANCHORS] ❌ MERGE: {a1} + {a2} "
+                            f"в периоде «{period.get('title', '?')}»"
+                        )
+
+    total_periods = len(periods)
+    # v62a-045e: strict period separation check for overlapping year_ranges
+    absorbed = []
+    for anchor_a in anchors:
+        yr_a = anchor_a.get("year_range", "")
+        for anchor_b in anchors:
+            if anchor_a["anchor_id"] >= anchor_b["anchor_id"]:
+                continue
+            yr_b = anchor_b.get("year_range", "")
+            # Parse year ranges
+            def _parse_yr(yr: str):
+                import re as _re2
+                m = _re2.match(r'(\d{4})-(\d{4})', yr)
+                return (int(m.group(1)), int(m.group(2))) if m else (None, None)
+            a_start, a_end = _parse_yr(yr_a)
+            b_start, b_end = _parse_yr(yr_b)
+            if None in (a_start, a_end, b_start, b_end):
+                continue
+            # Check overlap
+            overlap = min(a_end, b_end) - max(a_start, b_start)
+            if overlap <= 0:
+                continue
+            # Both must appear as separate **YYYY-YYYY. Title** blocks in ch_01.content
+            PERIOD_BLOCK_RE = re.compile(r'\*\*(\d{4})(?:[–\-](\d{4}))?\.\s+([^*]+)\*\*')
+            blocks_in_content = PERIOD_BLOCK_RE.findall(ch01_content)
+            # Check if anchor_a keywords and anchor_b keywords each match a distinct block
+            a_kws = [kw.lower() for kw in anchor_a.get("title_keywords", [])]
+            b_kws = [kw.lower() for kw in anchor_b.get("title_keywords", [])]
+            a_block = next(
+                (b for b in blocks_in_content if any(kw in b[2].lower() for kw in a_kws)), None
+            )
+            b_block = next(
+                (b for b in blocks_in_content if any(kw in b[2].lower() for kw in b_kws)), None
+            )
+            if a_block and b_block and a_block == b_block:
+                absorbed.append({
+                    "absorbed_anchor": anchor_b["anchor_id"],
+                    "absorbing_anchor": anchor_a["anchor_id"],
+                    "shared_block_title": a_block[2],
+                    "severity": "error",
+                })
+                print(
+                    f"[TIMELINE-ANCHORS] ⚠️ ABSORBED: {anchor_b['anchor_id']} absorbed into "
+                    f"{anchor_a['anchor_id']} block «{a_block[2][:40]}»"
+                )
+            elif (a_block is None or b_block is None) and overlap > 0:
+                # One of the anchors present only in content search, not as distinct block
+                # Already flagged as missing above; no duplicate flag needed
+                pass
+
+    report = {
+        "anchors_found": found_anchor_ids,
+        "anchors_missing": missing_anchor_ids,
+        "merges": merges,
+        "absorbed": absorbed,
+        "total_periods_found": total_periods,
+        "min_periods_required": min_periods,
+        "issues_count": len(missing_anchor_ids) + len(merges) + len(absorbed),
+        "period_count_ok": total_periods >= min_periods,
+    }
+    print(
+        f"[TIMELINE-ANCHORS] Found={len(found_anchor_ids)}/{len(anchors)}, "
+        f"Missing={len(missing_anchor_ids)}, Merges={len(merges)}, "
+        f"Periods={total_periods}/{min_periods}"
+    )
+    return report
+
+
+def enforce_timeline_anchors(book: dict, anchors_config: dict, fact_map: dict) -> tuple:
+    """Task 045: автоматически разделить склеенные периоды если оба контента явно присутствуют.
+
+    Auto-split ТОЛЬКО если оба anchor contents явно присутствуют в склеенном периоде.
+    Иначе — flag, не патчить.
+    Returns (patched_book, enforcement_report).
+    """
+    import copy
+    book = copy.deepcopy(book)
+    report = {"actions": [], "skipped": []}
+
+    validation = validate_timeline_anchors(book, anchors_config)
+    if not validation["merges"]:
+        return book, report
+
+    chapters = book.get("chapters", [])
+    ch01 = next((ch for ch in chapters if ch.get("id") == "ch_01"), None)
+    if ch01 is None:
+        return book, report
+
+    bio_data = ch01.get("bio_data") or {}
+    timeline = bio_data.get("timeline", [])
+    if not timeline:
+        report["skipped"].append({
+            "reason": "no_structured_timeline",
+            "detail": "timeline field empty; auto-split requires structured data",
+        })
+        return book, report
+
+    anchors_by_id = {a["anchor_id"]: a for a in anchors_config.get("anchors", [])}
+    new_timeline = []
+
+    for period in timeline:
+        period_text = ((period.get("title") or "") + " " + (period.get("text") or "")).lower()
+        period_matched_anchors = [
+            aid for aid, anchor in anchors_by_id.items()
+            if any(kw.lower() in period_text for kw in anchor.get("title_keywords", []))
+        ]
+
+        split_performed = False
+        for a1 in period_matched_anchors:
+            a1_spec = anchors_by_id.get(a1, {})
+            for a2 in period_matched_anchors:
+                if a1 >= a2 or a2 not in a1_spec.get("merge_forbidden_with", []):
+                    continue
+
+                a1_kws = [kw.lower() for kw in anchors_by_id[a1].get("required_events", [])]
+                a2_kws = [kw.lower() for kw in anchors_by_id[a2].get("required_events", [])]
+                period_text_full = period.get("text") or ""
+                text_lower = period_text_full.lower()
+
+                a1_present = sum(1 for kw in a1_kws if any(w in text_lower for w in kw.split())) >= max(1, len(a1_kws) // 2)
+                a2_present = sum(1 for kw in a2_kws if any(w in text_lower for w in kw.split())) >= max(1, len(a2_kws) // 2)
+
+                if not (a1_present and a2_present):
+                    report["skipped"].append({
+                        "reason": "insufficient_content_for_split",
+                        "period_title": period.get("title"),
+                        "merged_anchors": [a1, a2],
+                        "a1_content_present": a1_present,
+                        "a2_content_present": a2_present,
+                    })
+                    print(
+                        f"[TIMELINE-ANCHORS] ⚠️ Auto-split невозможен для «{period.get('title')}» "
+                        f"— нет контента для {a1 if not a1_present else a2}. Human review needed."
+                    )
+                    new_timeline.append(period)
+                    split_performed = True
+                    break
+
+                a1_anchor = anchors_by_id[a1]
+                a2_anchor = anchors_by_id[a2]
+                period_1 = {
+                    "title": f"{a1_anchor.get('year_range', '')}. {a1_anchor['title_keywords'][0].capitalize()}",
+                    "text": period_text_full,
+                    "source": f"auto-split from: {period.get('title')}",
+                    "anchor_id": a1,
+                }
+                period_2 = {
+                    "title": f"{a2_anchor.get('year_range', '')}. {a2_anchor['title_keywords'][0].capitalize()}",
+                    "text": period_text_full,
+                    "source": f"auto-split from: {period.get('title')}",
+                    "anchor_id": a2,
+                }
+                new_timeline.extend([period_1, period_2])
+                report["actions"].append({
+                    "action": "split",
+                    "original_title": period.get("title"),
+                    "split_into": [period_1["title"], period_2["title"]],
+                    "merged_anchors": [a1, a2],
+                })
+                print(
+                    f"[TIMELINE-ANCHORS] ✅ Auto-split: «{period.get('title')}» → "
+                    f"[«{period_1['title']}», «{period_2['title']}»]"
+                )
+                split_performed = True
+                break
+            if split_performed:
+                break
+
+        if not split_performed:
+            new_timeline.append(period)
+
+    bio_data["timeline"] = new_timeline
+    ch01["bio_data"] = bio_data
+    return book, report
+
+
+# ─── Task 043: Epilogue stop-phrases + paspart format + Class 11 awkward ──
+
+def _lemmatize_pattern(phrase: str) -> str:
+    """Task 043b: грубая лемматизация — добавляет \\w{0,4} к словам с флективными суффиксами."""
+    import re
+    VOWELS = "аеиоыуяюэёАЕИОЫУЯЮЭЁ"
+    words = phrase.split()
+    pat = []
+    for w in words:
+        if len(w) >= 5 and w[-1] in VOWELS:
+            pat.append(re.escape(w[:-1]) + r"\w{0,4}")
+        else:
+            pat.append(re.escape(w))
+    return r"\b" + r"\s+".join(pat) + r"\b"
+
+
+def validate_epilogue_stop_phrases(book: dict, stop_list_config: dict) -> dict:
+    """Task 043/043b: проверить epilogue и нарративные главы на пластиковые шаблонные фразы (Класс 6).
+
+    Поддерживает как literal substring, так и regex patterns (суффикс-aware через _lemmatize_pattern).
+    Returns {issues: [...], errors_count, warnings_count}.
+    Idempotent — только чтение.
+    """
+    import re as _re
+    phrases = stop_list_config.get("generic_stop_phrases", [])
+    # Task 043b: generic_categorical_patterns with precompiled regex
+    categorical = stop_list_config.get("generic_categorical_patterns", [])
+    scoped_error = set(stop_list_config.get("scoped_chapter_ids", ["epilogue"]))
+    scoped_warning = set(stop_list_config.get("extra_general_scope", []))
+    severity_map = stop_list_config.get("severity_map", {})
+
+    # Pre-compile categorical patterns scoped to epilogue
+    epilogue_categories = set(stop_list_config.get("scoped_to_epilogue_only", []))
+
+    issues = []
+    chapters = book.get("chapters", [])
+
+    all_scoped = scoped_error | scoped_warning
+    for chapter in chapters:
+        ch_id = chapter.get("id") or ""
+        if ch_id not in all_scoped and "epilogue" not in ch_id.lower():
+            continue
+
+        content = chapter.get("content") or ""
+        paragraphs = chapter.get("paragraphs", [])
+        full_text = content + " " + " ".join(p.get("text", "") for p in paragraphs)
+        full_text_lower = full_text.lower()
+
+        def _add_issue(phrase_label, severity_default):
+            severity = severity_map.get(ch_id, "error" if ch_id in scoped_error else severity_default)
+            issues.append({"phrase": phrase_label, "chapter_id": ch_id, "severity": severity})
+
+        # Literal phrases (with lemmatize-aware regex)
+        for phrase in phrases:
+            try:
+                pat = _lemmatize_pattern(phrase)
+                if _re.search(pat, full_text, _re.IGNORECASE):
+                    _add_issue(phrase, "warning")
+            except Exception:
+                if phrase.lower() in full_text_lower:
+                    _add_issue(phrase, "warning")
+
+        # Categorical patterns
+        is_epilogue = "epilogue" in ch_id.lower() or ch_id in scoped_error
+        for cat in categorical:
+            category = cat.get("category", "?")
+            if category in epilogue_categories and not is_epilogue:
+                continue
+            pattern = cat.get("pattern") or cat.get("pattern_regex")
+            if not pattern:
+                continue
+            try:
+                if _re.search(pattern, full_text, _re.IGNORECASE):
+                    _add_issue(f"[cat:{category}]", "warning" if not is_epilogue else "error")
+            except Exception:
+                pass
+
+    errors = sum(1 for i in issues if i["severity"] == "error")
+    warnings = sum(1 for i in issues if i["severity"] == "warning")
+    print(f"[EPILOGUE-STOP] {errors} errors + {warnings} warnings по {len(phrases)} фразам + {len(categorical)} категориям.")
+    return {"issues": issues, "errors_count": errors, "warnings_count": warnings}
+
+
+def validate_awkward_formulation(book: dict) -> dict:
+    """Task 043: Класс 11 — частный пример вместо обобщения.
+
+    Returns {issues: [...], issues_count}.
+    """
+    import re
+    patterns = [
+        r"не\s+любил[аи]?\s+\w+\s+(по|про|о|об|насчёт)\s+\S+\s+(или|и|,)\s+\S+",
+        r"не\s+нравил\w+\s+когда\s+\w+\s+(давал|просил|предлагал)\s+\w+\s+(по|про|о)\s+\S+\s+(или|и)\s+\S+",
+        r"не\s+любил[аи]?,\s+когда\s+\w+\s+давали\s+советы\s+по\s+\S+\s+(или|и)\s+\S+",
+    ]
+
+    issues = []
+    chapters = book.get("chapters", [])
+    for chapter in chapters:
+        ch_id = chapter.get("id") or ""
+        texts = [chapter.get("content") or ""] + [p.get("text", "") for p in chapter.get("paragraphs", [])]
+        for text in texts:
+            for pat in patterns:
+                for match in re.finditer(pat, text, re.IGNORECASE):
+                    issues.append({
+                        "type": "example_instead_of_generalization",
+                        "chapter_id": ch_id,
+                        "severity": "warning",
+                        "matched_text": match.group(0),
+                        "suggestion": "Обобщение первым, затем примеры: «не любил советов; например, по ...»",
+                    })
+
+    print(f"[AWKWARD-FORM] {len(issues)} паттернов «частный пример вместо обобщения».")
+    return {"issues": issues, "issues_count": len(issues)}
+
+
+_FEMALE_RELATIONS = frozenset({
+    "мать", "мама", "мамочка",
+    "дочь", "дочка",
+    "жена", "супруга",
+    "сестра",
+    "бабушка", "бабуля", "баба",
+    "внучка",
+    "тётя",
+    "племянница",
+    "золовка",
+    "свекровь",
+    "тёща",
+    "невестка",
+})
+
+
+def _is_female_relation(label: str) -> bool:
+    label_lower = label.strip().lower()
+    return any(rel in label_lower for rel in _FEMALE_RELATIONS)
+
+
+def enforce_paspart_format(book: dict) -> tuple:
+    """Task 043: заменить «р. YYYY» → «родился/родилась в YYYY году», «ум. YYYY» → «умер/умерла в YYYY году».
+
+    Род определяется по label (relation). Применяется к bio_data.family и ch_01.content.
+    Returns (patched_book, replacements_log).
+    """
+    import copy
+    import re
+    book = copy.deepcopy(book)
+    log = []
+
+    def _gender_birth(label: str) -> str:
+        return "родилась" if _is_female_relation(label) else "родился"
+
+    def _gender_death(label: str) -> str:
+        return "умерла" if _is_female_relation(label) else "умер"
+
+    def _replace_in_text(text: str, label: str) -> tuple:
+        replacements = []
+
+        def sub_born(m):
+            year = m.group(1)
+            r = f"{_gender_birth(label)} в {year} году"
+            replacements.append({"old": m.group(0), "new": r, "label": label})
+            return r
+
+        def sub_died(m):
+            year = m.group(1)
+            r = f"{_gender_death(label)} в {year} году"
+            replacements.append({"old": m.group(0), "new": r, "label": label})
+            return r
+
+        text = re.sub(r"\bр\.\s*(\d{4})\b", sub_born, text)
+        text = re.sub(r"\bум\.\s*(\d{4})\b", sub_died, text)
+        return text, replacements
+
+    chapters = book.get("chapters", [])
+    ch01 = next((ch for ch in chapters if ch.get("id") == "ch_01"), None)
+    if ch01:
+        bio_data = ch01.get("bio_data") or {}
+        family = bio_data.get("family", [])
+        for entry in family:
+            label = entry.get("label") or entry.get("relation") or ""
+            for field in ("value", "note"):
+                val = entry.get(field)
+                if val and isinstance(val, str):
+                    new_val, reps = _replace_in_text(val, label)
+                    if reps:
+                        entry[field] = new_val
+                        log.extend(reps)
+
+        content = ch01.get("content") or ""
+        new_content, reps = _replace_in_text(content, "")
+        if reps:
+            ch01["content"] = new_content
+            log.extend(reps)
+
+        ch01["bio_data"] = bio_data
+
+    print(f"[PASPART-FORMAT] Заменено {len(log)} вхождений «р./ум.» → полная форма.")
+    return book, log
+
+
+# ─── Task 038: CA confabulation guards ────────────────────────────────────
+
+def validate_description_drift(audit_data: dict) -> dict:
+    """Task 038: проверить CA event descriptions на causal/date/motivation confabulation.
+
+    audit_data — fact_map (с .timeline) или список events.
+    Returns {issues: [...], events_checked, events_flagged}.
+    """
+    import re
+
+    CAUSAL_RE = re.compile(
+        r"\b(потому что|поскольку|так как|из-за этого|это произошло|вследствие)\b",
+        re.IGNORECASE,
+    )
+    YEAR_RE = re.compile(r"\b(19|20)\d{2}\b")
+    MOTIVATION_RE = re.compile(
+        r"\b(хотел[аи]?\b|желал[аи]?\b|мечтал[аи]?\b|стремил\w*|верил[аи]? в|решил[аи]? что|думал[аи]? что)\b",
+        re.IGNORECASE,
+    )
+
+    issues = []
+    checked = 0
+
+    events = []
+    if isinstance(audit_data, dict):
+        events = audit_data.get("timeline", audit_data.get("events", []))
+    elif isinstance(audit_data, list):
+        events = audit_data
+
+    for event in events:
+        # Task 038b: bypass strict drift check for pin-list events
+        if event.get("was_in_pin_list"):
+            continue
+
+        description = (event.get("description") or "").strip()
+        source_quote = (event.get("source_quote") or event.get("transcript_quote") or "").strip()
+        event_id = event.get("event_id") or event.get("id") or "?"
+
+        if not description or not source_quote:
+            continue
+        checked += 1
+
+        # 1. Causal drift
+        if CAUSAL_RE.search(description) and not CAUSAL_RE.search(source_quote):
+            issues.append({
+                "event_id": event_id,
+                "type": "causal_drift",
+                "description_snippet": description[:120],
+                "source_snippet": source_quote[:120],
+            })
+
+        # 2. Date drift
+        desc_years = set(YEAR_RE.findall(description))
+        src_years = set(YEAR_RE.findall(source_quote))
+        extra_years = desc_years - src_years
+        if extra_years:
+            issues.append({
+                "event_id": event_id,
+                "type": "date_drift",
+                "extra_years": sorted(extra_years),
+                "description_snippet": description[:120],
+                "source_snippet": source_quote[:120],
+            })
+
+        # 3. Motivation drift
+        if MOTIVATION_RE.search(description) and not MOTIVATION_RE.search(source_quote):
+            issues.append({
+                "event_id": event_id,
+                "type": "motivation_drift",
+                "description_snippet": description[:120],
+                "source_snippet": source_quote[:120],
+            })
+
+    flagged = len({i["event_id"] for i in issues})
+    print(f"[CA-DRIFT] Проверено {checked} событий, flags: {len(issues)} в {flagged} событиях.")
+    return {"issues": issues, "events_checked": checked, "events_flagged": flagged}
+
+
+def validate_relation_consistency(fact_map: dict, transcript_text: str) -> dict:
+    """Task 038: проверить relation_to_subject персон на подтверждение в транскрипте.
+
+    Returns {issues: [...], persons_checked, unconfirmed_count}.
+    """
+    import re
+
+    COMPLEX_RELATIONS = frozenset({
+        "тётя", "дядя", "племянник", "племянница",
+        "золовка", "свекровь", "тесть", "тёща",
+        "кум", "кума", "свояк",
+    })
+    CONFIRMATION_RE = re.compile(
+        r"(сестра|брат|мать|отец|мама|папа)\s+(моей|его|её|мужа|жены)"
+        r"|сестра (мужа|жены|мамы|папы|отца|матери)"
+        r"|брат (мужа|жены|мамы|папы|отца|матери)"
+        r"|(тётя|дядя)\s+(со|из)\s+стороны",
+        re.IGNORECASE,
+    )
+
+    issues = []
+    persons = fact_map.get("persons", [])
+    checked = 0
+
+    for person in persons:
+        name = (person.get("name") or "").strip()
+        relation = (
+            person.get("relation_to_subject") or person.get("relation") or ""
+        ).strip().lower()
+
+        if not name or not relation:
+            continue
+        if not any(rel in relation for rel in COMPLEX_RELATIONS):
+            continue
+
+        checked += 1
+        name_lower = name.lower()
+        sentences = [s.strip() for s in re.split(r"[.!?]", transcript_text) if name_lower in s.lower()]
+        confirmed = any(CONFIRMATION_RE.search(s) for s in sentences)
+
+        # Known confirmations from pin-list
+        if "шура" in name_lower and any(r in relation for r in ("золовка", "сестра")):
+            confirmed = True
+
+        if not confirmed:
+            issues.append({
+                "person_name": name,
+                "relation": relation,
+                "type": "unconfirmed_relation",
+                "sentences_checked": len(sentences),
+                "suggested_action": f"Проверить: может быть «знакомый/соседка» вместо «{relation}»",
+            })
+
+    unconfirmed = len(issues)
+    print(f"[RELATION-CONSISTENCY] Проверено {checked} персон, неподтверждённых: {unconfirmed}.")
+    return {"issues": issues, "persons_checked": checked, "unconfirmed_count": unconfirmed}
+
+
+def validate_historical_note_grounding(book: dict, fact_map: dict, transcripts: list) -> dict:
+    """Task 038: проверить historical_notes на generalization без grounding (Класс 1c).
+
+    Returns {issues: [...], notes_checked, errors_count, warnings_count}.
+    """
+    import re
+
+    GENERALIZATION_RE = re.compile(
+        r"\b(многие|обычно|в те годы|в то время|зачастую|нередко|как правило)\b"
+        r"[^.]*\b(пожилые|люди|семьи|женщины|мужчины|все|часто)\b",
+        re.IGNORECASE,
+    )
+    ANTITRIGGERS = [
+        "в 1990-е многие пожилые",
+        "многие пожилые люди оставались одни",
+        "жизнь становилась всё дороже",
+        "1990-е многие пожилые",
+    ]
+
+    issues = []
+    checked = 0
+
+    notes = book.get("historical_notes", [])
+    for note in notes:
+        note_id = note.get("id") or note.get("note_id") or "?"
+        text = (note.get("text") or note.get("content") or "").strip()
+        if not text:
+            continue
+        checked += 1
+        text_lower = text.lower()
+        for antitrigger in ANTITRIGGERS:
+            if antitrigger.lower() in text_lower:
+                issues.append({
+                    "note_id": note_id, "type": "antitrigger_phrase",
+                    "severity": "error", "matched_phrase": antitrigger, "snippet": text[:150],
+                })
+        if GENERALIZATION_RE.search(text):
+            issues.append({
+                "note_id": note_id, "type": "generalization_unverified",
+                "severity": "warning", "snippet": text[:150],
+            })
+
+    chapters = book.get("chapters", [])
+    for chapter in chapters:
+        ch_id = chapter.get("id") or ""
+        content = chapter.get("content") or ""
+        inline_blocks = re.findall(r"\*\*\*(.+?)\*\*\*", content, re.DOTALL)
+        for block in inline_blocks:
+            checked += 1
+            block_lower = block.lower()
+            for antitrigger in ANTITRIGGERS:
+                if antitrigger.lower() in block_lower:
+                    issues.append({
+                        "note_id": f"inline_{ch_id}", "type": "antitrigger_phrase",
+                        "severity": "error", "chapter_id": ch_id,
+                        "matched_phrase": antitrigger, "snippet": block[:150],
+                    })
+            if GENERALIZATION_RE.search(block):
+                issues.append({
+                    "note_id": f"inline_{ch_id}", "type": "generalization_unverified",
+                    "severity": "warning", "chapter_id": ch_id, "snippet": block[:150],
+                })
+
+    errors = sum(1 for i in issues if i.get("severity") == "error")
+    warnings = sum(1 for i in issues if i.get("severity") == "warning")
+    print(f"[HN-GROUNDING] Проверено {checked} заметок, {errors} errors + {warnings} warnings.")
+    return {"issues": issues, "notes_checked": checked, "errors_count": errors, "warnings_count": warnings}
+
+
+def validate_motivation_attributions(book: dict, transcripts: list) -> dict:
+    """Task 038: проверить атрибуции мотивации на подтверждение в транскрипте (Класс 1d).
+
+    Returns {issues: [...], attributions_found, errors_count, warnings_count}.
+    """
+    import re
+
+    MOTIVATION_RE = re.compile(
+        r"\b(верила?\s+в\b|воевала?\s+за\b|хотела?\s+\S+|жила?\s+ради\b|посвятила?\s+себя\b|стремилась?\s+\S+)",
+        re.IGNORECASE,
+    )
+    BAD_ATTRIBUTIONS = [
+        "воевала за идеалы",
+        "верила в идеалы",
+        "идеалы за которые воевала",
+        "идеалы, за которые воевала",
+        "жизнь была наполнена служением",
+    ]
+
+    transcript_combined = " ".join(
+        t.get("text", "") if isinstance(t, dict) else str(t)
+        for t in transcripts
+    ).lower()
+
+    issues = []
+    attributions_found = 0
+
+    chapters = book.get("chapters", [])
+    for chapter in chapters:
+        ch_id = chapter.get("id") or ""
+        texts = [chapter.get("content") or ""] + [p.get("text", "") for p in chapter.get("paragraphs", [])]
+        for text in texts:
+            text_lower = text.lower()
+            for bad in BAD_ATTRIBUTIONS:
+                if bad.lower() in text_lower:
+                    attributions_found += 1
+                    idx = text_lower.find(bad.lower())
+                    issues.append({
+                        "chapter_id": ch_id, "type": "motivation_antitrigger",
+                        "severity": "error", "matched_phrase": bad,
+                        "snippet": text[max(0, idx - 20): idx + len(bad) + 40],
+                    })
+
+            for match in MOTIVATION_RE.finditer(text):
+                phrase = match.group(0)
+                phrase_words = phrase.lower().split()[:2]
+                found_in_tr = all(w in transcript_combined for w in phrase_words if len(w) > 3)
+                if not found_in_tr:
+                    attributions_found += 1
+                    issues.append({
+                        "chapter_id": ch_id, "type": "motivation_unverified",
+                        "severity": "warning", "matched_phrase": phrase,
+                        "context": text[max(0, match.start() - 30): match.end() + 30],
+                    })
+
+    errors = sum(1 for i in issues if i.get("severity") == "error")
+    warnings = sum(1 for i in issues if i.get("severity") == "warning")
+    print(f"[MOTIVATION] {attributions_found} атрибуций, {errors} errors + {warnings} warnings.")
+    return {"issues": issues, "attributions_found": attributions_found, "errors_count": errors, "warnings_count": warnings}
+
+
+# ─── Task 041: Pin-list coverage + episode diff ───────────────────────────
+
+def parse_pin_list_from_markdown(md_path: str) -> dict:
+    """Task 041/044b/050: парсить known_episodes_*.md → структурированный pin-list.
+
+    Returns:
+        {
+          episodes: [...],          # хронологические эпизоды с min_sentences
+          bytovye: [...],           # бытовые эпизоды с min_sentences
+          traits: [...],
+          characteristic_words: [],
+          required_persons: [...],  # task 044b: обязательные персоны из раздела «Прямые родственники»
+        }
+    """
+    import re
+    from pathlib import Path
+
+    path = Path(md_path)
+    if not path.exists():
+        print(f"[PIN-LIST-PARSER] Файл не найден: {md_path}")
+        return {"episodes": [], "bytovye": [], "traits": [], "characteristic_words": [], "required_persons": []}
+
+    content = path.read_text(encoding="utf-8")
+    lines = content.splitlines()
+
+    episodes = []
+    bytovye = []
+    traits = []
+    char_words = []
+    required_persons = []
+
+    current_table_type = None
+    header_seen = False
+    # Track column index for min_sentences in the current table header
+    min_sentences_col_idx: dict = {}  # table_type -> col index
+
+    for line in lines:
+        line_stripped = line.strip()
+
+        if "## Хронологические эпизоды" in line_stripped:
+            current_table_type = "episodes"; header_seen = False; min_sentences_col_idx = {}; continue
+        elif "## Бытовые эпизоды" in line_stripped:
+            current_table_type = "bytovye"; header_seen = False; min_sentences_col_idx = {}; continue
+        elif "## Характеристики" in line_stripped:
+            current_table_type = "traits"; header_seen = False; min_sentences_col_idx = {}; continue
+        elif "## Голос рассказчика" in line_stripped:
+            current_table_type = "char_words"; header_seen = False; min_sentences_col_idx = {}; continue
+        elif ("## Прямые родственники" in line_stripped or "## Обязательные персоны" in line_stripped):
+            current_table_type = "required_persons"; header_seen = False; min_sentences_col_idx = {}; continue
+        elif line_stripped.startswith("## "):
+            current_table_type = None; header_seen = False; min_sentences_col_idx = {}; continue
+
+        if current_table_type is None:
+            continue
+
+        if re.match(r"^\|[-|\s]+\|$", line_stripped):
+            header_seen = True
+            continue
+
+        # Parse header row to detect min_sentences column position
+        if not header_seen and line_stripped.startswith("|") and current_table_type in ("episodes", "bytovye", "traits"):
+            cells_h = [c.strip().lower() for c in line_stripped.split("|")[1:-1]]
+            for ci, ch in enumerate(cells_h):
+                if "min_sentences" in ch or "min_sent" in ch:
+                    min_sentences_col_idx[current_table_type] = ci
+            continue
+
+        if not (line_stripped.startswith("|") and header_seen):
+            continue
+
+        cells = [c.strip() for c in line_stripped.split("|")[1:-1]]
+        if len(cells) < 2:
+            continue
+
+        def _clean(s):
+            return re.sub(r"\*+", "", s).strip()
+
+        def _min_sent(cells_list, table_type, default):
+            idx = min_sentences_col_idx.get(table_type)
+            if idx is not None and idx < len(cells_list):
+                val = cells_list[idx].strip()
+                if val.isdigit():
+                    return int(val)
+            return default
+
+        if current_table_type == "episodes":
+            if len(cells) < 4:
+                continue
+            ep_id = cells[1]
+            title = _clean(cells[2])
+            markers_raw = cells[5] if len(cells) > 5 else ""
+            markers = [m.strip() for m in re.split(r"[,;`]", re.sub(r"`", "", markers_raw)) if m.strip()]
+            min_sent = _min_sent(cells, "episodes", 3)
+            if ep_id and title and ep_id not in ("#", "episode_id", "ep_id"):
+                episodes.append({
+                    "episode_id": ep_id, "title": title,
+                    "markers": markers, "min_sentences": min_sent,
+                })
+
+        elif current_table_type == "bytovye":
+            byt_id = cells[1]
+            title = _clean(cells[2]) if len(cells) > 2 else _clean(cells[1])
+            markers_raw = cells[3] if len(cells) > 3 else ""
+            markers = [m.strip() for m in re.split(r"[,;`]", re.sub(r"`", "", markers_raw)) if m.strip()]
+            min_sent = _min_sent(cells, "bytovye", 2)
+            if byt_id and title and byt_id not in ("#", "byt_id"):
+                bytovye.append({
+                    "byt_id": byt_id, "title": title,
+                    "markers": markers, "min_sentences": min_sent,
+                })
+
+        elif current_table_type == "traits":
+            trait_id = cells[1]
+            title = _clean(cells[2]) if len(cells) > 2 else _clean(cells[1])
+            markers_raw = cells[3] if len(cells) > 3 else ""
+            markers = [m.strip() for m in re.split(r"[,;`]", re.sub(r"`", "", markers_raw)) if m.strip()]
+            min_sent = _min_sent(cells, "traits", 1)
+            if trait_id and title and trait_id not in ("#", "trait_id"):
+                traits.append({
+                    "trait_id": trait_id, "title": title,
+                    "markers": markers, "min_sentences": min_sent,
+                })
+
+        elif current_table_type == "char_words":
+            word = _clean(cells[0])
+            if word and word not in ("#", "Слово", "слово"):
+                char_words.append(word)
+
+        elif current_table_type == "required_persons":
+            # task 044b: раздел «Прямые родственники»
+            # Ожидается: | # | name | relation | note/aliases |
+            if len(cells) < 2:
+                continue
+            name = _clean(cells[1]) if len(cells) > 1 else _clean(cells[0])
+            relation = _clean(cells[2]) if len(cells) > 2 else ""
+            note = _clean(cells[3]) if len(cells) > 3 else ""
+            if name and name not in ("#", "Имя", "name", "имя"):
+                entry = {"name": name, "relation": relation, "is_pin_list_required": True}
+                if note:
+                    entry["note"] = note
+                # Parse aliases from note (e.g. "тётя Маня")
+                aliases = [a.strip() for a in re.split(r"[,;/]", note) if a.strip() and a.strip() != name]
+                if aliases:
+                    entry["aliases"] = aliases
+                required_persons.append(entry)
+
+    print(
+        f"[PIN-LIST-PARSER] Загружено: {len(episodes)} эпизодов, "
+        f"{len(bytovye)} бытовых, {len(traits)} характеристик, {len(char_words)} слов, "
+        f"{len(required_persons)} required_persons."
+    )
+    return {
+        "episodes": episodes, "bytovye": bytovye,
+        "traits": traits, "characteristic_words": char_words,
+        "required_persons": required_persons,
+    }
+
+
+def validate_pin_list_coverage(book: dict, pin_list: dict) -> dict:
+    """Task 041: проверить покрытие pin-list эпизодов в финальном тексте книги.
+
+    coverage = "full" (≥60% markers), "partial" (≥1), "skipped" (0).
+    Returns {episodes: [...], summary: {full, partial, skipped, total}}.
+    """
+    import re
+    import math
+
+    chapters = book.get("chapters", [])
+    chapter_texts = {}
+    all_text = ""
+    for ch in chapters:
+        ch_id = ch.get("id") or ""
+        text = (ch.get("content") or "") + " ".join(p.get("text", "") for p in ch.get("paragraphs", []))
+        chapter_texts[ch_id] = text.lower()
+        all_text += text.lower() + " "
+
+    results = []
+
+    for category_key, id_field in [("episodes", "episode_id"), ("bytovye", "byt_id"), ("traits", "trait_id")]:
+        for item in pin_list.get(category_key, []):
+            item_id = item.get(id_field) or item.get("id") or "?"
+            title = item.get("title", "")
+            markers = item.get("markers", [])
+            must_include = item.get("must_include", [])
+
+            if not markers:
+                continue
+
+            found_markers = []
+            found_chapter = None
+            for marker in markers:
+                try:
+                    found = bool(re.search(marker, all_text, re.IGNORECASE))
+                except re.error:
+                    found = marker.lower() in all_text
+
+                if found:
+                    found_markers.append(marker)
+                    if found_chapter is None:
+                        for ch_id, ch_text in chapter_texts.items():
+                            try:
+                                if re.search(marker, ch_text, re.IGNORECASE):
+                                    found_chapter = ch_id
+                                    break
+                            except re.error:
+                                if marker.lower() in ch_text:
+                                    found_chapter = ch_id
+                                    break
+
+            threshold_full = math.ceil(len(markers) * 0.6)
+            count_found = len(found_markers)
+            if count_found >= threshold_full:
+                coverage = "full"
+            elif count_found >= 1:
+                coverage = "partial"
+            else:
+                coverage = "skipped"
+
+            must_include_failed = [
+                req for req in must_include
+                if not any(w in all_text for w in req.lower().split()[:3] if len(w) > 3)
+            ]
+
+            results.append({
+                "episode_id": item_id,
+                "category": category_key,
+                "title": title,
+                "coverage": coverage,
+                "markers_found": count_found,
+                "markers_total": len(markers),
+                "chapter_id": found_chapter,
+                "must_include_failed": must_include_failed,
+            })
+
+    char_words = pin_list.get("characteristic_words", [])
+    char_found = [w for w in char_words if w.lower().split()[0] in all_text]
+
+    full_count = sum(1 for r in results if r["coverage"] == "full")
+    partial_count = sum(1 for r in results if r["coverage"] == "partial")
+    skipped_count = sum(1 for r in results if r["coverage"] == "skipped")
+
+    summary = {
+        "full": full_count,
+        "partial": partial_count,
+        "skipped": skipped_count,
+        "total": len(results),
+        "characteristic_words_found": len(char_found),
+        "characteristic_words_total": len(char_words),
+        "must_include_issues": sum(1 for r in results if r["must_include_failed"]),
+    }
+
+    print(
+        f"[PIN-COVERAGE] Full={full_count}, Partial={partial_count}, Skipped={skipped_count} "
+        f"из {len(results)} | char_words={len(char_found)}/{len(char_words)}"
+    )
+    return {"episodes": results, "summary": summary}
+
+
+def diff_episodes_between_versions(
+    book_new: dict,
+    book_old: dict,
+    pin_list: dict,
+    regression_threshold: int = 3,
+) -> dict:
+    """Task 041: сравнить покрытие эпизодов между двумя версиями книги.
+
+    Returns {regressions: [...], improvements: [...], regression_count, improvement_count, verdict}.
+    """
+    coverage_new = validate_pin_list_coverage(book_new, pin_list)
+    coverage_old = validate_pin_list_coverage(book_old, pin_list)
+
+    new_by_id = {r["episode_id"]: r for r in coverage_new["episodes"]}
+    old_by_id = {r["episode_id"]: r for r in coverage_old["episodes"]}
+
+    coverage_rank = {"full": 2, "partial": 1, "skipped": 0}
+    regressions = []
+    improvements = []
+
+    for ep_id, new_r in new_by_id.items():
+        old_r = old_by_id.get(ep_id)
+        if old_r is None:
+            continue
+        new_rank = coverage_rank.get(new_r["coverage"], 0)
+        old_rank = coverage_rank.get(old_r["coverage"], 0)
+        if new_rank < old_rank:
+            regressions.append({
+                "episode_id": ep_id,
+                "title": new_r.get("title", ""),
+                "old_coverage": old_r["coverage"],
+                "new_coverage": new_r["coverage"],
+            })
+        elif new_rank > old_rank:
+            improvements.append({
+                "episode_id": ep_id,
+                "title": new_r.get("title", ""),
+                "old_coverage": old_r["coverage"],
+                "new_coverage": new_r["coverage"],
+            })
+
+    verdict = "regression_detected" if len(regressions) >= regression_threshold else "ok"
+    print(
+        f"[EPISODE-DIFF] Regressions={len(regressions)}, Improvements={len(improvements)}, "
+        f"Verdict={verdict}"
+    )
+    return {
+        "regressions": regressions,
+        "improvements": improvements,
+        "regression_count": len(regressions),
+        "improvement_count": len(improvements),
+        "verdict": verdict,
+        "regression_threshold": regression_threshold,
+        "summary_new": coverage_new["summary"],
+        "summary_old": coverage_old["summary"],
+    }
 def run_proofreader_per_chapter(client, book_draft: dict, project_id: str,
                                 cfg: dict | None = None) -> dict:
     """
@@ -2229,3 +3837,1144 @@ def run_proofreader_per_chapter(client, book_draft: dict, project_id: str,
     _auto_checkpoint(project_id, "proofreader", result)
     return result
 
+
+# ═══════════════════════════════════════════════════════════════
+# Batch 2-fix — новые функции (tasks 046, 043b, 038b, 049, 050, 048, 044b)
+# ═══════════════════════════════════════════════════════════════
+
+
+def enforce_epilogue_stop_phrases(book: dict, mapping: dict) -> tuple:
+    """Task 046: auto-rewrite epilogue — удалить предложения с пластиковыми шаблонами.
+
+    mapping — содержимое epilogue_rewrite_mapping.json (generic, universal).
+    Returns (modified_book, rewrite_log).
+    Idempotent.
+    """
+    import re
+    import copy
+
+    rules = mapping.get("rules", [])
+    applies_to = set(mapping.get("applies_to_chapter_ids", ["epilogue"]))
+    book_out = copy.deepcopy(book)
+    rewrite_log = []
+
+    def _split_sentences(text: str) -> list:
+        parts = re.split(r'(?<=[.!?])\s+(?=[А-ЯA-Z«"])', text)
+        return [p.strip() for p in parts if p.strip()]
+
+    for chapter in book_out.get("chapters", []):
+        ch_id = chapter.get("id") or ""
+        if ch_id not in applies_to and "epilogue" not in ch_id.lower():
+            continue
+        content = chapter.get("content") or ""
+        if not content:
+            continue
+        sentences = _split_sentences(content)
+        kept = []
+        for sent in sentences:
+            deleted = False
+            for rule in rules:
+                pat = rule.get("pattern_regex")
+                if not pat:
+                    continue
+                action = rule.get("action", "delete_sentence")
+                try:
+                    m = re.search(pat, sent, re.IGNORECASE)
+                except re.error:
+                    continue
+                if not m:
+                    continue
+                if action == "delete_sentence":
+                    rewrite_log.append({
+                        "chapter_id": ch_id, "action": "deleted",
+                        "category": rule.get("category", "?"),
+                        "reason": rule.get("reason", ""),
+                        "deleted_sentence": sent[:200],
+                    })
+                    deleted = True
+                    break
+                elif action == "delete_sentence_if_starts_with_match":
+                    if m.start() < 30:
+                        rewrite_log.append({
+                            "chapter_id": ch_id, "action": "deleted",
+                            "category": rule.get("category", "?"),
+                            "reason": rule.get("reason", ""),
+                            "deleted_sentence": sent[:200],
+                        })
+                        deleted = True
+                        break
+            if not deleted:
+                kept.append(sent)
+        chapter["content"] = " ".join(kept)
+        deleted_count = len(sentences) - len(kept)
+        if deleted_count:
+            print(f"[EPILOGUE-REWRITE] {ch_id}: удалено {deleted_count} из {len(sentences)} предложений")
+            if len(chapter["content"]) < 400:
+                print("[EPILOGUE-REWRITE] ⚠️ epilogue < 400 chars после rewrite — human review")
+                rewrite_log.append({"chapter_id": ch_id, "action": "warning",
+                                    "reason": "epilogue < 400 chars after rewrite"})
+    total_del = sum(1 for r in rewrite_log if r.get("action") == "deleted")
+    print(f"[EPILOGUE-REWRITE] Итого удалено: {total_del} предложений")
+    return book_out, rewrite_log
+
+
+def validate_narrative_stop_phrases(book: dict, config: dict) -> dict:
+    """Task 043b: проверить нарративные главы на Класс 6/11 украшения с pair-pattern support.
+
+    Returns {issues: [...], errors_count, warnings_count}.
+    Idempotent.
+    """
+    import re
+
+    patterns = config.get("generic_categorical_patterns", [])
+    scoped_epil_only = set(config.get("scoped_to_epilogue_only", []))
+    scoped_narrative = set(config.get("scoped_to_narrative_and_epilogue", []))
+    # v62a-043d: chapter-specific scope (optional, finer-grained than scoped_to_narrative_and_epilogue)
+    scoped_to_chapters = config.get("scoped_to_chapters", {})
+    issues = []
+
+    for chapter in book.get("chapters", []):
+        ch_id = chapter.get("id") or ""
+        is_epilogue = "epilogue" in ch_id.lower()
+        paras = chapter.get("paragraphs", [])
+        texts = [p.get("text", "") for p in paras] if paras else [
+            t.strip() for t in re.split(r"\n\n+", chapter.get("content", "")) if t.strip()
+        ]
+        for pat_entry in patterns:
+            category = pat_entry.get("category", "?")
+            if category in scoped_epil_only and not is_epilogue:
+                continue
+            if category not in scoped_epil_only and category not in scoped_narrative:
+                continue
+            # Chapter-specific scope check (overrides broader scope if defined)
+            if category in scoped_to_chapters:
+                allowed = scoped_to_chapters[category]
+                if ch_id not in allowed:
+                    continue
+            pair = pat_entry.get("pattern_pair")
+            if pair and len(pair) == 2:
+                try:
+                    re1 = re.compile(pair[0], re.IGNORECASE)
+                    re2 = re.compile(pair[1], re.IGNORECASE)
+                except re.error:
+                    continue
+                for para in texts:
+                    if re1.search(para) and re2.search(para):
+                        sev = "error" if is_epilogue else "warning"
+                        issues.append({"chapter_id": ch_id, "category": category,
+                                       "severity": sev, "match_type": "pair", "snippet": para[:150]})
+                continue
+            pattern = pat_entry.get("pattern") or pat_entry.get("pattern_regex")
+            if not pattern:
+                continue
+            try:
+                pat_re = re.compile(pattern, re.IGNORECASE)
+            except re.error:
+                continue
+            for para in texts:
+                if pat_re.search(para):
+                    sev = "error" if is_epilogue else "warning"
+                    issues.append({"chapter_id": ch_id, "category": category,
+                                   "severity": sev, "snippet": para[:150]})
+
+    errors = sum(1 for i in issues if i["severity"] == "error")
+    warnings = sum(1 for i in issues if i["severity"] == "warning")
+    print(f"[NARRATIVE-STOP] {errors} errors + {warnings} warnings по {len(patterns)} категориям.")
+    return {"issues": issues, "errors_count": errors, "warnings_count": warnings}
+
+
+def validate_pin_list_in_auto_enrich(audit_data: dict, pin_list: dict) -> dict:
+    """Task 038b: проверить что pin-list episodes/persons попали в CA auto_enrich.
+
+    Returns {pin_list_event_missing, pin_list_person_missing, errors_count}.
+    """
+    auto_enrich = audit_data.get("auto_enrich", {})
+    ae_event_texts = [
+        ((ev.get("title") or "") + " " + (ev.get("description") or "") + " " + (ev.get("source_quote") or "")).lower()
+        for ev in auto_enrich.get("timeline", [])
+    ]
+    ae_person_names = {(p.get("name") or "").lower() for p in auto_enrich.get("persons", [])}
+    gap_event_ids = {g.get("id") or g.get("event_id")
+                     for g in audit_data.get("log_only_gaps", {}).get("missing_events", [])}
+
+    missing_events = []
+    for ep in pin_list.get("episodes", []):
+        markers = ep.get("markers", [])
+        ep_id = ep.get("episode_id", "?")
+        if not markers:
+            continue
+        found = any(any(m.lower() in ae_text for m in markers if m) for ae_text in ae_event_texts)
+        if not found and ep_id not in gap_event_ids:
+            missing_events.append({"episode_id": ep_id, "title": ep.get("title", ""), "severity": "error"})
+
+    missing_persons = []
+    for rp in pin_list.get("required_persons", []):
+        name = (rp.get("name") or "").lower()
+        aliases = [(a or "").lower() for a in rp.get("aliases", [])]
+        if not any(n in ae_person_names for n in [name] + aliases if n):
+            missing_persons.append({"name": rp.get("name"), "relation": rp.get("relation", ""), "severity": "error"})
+
+    errors = len(missing_events) + len(missing_persons)
+    print(f"[PIN-LIST-COMPLIANCE] missing_events={len(missing_events)}, missing_persons={len(missing_persons)}")
+    return {"pin_list_event_missing": missing_events, "pin_list_person_missing": missing_persons, "errors_count": errors}
+
+
+def validate_discourse_markers(book: dict, fact_map: dict, config: dict) -> dict:
+    """Task 049/049c: Класс 13 — подсчёт discourse markers рассказчика в нарративе.
+
+    config — discourse_markers_<subject>.json.
+    v62a-049c: расширены generic patterns + aliases rapporteur'а включены в broad match
+    (не требуется точное имя — «дочь», «она вспоминает» тоже считается).
+    Returns {markers_found, thresholds, issues, errors_count, warnings_count}.
+    Idempotent.
+    """
+    import re
+
+    rapporteurs = config.get("rapporteurs", [])
+    thresholds = config.get("thresholds", {"ch_02": 8, "ch_03": 5, "ch_04": 3})
+
+    # Generic role-based patterns (not name-specific)
+    all_patterns = [
+        r"\bкак\s+вспоминает\s+(?:дочь|сын|внук\w*|племянник\w*|рассказчик\w*)\b",
+        r"\bпо\s+словам\s+(?:дочери|сына|внука|внучки|племянника|племянницы|рассказчик\w*)\b",
+        r"\bотмеча\w+\s+(?:дочь|сын|внук\w*)\b",
+        r"\bговорит\s+(?:дочь|сын|внук\w*)\b",
+        r"\bрассказывает\s+(?:дочь|сын|внук\w*)\b",
+        # v62a-049c: broader alias patterns not requiring exact name
+        r"\bона\s+вспомина\w+\b",
+        r"\bпо\s+её\s+словам\b",
+        r"\bпо\s+его\s+словам\b",
+        r"\bкак\s+она\s+(?:говор\w+|вспомина\w+|рассказ\w+)\b",
+        r"\bкак\s+он\s+(?:говор\w+|вспомина\w+|рассказ\w+)\b",
+        r"\bпо\s+воспоминани\w+\s+(?:дочери|сына|внука|внучки)\b",
+        r"\bсо\s+слов\s+(?:дочери|сына|внука|внучки|рассказчик\w*)\b",
+    ]
+
+    # Per-rapporteur patterns including their aliases
+    for rap in rapporteurs:
+        rap_names = [rap.get("name", "")] + rap.get("aliases", [])
+        for n in rap_names:
+            if not n:
+                continue
+            e = re.escape(n)
+            all_patterns.extend([
+                rf"\bкак\s+вспоминает\s+{e}\b",
+                rf"\bпо\s+словам\s+{e}\b",
+                rf"\b{e}\s+(?:отмеча\w+|вспомина\w+|говор\w+|рассказ\w+|пиш\w+|объясн\w+)\b",
+                rf"\b{e}\s+подчёркива\w+\b",
+                rf"\b{e}\s+уточня\w+\b",
+            ])
+
+    compiled = []
+    for pat in all_patterns:
+        try:
+            compiled.append(re.compile(pat, re.IGNORECASE))
+        except re.error:
+            pass
+
+    markers_found = {}
+    for chapter in book.get("chapters", []):
+        ch_id = chapter.get("id") or ""
+        if "epilogue" in ch_id.lower():
+            continue
+        full_text = (chapter.get("content") or "") + " " + " ".join(
+            p.get("text", "") for p in chapter.get("paragraphs", [])
+        )
+        markers_found[ch_id] = sum(len(p.findall(full_text)) for p in compiled)
+
+    issues = []
+    for ch_id, threshold in thresholds.items():
+        found = markers_found.get(ch_id, 0)
+        if found < threshold:
+            issues.append({"chapter_id": ch_id, "type": "below_threshold",
+                           "found": found, "expected": threshold, "severity": "warning"})
+
+    errors = sum(1 for i in issues if i["severity"] == "error")
+    warnings = sum(1 for i in issues if i["severity"] == "warning")
+    print(f"[DISCOURSE-MARKERS] " + ", ".join(f"{k}={v}" for k, v in markers_found.items()))
+    return {"markers_found": markers_found, "thresholds": thresholds,
+            "issues": issues, "errors_count": errors, "warnings_count": warnings}
+
+
+def remove_excluded_bio_data_family(book: dict, fact_map: dict) -> tuple:
+    """Task 044c: удалить из bio_data.family персонажей, помеченных
+    in_bio_data_family=false в fact_map.persons (после apply_relation_overrides).
+
+    filter_bio_data_family_by_relation_whitelist не достаточен: override может явно
+    исключить персону (flag в fact_map), но label родственника пройти через whitelist.
+
+    Returns (patched_book, excluded_list).
+    """
+    import copy
+    book = copy.deepcopy(book)
+    excluded = []
+
+    excluded_persons = [
+        p for p in fact_map.get("persons", [])
+        if p.get("in_bio_data_family") is False
+    ]
+    if not excluded_persons:
+        return book, excluded
+
+    chapters = book.get("chapters", [])
+    ch01 = next((ch for ch in chapters if ch.get("id") == "ch_01"), None)
+    if ch01 is None:
+        return book, excluded
+
+    bio_data = ch01.get("bio_data") or {}
+    family = bio_data.get("family")
+    if not family:
+        return book, excluded
+
+    def _name_matches(entry_text: str, person: dict) -> bool:
+        name = (person.get("name") or "").lower().strip()
+        aliases = [a.lower() for a in person.get("aliases", [])]
+        text_lower = entry_text.lower()
+        all_names = [name] + aliases
+        return any(n and n in text_lower for n in all_names)
+
+    kept = []
+    for entry in family:
+        entry_text = " ".join([
+            entry.get("label") or "",
+            entry.get("value") or "",
+            entry.get("note") or "",
+        ])
+        match = next(
+            (p for p in excluded_persons if _name_matches(entry_text, p)), None
+        )
+        if match:
+            excluded.append({
+                "label": entry.get("label", ""),
+                "value": entry.get("value", ""),
+                "matched_person": match.get("name", ""),
+                "reason": "in_bio_data_family=false",
+            })
+            print(
+                f"[v61-044c] Удалён из bio_data.family: «{entry.get('label', '')}» "
+                f"({entry.get('value', '')}) — matched «{match.get('name', '')}»"
+            )
+        else:
+            kept.append(entry)
+
+    bio_data["family"] = kept
+    ch01["bio_data"] = bio_data
+    print(f"[v61-044c] bio_data.family: исключено {len(excluded)}, сохранено {len(kept)}.")
+    return book, excluded
+
+
+def validate_pin_list_depth(book: dict, pin_list: dict) -> dict:
+    """Task 050: Класс 14 — минимальная глубина pin-list events в нарративе.
+
+    Returns {depth_issues: [...], errors_count, warnings_count}.
+    Idempotent.
+    """
+    import re
+
+    SENT_RE = re.compile(r'(?<=[.!?])\s+(?=[А-ЯA-Z«"])')
+    INITIAL_RE = re.compile(r'\b[А-ЯA-Z]\.')
+
+    def _count_sentences(text: str) -> int:
+        clean = INITIAL_RE.sub("X", text or "")
+        return max(1, len([p for p in SENT_RE.split(clean) if p.strip()]))
+
+    all_paragraphs = []
+    for ch in book.get("chapters", []):
+        ch_id = ch.get("id") or ""
+        # v61-050b: только нарративные главы; ch_01 (paspart) исключён — пустые структурные
+        # секции дают ложные depth errors; epilogue исключён — summary-style, не развёрнутый.
+        NARRATIVE_CHAPTERS = {"ch_02", "ch_03", "ch_04"}
+        if ch_id not in NARRATIVE_CHAPTERS:
+            continue
+        paras = ch.get("paragraphs", [])
+        if paras:
+            all_paragraphs.extend((p.get("text", ""), ch_id) for p in paras)
+        else:
+            for t in re.split(r"\n\n+", ch.get("content", "") or ""):
+                if t.strip():
+                    all_paragraphs.append((t.strip(), ch_id))
+
+    depth_issues = []
+    for ep in pin_list.get("episodes", []):
+        ep_id = ep.get("episode_id", "?")
+        markers = [m.lower() for m in ep.get("markers", []) if m]
+        min_req = ep.get("min_sentences", 3)
+        coverage = ep.get("coverage", "")
+        if not markers or coverage == "skipped":
+            continue
+        best_para, best_hits, found_ch = None, 0, ""
+        for para_text, ch_id in all_paragraphs:
+            hits = sum(1 for m in markers if m in para_text.lower())
+            if hits > best_hits:
+                best_hits, best_para, found_ch = hits, para_text, ch_id
+        if not best_para or best_hits == 0:
+            continue
+        actual = _count_sentences(best_para)
+        if actual < min_req:
+            sev = "error" if coverage == "full" else "warning"
+            depth_issues.append({
+                "episode_id": ep_id, "title": ep.get("title", ""),
+                "min_required": min_req, "actual_sentences": actual,
+                "chapter_id": found_ch, "paragraph_snippet": best_para[:150], "severity": sev,
+            })
+
+    errors = sum(1 for i in depth_issues if i["severity"] == "error")
+    warnings = sum(1 for i in depth_issues if i["severity"] == "warning")
+    print(f"[PIN-DEPTH] {errors} errors + {warnings} warnings.")
+    return {"depth_issues": depth_issues, "errors_count": errors, "warnings_count": warnings}
+
+
+def validate_chronological_consistency(book: dict, fact_map: dict) -> dict:
+    """Task 048: Класс 12 — проверить хронологическую согласованность persons и событий.
+
+    Returns {issues: [...], errors_count, warnings_count}.
+    Idempotent.
+    """
+    import re
+
+    person_years = {}
+    for p in fact_map.get("persons", []):
+        name = (p.get("name") or "").strip().lower()
+        aliases = [(a or "").strip().lower() for a in (p.get("aliases") or [])]
+        birth = p.get("birth_year") or p.get("born")
+        death = p.get("death_year") or p.get("died")
+        for n in [name] + aliases:
+            if n:
+                person_years[n] = (int(birth) if birth else None, int(death) if death else None)
+
+    def _min_birth_rel(rel_kw):
+        years = [int(p["birth_year"]) for p in fact_map.get("persons", [])
+                 if p.get("birth_year") and rel_kw in (p.get("relation_to_subject") or "").lower()]
+        return min(years) if years else None
+
+    collective_births = {
+        "дет": min(filter(None, [_min_birth_rel("сын"), _min_birth_rel("дочь")]), default=None),
+        "сын": _min_birth_rel("сын"),
+        "доч": _min_birth_rel("дочь"),
+        "внук": _min_birth_rel("внук"),
+    }
+
+    YEAR_RE = re.compile(r'\b((?:19|20)\d{2})\b')
+    COLLECTIVE_RE = re.compile(r'\b(дет\w{0,4}|сын\w{0,2}|доч\w{0,4}|внук\w{0,4})\b', re.IGNORECASE)
+
+    issues = []
+    for chapter in book.get("chapters", []):
+        ch_id = chapter.get("id") or ""
+        paras = chapter.get("paragraphs", [])
+        para_texts = [p.get("text", "") for p in paras] if paras else re.split(
+            r"\n\n+", chapter.get("content", "") or ""
+        )
+        for para in para_texts:
+            if not para.strip():
+                continue
+            para_years = [int(m) for m in YEAR_RE.findall(para)]
+            if not para_years:
+                continue
+            min_year = min(para_years)
+            para_lower = para.lower()
+
+            for col_m in COLLECTIVE_RE.finditer(para):
+                stem = col_m.group(0)[:4].lower()
+                birth = collective_births.get(stem)
+                if birth and min_year < birth:
+                    issues.append({
+                        "chapter_id": ch_id, "type": "person_mentioned_before_birth",
+                        "person_name": stem + "...", "person_birth_year_min": birth,
+                        "event_year_range": str(min_year), "snippet": para[:200], "severity": "error",
+                    })
+
+            for name, (birth, death) in person_years.items():
+                if len(name) < 4 or name not in para_lower:
+                    continue
+                if birth and min_year < birth:
+                    issues.append({
+                        "chapter_id": ch_id, "type": "person_mentioned_before_birth",
+                        "person_name": name, "person_birth_year_min": birth,
+                        "event_year_range": str(min_year), "snippet": para[:200], "severity": "error",
+                    })
+                if death and min_year > death + 5:
+                    issues.append({
+                        "chapter_id": ch_id, "type": "person_mentioned_after_death",
+                        "person_name": name, "person_death_year": death,
+                        "event_year_range": str(min_year), "snippet": para[:200], "severity": "warning",
+                    })
+
+    # v62a-048c: grandchild check — inferred min birth = max(parent.marriage_year+1, parent.birth_year+16)
+    # Детектирует упоминание внука/внучки в контексте года раньше чем мог родиться.
+    grandchild_persons = [
+        p for p in fact_map.get("persons", [])
+        if "внук" in (p.get("relation_to_subject") or "").lower()
+        and not (p.get("birth_year") or p.get("born"))
+    ]
+    if grandchild_persons:
+        # Find parent persons (сын/дочь of subject)
+        parent_persons = [
+            p for p in fact_map.get("persons", [])
+            if any(kw in (p.get("relation_to_subject") or "").lower() for kw in ("сын", "дочь"))
+        ]
+        # Per-grandchild: compute inferred min birth using the parent most likely to be their parent
+        # Generic: use max(earliest_parent.birth_year+16, earliest_parent.marriage_year+1)
+        parent_births = [int(p["birth_year"]) for p in parent_persons if p.get("birth_year")]
+        parent_marriages = [int(p["marriage_year"]) for p in parent_persons
+                            if p.get("marriage_year")]
+        min_gc_birth = None
+        if parent_births:
+            min_parent_birth = min(parent_births)
+            by_birth = min_parent_birth + 16
+            by_marriage = min(parent_marriages) + 1 if parent_marriages else by_birth
+            min_gc_birth = max(by_birth, by_marriage)
+
+        # v62a-048c: activity pattern — catch "встречал внучку после школы" + year
+        GRANDCHILD_ACTIVITY_RE = re.compile(
+            r'\b(встреча\w*|воспит\w*|играл\w*|видел\w*|школ\w*|из\s+школ\w*|сад\w*)\b',
+            re.IGNORECASE,
+        )
+        GRANDCHILD_WORD_RE = re.compile(r'\b(внук\w*|внучк\w*)\b', re.IGNORECASE)
+
+        for gc in grandchild_persons:
+            gc_name = (gc.get("name") or "").lower().strip()
+            gc_aliases = [(a or "").lower().strip() for a in gc.get("aliases", [])]
+            gc_names = [gc_name] + gc_aliases
+            for chapter in book.get("chapters", []):
+                ch_id = chapter.get("id") or ""
+                paras = chapter.get("paragraphs", [])
+                para_texts = [p.get("text", "") for p in paras] if paras else re.split(
+                    r"\n\n+", chapter.get("content", "") or ""
+                )
+                for para in para_texts:
+                    if not para.strip():
+                        continue
+                    para_lower = para.lower()
+                    name_in_para = any(n and n in para_lower for n in gc_names if len(n) >= 4)
+                    gc_word_in_para = bool(GRANDCHILD_WORD_RE.search(para))
+                    if not (name_in_para or gc_word_in_para):
+                        continue
+                    para_years = [int(m) for m in YEAR_RE.findall(para)]
+                    if not para_years or min_gc_birth is None:
+                        continue
+                    activity_match = bool(GRANDCHILD_ACTIVITY_RE.search(para))
+                    if min(para_years) < min_gc_birth and (name_in_para or activity_match):
+                        issues.append({
+                            "chapter_id": ch_id,
+                            "type": "grandchild_before_inferred_birth",
+                            "person_name": gc.get("name", gc_name),
+                            "inferred_min_birth": min_gc_birth,
+                            "parent_birth_used": min(parent_births) if parent_births else None,
+                            "parent_marriage_used": min(parent_marriages) if parent_marriages else None,
+                            "event_year_range": str(min(para_years)),
+                            "snippet": para[:200],
+                            "severity": "error",
+                        })
+
+    seen, deduped = set(), []
+    for iss in issues:
+        key = (iss.get("chapter_id"), iss.get("person_name"), iss.get("snippet", "")[:60])
+        if key not in seen:
+            seen.add(key)
+            deduped.append(iss)
+
+    errors = sum(1 for i in deduped if i["severity"] == "error")
+    warnings = sum(1 for i in deduped if i["severity"] == "warning")
+    print(f"[CHRONOLOGY] {errors} errors + {warnings} warnings.")
+    return {"issues": deduped, "errors_count": errors, "warnings_count": warnings}
+
+
+def enforce_bio_data_required_persons(book_final: dict, required_persons: list) -> dict:
+    """Task 044b/044e: добавить required_persons в bio_data.family если отсутствуют.
+
+    v62a-044e: исправлен поиск по existing entries — проверяет и name, и value поля
+    (enforce_bio_data_completeness использует label/value; этот модуль раньше проверял только name).
+    Добавляет entries в формате label/value (единый формат с enforce_bio_data_completeness).
+    Идемпотентно. Returns modified book_final.
+    """
+    import copy
+    book_out = copy.deepcopy(book_final)
+    added = []
+    for chapter in book_out.get("chapters", []):
+        bio_data = chapter.get("bio_data")
+        if bio_data is None:
+            continue
+        family = bio_data.get("family", [])
+        # v62a-044e: check both name and value keys for existing entries
+        existing_names: set[str] = set()
+        for m in family:
+            for k in ("name", "value"):
+                v = (m.get(k) or "").strip().lower()
+                if v and len(v) >= 3:
+                    existing_names.add(v)
+        for rp in required_persons:
+            name = rp.get("name", "")
+            if not name:
+                continue
+            name_lower = name.strip().lower()
+            aliases = [(a or "").strip().lower() for a in rp.get("aliases", [])]
+            all_names = [name_lower] + aliases
+            if any(n and any(n in en or en in n for en in existing_names) for n in all_names if n):
+                continue
+            relation = rp.get("relation", "")
+            label = relation if relation else "родственник"
+            # v62a-044e: use label/value format (consistent with enforce_bio_data_completeness)
+            entry = {
+                "label": label,
+                "value": name,
+                "note": (rp.get("note", "") + " [from pin-list required_persons]").strip(),
+                "confidence": "low",
+                "needs_verification": True,
+                "was_in_pin_list": True,
+            }
+            family.append(entry)
+            existing_names.add(name_lower)
+            added.append(name)
+            print(f"[REQUIRED-PERSONS] Добавлен: {name} ({label}) — confidence bypass (pin-list)")
+        bio_data["family"] = family
+    print(f"[REQUIRED-PERSONS] Добавлено {len(added)} required_persons.")
+    return book_out
+
+
+# ─────────────────────────────────────────────────────────────────
+# Task 051c: paspart-only temporal naming (v62a)
+# ─────────────────────────────────────────────────────────────────
+
+
+def apply_temporal_naming_to_paspart_only(book: dict, gazeteer: dict) -> dict:
+    """Task 051c: применить исторические переименования топонимов ТОЛЬКО к paspart секциям.
+
+    Области применения:
+    - bio_data.family[].value / bio_data.family[].note
+    - bio_data.timeline[].title / bio_data.timeline[].text
+    НЕ применяется к narrative chapters (ch_02..ch_04, epilogue) — риск разрушения текста.
+
+    gazeteer — gazeteer_<subject>.json с полем temporal_place_names[]:
+        modern_name, historical_name, historical_from_year, historical_to_year
+
+    Логика: если в строке упоминается год Y и Y попадает в [from_year, to_year] исторического
+    периода, заменяем modern_name на historical_name (на всех склонениях через suffix matching).
+    Idempotent: если уже historical_name — не трогаем.
+    Returns modified book (deep copy).
+    """
+    import copy
+    import re as _re
+
+    book = copy.deepcopy(book)
+    temporal_renames = gazeteer.get("temporal_place_names", [])
+    if not temporal_renames:
+        return book
+
+    YEAR_RE = _re.compile(r'\b((?:18|19|20)\d{2})\b')
+
+    def _extract_years_from_text(text: str):
+        return [int(m) for m in YEAR_RE.findall(text)]
+
+    def _apply_temporal_rename(text: str, entry_context_years: list[int]) -> str:
+        """Replace modern_name with historical_name if context years fall in historical period."""
+        if not text:
+            return text
+        inline_years = _extract_years_from_text(text)
+        all_years = inline_years + entry_context_years
+        for rename in temporal_renames:
+            modern = rename.get("modern_name", "")
+            historical = rename.get("historical_name", "")
+            from_yr = rename.get("historical_from_year")
+            to_yr = rename.get("historical_to_year")
+            if not (modern and historical and from_yr and to_yr):
+                continue
+            if not any(from_yr <= y <= to_yr for y in all_years):
+                continue
+            if historical.lower() in text.lower():
+                continue  # already has historical name
+            # Match modern_name and all declined forms (Russian morphology):
+            # use stem = modern minus last char (to cover е/и/ю/я/ь endings),
+            # then match stem + 0-3 trailing word chars.
+            # E.g. "Тверь" → stem "Твер" → matches "Тверь", "Твери", "Тверью", "Тверю".
+            stem = modern[:-1] if len(modern) > 3 else modern
+            try:
+                text = _re.sub(
+                    rf'\b{_re.escape(stem)}\w{{0,3}}\b',
+                    historical,
+                    text,
+                    flags=_re.IGNORECASE,
+                )
+            except _re.error:
+                pass
+        return text
+
+    chapters = book.get("chapters", [])
+    ch01 = next((c for c in chapters if c.get("id") == "ch_01"), None)
+    if not ch01:
+        return book
+
+    bio_data = ch01.get("bio_data") or {}
+    patched = 0
+
+    # Apply to bio_data.family
+    family = bio_data.get("family", [])
+    for entry in family:
+        # Collect context years from the entry itself
+        ctx_years = []
+        for fld in ("value", "name", "note"):
+            ctx_years.extend(_extract_years_from_text(entry.get(fld) or ""))
+        for fld in ("value", "name", "note"):
+            orig = entry.get(fld) or ""
+            if not orig:
+                continue
+            new_val = _apply_temporal_rename(orig, ctx_years)
+            if new_val != orig:
+                entry[fld] = new_val
+                patched += 1
+                print(f"[TEMPORAL-PASPART] family.{fld}: '{orig}' -> '{new_val}'")
+
+    # Apply to bio_data.timeline
+    timeline = bio_data.get("timeline") or ch01.get("timeline") or []
+    for period in timeline:
+        period_yrs = []
+        yr_raw = period.get("years") or period.get("period") or ""
+        period_yrs.extend(_extract_years_from_text(yr_raw))
+        for fld in ("title", "text", "description"):
+            orig = period.get(fld) or ""
+            if not orig:
+                continue
+            new_val = _apply_temporal_rename(orig, period_yrs)
+            if new_val != orig:
+                period[fld] = new_val
+                patched += 1
+                print(f"[TEMPORAL-PASPART] timeline.{fld}: '{orig}' -> '{new_val}'")
+
+    print(f"[TEMPORAL-PASPART] {patched} field(s) updated in paspart (bio_data only).")
+    return book
+
+
+# ─────────────────────────────────────────────────────────────────
+# Task 043e: anti-facts validation (v62a)
+# ─────────────────────────────────────────────────────────────────
+
+
+def validate_anti_facts(book: dict, anti_facts_config: dict) -> dict:
+    """Task 043e: Class 1 predicate-object confabulation check.
+
+    For each anti_fact pair (item_A, item_B): flag warning if BOTH patterns match
+    within the same paragraph (≤2 sentences proximity).
+    NOT enforce — flag only (risk of false positives).
+
+    anti_facts_config — anti_facts_<subject>.json with anti_facts[]:
+        anti_fact_id, item_A_patterns[], item_B_patterns[], reason, severity
+
+    Returns {issues: [...], warnings_count, checked_paragraphs}.
+    Idempotent.
+    """
+    import re as _re
+
+    anti_facts = anti_facts_config.get("anti_facts", [])
+    if not anti_facts:
+        return {"issues": [], "warnings_count": 0, "checked_paragraphs": 0}
+
+    # Pre-compile patterns
+    compiled_af = []
+    for af in anti_facts:
+        af_id = af.get("anti_fact_id", "?")
+        a_pats = af.get("item_A_patterns", [af.get("item_A", "")])
+        b_pats = af.get("item_B_patterns", [af.get("item_B", "")])
+        severity = af.get("severity", "warning")
+        try:
+            a_compiled = [_re.compile(p, _re.IGNORECASE) for p in a_pats if p]
+            b_compiled = [_re.compile(p, _re.IGNORECASE) for p in b_pats if p]
+            compiled_af.append((af_id, a_compiled, b_compiled, severity, af.get("reason", "")))
+        except _re.error as e:
+            print(f"[ANTI-FACTS] ⚠️ Pattern compile error for {af_id}: {e}")
+
+    issues = []
+    checked = 0
+
+    def _split_sentences(text: str) -> list[str]:
+        return [s.strip() for s in _re.split(r'(?<=[.!?])\s+', text) if s.strip()]
+
+    for chapter in book.get("chapters", []):
+        ch_id = chapter.get("id") or ""
+        paras = chapter.get("paragraphs", [])
+        if paras:
+            para_texts = [p.get("text", "") for p in paras]
+        else:
+            para_texts = [s for s in _re.split(r"\n\n+", chapter.get("content", "") or "") if s.strip()]
+
+        for para in para_texts:
+            if not para.strip():
+                continue
+            checked += 1
+            sentences = _split_sentences(para)
+
+            for af_id, a_compiled, b_compiled, severity, reason in compiled_af:
+                a_sent_idxs = [
+                    i for i, s in enumerate(sentences)
+                    if any(p.search(s) for p in a_compiled)
+                ]
+                b_sent_idxs = [
+                    i for i, s in enumerate(sentences)
+                    if any(p.search(s) for p in b_compiled)
+                ]
+                if not a_sent_idxs or not b_sent_idxs:
+                    continue
+                # Check if any A and B sentence are within 2 sentences of each other
+                for ai in a_sent_idxs:
+                    for bi in b_sent_idxs:
+                        if abs(ai - bi) <= 2:
+                            issues.append({
+                                "anti_fact_id": af_id,
+                                "chapter_id": ch_id,
+                                "sentence_A_idx": ai,
+                                "sentence_B_idx": bi,
+                                "reason": reason,
+                                "snippet": para[:250],
+                                "severity": severity,
+                            })
+                            print(
+                                f"[ANTI-FACTS] {severity.upper()}: {af_id} в {ch_id} — "
+                                f"{reason[:60]}"
+                            )
+                            break
+                    else:
+                        continue
+                    break
+
+    warnings = sum(1 for i in issues if i["severity"] == "warning")
+    errors = sum(1 for i in issues if i["severity"] == "error")
+    print(f"[ANTI-FACTS] {len(issues)} issue(s) ({warnings} warnings, {errors} errors) "
+          f"в {checked} параграфах.")
+    return {"issues": issues, "warnings_count": warnings, "errors_count": errors,
+            "checked_paragraphs": checked}
+
+
+
+# ─────────────────────────────────────────────────────────────────
+# Task 048d: children_before_birth chronology validator (v63)
+# ─────────────────────────────────────────────────────────────────
+
+
+def validate_children_before_birth(book: dict, chronology_config: dict) -> dict:
+    """Task 048d: Class 12 extension — check that children are not mentioned
+    in contexts before they could have been born.
+
+    chronology_config — chronology_periods_karakulina.json.
+    Returns {issues: [...], errors_count, warnings_count}.
+    Idempotent.
+    """
+    import re
+
+    subject_birth = None
+    for p in chronology_config.get("periods", []):
+        if p.get("period_id") == "birth":
+            subject_birth = p.get("year")
+            break
+
+    child_birth_years = {}
+    for p in chronology_config.get("periods", []):
+        pid = p.get("period_id", "")
+        year = p.get("year") or p.get("year_start")
+        # Only match birth periods — not marriage/move/death periods that also contain person names
+        if "birth" not in pid.lower():
+            continue
+        if "valeriy" in pid.lower() or ("son" in pid.lower() and "birth" in pid.lower()):
+            child_birth_years["валери"] = year
+        elif "tatyana" in pid.lower() or ("daughter" in pid.lower() and "birth" in pid.lower()):
+            child_birth_years["татьян"] = year
+
+    YEAR_RE = re.compile(r"\b((?:19|20)\d{2})\b")
+    CHILDREN_GENERAL_RE = re.compile(
+        r"\b(дет\w{0,4}|ребят\w{0,2}|детишк\w{0,2})\b", re.IGNORECASE
+    )
+    GRANDCHILD_RE = re.compile(r"\b(внук\w*|внучк\w*)\b", re.IGNORECASE)
+
+    issues = []
+    for chapter in book.get("chapters", []):
+        ch_id = chapter.get("id") or ""
+        paras = chapter.get("paragraphs", [])
+        para_texts = (
+            [p.get("text", "") for p in paras]
+            if paras
+            else re.split(r"\n\n+", chapter.get("content", "") or "")
+        )
+        for para in para_texts:
+            if not para.strip():
+                continue
+            years_in_para = [int(m) for m in YEAR_RE.findall(para)]
+            if not years_in_para:
+                continue
+            min_year = min(years_in_para)
+
+            if subject_birth and min_year < subject_birth and CHILDREN_GENERAL_RE.search(para):
+                issues.append({
+                    "chapter_id": ch_id, "type": "children_before_subject_birth",
+                    "subject_birth_year": subject_birth, "event_year": min_year,
+                    "snippet": para[:200], "severity": "error", "rule": "children_before_birth",
+                })
+
+            para_lower = para.lower()
+            for child_stem, child_birth in child_birth_years.items():
+                if not child_birth:
+                    continue
+                if child_stem in para_lower and min_year < child_birth:
+                    issues.append({
+                        "chapter_id": ch_id, "type": "named_child_before_birth",
+                        "child_stem": child_stem, "child_birth_year": child_birth,
+                        "event_year": min_year, "snippet": para[:200], "severity": "error",
+                    })
+
+            if GRANDCHILD_RE.search(para):
+                min_cb = min((y for y in child_birth_years.values() if y), default=None)
+                if min_cb and min_year < min_cb + 16:
+                    issues.append({
+                        "chapter_id": ch_id, "type": "grandchild_before_child_mature",
+                        "min_child_birth_plus_16": min_cb + 16, "event_year": min_year,
+                        "snippet": para[:200], "severity": "warning",
+                    })
+
+    errors = sum(1 for i in issues if i.get("severity") == "error")
+    warnings = sum(1 for i in issues if i.get("severity") == "warning")
+    if issues:
+        print(f"[CHRONO-048d] {errors} errors, {warnings} warnings.")
+    else:
+        print("[CHRONO-048d] OK — no children_before_birth violations.")
+    return {"issues": issues, "errors_count": errors, "warnings_count": warnings}
+
+
+# ─────────────────────────────────────────────────────────────────
+# Task 051d: year_confidence parser for pin-list entries (v63)
+# ─────────────────────────────────────────────────────────────────
+
+
+def parse_pin_list_year_field(year_cell: str) -> dict:
+    """Task 051d: parse year field from pin-list table cell.
+
+    Formats handled:
+        "1946"                          -> {year: 1946, year_confidence: "high"}
+        "1990-е"                        -> {year_range: ..., year_confidence: "medium"}
+        "unknown"                       -> {year: None, year_confidence: "low"}
+        "unknown (year_confidence=low)" -> {year: None, year_confidence: "low"}
+        "~1940"                         -> {year: 1940, year_confidence: "medium"}
+        "1958-62"                       -> {year_start: 1958, year_end: 1962, year_confidence: "high"}
+    """
+    import re
+
+    cell = (year_cell or "").strip()
+    conf_match = re.search(r"year_confidence\s*=\s*(low|medium|high)", cell, re.IGNORECASE)
+    explicit_conf = conf_match.group(1).lower() if conf_match else None
+    clean = re.sub(r"\([^)]*\)", "", cell).strip()
+
+    if re.match(r"^(unknown|неизвестен|неизвестно|не\s+известен|-)$", clean, re.IGNORECASE):
+        return {"year": None, "year_confidence": explicit_conf or "low"}
+
+    range_match = re.match(r"^((?:19|20)\d{2})[–—-]((?:\d{2}|\d{4}))$", clean)
+    if range_match:
+        start = int(range_match.group(1))
+        end_raw = range_match.group(2)
+        end = int(end_raw) if len(end_raw) == 4 else int(str(start)[:2] + end_raw)
+        return {"year_start": start, "year_end": end, "year_confidence": explicit_conf or "high"}
+
+    approx = re.match(r"^~((?:19|20)\d{2})$", clean)
+    if approx:
+        return {"year": int(approx.group(1)), "year_confidence": explicit_conf or "medium"}
+
+    decade = re.match(r"^((?:19|20)\d{2})[- ]?(е|х|x|s)$", clean, re.IGNORECASE)
+    if decade:
+        return {"year_range": clean, "year_confidence": explicit_conf or "medium"}
+
+    exact = re.match(r"^((?:19|20)\d{2})$", clean)
+    if exact:
+        return {"year": int(exact.group(1)), "year_confidence": explicit_conf or "high"}
+
+    return {"year_raw": cell, "year_confidence": explicit_conf or "low"}
+
+
+# ─────────────────────────────────────────────────────────────────
+# Task 043e-2: epilogue quote density validator (v63)
+# ─────────────────────────────────────────────────────────────────
+
+
+def validate_epilogue_quote_density(book: dict, config: dict = None) -> dict:
+    """Task 043e-2: flag epilogue with zero or insufficient voice attribution.
+
+    Defaults: min_quotes=1, max_generic_sentences_pct=0.6.
+    Returns {ok: bool, quote_count: int, generic_pct: float, issues: []}.
+    Idempotent.
+    """
+    import re
+
+    cfg = config or {}
+    min_quotes = cfg.get("min_quotes_in_epilogue", 1)
+    max_generic_pct = cfg.get("max_generic_sentences_pct", 0.6)
+
+    epilogue = None
+    for ch in book.get("chapters", []):
+        if "epilogue" in (ch.get("id") or ""):
+            epilogue = ch
+            break
+    if epilogue is None:
+        return {"ok": True, "skipped": True, "reason": "no epilogue chapter"}
+
+    content = epilogue.get("content") or " ".join(
+        p.get("text", "") for p in epilogue.get("paragraphs", [])
+    )
+    if not content.strip():
+        return {"ok": True, "skipped": True, "reason": "empty epilogue"}
+
+    sentences = [s.strip() for s in re.split(r"[.!?]+", content) if len(s.strip()) > 10]
+    total = len(sentences)
+    if total == 0:
+        return {"ok": True, "skipped": True, "reason": "too short"}
+
+    QUOTE_RE = re.compile(
+        r"(говор\w+|сказал\w*|вспомин\w+|по\s+её\s+словам|по\s+его\s+словам|"
+        r"рассказывает|«[^»]{5,}»|считал\w*|любил\w+\s+говорить|вспоминает|по\s+словам)",
+        re.IGNORECASE,
+    )
+    quote_count = sum(1 for s in sentences if QUOTE_RE.search(s))
+    generic_pct = (total - quote_count) / total if total > 0 else 0.0
+
+    issues = []
+    ok = True
+    if quote_count < min_quotes:
+        ok = False
+        issues.append({
+            "type": "epilogue_zero_quotes", "quote_count": quote_count,
+            "min_required": min_quotes, "severity": "error",
+        })
+        print(f"[EPILOGUE-DENSITY] ERROR: {quote_count} quotes in epilogue (min={min_quotes})")
+    if generic_pct > max_generic_pct:
+        ok = False
+        issues.append({
+            "type": "epilogue_too_many_generic",
+            "generic_pct": round(generic_pct, 2), "severity": "warning",
+        })
+        print(f"[EPILOGUE-DENSITY] WARNING: {round(generic_pct*100)}% generic sentences")
+    if ok:
+        print(f"[EPILOGUE-DENSITY] OK — {quote_count} quotes, {round(generic_pct*100)}% generic.")
+
+    return {
+        "ok": ok, "quote_count": quote_count, "total_sentences": total,
+        "generic_pct": round(generic_pct, 3), "issues": issues,
+    }
+
+
+# ─────────────────────────────────────────────────────────────────
+# Task 038c: entity substitution check (CA v1.5 companion) (v63)
+# ─────────────────────────────────────────────────────────────────
+
+
+def validate_entity_substitution(book: dict, fact_map: dict, transcripts: list) -> dict:
+    """Task 038c: detect toponym/institution substitution (book vs transcripts).
+
+    Checks: Калинин→Тверь, Молдавия→Молдова, Химинститут→РХТУ.
+    Uses stem matching to handle Russian inflection (Тверь/Твери, Молдова/Молдове etc.).
+    Allowed overrides via fact_map.place_canonical[].canonical_form_required=true.
+    Returns {ok: bool, issues: []}.
+    """
+    import re
+
+    allowed_subs = set()
+    for place in fact_map.get("place_canonical", []):
+        if place.get("canonical_form_required"):
+            orig = (place.get("original") or "").lower()
+            repl = (place.get("canonical_replacement") or "").lower()
+            if orig and repl:
+                allowed_subs.add((orig, repl))
+
+    # Each tuple: (orig_stem_re, repl_stem_re, orig_key, repl_key, hint)
+    substitution_pairs = [
+        (r"\bкалинин\w*\b", r"\bтвер\w+\b", "калинин", "тверь",
+         "TR says Калинин, book says Тверь"),
+        (r"\bмолдав\w+\b", r"\bмолдов\w+\b", "молдавия", "молдова",
+         "TR says Молдавия, book says Молдова"),
+        (r"\bхиминститут\w*\b", r"\bрхту\b", "химинститут", "рхту",
+         "TR says Химинститут, book says РХТУ"),
+        (r"\bхиминститут\w*\b", r"российск\w+\s+химико.технологическ\w+", "химинститут",
+         "российский химико-технологический", "institution full name sub"),
+    ]
+
+    tr_text = " ".join((t or "") for t in (transcripts or [])).lower()
+    issues = []
+
+    for orig_re, repl_re, orig_key, repl_key, hint in substitution_pairs:
+        if (orig_key, repl_key) in allowed_subs:
+            continue
+        if not re.search(orig_re, tr_text):
+            continue
+        for ch in book.get("chapters", []):
+            ch_id = ch.get("id") or ""
+            ch_text = (ch.get("content") or "") + " ".join(
+                p.get("text", "") for p in ch.get("paragraphs", [])
+            )
+            ch_lower = ch_text.lower()
+            if re.search(repl_re, ch_lower) and not re.search(orig_re, ch_lower):
+                issues.append({
+                    "type": "entity_substitution", "original": orig_key,
+                    "substituted": repl_key, "chapter_id": ch_id,
+                    "hint": hint, "severity": "warning",
+                })
+                print(f"[ENTITY-SUB] WARNING: {orig_key} -> {repl_key} in {ch_id}. {hint}")
+
+    ok = len(issues) == 0
+    if ok:
+        print("[ENTITY-SUB] OK — no entity substitutions.")
+    return {"ok": ok, "issues": issues}
+
+
+# ─────────────────────────────────────────────────────────────────
+# Task 044g: bio_data.family format normalisation + locative case (v63)
+# ─────────────────────────────────────────────────────────────────
+
+
+def validate_bio_data_family_format(bio_data: dict, config: dict = None) -> dict:
+    """Task 044g: validate bio_data.family entries for format compliance.
+
+    Expected: "<Relation>: <ФИО>" with optional parenthetical note.
+    Also checks locative case in place fields.
+    Returns {ok: bool, issues: [], malformed_count: int}.
+    """
+    import re
+
+    issues = []
+    family = bio_data.get("family") or []
+    if isinstance(family, str):
+        family = [family]
+
+    for entry in family:
+        if not isinstance(entry, str) or not entry.strip():
+            continue
+        es = entry.strip()
+        if ":" not in es:
+            issues.append({
+                "type": "malformed_entry", "entry": es,
+                "reason": "no colon separator", "severity": "warning",
+            })
+            continue
+        parts = es.split(":", 1)
+        rel = parts[0].strip()
+        name = parts[1].strip() if len(parts) > 1 else ""
+        if not rel or rel in ("?", "-", ""):
+            issues.append({"type": "empty_relation", "entry": es, "severity": "error"})
+        if not name or name in ("?", "-", "", "(неизвестно)"):
+            issues.append({
+                "type": "empty_name", "entry": es,
+                "relation_term": rel, "severity": "warning",
+            })
+
+    NOMINATIVE_CITY_RE = re.compile(r"\bв\s+(Калинин|Москва|Ленинград|Тверь)\b")
+    for field in ("birth_place", "death_place", "lived_in"):
+        val = bio_data.get(field) or ""
+        if isinstance(val, list):
+            val = " ".join(str(v) for v in val)
+        if not val:
+            continue
+        m = NOMINATIVE_CITY_RE.search(val)
+        if m:
+            issues.append({
+                "type": "locative_case_error", "field": field,
+                "value": val, "match": m.group(0), "severity": "error",
+                "hint": "Use prepositional: в Калинине not в Калинин",
+            })
+
+    malformed = sum(1 for i in issues if i.get("type") == "malformed_entry")
+    ok = all(i.get("severity") != "error" for i in issues)
+    if issues:
+        print(f"[BIO-FAMILY-FORMAT] {len(issues)} issues (malformed={malformed})")
+    else:
+        print("[BIO-FAMILY-FORMAT] OK — all family entries valid.")
+    return {"ok": ok, "issues": issues, "malformed_count": malformed}

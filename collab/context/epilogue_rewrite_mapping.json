@@ -1,0 +1,79 @@
+{
+  "version": "v3",
+  "description": "Generic epilogue auto-rewrite mapping (task 046 + v61-043c + v61-046c + v63-043g). Categorical rules — no subject-specific content.",
+  "rules": [
+    {
+      "category": "person_of_their_time",
+      "pattern_regex": "\\b[Бб]ыл\\w*\\s+человек\\w{0,4}\\s+своего\\s+времени[.,]?",
+      "action": "delete_sentence_if_starts_with_match",
+      "reason": "клише обобщения эпохи"
+    },
+    {
+      "category": "path_from_X_to_Y",
+      "pattern_regex": "(прош\\w+|прокат\\w+|преодолел\\w+)\\s+путь\\s+от\\s+\\S+(\\s+[^.!?]*?)?\\s+(до|к)\\s+\\S+",
+      "action": "delete_sentence",
+      "reason": "стандартная риторическая фигура без конкретики (v61-046c: поддержка intermediate words)"
+    },
+    {
+      "category": "life_filled_with_X",
+      "pattern_regex": "(жизн\\w+|жил\\w+)\\s+был\\w+\\s+наполнен\\w+\\s+\\w+",
+      "action": "delete_sentence",
+      "reason": "пафосное обобщение без конкретики"
+    },
+    {
+      "category": "passed_to_generations",
+      "pattern_regex": "передал\\w+\\s+(следующ\\w+\\s+поколен|следующ\\w+\\s+поколения|потомк)",
+      "action": "delete_sentence",
+      "reason": "клише межпоколенческой передачи"
+    },
+    {
+      "category": "tradition_lives_in_family",
+      "pattern_regex": "(традиция|обычай)\\s+.{0,30}(жив|живёт|остал\\w+)\\s+(в\\s+семье|с\\s+нами|в\\s+памяти)",
+      "action": "delete_sentence",
+      "reason": "часто фантазия про продолжение традиции без подтверждения в источнике"
+    },
+    {
+      "category": "ideals_fought_for",
+      "pattern_regex": "(идеал\\w+|принцип\\w+)\\s+(за\\s+которые?|которым)\\s+(воевал\\w+|бор\\w+|жил\\w+)",
+      "action": "delete_sentence",
+      "reason": "мотивационное приписывание без источника"
+    },
+    {
+      "category": "believed_in_ideals",
+      "pattern_regex": "верил\\w*\\s+в\\s+идеал\\w+",
+      "action": "delete_sentence",
+      "reason": "v61-043c: обобщённое мотивационное приписывание без источника"
+    },
+    {
+      "category": "unbroken_person",
+      "pattern_regex": "не\\s+сломл?ен\\w*",
+      "action": "delete_sentence",
+      "reason": "v61-043c: пафосный эпитет без конкретики"
+    },
+    {
+      "category": "left_like_that",
+      "pattern_regex": "(такой\\s+ушл\\w+|такой\\s+и\\s+остал\\w+)",
+      "action": "delete_sentence",
+      "reason": "v61-043c: патетический финал без содержания"
+    },
+    {
+      "category": "kept_until_end",
+      "pattern_regex": "сохранив\\w*\\s+(до\\s+конца|до\\s+последн)",
+      "action": "delete_sentence",
+      "reason": "v61-043c: пафосная формула без конкретики"
+    },
+    {
+      "category": "event_changed_life",
+      "pattern_regex": "(событи\\w+|момент\\w+|встреч\\w+|случа\\w+)\\s+.{0,25}(изменил\\w+|переверну\\w+|повернул\\w+)\\s+.{0,20}(жизн\\w+|судьб\\w+|всё)",
+      "action": "delete_sentence",
+      "reason": "v63-043g: «поворотный момент» без source_quote = confabulation"
+    },
+    {
+      "category": "typical_for_generation_uniqueness",
+      "pattern_regex": "(типичн\\w+|обычн\\w+|характерн\\w+)\\s+(для\\s+)?(своег\\w+\\s+)?(поколен\\w+|времен\\w+|эпох\\w+)",
+      "action": "delete_sentence",
+      "reason": "v63-043g: «типичный для поколения» — обобщение без TR; включает конструкцию «в типичности — уникальность»"
+    }
+  ],
+  "applies_to_chapter_ids": ["epilogue"]
+}
