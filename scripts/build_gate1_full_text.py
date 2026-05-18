@@ -170,6 +170,10 @@ def _format_family(family: list | None) -> list[str]:
             continue
         if f.get("in_bio_data_family") is False:
             continue
+        # Skip entries explicitly marked as NOT in family (added by override/required_persons logic)
+        note_check = (f.get("note") or "").lower()
+        if "не в family" in note_check or "not in family" in note_check:
+            continue
         # Support both field-name conventions
         relation = f.get("label") or f.get("relation") or f.get("role") or ""
         name = f.get("value") or f.get("name") or ""
@@ -463,9 +467,9 @@ def _parse_contributors_from_pin_list(pin_list_path: str | None) -> list[dict]:
         return []
 
     text = path.read_text(encoding="utf-8")
-    # Find the Contributors section
+    # Find the Contributors section — match any ## heading containing "Contributors"
     sec_match = _re.search(
-        r'##\s+Contributors.*?\n(.*?)(?=\n##\s|\Z)', text, _re.DOTALL | _re.IGNORECASE
+        r'##[^\n]*Contributors[^\n]*\n(.*?)(?=\n##\s|\Z)', text, _re.DOTALL | _re.IGNORECASE
     )
     if not sec_match:
         print("[CONTRIBUTORS] ⚠️ Contributors section not found in pin-list", file=sys.stderr)

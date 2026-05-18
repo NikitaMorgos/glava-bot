@@ -948,6 +948,30 @@ async def main():
         json.dump(chronology_report, f, ensure_ascii=False, indent=2)
     print(f"[BATCH2FIX-048] Chronology check: {chronology_report.get('errors_count',0)} errors + {chronology_report.get('warnings_count',0)} warnings. Saved: {_chron_path.name}")
 
+    # ── v62a: Task 051c — Paspart-only temporal naming ────────────────
+    _gazeteer_path = ROOT / "collab" / "context" / f"gazeteer_{_subject_name}.json"
+    if _gazeteer_path.exists():
+        with open(_gazeteer_path, encoding="utf-8") as f:
+            _gazeteer_cfg = json.load(f)
+        if _gazeteer_cfg.get("temporal_place_names"):
+            from pipeline_utils import apply_temporal_naming_to_paspart_only
+            book_final = apply_temporal_naming_to_paspart_only(book_final, _gazeteer_cfg)
+            print(f"[v62a-051c] Temporal paspart naming applied (gazeteer v{_gazeteer_cfg.get('version','?')})")
+
+    # ── v62a: Task 043e — Anti-facts validation ───────────────────────
+    _anti_facts_path = ROOT / "collab" / "context" / f"anti_facts_{_subject_name}.json"
+    anti_facts_report = {"note": "anti_facts config not found"}
+    if _anti_facts_path.exists():
+        with open(_anti_facts_path, encoding="utf-8") as f:
+            _anti_facts_cfg = json.load(f)
+        from pipeline_utils import validate_anti_facts
+        anti_facts_report = validate_anti_facts(book_final, _anti_facts_cfg)
+        print(f"[v62a-043e] Anti-facts check: {len(anti_facts_report.get('issues',[]))} issue(s)")
+    _anti_facts_report_path = out_dir / f"{args.prefix}_anti_facts_check_{ts}.json"
+    with open(_anti_facts_report_path, "w", encoding="utf-8") as f:
+        json.dump(anti_facts_report, f, ensure_ascii=False, indent=2)
+    print(f"[SAVED] anti_facts_check: {_anti_facts_report_path.name}")
+
     # ── Batch 2-fix: Task 038b — Pin list compliance ─────────────────
     pin_compliance_report = {"note": "no audit data or pin_list"}
     # audit_data would need to come from Stage 1 output; here we just create placeholder
