@@ -47,6 +47,7 @@ from pipeline_utils import (
     enforce_bio_data_completeness,
     filter_bio_data_family_by_relation_whitelist,
     validate_bio_data_required_fields,
+    remove_excluded_bio_data_family,        # v61-044c
     normalize_book_topo,
     # Batch 2 — Task 044
     apply_relation_overrides,
@@ -656,6 +657,12 @@ async def main():
         json.dump(rel_overrides_report, f, ensure_ascii=False, indent=2)
     print(f"[SAVED] relation_overrides_applied: {_rel_ov_path.name}")
 
+    # v61-044c: явно удалить персон с in_bio_data_family=false (после relation overrides)
+    book_after_le, _excluded_override = remove_excluded_bio_data_family(book_after_le, fact_map)
+    rel_overrides_report["excluded_by_override"] = _excluded_override
+    with open(_rel_ov_path, "w", encoding="utf-8") as f:
+        json.dump(rel_overrides_report, f, ensure_ascii=False, indent=2)
+
     if _persona_notes_path.exists():
         with open(_persona_notes_path, encoding="utf-8") as f:
             _persona_notes_cfg = json.load(f)
@@ -812,6 +819,20 @@ async def main():
         with open(topo_report_path, "w", encoding="utf-8") as f:
             json.dump({"replacements": [], "note": "gazeteer not found"}, f, ensure_ascii=False)
 
+    # ── Batch 2-fix: Task 046 — Epilogue auto-rewrite (v61-046b: ПЕРЕД style checks) ─
+    # Порядок важен: enforce сначала очищает стоп-фразы, затем validate проверяет чистый текст.
+    _epilogue_mapping_path = ROOT / "collab" / "context" / "epilogue_rewrite_mapping.json"
+    if _epilogue_mapping_path.exists():
+        with open(_epilogue_mapping_path, encoding="utf-8") as f:
+            _ep_mapping = json.load(f)
+        book_final, _ep_rewrite_log = enforce_epilogue_stop_phrases(book_final, _ep_mapping)
+        _ep_rewrite_path = out_dir / f"{args.prefix}_epilogue_rewrite_log_{ts}.json"
+        with open(_ep_rewrite_path, "w", encoding="utf-8") as f:
+            json.dump(_ep_rewrite_log, f, ensure_ascii=False, indent=2)
+        print(f"[BATCH2FIX-046] Epilogue rewrite: {sum(1 for r in _ep_rewrite_log if r.get('action')=='deleted')} удалено. Saved: {_ep_rewrite_path.name}")
+    else:
+        print(f"[BATCH2FIX-046] epilogue_rewrite_mapping.json не найден — пропуск")
+
     # ── Batch 2: Task 043 — Style checks (stop phrases + awkward) ───
     _stop_list_path = ROOT / "collab" / "context" / "epilogue_stop_phrases.json"
     style_checks = {}
@@ -867,19 +888,6 @@ async def main():
     with open(_pin_cov_path, "w", encoding="utf-8") as f:
         json.dump(pin_coverage_report, f, ensure_ascii=False, indent=2)
     print(f"[SAVED] pin_coverage: {_pin_cov_path.name}")
-
-    # ── Batch 2-fix: Task 046 — Epilogue auto-rewrite ───────────────
-    _epilogue_mapping_path = ROOT / "collab" / "context" / "epilogue_rewrite_mapping.json"
-    if _epilogue_mapping_path.exists():
-        with open(_epilogue_mapping_path, encoding="utf-8") as f:
-            _ep_mapping = json.load(f)
-        book_final, _ep_rewrite_log = enforce_epilogue_stop_phrases(book_final, _ep_mapping)
-        _ep_rewrite_path = out_dir / f"{args.prefix}_epilogue_rewrite_log_{ts}.json"
-        with open(_ep_rewrite_path, "w", encoding="utf-8") as f:
-            json.dump(_ep_rewrite_log, f, ensure_ascii=False, indent=2)
-        print(f"[BATCH2FIX-046] Epilogue rewrite: {sum(1 for r in _ep_rewrite_log if r.get('action')=='deleted')} удалено. Saved: {_ep_rewrite_path.name}")
-    else:
-        print(f"[BATCH2FIX-046] epilogue_rewrite_mapping.json не найден — пропуск")
 
     # ── Batch 2-fix: Task 043b — Narrative stop phrases ─────────────
     _narr_stop_path = ROOT / "collab" / "context" / "narrative_stop_phrases.json"

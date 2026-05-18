@@ -60,6 +60,16 @@ from pipeline_quality_gates import (
     save_gate_report, summarize_failed_gates,
 )
 
+# ── Task 049b: helper to extract version string from prompt filename ──────────
+def _extract_prompt_version(prompt_file: str) -> str:
+    """Extract version string like 'v2.20' from filename like '03_ghostwriter_v2.20.md'."""
+    import re
+    if not prompt_file:
+        return "unknown"
+    m = re.search(r'v(\d+\.\d+)', prompt_file)
+    return f"v{m.group(1)}" if m else prompt_file
+
+
 # ──────────────────────────────────────────────────────────────────
 # Параметры субъекта
 # ──────────────────────────────────────────────────────────────────
@@ -434,7 +444,9 @@ def main():
             "text_gates_path": str(gate_report_path),
             "text_gates_passed": gate_report.get("passed"),
         },
-        notes={"strict_gates_enabled": not args.no_strict_gates, "variant_b": args.variant_b},
+        notes={"strict_gates_enabled": not args.no_strict_gates, "variant_b": args.variant_b,
+               "ghostwriter_version": _extract_prompt_version(cfg.get("ghostwriter", {}).get("prompt_file", "")),
+               "completeness_auditor_version": _extract_prompt_version(cfg.get("completeness_auditor", {}).get("prompt_file", ""))},
     )
 
     if gate_failed and not args.no_strict_gates:

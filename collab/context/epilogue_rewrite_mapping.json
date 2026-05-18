@@ -1,6 +1,6 @@
 {
-  "version": "v1",
-  "description": "Generic epilogue auto-rewrite mapping (task 046). Categorical rules — no subject-specific content.",
+  "version": "v2",
+  "description": "Generic epilogue auto-rewrite mapping (task 046 + v61-043c + v61-046c). Categorical rules — no subject-specific content.",
   "rules": [
     {
       "category": "person_of_their_time",
@@ -10,9 +10,9 @@
     },
     {
       "category": "path_from_X_to_Y",
-      "pattern_regex": "(прош\\w+|прокат\\w+|преодолел\\w+)\\s+путь\\s+от\\s+\\w+\\s+(до|к)\\s+\\w+",
+      "pattern_regex": "(прош\\w+|прокат\\w+|преодолел\\w+)\\s+путь\\s+от\\s+\\S+(\\s+[^.!?]*?)?\\s+(до|к)\\s+\\S+",
       "action": "delete_sentence",
-      "reason": "стандартная риторическая фигура без конкретики"
+      "reason": "стандартная риторическая фигура без конкретики (v61-046c: поддержка intermediate words)"
     },
     {
       "category": "life_filled_with_X",
@@ -37,6 +37,30 @@
       "pattern_regex": "(идеал\\w+|принцип\\w+)\\s+(за\\s+которые?|которым)\\s+(воевал\\w+|бор\\w+|жил\\w+)",
       "action": "delete_sentence",
       "reason": "мотивационное приписывание без источника"
+    },
+    {
+      "category": "believed_in_ideals",
+      "pattern_regex": "верил\\w*\\s+в\\s+идеал\\w+",
+      "action": "delete_sentence",
+      "reason": "v61-043c: обобщённое мотивационное приписывание без источника"
+    },
+    {
+      "category": "unbroken_person",
+      "pattern_regex": "не\\s+сломл?ен\\w*",
+      "action": "delete_sentence",
+      "reason": "v61-043c: пафосный эпитет без конкретики"
+    },
+    {
+      "category": "left_like_that",
+      "pattern_regex": "(такой\\s+ушл\\w+|такой\\s+и\\s+остал\\w+)",
+      "action": "delete_sentence",
+      "reason": "v61-043c: патетический финал без содержания"
+    },
+    {
+      "category": "kept_until_end",
+      "pattern_regex": "сохранив\\w*\\s+(до\\s+конца|до\\s+последн)",
+      "action": "delete_sentence",
+      "reason": "v61-043c: пафосная формула без конкретики"
     }
   ],
   "applies_to_chapter_ids": ["epilogue"]

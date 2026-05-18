@@ -4023,6 +4023,73 @@ def validate_discourse_markers(book: dict, fact_map: dict, config: dict) -> dict
             "issues": issues, "errors_count": errors, "warnings_count": warnings}
 
 
+def remove_excluded_bio_data_family(book: dict, fact_map: dict) -> tuple:
+    """Task 044c: удалить из bio_data.family персонажей, помеченных
+    in_bio_data_family=false в fact_map.persons (после apply_relation_overrides).
+
+    filter_bio_data_family_by_relation_whitelist не достаточен: override может явно
+    исключить персону (flag в fact_map), но label родственника пройти через whitelist.
+
+    Returns (patched_book, excluded_list).
+    """
+    import copy
+    book = copy.deepcopy(book)
+    excluded = []
+
+    excluded_persons = [
+        p for p in fact_map.get("persons", [])
+        if p.get("in_bio_data_family") is False
+    ]
+    if not excluded_persons:
+        return book, excluded
+
+    chapters = book.get("chapters", [])
+    ch01 = next((ch for ch in chapters if ch.get("id") == "ch_01"), None)
+    if ch01 is None:
+        return book, excluded
+
+    bio_data = ch01.get("bio_data") or {}
+    family = bio_data.get("family")
+    if not family:
+        return book, excluded
+
+    def _name_matches(entry_text: str, person: dict) -> bool:
+        name = (person.get("name") or "").lower().strip()
+        aliases = [a.lower() for a in person.get("aliases", [])]
+        text_lower = entry_text.lower()
+        all_names = [name] + aliases
+        return any(n and n in text_lower for n in all_names)
+
+    kept = []
+    for entry in family:
+        entry_text = " ".join([
+            entry.get("label") or "",
+            entry.get("value") or "",
+            entry.get("note") or "",
+        ])
+        match = next(
+            (p for p in excluded_persons if _name_matches(entry_text, p)), None
+        )
+        if match:
+            excluded.append({
+                "label": entry.get("label", ""),
+                "value": entry.get("value", ""),
+                "matched_person": match.get("name", ""),
+                "reason": "in_bio_data_family=false",
+            })
+            print(
+                f"[v61-044c] Удалён из bio_data.family: «{entry.get('label', '')}» "
+                f"({entry.get('value', '')}) — matched «{match.get('name', '')}»"
+            )
+        else:
+            kept.append(entry)
+
+    bio_data["family"] = kept
+    ch01["bio_data"] = bio_data
+    print(f"[v61-044c] bio_data.family: исключено {len(excluded)}, сохранено {len(kept)}.")
+    return book, excluded
+
+
 def validate_pin_list_depth(book: dict, pin_list: dict) -> dict:
     """Task 050: Класс 14 — минимальная глубина pin-list events в нарративе.
 
@@ -4041,6 +4108,11 @@ def validate_pin_list_depth(book: dict, pin_list: dict) -> dict:
     all_paragraphs = []
     for ch in book.get("chapters", []):
         ch_id = ch.get("id") or ""
+        # v61-050b: только нарративные главы; ch_01 (paspart) исключён — пустые структурные
+        # секции дают ложные depth errors; epilogue исключён — summary-style, не развёрнутый.
+        NARRATIVE_CHAPTERS = {"ch_02", "ch_03", "ch_04"}
+        if ch_id not in NARRATIVE_CHAPTERS:
+            continue
         paras = ch.get("paragraphs", [])
         if paras:
             all_paragraphs.extend((p.get("text", ""), ch_id) for p in paras)
@@ -4153,6 +4225,53 @@ def validate_chronological_consistency(book: dict, fact_map: dict) -> dict:
                         "person_name": name, "person_death_year": death,
                         "event_year_range": str(min_year), "snippet": para[:200], "severity": "warning",
                     })
+
+    # v61-048b: grandchild check для внуков без birth_year; min birth = parent_birth + 15
+    # Детектирует упоминание внука/внучки в контексте года раньше чем мог родиться.
+    grandchild_persons = [
+        p for p in fact_map.get("persons", [])
+        if "внук" in (p.get("relation_to_subject") or "").lower()
+        and not (p.get("birth_year") or p.get("born"))
+    ]
+    if grandchild_persons:
+        child_births = [
+            int(p["birth_year"]) for p in fact_map.get("persons", [])
+            if (p.get("birth_year") or p.get("born"))
+            and any(kw in (p.get("relation_to_subject") or "").lower() for kw in ("сын", "дочь"))
+        ]
+        parent_birth = min(child_births) if child_births else None
+        if parent_birth is not None:
+            min_gc_birth = parent_birth + 15
+            for gc in grandchild_persons:
+                gc_name = (gc.get("name") or "").lower().strip()
+                gc_aliases = [(a or "").lower().strip() for a in gc.get("aliases", [])]
+                gc_names = [gc_name] + gc_aliases
+                for chapter in book.get("chapters", []):
+                    ch_id = chapter.get("id") or ""
+                    paras = chapter.get("paragraphs", [])
+                    para_texts = [p.get("text", "") for p in paras] if paras else re.split(
+                        r"\n\n+", chapter.get("content", "") or ""
+                    )
+                    for para in para_texts:
+                        if not para.strip():
+                            continue
+                        para_lower = para.lower()
+                        if not any(n and n in para_lower for n in gc_names if len(n) >= 4):
+                            continue
+                        para_years = [int(m) for m in YEAR_RE.findall(para)]
+                        if not para_years:
+                            continue
+                        if min(para_years) < min_gc_birth:
+                            issues.append({
+                                "chapter_id": ch_id,
+                                "type": "grandchild_before_inferred_birth",
+                                "person_name": gc.get("name", gc_name),
+                                "inferred_min_birth": min_gc_birth,
+                                "parent_birth": parent_birth,
+                                "event_year_range": str(min(para_years)),
+                                "snippet": para[:200],
+                                "severity": "warning",
+                            })
 
     seen, deduped = set(), []
     for iss in issues:
