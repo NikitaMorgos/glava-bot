@@ -157,6 +157,7 @@ def _format_family(family: list | None) -> list[str]:
 
     v62a-044d: skip entries marked in_bio_data_family=False (override entries);
     skip entries where both name/value are empty or label/relation is "?".
+    v63-044d-2: strict skip for malformed entries (backslash/quote artifacts).
     """
     if not family or not isinstance(family, list):
         return []
@@ -177,11 +178,17 @@ def _format_family(family: list | None) -> list[str]:
         # Support both field-name conventions
         relation = f.get("label") or f.get("relation") or f.get("role") or ""
         name = f.get("value") or f.get("name") or ""
-        note = f.get("note") or f.get("detail")
+        note = f.get("note") or f.get("detail") or ""
         if not name or not name.strip():
             continue
         if relation.strip() in ("?", "", "-"):
             continue
+        # v63-044d-2: skip malformed entries with backslash or stray quote artifacts
+        if "\\" in relation or "\\" in name or '"' in relation or '"' in name:
+            continue
+        # v63-044d-2: clean internal metadata artifact from notes
+        import re as _re2
+        note = _re2.sub(r"\s*\[from pin-list required_persons\]\s*", "", note).strip()
         relation_label = relation.strip().capitalize() if relation.strip() else "Родственник"
         dedup_key = (relation_label.lower(), name.lower())
         if dedup_key in seen:
@@ -244,14 +251,17 @@ def _render_ch01_bio(book: dict, fact_map: dict | None) -> list[str]:
 
     # Если есть content (старый формат) — добавляем как note
     # v62a-044d: strip duplicate "## Основные даты жизни" heading from content
+    # v63-044d-2: skip block entirely if content is empty or heading-only after paspart rendered
     content = (ch01.get("content") or "").strip()
     if content:
-        # Remove a leading ## heading that duplicates the section title already rendered above
         import re as _re
         content_clean = _re.sub(
             r'^##\s+(?:Основные\s+даты\s+жизни|[^\n]+)\n*', '', content, count=1
         ).strip()
-        if content_clean:
+        # v63-044d-2: after structured paspart is rendered, only add content block if
+        # there's actual non-heading text (avoids empty "### Дополнительный текст ch_01" header)
+        text_only = _re.sub(r'^#+\s+.*$', '', content_clean, flags=_re.MULTILINE).strip()
+        if text_only:
             out.extend(["### Дополнительный текст ch_01", "", content_clean, ""])
 
     return out
@@ -514,9 +524,10 @@ def _parse_contributors_from_pin_list(pin_list_path: str | None) -> list[dict]:
 
 
 def append_contributors_section(lines: list[str], pin_list_path: str | None) -> list[str]:
-    """Task 052c: append 'Кто работал над этой Главой' section from pin-list Contributors.
+    """Task 052c/052d: append 'Кто работал над этой Главой' section.
 
-    Pure scripted — no GW involvement. Reads pin-list, renders clean section.
+    Task 052d: render ONLY full_name + relation_to_subject.
+    interview_role and notes are parsed but NOT rendered (per Никита v62a feedback).
     Returns new list of lines with section appended.
     """
     contributors = _parse_contributors_from_pin_list(pin_list_path)
@@ -532,19 +543,13 @@ def append_contributors_section(lines: list[str], pin_list_path: str | None) -> 
         "",
     ]
     for c in contributors:
-        name = c["full_name"]
-        parts = []
-        if c["relation_to_subject"]:
-            parts.append(c["relation_to_subject"])
-        if c["interview_role"]:
-            parts.append(c["interview_role"])
-        detail = ", ".join(parts) if parts else ""
-        if detail:
-            section.append(f"- **{name}** — {detail}")
-        else:
-            section.append(f"- **{name}**")
+        name = (c.get("full_name") or "").strip()
+        relation = (c.get("relation_to_subject") or "").strip()
+        if not name or not relation:
+            continue
+        section.append(f"- **{name}** — {relation}")
     section.append("")
-    print(f"[CONTRIBUTORS] Appended {len(contributors)} contributors from pin-list")
+    print(f"[CONTRIBUTORS] Appended {len(contributors)} contributors (ФИО+relation only)")
     return lines + section
 
 

@@ -4641,3 +4641,340 @@ def validate_anti_facts(book: dict, anti_facts_config: dict) -> dict:
     return {"issues": issues, "warnings_count": warnings, "errors_count": errors,
             "checked_paragraphs": checked}
 
+
+
+# ─────────────────────────────────────────────────────────────────
+# Task 048d: children_before_birth chronology validator (v63)
+# ─────────────────────────────────────────────────────────────────
+
+
+def validate_children_before_birth(book: dict, chronology_config: dict) -> dict:
+    """Task 048d: Class 12 extension — check that children are not mentioned
+    in contexts before they could have been born.
+
+    chronology_config — chronology_periods_karakulina.json.
+    Returns {issues: [...], errors_count, warnings_count}.
+    Idempotent.
+    """
+    import re
+
+    subject_birth = None
+    for p in chronology_config.get("periods", []):
+        if p.get("period_id") == "birth":
+            subject_birth = p.get("year")
+            break
+
+    child_birth_years = {}
+    for p in chronology_config.get("periods", []):
+        pid = p.get("period_id", "")
+        year = p.get("year") or p.get("year_start")
+        # Only match birth periods — not marriage/move/death periods that also contain person names
+        if "birth" not in pid.lower():
+            continue
+        if "valeriy" in pid.lower() or ("son" in pid.lower() and "birth" in pid.lower()):
+            child_birth_years["валери"] = year
+        elif "tatyana" in pid.lower() or ("daughter" in pid.lower() and "birth" in pid.lower()):
+            child_birth_years["татьян"] = year
+
+    YEAR_RE = re.compile(r"\b((?:19|20)\d{2})\b")
+    CHILDREN_GENERAL_RE = re.compile(
+        r"\b(дет\w{0,4}|ребят\w{0,2}|детишк\w{0,2})\b", re.IGNORECASE
+    )
+    GRANDCHILD_RE = re.compile(r"\b(внук\w*|внучк\w*)\b", re.IGNORECASE)
+
+    issues = []
+    for chapter in book.get("chapters", []):
+        ch_id = chapter.get("id") or ""
+        paras = chapter.get("paragraphs", [])
+        para_texts = (
+            [p.get("text", "") for p in paras]
+            if paras
+            else re.split(r"\n\n+", chapter.get("content", "") or "")
+        )
+        for para in para_texts:
+            if not para.strip():
+                continue
+            years_in_para = [int(m) for m in YEAR_RE.findall(para)]
+            if not years_in_para:
+                continue
+            min_year = min(years_in_para)
+
+            if subject_birth and min_year < subject_birth and CHILDREN_GENERAL_RE.search(para):
+                issues.append({
+                    "chapter_id": ch_id, "type": "children_before_subject_birth",
+                    "subject_birth_year": subject_birth, "event_year": min_year,
+                    "snippet": para[:200], "severity": "error", "rule": "children_before_birth",
+                })
+
+            para_lower = para.lower()
+            for child_stem, child_birth in child_birth_years.items():
+                if not child_birth:
+                    continue
+                if child_stem in para_lower and min_year < child_birth:
+                    issues.append({
+                        "chapter_id": ch_id, "type": "named_child_before_birth",
+                        "child_stem": child_stem, "child_birth_year": child_birth,
+                        "event_year": min_year, "snippet": para[:200], "severity": "error",
+                    })
+
+            if GRANDCHILD_RE.search(para):
+                min_cb = min((y for y in child_birth_years.values() if y), default=None)
+                if min_cb and min_year < min_cb + 16:
+                    issues.append({
+                        "chapter_id": ch_id, "type": "grandchild_before_child_mature",
+                        "min_child_birth_plus_16": min_cb + 16, "event_year": min_year,
+                        "snippet": para[:200], "severity": "warning",
+                    })
+
+    errors = sum(1 for i in issues if i.get("severity") == "error")
+    warnings = sum(1 for i in issues if i.get("severity") == "warning")
+    if issues:
+        print(f"[CHRONO-048d] {errors} errors, {warnings} warnings.")
+    else:
+        print("[CHRONO-048d] OK — no children_before_birth violations.")
+    return {"issues": issues, "errors_count": errors, "warnings_count": warnings}
+
+
+# ─────────────────────────────────────────────────────────────────
+# Task 051d: year_confidence parser for pin-list entries (v63)
+# ─────────────────────────────────────────────────────────────────
+
+
+def parse_pin_list_year_field(year_cell: str) -> dict:
+    """Task 051d: parse year field from pin-list table cell.
+
+    Formats handled:
+        "1946"                          -> {year: 1946, year_confidence: "high"}
+        "1990-е"                        -> {year_range: ..., year_confidence: "medium"}
+        "unknown"                       -> {year: None, year_confidence: "low"}
+        "unknown (year_confidence=low)" -> {year: None, year_confidence: "low"}
+        "~1940"                         -> {year: 1940, year_confidence: "medium"}
+        "1958-62"                       -> {year_start: 1958, year_end: 1962, year_confidence: "high"}
+    """
+    import re
+
+    cell = (year_cell or "").strip()
+    conf_match = re.search(r"year_confidence\s*=\s*(low|medium|high)", cell, re.IGNORECASE)
+    explicit_conf = conf_match.group(1).lower() if conf_match else None
+    clean = re.sub(r"\([^)]*\)", "", cell).strip()
+
+    if re.match(r"^(unknown|неизвестен|неизвестно|не\s+известен|-)$", clean, re.IGNORECASE):
+        return {"year": None, "year_confidence": explicit_conf or "low"}
+
+    range_match = re.match(r"^((?:19|20)\d{2})[–—-]((?:\d{2}|\d{4}))$", clean)
+    if range_match:
+        start = int(range_match.group(1))
+        end_raw = range_match.group(2)
+        end = int(end_raw) if len(end_raw) == 4 else int(str(start)[:2] + end_raw)
+        return {"year_start": start, "year_end": end, "year_confidence": explicit_conf or "high"}
+
+    approx = re.match(r"^~((?:19|20)\d{2})$", clean)
+    if approx:
+        return {"year": int(approx.group(1)), "year_confidence": explicit_conf or "medium"}
+
+    decade = re.match(r"^((?:19|20)\d{2})[- ]?(е|х|x|s)$", clean, re.IGNORECASE)
+    if decade:
+        return {"year_range": clean, "year_confidence": explicit_conf or "medium"}
+
+    exact = re.match(r"^((?:19|20)\d{2})$", clean)
+    if exact:
+        return {"year": int(exact.group(1)), "year_confidence": explicit_conf or "high"}
+
+    return {"year_raw": cell, "year_confidence": explicit_conf or "low"}
+
+
+# ─────────────────────────────────────────────────────────────────
+# Task 043e-2: epilogue quote density validator (v63)
+# ─────────────────────────────────────────────────────────────────
+
+
+def validate_epilogue_quote_density(book: dict, config: dict = None) -> dict:
+    """Task 043e-2: flag epilogue with zero or insufficient voice attribution.
+
+    Defaults: min_quotes=1, max_generic_sentences_pct=0.6.
+    Returns {ok: bool, quote_count: int, generic_pct: float, issues: []}.
+    Idempotent.
+    """
+    import re
+
+    cfg = config or {}
+    min_quotes = cfg.get("min_quotes_in_epilogue", 1)
+    max_generic_pct = cfg.get("max_generic_sentences_pct", 0.6)
+
+    epilogue = None
+    for ch in book.get("chapters", []):
+        if "epilogue" in (ch.get("id") or ""):
+            epilogue = ch
+            break
+    if epilogue is None:
+        return {"ok": True, "skipped": True, "reason": "no epilogue chapter"}
+
+    content = epilogue.get("content") or " ".join(
+        p.get("text", "") for p in epilogue.get("paragraphs", [])
+    )
+    if not content.strip():
+        return {"ok": True, "skipped": True, "reason": "empty epilogue"}
+
+    sentences = [s.strip() for s in re.split(r"[.!?]+", content) if len(s.strip()) > 10]
+    total = len(sentences)
+    if total == 0:
+        return {"ok": True, "skipped": True, "reason": "too short"}
+
+    QUOTE_RE = re.compile(
+        r"(говор\w+|сказал\w*|вспомин\w+|по\s+её\s+словам|по\s+его\s+словам|"
+        r"рассказывает|«[^»]{5,}»|считал\w*|любил\w+\s+говорить|вспоминает|по\s+словам)",
+        re.IGNORECASE,
+    )
+    quote_count = sum(1 for s in sentences if QUOTE_RE.search(s))
+    generic_pct = (total - quote_count) / total if total > 0 else 0.0
+
+    issues = []
+    ok = True
+    if quote_count < min_quotes:
+        ok = False
+        issues.append({
+            "type": "epilogue_zero_quotes", "quote_count": quote_count,
+            "min_required": min_quotes, "severity": "error",
+        })
+        print(f"[EPILOGUE-DENSITY] ERROR: {quote_count} quotes in epilogue (min={min_quotes})")
+    if generic_pct > max_generic_pct:
+        ok = False
+        issues.append({
+            "type": "epilogue_too_many_generic",
+            "generic_pct": round(generic_pct, 2), "severity": "warning",
+        })
+        print(f"[EPILOGUE-DENSITY] WARNING: {round(generic_pct*100)}% generic sentences")
+    if ok:
+        print(f"[EPILOGUE-DENSITY] OK — {quote_count} quotes, {round(generic_pct*100)}% generic.")
+
+    return {
+        "ok": ok, "quote_count": quote_count, "total_sentences": total,
+        "generic_pct": round(generic_pct, 3), "issues": issues,
+    }
+
+
+# ─────────────────────────────────────────────────────────────────
+# Task 038c: entity substitution check (CA v1.5 companion) (v63)
+# ─────────────────────────────────────────────────────────────────
+
+
+def validate_entity_substitution(book: dict, fact_map: dict, transcripts: list) -> dict:
+    """Task 038c: detect toponym/institution substitution (book vs transcripts).
+
+    Checks: Калинин→Тверь, Молдавия→Молдова, Химинститут→РХТУ.
+    Uses stem matching to handle Russian inflection (Тверь/Твери, Молдова/Молдове etc.).
+    Allowed overrides via fact_map.place_canonical[].canonical_form_required=true.
+    Returns {ok: bool, issues: []}.
+    """
+    import re
+
+    allowed_subs = set()
+    for place in fact_map.get("place_canonical", []):
+        if place.get("canonical_form_required"):
+            orig = (place.get("original") or "").lower()
+            repl = (place.get("canonical_replacement") or "").lower()
+            if orig and repl:
+                allowed_subs.add((orig, repl))
+
+    # Each tuple: (orig_stem_re, repl_stem_re, orig_key, repl_key, hint)
+    substitution_pairs = [
+        (r"\bкалинин\w*\b", r"\bтвер\w+\b", "калинин", "тверь",
+         "TR says Калинин, book says Тверь"),
+        (r"\bмолдав\w+\b", r"\bмолдов\w+\b", "молдавия", "молдова",
+         "TR says Молдавия, book says Молдова"),
+        (r"\bхиминститут\w*\b", r"\bрхту\b", "химинститут", "рхту",
+         "TR says Химинститут, book says РХТУ"),
+        (r"\bхиминститут\w*\b", r"российск\w+\s+химико.технологическ\w+", "химинститут",
+         "российский химико-технологический", "institution full name sub"),
+    ]
+
+    tr_text = " ".join((t or "") for t in (transcripts or [])).lower()
+    issues = []
+
+    for orig_re, repl_re, orig_key, repl_key, hint in substitution_pairs:
+        if (orig_key, repl_key) in allowed_subs:
+            continue
+        if not re.search(orig_re, tr_text):
+            continue
+        for ch in book.get("chapters", []):
+            ch_id = ch.get("id") or ""
+            ch_text = (ch.get("content") or "") + " ".join(
+                p.get("text", "") for p in ch.get("paragraphs", [])
+            )
+            ch_lower = ch_text.lower()
+            if re.search(repl_re, ch_lower) and not re.search(orig_re, ch_lower):
+                issues.append({
+                    "type": "entity_substitution", "original": orig_key,
+                    "substituted": repl_key, "chapter_id": ch_id,
+                    "hint": hint, "severity": "warning",
+                })
+                print(f"[ENTITY-SUB] WARNING: {orig_key} -> {repl_key} in {ch_id}. {hint}")
+
+    ok = len(issues) == 0
+    if ok:
+        print("[ENTITY-SUB] OK — no entity substitutions.")
+    return {"ok": ok, "issues": issues}
+
+
+# ─────────────────────────────────────────────────────────────────
+# Task 044g: bio_data.family format normalisation + locative case (v63)
+# ─────────────────────────────────────────────────────────────────
+
+
+def validate_bio_data_family_format(bio_data: dict, config: dict = None) -> dict:
+    """Task 044g: validate bio_data.family entries for format compliance.
+
+    Expected: "<Relation>: <ФИО>" with optional parenthetical note.
+    Also checks locative case in place fields.
+    Returns {ok: bool, issues: [], malformed_count: int}.
+    """
+    import re
+
+    issues = []
+    family = bio_data.get("family") or []
+    if isinstance(family, str):
+        family = [family]
+
+    for entry in family:
+        if not isinstance(entry, str) or not entry.strip():
+            continue
+        es = entry.strip()
+        if ":" not in es:
+            issues.append({
+                "type": "malformed_entry", "entry": es,
+                "reason": "no colon separator", "severity": "warning",
+            })
+            continue
+        parts = es.split(":", 1)
+        rel = parts[0].strip()
+        name = parts[1].strip() if len(parts) > 1 else ""
+        if not rel or rel in ("?", "-", ""):
+            issues.append({"type": "empty_relation", "entry": es, "severity": "error"})
+        if not name or name in ("?", "-", "", "(неизвестно)"):
+            issues.append({
+                "type": "empty_name", "entry": es,
+                "relation_term": rel, "severity": "warning",
+            })
+
+    NOMINATIVE_CITY_RE = re.compile(r"\bв\s+(Калинин|Москва|Ленинград|Тверь)\b")
+    for field in ("birth_place", "death_place", "lived_in"):
+        val = bio_data.get(field) or ""
+        if isinstance(val, list):
+            val = " ".join(str(v) for v in val)
+        if not val:
+            continue
+        m = NOMINATIVE_CITY_RE.search(val)
+        if m:
+            issues.append({
+                "type": "locative_case_error", "field": field,
+                "value": val, "match": m.group(0), "severity": "error",
+                "hint": "Use prepositional: в Калинине not в Калинин",
+            })
+
+    malformed = sum(1 for i in issues if i.get("type") == "malformed_entry")
+    ok = all(i.get("severity") != "error" for i in issues)
+    if issues:
+        print(f"[BIO-FAMILY-FORMAT] {len(issues)} issues (malformed={malformed})")
+    else:
+        print("[BIO-FAMILY-FORMAT] OK — all family entries valid.")
+    return {"ok": ok, "issues": issues, "malformed_count": malformed}

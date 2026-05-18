@@ -1,6 +1,6 @@
 {
   "_comment": "Единый конфиг пайплайна Glava. Изменения здесь автоматически применяются во всех скриптах.",
-  "_updated": "2026-04-14",
+  "_updated": "2026-05-18",
 
   "blitz_questions": [
     "Как реагировал, когда злился — кричал, молчал, уходил?",
@@ -67,8 +67,8 @@
     "model": "claude-sonnet-4-20250514",
     "max_tokens": 32000,
     "temperature": 0.4,
-    "prompt_file": "03_ghostwriter_v2.20.md",
-    "_notes": "v2.19 (2026-05-17, task 041+043, Batch 2): +ЗАПРЕТ 12 паспортичка формат (р.→родился/умерла); +ЗАПРЕТ 13 epilogue антишаблоны (11 стоп-фраз); +ЗАПРЕТ 14 Класс 11 авквард формулировки; +PIN_LIST_EVENTS раздел input — обязательные эпизоды с revision_log.pin_list_coverage. v2.18 (task 036): 5 изменений ЗАПРЕТ 8-10 + characteristic words обязательны."
+    "prompt_file": "03_ghostwriter_v2.22.md",
+    "_notes": "v2.22 (2026-05-18, task 049d, v63 sprint): +ПРАВИЛО 12 NARRATIVE DEPTH+VOICE+ОБЪЁМ. v2.20 (Batch 2-fix): +ПРАВИЛО 6 discourse markers +ПРАВИЛО 7 subject_age +ПРАВИЛО 8 pin-list min depth +ЗАПРЕТ 15 narrative антишаблоны."
   },
 
   "fact_checker": {
@@ -155,8 +155,8 @@
     "model": "claude-haiku-4-5-20251001",
     "max_tokens": 32000,
     "temperature": 0.1,
-    "prompt_file": "16_completeness_auditor_v1.4.md",
-    "_notes": "v1.3 (2026-05-17, task 038, Batch 2): ПРАВИЛО 4 strict description (без causal confabulation) + ПРАВИЛО 5 strict relation_to_subject (без ложного родства по обращению). v1.2 (task 035): pin-list расширен на events."
+    "prompt_file": "16_completeness_auditor_v1.5.md",
+    "_notes": "v1.5 (2026-05-18, task 038c, v63): ПРАВИЛО 7 — named entity preservation (топонимы/имена из TR verbatim). v1.4 (task 038b): ПРАВИЛО 6 pin-list bypass strict. v1.3 (task 038): ПРАВИЛА 4+5 strict description/relation."
   },
 
   "pin_list_diff_baseline_version": "v56",
@@ -164,5 +164,7 @@
 
   "ghostwriter_v2_19_note": "v2.19 (2026-05-17, Batch 2): +ЗАПРЕТ 12 (паспортичка формат) +ЗАПРЕТ 13 (epilogue антишаблоны) +ЗАПРЕТ 14 (авквард формулировки) +PIN_LIST_EVENTS раздел.",
   "ghostwriter_v2_20_note": "v2.20 (2026-05-17, Batch 2-fix): +ПРАВИЛО 6 (discourse markers) +ПРАВИЛО 7 (subject_age) +ПРАВИЛО 8 (pin-list min depth) +ЗАПРЕТ 15 (narrative антишаблоны). CA v1.4.",
-  "completeness_auditor_v1_4_note": "v1.4 (2026-05-17, Batch 2-fix task 038b): ПРАВИЛО 6 — pin-list bypass strict (pin-list events not blocked by ПРАВИЛО 4)."
+  "ghostwriter_v2_22_note": "v2.22 (2026-05-18, v63 sprint): +ПРАВИЛО 12 (narrative depth + voice + объём). Base=v2.20. v2.21 откатана в v60 — НЕ использовать.",
+  "completeness_auditor_v1_4_note": "v1.4 (2026-05-17, Batch 2-fix task 038b): ПРАВИЛО 6 — pin-list bypass strict (pin-list events not blocked by ПРАВИЛО 4).",
+  "completeness_auditor_v1_5_note": "v1.5 (2026-05-18, v63 sprint task 038c): ПРАВИЛО 7 — named entity preservation. Universality check passed."
 }
