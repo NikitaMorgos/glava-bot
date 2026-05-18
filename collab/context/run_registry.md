@@ -662,10 +662,10 @@ Generic:
 
 ---
 
-## v62a (PENDING — 10 точечных scripted fixes, NO GW change)
+## v62a (2026-05-18) — 10 точечных scripted fixes — **НЕ PASS**, регрессия объёма
 
-**Branch + commit:** TBD (Курсор реализует на feat/v62a-pointed-fixes branch off v61 `a8809aa`)
-**Status:** pending — Курсор реализует v62a sprint
+**Branch + commit:** `feat/v62a-pointed-fixes` @ `db03743` (5 commits 3b3c9df→db03743); артефакты `runs/karakulina-v62-artifacts`
+**Status:** verified, **НЕ PASS Ворот 1** (3 блокера: объём, pin-list depth, discourse markers)
 
 ### Components
 - Cleaner: v1, FE: v3.4, Historian: v3
@@ -705,30 +705,65 @@ Generic:
 - `--known-episodes=collab/context/known_episodes_karakulina.md`
 - **Diff baseline: v59** (Никитино решение от v61 sprint)
 
-### Outputs (PENDING)
-- Expected (11 verifications):
-  - Render text_FULL чистый (без `?: ?`, без дубля «Основные даты»)
-  - Бабушка Марфа в bio_data.family
-  - Дочь Татьяна «в Калинине» (paspart)
-  - Внук/Внучка с notes «сын/дочь Татьяны»
-  - Contributors раздел в конце (4 имени из pin-list v4)
-  - Chronology errors включают «1973 + внучка Даша»
-  - narrative_stop_phrases ловит «определило жизнь» + «помогая в важные моменты»
-  - timeline anchors включает widowhood (1978-1996) as separate
-  - anti_facts validator: warning на «варенье+салат» combine (если GW снова напишет)
-  - discourse markers validator показывает реальный count (не false 0)
-  - gate1 target 20K+ обновлён в checklist
+### Outputs
+- Run artifacts: `runs/karakulina-v62-artifacts` (20+ файлов включая VERIFIED_ON_RUN_v62.md)
+- **text_FULL.md book content: 17 750 chars** ⚠️ (NOT 22 927 — Курсор ошибочно использовал file_size как metric; реальный gate1 chars = build_gate1 own counter)
+- ch_01=3354 / ch_02=6834 / ch_03=4450 / ch_04=2327 / epilogue=785
+- **historical_notes: 10 field + 10 inline** ⭐ (отличное улучшение vs v59 7+9, v61 2+0)
+- bio_data.family: 23 (Марфа есть с note «мать отца Валентины» ✅)
+- callouts: 7
+- Pin-list: full 15, partial 7, skipped 45 / 67
+- Timeline anchors: 7/7 found ✅
+- Stage 2 manifest: `ghostwriter_version: v2.20` ✅
+- FC verdict: PASS iter1 (0 critical, 0 major)
 
-### Verification — PENDING
+### Verification — НЕ PASS, 3 блокера
+
+**Закрытые задачи (10/11 ✅):**
+- 044d render bug ✅ (text_FULL чистый)
+- 044e Марфа ✅ (в bio_data.family с note)
+- 044f Внук/Внучка notes ✅
+- 049c validator fix ✅ работает (но GW не пишет markers → backlog v63)
+- 051c paspart Тверь→Калинин ✅
+- 048c chronology grandchildren ✅ (1 error в epilogue — partial false positive «1933 + внуки» semantic)
+- 052c Contributors clean rewrite ✅ (4 имени из pin-list)
+- 043d narrative stop phrases ✅ (1 warning «определило жизнь»)
+- 045e timeline anchors widowhood ✅ (7/7 found)
+- 043e anti_facts ✅ (af_002 акушерство fired)
+
+**Блокеры для PASS:**
+
+1. ❌ **Объём 17 750 < 20K+ target** (регрессия vs v59 19 930 и v61 20 272). GW v2.20 написал короче — stochastic LLM variance или config recompilation effect (anti_facts введён). ch_02 −18% vs v61.
+
+2. ❌ **Pin-list depth 5 errors** (vs v61 2): ep_005 свадьба, ep_011 операция, ep_012 Кирсанов, ep_027 пенсия, ep_028 Капошвара, ep_030 перелом — все 2 sentences (min 3). GW сжимает narrative.
+
+3. ❌ **Discourse markers all 3 chapters below threshold** (ch_02=0/8, ch_03=2/5, ch_04=0/3). GW v2.20 не пишет rapporteur attribution phrases. Validator fix 049c works, root cause — **GW prompt не инструктирует** → backlog v63 (1 GW правило).
+
+4. ⚠️ Chronology 1 error: «Голод 1933 года... дождалась внуков» в epilogue — semantic false positive (general life summary, не linked timing). Acceptable warning level (errors_count=1, не block).
+
+### Bugs found & fixed during sprint (бонус Курсора)
+
+1. narrative_stop_phrases.json: speciality_defined_life + helping_at_important_moments не в `scoped_to_narrative_and_epilogue` → fix
+2. narrative_stop_phrases.json: `\\s+` → `\\s*` в pattern (не матчил «специальность,»)
+3. test_stage3.py: build_gate1_text() без pin_list_path → Contributors skipped, fix
+4. known_episodes_karakulina.md локально v2 (без Contributors/Anti-facts) → обновлено до v4
+
+### Lesson learned — chars metric ambiguity
+
+Курсор отчитал «Gate-1 text: 22 927 chars >> 20K+ target ✅», но это **`len(file_text)`** всего text_FULL.md (включая summary header, paspart markdown, Contributors раздел, decorations). **Реальный book content** = build_gate1 own counter = **17 750 chars** (только narrative paragraphs).
+
+Lesson: при measuring chars target — что именно меряем? Build_gate1 «Total chars» в сводке = **source of truth** для gate1 metrics. File size — не gate1 metric.
+
+Зафиксировано: при verified-on-run уточнять metric источник.
 
 ### Notes
-- v62a sprint: 10 scripted + 1 meta, NO GW change (per Правило 6 — медленно без откатов)
-- Backlog после v62a PASS:
-  - v63: ch_03 «Гостеприимство и кулинария» (GW prompt-bump, 1 правило)
-  - v64: Epilogue extend 676→~900 (GW prompt-bump, 1 правило)
-  - v65: historical_notes inline restoration (investigation)
-  - v66+: task 053 generic runners → подключение Корольковой
-- Target 20K+ обновлён в gate1_product_checklist (вместо 14-18K)
+- v62a sprint: 10 scripted + 1 meta, NO GW change. 10/11 tasks succeed как scripts, но GW регрессировал объём.
+- Регрессия объёма ch_02 18% — likely stochastic LLM variance (same prompts → разный output) либо subtle config effect.
+- **Решение PASS Ворот 1 — ждёт Никитино go (Опции A/B/C/D):**
+  - A: v62a-rerun stochastic check ($2-3)
+  - B: v63 GW prompt-bump «narrative depth + voice» ($2-3)
+  - C: tag RP-1 на v59 (не приемлемо — Никитины items missing)
+  - D Hybrid (моё предложение): v62a-rerun first, если <18K → v63 prompt-bump
 
 ---
 
