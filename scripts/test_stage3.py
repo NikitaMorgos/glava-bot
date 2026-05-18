@@ -1027,7 +1027,9 @@ async def main():
             "timeline_anchors_json": _anchor_report if "_anchor_report" in dir() else {},
             "pin_list_depth_json": pin_depth_report,
         }
-        _gate1_text = build_gate1_text(book_final, fact_map, _gate1_reports)
+        # v62a-052c: pass pin_list_path so Contributors section is appended
+        _pin_list_for_gate1 = str(_pin_list_md_path) if "_pin_list_md_path" in dir() and _pin_list_md_path.exists() else None
+        _gate1_text = build_gate1_text(book_final, fact_map, _gate1_reports, pin_list_path=_pin_list_for_gate1)
         _text_full_path = out_dir / f"{args.prefix}_text_FULL_{ts}.md"
         with open(_text_full_path, "w", encoding="utf-8") as f:
             f.write(_gate1_text)
