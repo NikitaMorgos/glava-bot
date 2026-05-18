@@ -54,7 +54,7 @@
     }
   ],
   "scoped_to_epilogue_only": ["epilogue_path_X_to_Y", "filled_with_X", "passed_to_generations", "person_of_their_time"],
-  "scoped_to_narrative_and_epilogue": ["metaphor_bonds", "lifedefining_speciality", "could_X_any_Y_but_actually_Z"],
+  "scoped_to_narrative_and_epilogue": ["metaphor_bonds", "lifedefining_speciality", "could_X_any_Y_but_actually_Z", "speciality_defined_life", "helping_at_important_moments"],
   "scoped_to_chapters": {
     "speciality_defined_life": ["epilogue", "ch_02"],
     "helping_at_important_moments": ["ch_02", "ch_03"]

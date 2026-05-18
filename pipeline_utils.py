@@ -3929,6 +3929,8 @@ def validate_narrative_stop_phrases(book: dict, config: dict) -> dict:
     patterns = config.get("generic_categorical_patterns", [])
     scoped_epil_only = set(config.get("scoped_to_epilogue_only", []))
     scoped_narrative = set(config.get("scoped_to_narrative_and_epilogue", []))
+    # v62a-043d: chapter-specific scope (optional, finer-grained than scoped_to_narrative_and_epilogue)
+    scoped_to_chapters = config.get("scoped_to_chapters", {})
     issues = []
 
     for chapter in book.get("chapters", []):
@@ -3944,6 +3946,11 @@ def validate_narrative_stop_phrases(book: dict, config: dict) -> dict:
                 continue
             if category not in scoped_epil_only and category not in scoped_narrative:
                 continue
+            # Chapter-specific scope check (overrides broader scope if defined)
+            if category in scoped_to_chapters:
+                allowed = scoped_to_chapters[category]
+                if ch_id not in allowed:
+                    continue
             pair = pat_entry.get("pattern_pair")
             if pair and len(pair) == 2:
                 try:
