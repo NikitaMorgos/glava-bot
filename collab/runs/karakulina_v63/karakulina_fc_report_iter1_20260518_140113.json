@@ -1,0 +1,191 @@
+{
+  "project_id": "karakulina_stage2_test",
+  "iteration": 1,
+  "verdict": "fail",
+  "errors": [
+    {
+      "id": "err_001",
+      "type": "distortion",
+      "severity": "critical",
+      "chapter_id": "ch_01",
+      "location": "bio_data.family, запись 'Старшая сестра' с value 'Мария (тётя Маня)'",
+      "what_is_written": "Старшая сестра: Мария (тётя Маня)",
+      "what_should_be": "Согласно fact_map.persons[person_018], имя 'Мария' имеет confidence: medium и needs_verification: true. В транскрипте упоминается только как 'тётя Маня'",
+      "source": {
+        "type": "fact_map",
+        "reference": "person_018: confidence=medium, needs_verification=true"
+      },
+      "fix_instruction": "Заменить на 'Мария (тётя Маня)' с пометкой о неточности или использовать только 'тётя Маня' без полного имени",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_002",
+      "type": "omission",
+      "severity": "critical",
+      "chapter_id": "ch_01",
+      "location": "timeline отсутствует",
+      "what_is_written": "timeline: [] (пустой массив)",
+      "what_should_be": "timeline должен содержать минимум 4 этапа жизни героини",
+      "source": {
+        "type": "fact_map",
+        "reference": "fact_map.timeline содержит 37 событий, которые должны быть структурированы в этапы"
+      },
+      "fix_instruction": "Писатель обязан сгенерировать 4–7 этапов жизни в timeline. Пустое поле = блокировка. Использовать периоды: 1920–1933 (детство), 1938–1945 (образование и война), 1946–1962 (семья и переезды), 1962–1994 (работа), 1994–2005 (пенсия)",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_003",
+      "type": "omission",
+      "severity": "major",
+      "chapter_id": "ch_01",
+      "location": "bio_data.awards",
+      "what_is_written": "8 наград в списке",
+      "what_should_be": "Отсутствует медаль 50 лет Вооружённых Сил СССР (1968 год) из fact_map",
+      "source": {
+        "type": "fact_map",
+        "reference": "Автобиография в транскрипте: 'Медаль 50 лет вооруженных сил СССР'"
+      },
+      "fix_instruction": "Добавить в bio_data.awards запись: {\"label\": \"1968\", \"value\": \"Медаль 50 лет Вооружённых Сил СССР\"}",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_004",
+      "type": "distortion",
+      "severity": "major",
+      "chapter_id": "ch_02",
+      "location": "Абзац о переезде в Химинститут",
+      "what_is_written": "В 1962 году произошла демобилизация, и всех военных сократили",
+      "what_should_be": "В транскрипте: 'Там была демобилизация и всех военных распустили'",
+      "source": {
+        "type": "transcript",
+        "reference": "int_001: 'Там была демобилизация и всех военных распустили. Дмитрию Каракулину предложили или на Сахалин, или уходить из армии'"
+      },
+      "fix_instruction": "Заменить 'сократили' на 'распустили' для точного соответствия источнику",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_005",
+      "type": "distortion",
+      "severity": "major",
+      "chapter_id": "ch_02",
+      "location": "Абзац о начале работы в поликлинике",
+      "what_is_written": "В 1962-63 году Валентина начала работать медсестрой в поликлинике в Химинституте... С 1963 года работала в 6-й городской больнице, поликлинике №3 в Калинине",
+      "what_should_be": "Согласно fact_map, это два разных места работы с разными датами: event_028 (1962) и event_029 (1963)",
+      "source": {
+        "type": "fact_map",
+        "reference": "event_028: поликлиника в Химинституте (1962), event_029: 6-я городская больница (1963)"
+      },
+      "fix_instruction": "Разделить на два этапа: сначала работа в поликлинике Химинститута (1962), затем переход в 6-ю городскую больницу в Калинине (1963)",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_006",
+      "type": "distortion",
+      "severity": "major",
+      "chapter_id": "ch_02",
+      "location": "Абзац о возрасте начала работы",
+      "what_is_written": "Интересно, что к работе она приступила в 42 года",
+      "what_should_be": "Валентина родилась в 1920 году, начала работать в 1962 году — ей было 42 года. Но в тексте есть противоречие с фразой 'в возрасте 40 лет'",
+      "source": {
+        "type": "fact_map",
+        "reference": "event_001: birth_year=1920, event_028: date.year=1962"
+      },
+      "fix_instruction": "Исправить возраст: либо везде '42 года', либо везде '40 лет' (проверить точный расчёт)",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_007",
+      "type": "hallucination",
+      "severity": "major",
+      "chapter_id": "ch_04",
+      "location": "Первый абзац",
+      "what_is_written": "В 1962 году Валентина продала шикарную немецкую шубу, привезённую из Венгрии, чтобы купить дочери Татьяне пианино",
+      "what_should_be": "В транскрипте нет указания на конкретный год (1962). Упоминается только факт продажи шубы для покупки пианино",
+      "source": {
+        "type": "transcript",
+        "reference": "int_001: 'она продала свою шубу, и купили мне пианино... это была очень шикарная шуба привезенная там из Венгрии'"
+      },
+      "fix_instruction": "Убрать конкретный год '1962' или заменить на 'в 1960-е годы' / 'когда дочь училась музыке'",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_008",
+      "type": "distortion",
+      "severity": "minor",
+      "chapter_id": "ch_02",
+      "location": "Абзац о Валерии в Кирсанове",
+      "what_is_written": "остался с тётей Шурой в городе Кирсанов Тамбовской области",
+      "what_should_be": "В транскрипте: 'в городе Керсанов в Тамбовской области'",
+      "source": {
+        "type": "transcript",
+        "reference": "int_001: 'остался с тетей Шурой в городе Керсанов в Тамбовской области'"
+      },
+      "fix_instruction": "Проверить правильное написание города: 'Кирсанов' или 'Керсанов'. Использовать каноническое написание из fact_map.locations[loc_013].name",
+      "legitimate_deletion": false
+    }
+  ],
+  "warnings": [
+    {
+      "id": "warn_001",
+      "type": "possible_omission",
+      "chapter_id": "ch_02",
+      "description": "Отсутствует упоминание работы в санэпидемстанции Старобельска после войны",
+      "recommendation": "Рассмотреть включение периода работы в санэпидемстанции (event_016) или объяснить его пропуск"
+    },
+    {
+      "id": "warn_002",
+      "type": "ambiguous_source",
+      "chapter_id": "ch_02",
+      "description": "Противоречие в датах пребывания в Германии: '1946-1961 не работала' vs '1948 вернулись из Германии'",
+      "recommendation": "Уточнить хронологию пребывания в Германии и периодов работы"
+    },
+    {
+      "id": "warn_003",
+      "type": "style_concern",
+      "chapter_id": "ch_03",
+      "description": "Множественные характеристики без прямых цитат из источников",
+      "recommendation": "Проверить, что все черты характера имеют основание в fact_map или транскрипте"
+    }
+  ],
+  "completeness_check": {
+    "total_facts_in_map": 156,
+    "facts_referenced_in_text": 89,
+    "facts_verified_ok": 81,
+    "facts_with_errors": 8,
+    "facts_missing_from_text": [
+      {
+        "fact_id": "event_016",
+        "fact_description": "Работа в санэпидемстанции Старобельска после войны",
+        "was_in_facts_omitted": true,
+        "omission_justified": false,
+        "recommendation": "Включить"
+      },
+      {
+        "fact_id": "person_017",
+        "fact_description": "Тётя Маша — знакомая, любительница грибов и ягод",
+        "was_in_facts_omitted": true,
+        "omission_justified": true,
+        "recommendation": "Допустимо пропустить"
+      }
+    ]
+  },
+  "regression_check": {
+    "performed": false,
+    "chapters_checked": [],
+    "issues_found": []
+  },
+  "summary": {
+    "critical_errors": 2,
+    "major_errors": 5,
+    "minor_errors": 1,
+    "warnings_count": 3,
+    "overall_assessment": "Текст содержит критические ошибки в структуре ch_01 (отсутствует timeline) и несколько фактических искажений. Требуется доработка перед передачей Литредактору."
+  },
+  "stats": {
+    "facts_checked": 89,
+    "facts_passed": 81,
+    "facts_failed": 8,
+    "coverage_percent": 57,
+    "needs_verification_flagged": 2
+  }
+}

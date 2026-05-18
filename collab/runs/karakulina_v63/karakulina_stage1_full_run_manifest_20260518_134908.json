@@ -1,0 +1,323 @@
+{
+  "project_id": "karakulina",
+  "stage": "stage1_full",
+  "timestamp": "20260518_134908",
+  "generated_at": "2026-05-18T14:01:12.037007Z",
+  "git_sha": "84a145d",
+  "config_file": "/opt/glava/prompts/pipeline_config.json",
+  "config_sha256": "2c2b71337370e0d527bbfcd5813dca8a2d81bf4dd8fe71c9376231bb86c49f22",
+  "active_prompts": {
+    "cleaner": {
+      "prompt_file": "01_cleaner_v1.md",
+      "prompt_exists": true,
+      "prompt_sha256": "bcdb4a845744438ee931e5557c8d30e3eaa0dbeec2b4ee158aeb89337147e1fc",
+      "model": "claude-haiku-4-5-20251001",
+      "max_tokens": 32000,
+      "temperature": 0.1
+    },
+    "fact_extractor": {
+      "prompt_file": "02_fact_extractor_v3.4.md",
+      "prompt_exists": true,
+      "prompt_sha256": "a863422a7676dab7ce098b2a7cf6fa4ec7dfc9a6cb17197a4e201b4210ddf26f",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 32000,
+      "temperature": 0.15
+    },
+    "historian": {
+      "prompt_file": "12_historian_v3.md",
+      "prompt_exists": true,
+      "prompt_sha256": "3e316c1468738ceb22b4f8ce2cea1defd7918ac04180b2551b3e59f0f8a76a22",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 64000,
+      "temperature": 0.3
+    },
+    "ghostwriter": {
+      "prompt_file": "03_ghostwriter_v2.22.md",
+      "prompt_exists": true,
+      "prompt_sha256": "6d605f8d435b2c00afd4836c7fdbc20f4f4edd29332777b0de74d5d9ba252eb1",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 32000,
+      "temperature": 0.4
+    },
+    "fact_checker": {
+      "prompt_file": "04_fact_checker_v2.13.md",
+      "prompt_exists": true,
+      "prompt_sha256": "efec0625f4ae6f71bb3920f93615f1150a681b2609a34ceb69e0d32fa61acd3d",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 64000,
+      "temperature": 0.1
+    },
+    "literary_editor": {
+      "prompt_file": "05_literary_editor_v3.1.md",
+      "prompt_exists": true,
+      "prompt_sha256": "544582a54c287aaeff44be3826c00276d063b4ce915d29c02dd5ebfdd3f90485",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 32000,
+      "temperature": 0.5
+    },
+    "proofreader": {
+      "prompt_file": "06_proofreader_v1.md",
+      "prompt_exists": true,
+      "prompt_sha256": "5c600132d206cdc62876661662b917b17922e3779047de366485a78703758d79",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 32000,
+      "temperature": 0.0
+    },
+    "photo_editor": {
+      "prompt_file": "07_photo_editor_v1.md",
+      "prompt_exists": true,
+      "prompt_sha256": "0d55f58677f5c2568566b4cff82d0faccf9cea6af0d6f413830fa86a363a4179",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 32000,
+      "temperature": 0.25
+    },
+    "layout_designer": {
+      "prompt_file": "08_layout_designer_v3.22.md",
+      "prompt_exists": true,
+      "prompt_sha256": "d328e96f13fea1f2f692af68db8c1d055c62a029e70bebc339646f206f3f79ff",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 64000,
+      "temperature": 0.25
+    },
+    "qa_layout": {
+      "prompt_file": "09_qa_layout_v1.md",
+      "prompt_exists": true,
+      "prompt_sha256": "04a0b4137d947ef287a3e78de08f8dd0e024c3da836a3bafb8ab9bb08e1a4c92",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 32000,
+      "temperature": 0.05
+    },
+    "cover_designer": {
+      "prompt_file": "13_cover_designer_v2.6.md",
+      "prompt_exists": true,
+      "prompt_sha256": "38c4330f89f693ca8928b75e5a43822a9b64223238d0a3eaabac1df1199bdcf4",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 32000,
+      "temperature": 0.65
+    },
+    "layout_art_director": {
+      "prompt_file": "15_layout_art_director_v1.8.md",
+      "prompt_exists": true,
+      "prompt_sha256": "f04d0ab80ad4c86298503cd38b23e32f9608613957b79fa04c37dd2e2b6d49ea",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 64000,
+      "temperature": 0.45
+    },
+    "interview_architect": {
+      "prompt_file": "11_interview_architect_v4.1.md",
+      "prompt_exists": true,
+      "prompt_sha256": "b5d627abeca38235a963a2f1efa44d17ed5bc22c37aacf7115834d205f54ded2",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 32000,
+      "temperature": 0.5
+    },
+    "completeness_auditor": {
+      "prompt_file": "16_completeness_auditor_v1.5.md",
+      "prompt_exists": true,
+      "prompt_sha256": "85111b92f7a9fc2fce4e79adbe90973d8eb18e276efe055ee3fc006430608ed2",
+      "model": "claude-haiku-4-5-20251001",
+      "max_tokens": 32000,
+      "temperature": 0.1
+    }
+  },
+  "inputs": {
+    "transcript1": "collab/transcripts/01_karakulina_original_assemblyai_20260326.txt",
+    "transcript2": "collab/transcripts/02_karakulina_nikita_tatyana_interview.txt",
+    "pin_list_used": "collab/context/known_episodes_karakulina.md",
+    "pin_list_episodes_count": 35,
+    "pin_list_required_persons_count": 3
+  },
+  "inputs_sha256": {
+    "transcript1": "sha256:3555b3d0cb4da1ea",
+    "transcript2": "sha256:e5a1c8e149ed51c7",
+    "pin_list_used": "sha256:8677e71f75a16331"
+  },
+  "outputs": {
+    "cleaned": "exports/karakulina_v63/karakulina_combined_cleaned_20260518_134908.txt",
+    "fact_map_full": "exports/karakulina_v63/karakulina_fact_map_full_20260518_134908.json",
+    "fact_map_clean": "exports/karakulina_v63/karakulina_fact_map_20260518_134908.json",
+    "completeness_audit": "exports/karakulina_v63/karakulina_completeness_audit_20260518_134908.json",
+    "normalization_log": "exports/karakulina_v63/karakulina_normalization_log_20260518_134908.json"
+  },
+  "checkpoints": {},
+  "notes": {
+    "completeness_audit": {
+      "completeness_status": "incomplete",
+      "auto_enriched": {
+        "persons": 3,
+        "events": 6,
+        "locations": 0,
+        "traits": 10
+      },
+      "log_only_gaps": {
+        "missing_persons": [
+          {
+            "mention_in_transcript": "Шура (дочь тёти Шуры, упомянута как Шура, Зина)",
+            "transcript_quote": "Но это уже потом, и всё, дочери тёти Шуры, они же у нас учились тут, в Калинине. Вот. И очень часто у нас были Римма и Шура. Ой, Шура, Зина. Римма, Зина",
+            "likely_relation": "племянница мужа (дочь тёти Шуры)",
+            "reason_low_confidence": "Путаница в имени: сначала названа Шура, потом исправлено на Зина. Неясно, это одна или две разные персоны. В fact_map уже есть Зина (person_022), но упоминание Шуры как отдельного имени требует уточнения",
+            "was_in_pin_list": false
+          },
+          {
+            "mention_in_transcript": "Сапоново (место, откуда привозили мельхиоровые ложечки)",
+            "transcript_quote": "любовь к посуде, к этим мельхиоровым ложечкам, она же их привозила там из Сапонова",
+            "likely_relation": "место (город или посёлок)",
+            "reason_low_confidence": "Упомянуто вскользь как место, откуда привозили посуду. Неясно, это город, посёлок или магазин. Может быть опечатка ASR (Сафроново?). Требует географической верификации",
+            "was_in_pin_list": false
+          },
+          {
+            "mention_in_transcript": "ДК «Синтетик» (дворец культуры в Химинституте)",
+            "transcript_quote": "Когда Татьяна брала своего сына Никиту в ДК «Синтетик» на аэробику, Валентина удивлялась, зачем это надо",
+            "likely_relation": "учреждение культуры",
+            "reason_low_confidence": "Упомянуто как место, где занимался внук. Это локация, а не персона. Может быть добавлено в locations, но в текущем fact_map отсутствует",
+            "was_in_pin_list": false
+          },
+          {
+            "mention_in_transcript": "Брат Зима (упомянут в контексте мытья посуды)",
+            "transcript_quote": "Или, а если еще история про то, что брат Зима, он всегда посуду моет, то один прием пищи, он превращался в такие, типа, какую-то конфликтную историю",
+            "likely_relation": "брат Никиты (внука Валентины)",
+            "reason_low_confidence": "Упомянут вскользь как брат Никиты, который мыл посуду. Это внук Валентины, но не упомянут в основном fact_map. Требует уточнения: это второй сын Татьяны или ошибка в нарративе?",
+            "was_in_pin_list": false
+          }
+        ],
+        "missing_events": [
+          {
+            "keyword": "Работа в санэпидемстанции Старобельска",
+            "transcript_quote": "После войны работала в Ворошилово-Градской области, город Старобельск, в городской санэпидемстанции, заведующей малярийным пунктом",
+            "suggested_title": "Работа в санэпидемстанции Старобельска после войны",
+            "reason_low_confidence": "Упомянуто в автобиографии, но хронология неясна. Противоречие: если она работала в Старобельске, то когда она была в Германии? Требует уточнения временных рамок"
+          },
+          {
+            "keyword": "Курсы кройки и шитья при доме офицеров",
+            "transcript_quote": "Валентина хорошо шила, вышивала, закончила курсы кройки и шитья при доме офицеров",
+            "suggested_title": "Окончание курсов кройки и шитья при доме офицеров",
+            "reason_low_confidence": "Упомянуто как факт, но без даты и места. Неясно, когда это было (во время войны, после войны, в Венгрии?). Требует уточнения"
+          },
+          {
+            "keyword": "Пение в хоре в Венгрии",
+            "transcript_quote": "Хорошо пела. В Венгрии пела в хоре. Вроде даже за столом пела",
+            "suggested_title": "Пение в хоре в Венгрии",
+            "reason_low_confidence": "Упомянуто как факт, но без деталей: какой хор, когда, где, как долго. Требует развёрнутого описания"
+          },
+          {
+            "keyword": "Дважды на доске почёта",
+            "transcript_quote": "Дважды была на доске почёта",
+            "suggested_title": "Награждение: доска почёта (дважды)",
+            "reason_low_confidence": "Упомянуто в автобиографии, но без дат и контекста. Требует уточнения, когда и за что"
+          },
+          {
+            "keyword": "Профсоюзный организатор поликлиники",
+            "transcript_quote": "Выполняет большую общественную работу, являясь профсоюзным организатором поликлиники в настоящее время",
+            "suggested_title": "Работа профсоюзным организатором в поликлинике",
+            "reason_low_confidence": "Упомянуто в автобиографии как текущая деятельность, но без дат начала и окончания. Требует уточнения периода"
+          },
+          {
+            "keyword": "Отпуска в Сочи и Гаграх с Валериком",
+            "transcript_quote": "Отпуска проводили то в Сочи, то в Гаграх с Валериком. Валерик — это её сын. Татьяну особо не брали, дочку Татьяну",
+            "suggested_title": "Отпуска в Сочи и Гаграх с сыном Валериком",
+            "reason_low_confidence": "Упомянуто вскользь без дат. Неясно, в какие годы это было. Требует уточнения периода"
+          },
+          {
+            "keyword": "Поездки в Питер с дочкой Татьяной",
+            "transcript_quote": "И с Татьяной, дочкой, ездили в Питер",
+            "suggested_title": "Поездка в Санкт-Петербург с дочкой",
+            "reason_low_confidence": "Упомянуто вскользь без дат и деталей. Требует уточнения, когда и зачем"
+          },
+          {
+            "keyword": "Поездки в Кирсаны к сестре деда Дмитрия",
+            "transcript_quote": "Ездили иногда в Кирсаны на машине к сестре деда Дмитрия, то есть мужа Валентины Дмитрия",
+            "suggested_title": "Поездки в Кирсаны к тёте Шуре",
+            "reason_low_confidence": "Упомянуто вскользь без дат. Требует уточнения периода и частоты"
+          },
+          {
+            "keyword": "Поездки в Сафроново к сыну Валере",
+            "transcript_quote": "К Валере, это сын Валентины, в Сафроново ездили",
+            "suggested_title": "Поездки в Сафроново к сыну Валерию",
+            "reason_low_confidence": "Упомянуто вскользь без дат. Требует уточнения периода и частоты"
+          },
+          {
+            "keyword": "Страховка при переломе руки Никиты в 5 лет",
+            "transcript_quote": "Но когда внук этот же сломал руку в 5 лет, её дочь, то есть мама Никиты, Татьяна, взяла всё-таки страховку и купила фруктов",
+            "suggested_title": "Страховка при переломе руки Никиты в 5 лет",
+            "reason_low_confidence": "Упомянуто как контрастный пример с переломом в 3 года. Требует уточнения, почему в этот раз взяли страховку"
+          }
+        ],
+        "missing_locations": [
+          {
+            "mention_in_transcript": "Сапоново",
+            "transcript_quote": "любовь к посуде, к этим мельхиоровым ложечкам, она же их привозила там из Сапонова",
+            "likely_type": "city/village",
+            "reason_low_confidence": "Упомянуто как место, откуда привозили посуду. Может быть опечатка ASR (Сафроново?). Требует географической верификации и уточнения связи с Валентиной"
+          },
+          {
+            "mention_in_transcript": "ДК «Синтетик»",
+            "transcript_quote": "Когда Татьяна брала своего сына Никиту в ДК «Синтетик» на аэробику",
+            "likely_type": "institution",
+            "reason_low_confidence": "Дворец культуры в Химинституте. Упомянуто как место, где занимался внук. Требует уточнения точного названия и местоположения"
+          }
+        ],
+        "missing_traits": [
+          {
+            "trait": "Отношение к страхованию",
+            "transcript_quote": "Страхование было способом сбережения денег. Нельзя наживаться на горе ребёнка... Но когда внук этот же сломал руку в 5 лет, её дочь, то есть мама Никиты, Татьяна, взяла всё-таки страховку и купила фруктов",
+            "reason_low_confidence": "Упомянуто как принцип, но с противоречием в применении. Требует уточнения, почему в одном случае не брала, а в другом взяла"
+          },
+          {
+            "trait": "Отношение к внучке Даше vs внуку Никите",
+            "transcript_quote": "К внучке Даше она, может быть, получше относилась, чем к внуку Никите, но не сильно... В карты и домино даже играла",
+            "reason_low_confidence": "Упомянуто вскользь, требует развёрнутого описания различий в отношении"
+          }
+        ]
+      }
+    },
+    "name_normalization": {
+      "merged_pairs": [
+        {
+          "status": "merged",
+          "field": "persons",
+          "canonical": "Полсачева Нинвана",
+          "canonical_id": "person_auto_002",
+          "merged": "Нинвана Полсачева",
+          "merged_id": "person_020",
+          "overlap": 0.75,
+          "shared_variants": [
+            "доктор",
+            "доктор нинвана",
+            "нинвана"
+          ]
+        }
+      ],
+      "rejected_pairs": [
+        {
+          "status": "rejected",
+          "field": "persons",
+          "candidate_a": "Рудая Пелагея Алексеевна",
+          "candidate_id_a": "person_002",
+          "candidate_b": "Полина",
+          "candidate_id_b": "person_004",
+          "shared_variants": [
+            "пелагея",
+            "полина",
+            "поля"
+          ],
+          "blocked_reason": "relation_group_mismatch (parent:'мать' vs sibling:'старшая сестра')"
+        },
+        {
+          "status": "rejected",
+          "field": "persons",
+          "candidate_a": "тётя Маша",
+          "candidate_id_a": "person_017",
+          "candidate_b": "Мария",
+          "candidate_id_b": "person_018",
+          "shared_variants": [
+            "маня",
+            "мария",
+            "маша"
+          ],
+          "blocked_reason": "relation_group_mismatch (non_family:'знакомая/соседка' vs sibling:'старшая сестра')"
+        }
+      ],
+      "normalized_count": 1
+    }
+  }
+}

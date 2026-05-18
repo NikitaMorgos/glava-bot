@@ -1,0 +1,144 @@
+{
+  "stage": "stage3",
+  "passed": false,
+  "gates": [
+    {
+      "gate": "non_empty_book",
+      "passed": true,
+      "issues": [],
+      "min_chapter_chars": 120
+    },
+    {
+      "gate": "required_entities",
+      "passed": false,
+      "required_total": 25,
+      "critical_total": 11,
+      "critical_matched_total": 9,
+      "critical_matched": [
+        {
+          "label": "Каракулина Валентина Ивановна",
+          "found_in": "narrative"
+        },
+        {
+          "label": "Рудай Иван Андреевич",
+          "found_in": "narrative"
+        },
+        {
+          "label": "Рудая Пелагея Алексеевна",
+          "found_in": "narrative"
+        },
+        {
+          "label": "младший брат",
+          "found_in": "narrative"
+        },
+        {
+          "label": "Полина",
+          "found_in": "narrative"
+        },
+        {
+          "label": "Каракулин Дмитрий",
+          "found_in": "narrative"
+        },
+        {
+          "label": "Каракулин Валерий",
+          "found_in": "narrative"
+        },
+        {
+          "label": "Марфа",
+          "found_in": "narrative"
+        },
+        {
+          "label": "Татьяна Каракулина",
+          "found_in": "narrative"
+        }
+      ],
+      "critical_missing_total": 2,
+      "critical_missing": [
+        {
+          "type": "person",
+          "label": "Мария",
+          "variants": [
+            "мария"
+          ]
+        },
+        {
+          "type": "person",
+          "label": "баба Аня",
+          "variants": [
+            "баба аня",
+            "баба"
+          ]
+        }
+      ],
+      "optional_total": 14,
+      "optional_matched_total": 14,
+      "optional_matched": [
+        {
+          "label": "старшие сёстры",
+          "found_in": "narrative"
+        },
+        {
+          "label": "тётя Шура",
+          "found_in": "narrative"
+        },
+        {
+          "label": "Маргось Владимир",
+          "found_in": "narrative"
+        },
+        {
+          "label": "Кужба Олег",
+          "found_in": "narrative"
+        },
+        {
+          "label": "Никита",
+          "found_in": "narrative"
+        },
+        {
+          "label": "Даша",
+          "found_in": "narrative"
+        },
+        {
+          "label": "Амельченко",
+          "found_in": "narrative"
+        },
+        {
+          "label": "Толя",
+          "found_in": "narrative"
+        },
+        {
+          "label": "Коля",
+          "found_in": "narrative"
+        },
+        {
+          "label": "Витя",
+          "found_in": "narrative"
+        },
+        {
+          "label": "тётя Маша",
+          "found_in": "narrative"
+        },
+        {
+          "label": "Римма",
+          "found_in": "narrative"
+        },
+        {
+          "label": "Зина",
+          "found_in": "narrative"
+        },
+        {
+          "label": "Полсачева Нинвана",
+          "found_in": "narrative"
+        }
+      ],
+      "optional_missing_total": 0,
+      "optional_missing": []
+    },
+    {
+      "gate": "cross_chapter_repetition",
+      "passed": true,
+      "ngram_size": 5,
+      "threshold": 0.22,
+      "violations": []
+    }
+  ]
+}
