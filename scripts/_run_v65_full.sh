@@ -186,7 +186,7 @@ chrono_cfg = json.load(open('collab/context/chronology_check_config.json', encod
 dupl_cfg = json.load(open('collab/context/cross_paragraph_duplication_config.json', encoding='utf-8'))
 hist_dist_cfg = json.load(open('collab/context/historical_notes_distribution_config.json', encoding='utf-8'))
 
-pin_list_data = parse_pin_list_from_markdown(open('collab/context/known_episodes_karakulina.md', encoding='utf-8').read())
+pin_list_data = parse_pin_list_from_markdown('collab/context/known_episodes_karakulina.md')
 
 tr_files = sorted(glob.glob('collab/transcripts/*.txt'))
 transcripts = [open(f, encoding='utf-8').read() for f in tr_files[:2]]
@@ -612,7 +612,7 @@ chrono_cfg = json.load(open('collab/context/chronology_check_config.json', encod
 stop_cfg = json.load(open('collab/context/narrative_stop_phrases.json', encoding='utf-8'))
 dupl_cfg = json.load(open('collab/context/cross_paragraph_duplication_config.json', encoding='utf-8'))
 hist_dist_cfg = json.load(open('collab/context/historical_notes_distribution_config.json', encoding='utf-8'))
-pin_list_data = parse_pin_list_from_markdown(open('collab/context/known_episodes_karakulina.md', encoding='utf-8').read())
+pin_list_data = parse_pin_list_from_markdown('collab/context/known_episodes_karakulina.md')
 
 print("\n=== FINAL VALIDATORS (post-revision, on stage3 output) ===\n")
 results = {}
