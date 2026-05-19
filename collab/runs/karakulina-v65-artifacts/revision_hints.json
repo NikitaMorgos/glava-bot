@@ -1,0 +1,200 @@
+[
+  {
+    "hint_id": "h_001",
+    "validator": "narrative_stop_phrases",
+    "category": "speciality_defined_life",
+    "chapter_id": "ch_02",
+    "severity": "warning",
+    "snippet": "В 1938 году Валентина поступила в Кировоградскую фельдшерско-акушерскую школу. Фельдшерско-акушерские школы в те годы были путёвкой в жизнь для сельск",
+    "reason": "narrative_stop_phrases/speciality_defined_life (warning)",
+    "suggestion": "Удалить causal claim (часть про 'определила жизнь/карьеру'). Оставить factual content (год обучения, специальность).",
+    "must_apply": false
+  },
+  {
+    "hint_id": "h_002",
+    "validator": "epilogue_quote_density",
+    "category": "epilogue_too_many_generic",
+    "chapter_id": null,
+    "severity": "warning",
+    "snippet": "[chapter unknown — epilogue_too_many_generic: see validator output]",
+    "reason": "epilogue_quote_density/epilogue_too_many_generic (warning)",
+    "suggestion": "Снизить density cited phrases в epilogue. Распределить характерные слова по ch_02/ch_03/ch_04, в epilogue оставить spokoyno.",
+    "must_apply": false
+  },
+  {
+    "hint_id": "h_003",
+    "validator": "personal_historical_voice",
+    "category": "below_threshold",
+    "chapter_id": "ch_02",
+    "severity": "warning",
+    "snippet": "[chapter ch_02 — personal_historical_voice: see validator output]",
+    "reason": "personal_historical_voice/below_threshold (warning): Class 18 personal-historical voice — рассказчик помещает личную память в исторический контекст",
+    "suggestion": "Добавить ≥3 personal-historical voice markers в ch_02. Examples: 'как [rapporteur] помнит, в [период]...', 'тогда у нас в семье...', 'когда [rapporteur] был ребёнком, ...'. Использовать narrator_voice_anchors из pin-list.",
+    "must_apply": false
+  },
+  {
+    "hint_id": "h_004",
+    "validator": "personal_historical_voice",
+    "category": "below_threshold",
+    "chapter_id": "ch_03",
+    "severity": "warning",
+    "snippet": "[chapter ch_03 — personal_historical_voice: see validator output]",
+    "reason": "personal_historical_voice/below_threshold (warning): Class 18 personal-historical voice — рассказчик помещает личную память в исторический контекст",
+    "suggestion": "Добавить ≥2 personal-historical voice markers в ch_03. Examples: 'как [rapporteur] помнит, в [период]...', 'тогда у нас в семье...', 'когда [rapporteur] был ребёнком, ...'. Использовать narrator_voice_anchors из pin-list.",
+    "must_apply": false
+  },
+  {
+    "hint_id": "h_005",
+    "validator": "personal_historical_voice",
+    "category": "below_threshold",
+    "chapter_id": "ch_04",
+    "severity": "warning",
+    "snippet": "[chapter ch_04 — personal_historical_voice: see validator output]",
+    "reason": "personal_historical_voice/below_threshold (warning): Class 18 personal-historical voice — рассказчик помещает личную память в исторический контекст",
+    "suggestion": "Добавить ≥1 personal-historical voice markers в ch_04. Examples: 'как [rapporteur] помнит, в [период]...', 'тогда у нас в семье...', 'когда [rapporteur] был ребёнком, ...'. Использовать narrator_voice_anchors из pin-list.",
+    "must_apply": false
+  },
+  {
+    "hint_id": "h_006",
+    "validator": "historical_notes_distribution",
+    "category": "below_threshold_per_chapter",
+    "chapter_id": "ch_03",
+    "severity": "warning",
+    "snippet": "[chapter ch_03 — historical_notes_distribution: see validator output]",
+    "reason": "historical_notes_distribution/below_threshold_per_chapter (warning): Class 9 historical_notes underutilization per chapter",
+    "suggestion": "Добавить ≥2 historical_note inline в ch_03 (***текст***). Контекст: исторический фон эпохи, социальный контекст.",
+    "must_apply": false
+  },
+  {
+    "hint_id": "h_007",
+    "validator": "historical_notes_distribution",
+    "category": "below_threshold_per_chapter",
+    "chapter_id": "ch_04",
+    "severity": "warning",
+    "snippet": "[chapter ch_04 — historical_notes_distribution: see validator output]",
+    "reason": "historical_notes_distribution/below_threshold_per_chapter (warning): Class 9 historical_notes underutilization per chapter",
+    "suggestion": "Добавить ≥1 historical_note inline в ch_04 (***текст***). Контекст: исторический фон эпохи, социальный контекст.",
+    "must_apply": false
+  },
+  {
+    "hint_id": "h_008",
+    "validator": "required_episodes_coverage",
+    "category": "missing_required_episode",
+    "chapter_id": null,
+    "severity": "error",
+    "snippet": "[episode ep_009 not found in narrative]",
+    "reason": "required_episodes_coverage/missing_required_episode (error): Required episode missing from narrative",
+    "suggestion": "Episode [ep_009] «Рождение Татьяны (Тверь/Калинин, 1956)» — required_in_narrative, отсутствует. Развернуть в ch_03 или ch_04 на ≥3 sentences. Маркеры: ['Татьян.*1956\\\\'].",
+    "must_apply": true
+  },
+  {
+    "hint_id": "h_009",
+    "validator": "required_episodes_coverage",
+    "category": "missing_required_episode",
+    "chapter_id": null,
+    "severity": "error",
+    "snippet": "[episode ep_022 not found in narrative]",
+    "reason": "required_episodes_coverage/missing_required_episode (error): Required episode missing from narrative",
+    "suggestion": "Episode [ep_022] «Замечание про счётчик 1977 (конфликт с зятем)» — required_in_narrative, отсутствует. Развернуть в ch_03 или ch_04 на ≥3 sentences. Маркеры: ['счётчик\\\\'].",
+    "must_apply": true
+  },
+  {
+    "hint_id": "h_010",
+    "validator": "required_episodes_coverage",
+    "category": "missing_required_episode",
+    "chapter_id": null,
+    "severity": "error",
+    "snippet": "[episode ep_029 not found in narrative]",
+    "reason": "required_episodes_coverage/missing_required_episode (error): Required episode missing from narrative",
+    "suggestion": "Episode [ep_029] «Продажа дачи (до 1990-х по уточнению Никиты), Вале» — required_in_narrative, отсутствует. Развернуть в ch_03 или ch_04 на ≥3 sentences. Маркеры: ['продал.*дач\\\\'].",
+    "must_apply": true
+  },
+  {
+    "hint_id": "h_011",
+    "validator": "required_episodes_coverage",
+    "category": "missing_required_episode",
+    "chapter_id": null,
+    "severity": "error",
+    "snippet": "[episode ? not found in narrative]",
+    "reason": "required_episodes_coverage/missing_required_episode (error): Required episode missing from narrative",
+    "suggestion": "Episode [?] «Шуба → пианино для Татьяны 1962» — required_in_narrative, отсутствует. Развернуть в ch_03 или ch_04 на ≥3 sentences. Маркеры: ['TR2'].",
+    "must_apply": true
+  },
+  {
+    "hint_id": "h_012",
+    "validator": "required_episodes_coverage",
+    "category": "missing_required_episode",
+    "chapter_id": null,
+    "severity": "error",
+    "snippet": "[episode ? not found in narrative]",
+    "reason": "required_episodes_coverage/missing_required_episode (error): Required episode missing from narrative",
+    "suggestion": "Episode [?] «Авоська из зонтика» — required_in_narrative, отсутствует. Развернуть в ch_03 или ch_04 на ≥3 sentences. Маркеры: ['TR1', 'TR2'].",
+    "must_apply": true
+  },
+  {
+    "hint_id": "h_013",
+    "validator": "required_episodes_coverage",
+    "category": "missing_required_episode",
+    "chapter_id": null,
+    "severity": "error",
+    "snippet": "[episode ? not found in narrative]",
+    "reason": "required_episodes_coverage/missing_required_episode (error): Required episode missing from narrative",
+    "suggestion": "Episode [?] «Немецкий фарфор сервиз на 12 персон за 120 руб (ме» — required_in_narrative, отсутствует. Развернуть в ch_03 или ch_04 на ≥3 sentences. Маркеры: ['TR2'].",
+    "must_apply": true
+  },
+  {
+    "hint_id": "h_014",
+    "validator": "required_episodes_coverage",
+    "category": "missing_required_episode",
+    "chapter_id": null,
+    "severity": "error",
+    "snippet": "[episode ? not found in narrative]",
+    "reason": "required_episodes_coverage/missing_required_episode (error): Required episode missing from narrative",
+    "suggestion": "Episode [?] «Пение в хоре в Венгрии» — required_in_narrative, отсутствует. Развернуть в ch_03 или ch_04 на ≥3 sentences. Маркеры: ['TR1', 'TR2'].",
+    "must_apply": true
+  },
+  {
+    "hint_id": "h_015",
+    "validator": "required_episodes_coverage",
+    "category": "missing_required_episode",
+    "chapter_id": null,
+    "severity": "error",
+    "snippet": "[episode ? not found in narrative]",
+    "reason": "required_episodes_coverage/missing_required_episode (error): Required episode missing from narrative",
+    "suggestion": "Episode [?] «Не любила грибы/ягоды; тётя Маша-соседка любила» — required_in_narrative, отсутствует. Развернуть в ch_03 или ch_04 на ≥3 sentences. Маркеры: ['TR1'].",
+    "must_apply": true
+  },
+  {
+    "hint_id": "h_016",
+    "validator": "required_episodes_coverage",
+    "category": "missing_required_episode",
+    "chapter_id": null,
+    "severity": "error",
+    "snippet": "[episode ? not found in narrative]",
+    "reason": "required_episodes_coverage/missing_required_episode (error): Required episode missing from narrative",
+    "suggestion": "Episode [?] «Зависимость от авторитета врача Нинваны Полсачевой» — required_in_narrative, отсутствует. Развернуть в ch_03 или ch_04 на ≥3 sentences. Маркеры: ['TR2'].",
+    "must_apply": true
+  },
+  {
+    "hint_id": "h_017",
+    "validator": "required_episodes_coverage",
+    "category": "missing_required_episode",
+    "chapter_id": null,
+    "severity": "error",
+    "snippet": "[episode ? not found in narrative]",
+    "reason": "required_episodes_coverage/missing_required_episode (error): Required episode missing from narrative",
+    "suggestion": "Episode [?] «Карты и домино с внуками» — required_in_narrative, отсутствует. Развернуть в ch_03 или ch_04 на ≥3 sentences. Маркеры: ['TR1'].",
+    "must_apply": true
+  },
+  {
+    "hint_id": "h_018",
+    "validator": "required_episodes_coverage",
+    "category": "missing_required_episode",
+    "chapter_id": null,
+    "severity": "error",
+    "snippet": "[episode ? not found in narrative]",
+    "reason": "required_episodes_coverage/missing_required_episode (error): Required episode missing from narrative",
+    "suggestion": "Episode [?] ««Посидеть на дорожку» — святая семейная традиция (» — required_in_narrative, отсутствует. Развернуть в ch_03 или ch_04 на ≥3 sentences. Маркеры: ['TR2'].",
+    "must_apply": true
+  }
+]

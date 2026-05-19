@@ -1,0 +1,82 @@
+{
+  "hints_count": 18,
+  "applied": [],
+  "skipped": [
+    {
+      "hint_id": "h_001",
+      "reason": "not_in_writing_notes"
+    },
+    {
+      "hint_id": "h_002",
+      "reason": "not_in_writing_notes"
+    },
+    {
+      "hint_id": "h_003",
+      "reason": "not_in_writing_notes"
+    },
+    {
+      "hint_id": "h_004",
+      "reason": "not_in_writing_notes"
+    },
+    {
+      "hint_id": "h_005",
+      "reason": "not_in_writing_notes"
+    },
+    {
+      "hint_id": "h_006",
+      "reason": "not_in_writing_notes"
+    },
+    {
+      "hint_id": "h_007",
+      "reason": "not_in_writing_notes"
+    },
+    {
+      "hint_id": "h_008",
+      "reason": "not_in_writing_notes"
+    },
+    {
+      "hint_id": "h_009",
+      "reason": "not_in_writing_notes"
+    },
+    {
+      "hint_id": "h_010",
+      "reason": "not_in_writing_notes"
+    },
+    {
+      "hint_id": "h_011",
+      "reason": "not_in_writing_notes"
+    },
+    {
+      "hint_id": "h_012",
+      "reason": "not_in_writing_notes"
+    },
+    {
+      "hint_id": "h_013",
+      "reason": "not_in_writing_notes"
+    },
+    {
+      "hint_id": "h_014",
+      "reason": "not_in_writing_notes"
+    },
+    {
+      "hint_id": "h_015",
+      "reason": "not_in_writing_notes"
+    },
+    {
+      "hint_id": "h_016",
+      "reason": "not_in_writing_notes"
+    },
+    {
+      "hint_id": "h_017",
+      "reason": "not_in_writing_notes"
+    },
+    {
+      "hint_id": "h_018",
+      "reason": "not_in_writing_notes"
+    }
+  ],
+  "unauthorized_changes": [],
+  "unauthorized_changes_count": 0,
+  "writing_notes_proof": [],
+  "revision_failed": false
+}
