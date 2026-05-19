@@ -1,0 +1,165 @@
+{
+  "project_id": "karakulina_stage2_test",
+  "iteration": 2,
+  "verdict": "fail",
+  "errors": [
+    {
+      "id": "err_001",
+      "type": "omission",
+      "severity": "critical",
+      "chapter_id": "ch_01",
+      "location": "bio_data.family - отсутствуют родственники из fact_map",
+      "what_is_written": "В bio_data.family отсутствуют: Римма (племянница), Зина (племянница), баба Аня (свекровь)",
+      "what_should_be": "Все родственники из fact_map.persons должны быть включены в bio_data.family",
+      "source": {
+        "type": "fact_map",
+        "reference": "person_022 (Римма), person_023 (Зина), person_auto_002 (баба Аня)"
+      },
+      "fix_instruction": "Добавить в bio_data.family: {\"label\": \"Племянница\", \"value\": \"Римма\", \"note\": \"дочь тёти Шуры, училась в Калинине\"}, {\"label\": \"Племянница\", \"value\": \"Зина\", \"note\": \"дочь тёти Шуры, училась в Калинине\"}, {\"label\": \"Свекровь\", \"value\": \"баба Аня\", \"note\": \"мать зятя Владимира Маргося\"}",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_002",
+      "type": "omission",
+      "severity": "major",
+      "chapter_id": "ch_01",
+      "location": "bio_data.awards - отсутствуют годы для некоторых наград",
+      "what_is_written": "Медаль 25 лет победы в ВОВ без года, медаль 30 лет победы в ВОВ без года, медаль 50 лет вооружённых сил СССР без года",
+      "what_should_be": "Все награды должны иметь годы получения согласно fact_map",
+      "source": {
+        "type": "fact_map",
+        "reference": "Медаль 25 лет победы - 1970 год, медаль 30 лет победы - 1975 год, медаль 50 лет ВС - 1968 год"
+      },
+      "fix_instruction": "Добавить годы: медаль 25 лет победы - 1970, медаль 30 лет победы - 1975, медаль 50 лет ВС - 1968",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_003",
+      "type": "distortion",
+      "severity": "major",
+      "chapter_id": "ch_04",
+      "location": "p_04_001 - продажа шубы для покупки пианино",
+      "what_is_written": "В 1990-е годы Валентина продала шикарную немецкую шубу",
+      "what_should_be": "Согласно fact_map event_auto_009, это произошло примерно в 1990 году, но не обязательно в 1990-е годы",
+      "source": {
+        "type": "fact_map",
+        "reference": "event_auto_009: date.year = 1990, precision = approximate"
+      },
+      "fix_instruction": "Заменить 'В 1990-е годы' на 'Примерно в 1990 году' или 'В начале 1990-х'",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_004",
+      "type": "hallucination",
+      "severity": "minor",
+      "chapter_id": "ch_02",
+      "location": "p_02_005 - система распределения",
+      "what_is_written": "молодые специалисты отрабатывали назначенный срок там, куда их направляло государство",
+      "what_should_be": "Конкретный срок отработки не указан в источниках",
+      "source": {
+        "type": "fact_map",
+        "reference": "event_006 содержит только факт направления, без указания срока"
+      },
+      "fix_instruction": "Убрать конкретное упоминание срока отработки или добавить оговорку 'обычно 3 года'",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_005",
+      "type": "hallucination",
+      "severity": "minor",
+      "chapter_id": "ch_02",
+      "location": "p_02_012 - детали жизни в Германии",
+      "what_is_written": "Валентина не работала — занималась домашним хозяйством",
+      "what_should_be": "В fact_map нет конкретных деталей о занятиях Валентины в Германии",
+      "source": {
+        "type": "fact_map",
+        "reference": "event_015 содержит только факт проживания в Германии 1946-1948"
+      },
+      "fix_instruction": "Убрать конкретные детали о домашнем хозяйстве или добавить оговорку 'предположительно'",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_006",
+      "type": "confidence_inflation",
+      "severity": "minor",
+      "chapter_id": "ch_02",
+      "location": "p_02_005 - направление в село Глинск",
+      "what_is_written": "В 1940 году, окончив училище, Валентина предположительно была направлена",
+      "what_should_be": "Правильно использована оговорка для факта с needs_verification: true",
+      "source": {
+        "type": "fact_map",
+        "reference": "event_006: needs_verification = true, confidence = medium"
+      },
+      "fix_instruction": "Оговорка использована корректно, исправления не требуется",
+      "legitimate_deletion": false
+    }
+  ],
+  "warnings": [
+    {
+      "id": "warn_001",
+      "type": "possible_omission",
+      "chapter_id": "ch_02",
+      "description": "Эпизод с огурцами из Молдавии упомянут кратко в p_02_028, но может потребовать более подробного описания",
+      "recommendation": "Рассмотреть возможность расширения описания эпизода с огурцами для лучшего понимания отношений с зятем"
+    },
+    {
+      "id": "warn_002",
+      "type": "style_concern",
+      "chapter_id": "ch_03",
+      "description": "Некоторые характеристики в главе 3 могут показаться слишком критичными",
+      "recommendation": "Литредактору рассмотреть баланс между честностью и деликатностью в описании характера"
+    }
+  ],
+  "completeness_check": {
+    "total_facts_in_map": 156,
+    "facts_referenced_in_text": 142,
+    "facts_verified_ok": 139,
+    "facts_with_errors": 3,
+    "facts_missing_from_text": [
+      {
+        "fact_id": "person_022",
+        "fact_description": "Римма - племянница, дочь тёти Шуры",
+        "was_in_facts_omitted": false,
+        "omission_justified": false,
+        "recommendation": "Включить в bio_data.family"
+      },
+      {
+        "fact_id": "person_023",
+        "fact_description": "Зина - племянница, дочь тёти Шуры",
+        "was_in_facts_omitted": false,
+        "omission_justified": false,
+        "recommendation": "Включить в bio_data.family"
+      },
+      {
+        "fact_id": "person_auto_002",
+        "fact_description": "баба Аня - свекровь, мать зятя Владимира",
+        "was_in_facts_omitted": false,
+        "omission_justified": false,
+        "recommendation": "Включить в bio_data.family"
+      }
+    ]
+  },
+  "regression_check": {
+    "performed": true,
+    "chapters_checked": [
+      "ch_01",
+      "ch_02",
+      "ch_04"
+    ],
+    "issues_found": []
+  },
+  "summary": {
+    "critical_errors": 1,
+    "major_errors": 2,
+    "minor_errors": 3,
+    "warnings_count": 2,
+    "overall_assessment": "Текст содержит критическую ошибку в ch_01 (отсутствие родственников в bio_data) и несколько мажорных ошибок. Требуется доработка перед передачей Литредактору."
+  },
+  "stats": {
+    "facts_checked": 142,
+    "facts_passed": 139,
+    "facts_failed": 3,
+    "coverage_percent": 91,
+    "needs_verification_flagged": 1
+  }
+}

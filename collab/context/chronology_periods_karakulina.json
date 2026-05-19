@@ -1,0 +1,148 @@
+{
+  "version": "v1",
+  "description": "Life-stage periods for chronological consistency validation (task 048d). Subject-specific — Каракулина В.И.",
+  "_updated": "2026-05-18",
+  "subject": "karakulina",
+
+  "periods": [
+    {
+      "period_id": "birth",
+      "label": "Рождение",
+      "year": 1920,
+      "year_confidence": "high",
+      "source": "TR1"
+    },
+    {
+      "period_id": "parents_marriage",
+      "label": "Родители поженились",
+      "year_approx": 1918,
+      "year_confidence": "medium",
+      "source": "TR1"
+    },
+    {
+      "period_id": "father_death",
+      "label": "Смерть отца (сиротство в 13 лет)",
+      "year": 1933,
+      "year_confidence": "high",
+      "source": "TR1",
+      "note": "сиротство 13 лет → 1920+13=1933"
+    },
+    {
+      "period_id": "marriage_dmitry",
+      "label": "Брак с Дмитрием",
+      "year_approx": 1940,
+      "year_confidence": "medium",
+      "source": "TR1"
+    },
+    {
+      "period_id": "war_service",
+      "label": "Военная служба",
+      "year_start": 1941,
+      "year_end": 1945,
+      "year_confidence": "high",
+      "source": "TR1"
+    },
+    {
+      "period_id": "son_valeriy_birth",
+      "label": "Рождение сына Валерия (Вышний Волочёк)",
+      "year": 1948,
+      "year_confidence": "high",
+      "source": "TR1"
+    },
+    {
+      "period_id": "daughter_tatyana_birth",
+      "label": "Рождение дочери Татьяны (Калинин)",
+      "year": 1956,
+      "year_confidence": "high",
+      "source": "TR1"
+    },
+    {
+      "period_id": "hungary_posting",
+      "label": "Венгрия (Кечкемет, Кишкунхалаш, Байя)",
+      "year_start": 1958,
+      "year_end": 1962,
+      "year_confidence": "high",
+      "source": "TR1"
+    },
+    {
+      "period_id": "khiminstitut_apartment",
+      "label": "Квартира в Химинституте (Калинин)",
+      "year": 1962,
+      "year_confidence": "high",
+      "source": "TR1"
+    },
+    {
+      "period_id": "tatyana_marriage",
+      "label": "Брак Татьяны с Маргось Владимиром",
+      "year": 1977,
+      "year_confidence": "high",
+      "source": "TR1"
+    },
+    {
+      "period_id": "husband_death",
+      "label": "Смерть мужа Дмитрия",
+      "year": 1978,
+      "year_confidence": "high",
+      "source": "TR1"
+    },
+    {
+      "period_id": "pension",
+      "label": "Выход на пенсию (август)",
+      "year": 1994,
+      "year_confidence": "high",
+      "source": "TR1"
+    },
+    {
+      "period_id": "tatyana_moves_out",
+      "label": "Татьяна вышла замуж за Кужбу Олега, переезд на Капошвара — Валентина осталась одна",
+      "year": 1996,
+      "year_confidence": "high",
+      "source": "TR1",
+      "note": "АНТИТРИГГЕР: Валентина осталась ОДНА с 1996, НЕ с 1978"
+    },
+    {
+      "period_id": "leg_fracture_move",
+      "label": "Перелом ноги, переезд к дочери на Капошвара",
+      "year": 2005,
+      "year_confidence": "high",
+      "source": "TR1"
+    },
+    {
+      "period_id": "death",
+      "label": "Смерть",
+      "year": 2019,
+      "year_confidence": "high",
+      "source": "TR1"
+    }
+  ],
+
+  "children_birth_constraints": {
+    "description": "For task 048d: children must be born after parents marriage and within realistic age range.",
+    "rules": [
+      {
+        "rule_id": "children_before_birth",
+        "description": "Any child born before subject birth year is impossible",
+        "subject_birth_year": 1920,
+        "check": "child.birth_year >= 1920"
+      },
+      {
+        "rule_id": "children_realistic_age",
+        "description": "Subject must be at least 15 when first child born, at most 50",
+        "min_parent_age_at_birth": 15,
+        "max_parent_age_at_birth": 50,
+        "check": "(child.birth_year - 1920) BETWEEN 15 AND 50"
+      },
+      {
+        "rule_id": "grandchildren_before_children",
+        "description": "Grandchild cannot be born before corresponding child",
+        "check": "grandchild.birth_year > child.birth_year"
+      },
+      {
+        "rule_id": "widowhood_context",
+        "description": "Events described as 'living alone' must be post-1996, not post-1978",
+        "check": "living_alone_year >= 1996",
+        "anti_trigger": "не привязывать «жила одна» к 1978 (смерть мужа) — дочь Татьяна жила с ней до 1996"
+      }
+    ]
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "issues": [
+    {
+      "chapter_id": "ch_02",
+      "type": "person_mentioned_before_birth",
+      "person_name": "сын...",
+      "person_birth_year_min": 1948,
+      "event_year_range": "1946",
+      "snippet": "В Германии жили с 1946 по 1948 год. Валентина не работала, сидела дома. В 1948 году семья вернулась в Вышний Волочёк, где родился сын Валерий.",
+      "severity": "error"
+    },
+    {
+      "chapter_id": "epilogue",
+      "type": "grandchild_before_inferred_birth",
+      "person_name": "Никита",
+      "inferred_min_birth": 1964,
+      "parent_birth_used": 1948,
+      "parent_marriage_used": null,
+      "event_year_range": "1920",
+      "snippet": "Родившись в украинском селе в 1920 году, она потеряла семью в 13 лет, но не сломалась. Война стала для неё школой жизни — четыре года в госпиталях, боевые награды, партийность. После войны создала сем",
+      "severity": "error"
+    }
+  ],
+  "errors_count": 2,
+  "warnings_count": 0
+}

@@ -1,0 +1,13 @@
+[
+  {
+    "hint_id": "h_001",
+    "validator": "chronology_check",
+    "category": "named_child_before_birth",
+    "chapter_id": "ch_02",
+    "severity": "error",
+    "snippet": "Жёны советских военных в послевоенной Германии имели право жить с мужьями — это была привилегия, недоступная гражданским семьям. В Германии жили с 1946 по 1948 год. В те годы жёны военных, как правило",
+    "reason": "chronology_check/named_child_before_birth (error)",
+    "suggestion": "Переписать или удалить flagged sentence.",
+    "must_apply": true
+  }
+]

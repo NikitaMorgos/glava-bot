@@ -1,0 +1,393 @@
+{
+  "version": "v6",
+  "description": "Generic categorical patterns for narrative anti-triggers (task 043b/043d/043g/043f/043h/043d-2/043f-2). Universal — no subject-specific content. v3→v4: 043h Class 17 narrative truism. v4→v5: 043d-2 Class 1 recurring. v5→v6: 043f-2 Class 11 recurring extended.",
+  "generic_categorical_patterns": [
+    {
+      "category": "metaphor_bonds",
+      "pattern": "\\b(семейн\\w+|кровн\\w+|родств\\w+)\\s+узы\\s+(оказ\\w+\\s+)?крепче\\s+\\w+",
+      "example_neg_template": "[семейные|кровные|родственные] узы оказались крепче [X]"
+    },
+    {
+      "category": "lifedefining_speciality",
+      "pattern": "(определ\\w+|стал\\w+)\\s+(всю|её|его|всей)?\\s*(дальнейш\\w+|будущ\\w+|всю)?\\s*(жизн\\w+|карьер\\w+|судьб\\w+)",
+      "example_neg_template": "[профессия] — специальность, которая определила всю [его/её] [жизнь/карьеру]"
+    },
+    {
+      "category": "could_X_any_Y_but_actually_Z",
+      "pattern_pair": [
+        "\\b(могло|способно)\\s+\\w+\\s+любо\\w+\\s+(матер|отц|родител)",
+        "\\bотн\\w+\\s+(спокойн|ровн)\\w+|приняла? спокойно"
+      ],
+      "description": "пара противоречивых украшений — генеральное преувеличение + успокаивающее"
+    },
+    {
+      "category": "epilogue_path_X_to_Y",
+      "pattern": "\\bпуть\\s+от\\s+\\w+\\s+(до|к)\\s+\\w+"
+    },
+    {
+      "category": "filled_with_X",
+      "pattern": "(жизн\\w+|жил\\w+)\\s+был\\w+\\s+наполнен\\w+",
+      "example_neg_template": "жизнь была наполнена [абстрактное обобщение]"
+    },
+    {
+      "category": "passed_to_generations",
+      "pattern": "передал\\w+\\s+(следующ\\w+\\s+поколен|потомк|следующ\\w+\\s+поколения)",
+      "example_neg_template": "передались следующим поколениям"
+    },
+    {
+      "category": "person_of_their_time",
+      "pattern": "человек\\w{0,4}\\s+своего\\s+времени"
+    },
+    {
+      "category": "speciality_defined_life",
+      "pattern": "(специальност\\w+|профессия|обучение)\\s*.{0,30}(определ\\w+|стал\\w+).{0,20}(всю|её|его|их)?\\s*(дальнейш\\w+|жизн\\w+|карьер\\w+|судьб\\w+)",
+      "scope": [
+        "epilogue",
+        "ch_02"
+      ],
+      "severity": "warning",
+      "suggestion": "Удалить causal claim. Оставить factual content (год обучения, специальность).",
+      "rationale": "v62a-043d Class 1: акушерство ≠ «определило всю жизнь»; образование ≠ профессия"
+    },
+    {
+      "category": "helping_at_important_moments",
+      "pattern": "(помога\\w+|оказыва\\w+\\s+помощ\\w+)\\s+\\w+\\s+в\\s+(самы\\w+\\s+)?важн\\w+\\s+момент\\w+\\s+\\w+\\s+жизн\\w+",
+      "scope": [
+        "ch_02",
+        "ch_03"
+      ],
+      "severity": "error",
+      "suggestion": "Удалить confabulation. Если помощь в TR подтверждена — сохранить конкретный эпизод, удалить оценочное обобщение.",
+      "rationale": "v62a-043d Class 1: в TR нет данных о работе акушеркой; pattern = confabulation"
+    },
+    {
+      "category": "event_that_changed_life",
+      "pattern": "(событи\\w+|момент\\w+|встреч\\w+|случа\\w+)\\s*.{0,25}(изменил\\w+|переверну\\w+|повернул\\w+)\\s*.{0,20}(жизн\\w+|судьб\\w+|всё)",
+      "scope": [
+        "ch_02",
+        "ch_03",
+        "ch_04",
+        "epilogue"
+      ],
+      "severity": "error",
+      "suggestion": "Удалить framing 'изменил жизнь'. Начать с конкретного факта (год, событие, действующее лицо).",
+      "rationale": "v63-043g Class 1: «поворотный момент» / «изменил жизнь» без source_quote = confabulation"
+    },
+    {
+      "category": "typical_for_generation",
+      "pattern": "(типичн\\w+|обычн\\w+|характерн\\w+)\\s+(для\\s+)?(своег\\w+\\s+)?(поколен\\w+|времен\\w+|эпох\\w+)",
+      "scope": [
+        "ch_02",
+        "ch_03",
+        "ch_04",
+        "epilogue"
+      ],
+      "severity": "warning",
+      "suggestion": "Заменить конкретным эпизодом из TR или удалить.",
+      "rationale": "v63-043g Class 1: «типичный для своего поколения» — обобщение без опоры на TR"
+    },
+    {
+      "category": "in_this_typicality_uniqueness",
+      "pattern": "в\\s+(этой\\s+)?(типичност\\w+|обычност\\w+|простот\\w+)\\s+(и\\s+)?(был\\w+|крыл\\w+|заключал\\w+)\\s+(уникальност\\w+|особенност\\w+|индивидуальност\\w+)",
+      "scope": [
+        "epilogue"
+      ],
+      "severity": "error",
+      "suggestion": "delete_sentence",
+      "rationale": "v63-043g Class 11: парная конструкция «в типичности — уникальность» — литературный штамп"
+    },
+    {
+      "category": "class11_not_loved_x_by_y_and_z",
+      "pattern": "не\\s+люб\\w+\\s+(советов?|замечаний?|критик\\w+|указаний?)\\s+(по|от)\\s+\\w+",
+      "scope": [
+        "ch_04"
+      ],
+      "severity": "error",
+      "suggestion": "Переписать обобщённо: «не любил советов» без перечисления частных категорий.",
+      "rationale": "v63-043f Class 11 (ЗАПРЕТ 9 GW): «не любил советов по X, Y и Z» = listing antipattern"
+    },
+    {
+      "_comment": "=== v4: 043h Class 17 narrative truism (новые patterns 2026-05-18) ===",
+      "category": "obvious_responsibility_constatation",
+      "pattern": "брал\\w*\\s+на\\s+себя\\s+(огромн\\w+|больш\\w+|тяжёл\\w+|колоссальн\\w+)?\\s*(ответственност\\w+|заботу|нагрузку)",
+      "scope": [
+        "ch_02",
+        "ch_03",
+        "ch_04",
+        "epilogue"
+      ],
+      "severity": "warning",
+      "suggestion": "delete_sentence",
+      "reason": "Class 17 narrative truism — констатация очевидного, читатель сам понимает из контекста"
+    },
+    {
+      "category": "everything_fell_on_shoulders",
+      "pattern": "(всё|вс[еёя])\\s+(ложил\\w+|легл\\w+)\\s+на\\s+(её|его|их|плечи)",
+      "scope": [
+        "ch_02",
+        "ch_03",
+        "ch_04",
+        "epilogue"
+      ],
+      "severity": "warning",
+      "suggestion": "delete_sentence",
+      "reason": "Class 17 narrative truism — «всё ложилось на плечи» = очевидное обобщение без новой информации"
+    },
+    {
+      "category": "accepted_calmly",
+      "pattern": "(приня\\w+|восприня\\w+|отнесл\\w+).{0,50}(спокойно|молча|без\\s+слов|с\\s+пониманием|сдержанн\\w+)",
+      "scope": [
+        "ch_02",
+        "ch_03",
+        "ch_04"
+      ],
+      "severity": "warning",
+      "suggestion": "delete_sentence",
+      "reason": "Class 17 subjective emotional ascription без подтверждения в transcripts"
+    },
+    {
+      "category": "required_strength_and_character",
+      "pattern": "(требова\\w+|нужн\\w+|необходим\\w+)\\s+(огромн\\w+|больш\\w+|немал\\w+)?\\s*(силы|характер\\w+|мужеств\\w+|стойкости|терпени\\w+)",
+      "scope": [
+        "ch_02",
+        "ch_03",
+        "ch_04"
+      ],
+      "severity": "warning",
+      "suggestion": "delete_sentence",
+      "reason": "Class 17 narrative truism — generic strength constatation без конкретики"
+    },
+    {
+      "category": "was_not_easy_in_those_years",
+      "pattern": "(было\\s+не\\s*прост\\w+|трудн\\w+|тяжел\\w+)\\s+в\\s+(те\\s+годы|то\\s+время|эпох\\w+|период)",
+      "scope": [
+        "ch_02",
+        "ch_03",
+        "ch_04"
+      ],
+      "severity": "warning",
+      "suggestion": "delete_sentence",
+      "reason": "Class 17 truism — «было непросто в те годы» = generic mid-event commentary"
+    },
+    {
+      "category": "this_required_dedication",
+      "pattern": "(это|такая|подобн\\w+)\\s+\\w*\\s*(требовал\\w+|стоил\\w+)\\s+(преданности|посвящени\\w+|жертв)",
+      "scope": [
+        "ch_02",
+        "ch_03",
+        "ch_04"
+      ],
+      "severity": "warning",
+      "suggestion": "delete_sentence",
+      "reason": "Class 17 truism — «требовало преданности/жертв» = очевидное обобщение"
+    },
+    {
+      "category": "had_to_show_X",
+      "pattern": "(приходил\\w+|пришл\\w+|нужн\\w+)\\s+\\w*\\s*(проявля\\w+|показыва\\w+)\\s+(\\w+\\s+)?(терпени\\w+|выдержк\\w+|изобретательност\\w+|находчивост\\w+)",
+      "scope": [
+        "ch_02",
+        "ch_03",
+        "ch_04"
+      ],
+      "severity": "warning",
+      "suggestion": "delete_sentence_or_replace_with_specific",
+      "reason": "Class 17 truism — «приходилось проявлять терпение» без конкретного случая"
+    },
+    {
+      "_comment": "=== v5: 043d-2 Class 1 recurring patterns extend (2026-05-18) ===",
+      "category": "speciality_defined_life_v3",
+      "pattern": "(специальност\\w+|профессия|образовани\\w+|обучени\\w+)\\W{1,40}(определ\\w+|стал\\w+|сформирова\\w+)\\W{1,30}(всю|её|его|их|дальнейш\\w+|будущ\\w+)?\\W{0,10}(жизн\\w+|карьер\\w+|судьб\\w+|путь|деятельност\\w+)",
+      "scope": [
+        "ch_02",
+        "ch_03",
+        "epilogue"
+      ],
+      "severity": "error",
+      "suggestion": "Удалить causal claim (часть про 'определила/стала жизнь/карьеру'). Оставить factual content (год обучения, специальность, место).",
+      "reason": "Class 1 recurring — causal claim не в источнике; pattern эволюционировал v62a→v63"
+    },
+    {
+      "category": "episode_especially_remembered",
+      "pattern": "(один|какой[-\\s]?то|особенно)\\s+(эпизод|случа\\w+|момент|разговор|инцидент)\\s+\\w*\\s*(особенно|больше\\s+всего|навсегда|надолго|глубок\\w+)?\\s*(запомнил\\w+|остал\\w+\\s+в\\s+памяти|врезал\\w+\\s+в\\s+память|поразил\\w+)",
+      "scope": [
+        "ch_02",
+        "ch_03",
+        "ch_04"
+      ],
+      "severity": "error",
+      "suggestion": "Удалить subjective claim о memorability. Оставить factual content эпизода без оценки.",
+      "reason": "Class 1 multiplication of significance — «особенно запомнился» = subjective claim не в источнике"
+    },
+    {
+      "category": "motivation_attribution_seemed",
+      "pattern": "(ей|ему|им)\\s+(казал\\w+|представля\\w+|думал\\w+|показ\\w+)\\W{1,10}\\s*что.{0,50}(должн\\w+|обязан\\w+|следов\\w+|стоил\\w+)",
+      "scope": [
+        "ch_02",
+        "ch_03",
+        "ch_04"
+      ],
+      "severity": "error",
+      "suggestion": "Удалить attribution мотивации/мысли без источника. Оставить factual content (что произошло), не интерпретацию причин.",
+      "reason": "Class 1 motivation confabulation — «ей казалось что X должны Y» = psychic insight без TR"
+    },
+    {
+      "category": "stage_event_changed_X_extended",
+      "pattern": "(произошл\\w+|случил\\w+|стал\\w+)\\s+.{0,20}(событи\\w+|переломн\\w+|важн\\w+)[^.]{1,80}котор\\w+\\s+(измен\\w+|преобраз\\w+|перевернул\\w+|сильно\\s+повлия\\w+).{0,30}(жизн\\w+|сем\\w+|судьб\\w+)",
+      "scope": [
+        "ch_02",
+        "ch_03"
+      ],
+      "severity": "warning",
+      "suggestion": "Удалить framing-фразу. Начинать с конкретного факта (год, событие, действующее лицо), не с abstract 'событие, которое изменило'.",
+      "reason": "Class 6 narrative пафос extended — task 043g pattern эволюционировал v63"
+    },
+    {
+      "_comment": "=== v6: 043f-2 Class 11 recurring extended (2026-05-18) ===",
+      "category": "class11_not_loved_x_by_y_and_z_extended",
+      "pattern_options": [
+        "\\bне\\s+(люб\\w+|выноси\\w+|терп\\w+|перевари\\w+|перенос\\w+)\\s+(\\w+\\s*,?\\s*)?(особенно\\s+)?по\\s+(\\w+)\\s+(и|или|,)\\s+(\\w+)",
+        "\\bне\\s+(люб\\w+|выноси\\w+|терп\\w+|перевари\\w+|перенос\\w+)\\s+(\\w+\\s+)?(в\\s+принципе|вообще|никогда)\\s*,?\\s*(особенно\\s+по\\s+\\w+)",
+        "\\bне\\s+(люб\\w+|выноси\\w+|терп\\w+|перевари\\w+|перенос\\w+)\\s+[^.]{0,80}\\s+(будь\\s+то)\\s+\\w+\\s+(и|или|,|—|-)\\s+\\w+",
+        "(по\\s+практическ\\w+\\s+вопрос\\w+|по\\s+житейск\\w+\\s+тем\\w+|по\\s+бытов\\w+\\s+\\w+)\\s*[—–-]\\s*будь\\s+то"
+      ],
+      "scope": [
+        "ch_02",
+        "ch_03",
+        "ch_04"
+      ],
+      "severity": "error",
+      "suggestion": "Переписать обобщённо: «не любил советов» / «не любил [X]», без перечисления частных категорий. Если контекст требует — выбрать ОДНУ конкретную деталь.",
+      "reason": "Class 11 awkward formulation recurring — частное перечисление через 'в принципе, особенно по' / 'будь то X или Y' / 'по практическим вопросам — будь то'"
+    }
+  ],
+  "scoped_to_epilogue_only": [
+    "epilogue_path_X_to_Y",
+    "filled_with_X",
+    "passed_to_generations",
+    "person_of_their_time",
+    "in_this_typicality_uniqueness"
+  ],
+  "scoped_to_narrative_and_epilogue": [
+    "metaphor_bonds",
+    "lifedefining_speciality",
+    "could_X_any_Y_but_actually_Z",
+    "speciality_defined_life",
+    "helping_at_important_moments",
+    "event_that_changed_life",
+    "typical_for_generation",
+    "class11_not_loved_x_by_y_and_z",
+    "obvious_responsibility_constatation",
+    "everything_fell_on_shoulders",
+    "accepted_calmly",
+    "required_strength_and_character",
+    "was_not_easy_in_those_years",
+    "this_required_dedication",
+    "had_to_show_X",
+    "speciality_defined_life_v3",
+    "episode_especially_remembered",
+    "motivation_attribution_seemed",
+    "stage_event_changed_X_extended",
+    "class11_not_loved_x_by_y_and_z_extended"
+  ],
+  "scoped_to_chapters": {
+    "speciality_defined_life": [
+      "epilogue",
+      "ch_02"
+    ],
+    "helping_at_important_moments": [
+      "ch_02",
+      "ch_03"
+    ],
+    "event_that_changed_life": [
+      "ch_02",
+      "ch_03",
+      "ch_04",
+      "epilogue"
+    ],
+    "typical_for_generation": [
+      "ch_02",
+      "ch_03",
+      "ch_04",
+      "epilogue"
+    ],
+    "in_this_typicality_uniqueness": [
+      "epilogue"
+    ],
+    "class11_not_loved_x_by_y_and_z": [
+      "ch_04"
+    ],
+    "obvious_responsibility_constatation": [
+      "ch_02",
+      "ch_03",
+      "ch_04",
+      "epilogue"
+    ],
+    "everything_fell_on_shoulders": [
+      "ch_02",
+      "ch_03",
+      "ch_04",
+      "epilogue"
+    ],
+    "accepted_calmly": [
+      "ch_02",
+      "ch_03",
+      "ch_04"
+    ],
+    "required_strength_and_character": [
+      "ch_02",
+      "ch_03",
+      "ch_04"
+    ],
+    "was_not_easy_in_those_years": [
+      "ch_02",
+      "ch_03",
+      "ch_04"
+    ],
+    "this_required_dedication": [
+      "ch_02",
+      "ch_03",
+      "ch_04"
+    ],
+    "had_to_show_X": [
+      "ch_02",
+      "ch_03",
+      "ch_04"
+    ],
+    "speciality_defined_life_v3": [
+      "ch_02",
+      "ch_03",
+      "epilogue"
+    ],
+    "episode_especially_remembered": [
+      "ch_02",
+      "ch_03",
+      "ch_04"
+    ],
+    "motivation_attribution_seemed": [
+      "ch_02",
+      "ch_03",
+      "ch_04"
+    ],
+    "stage_event_changed_X_extended": [
+      "ch_02",
+      "ch_03"
+    ],
+    "class11_not_loved_x_by_y_and_z_extended": [
+      "ch_02",
+      "ch_03",
+      "ch_04"
+    ]
+  },
+  "narrative_truism": {
+    "_comment": "v4: Class 17 categories — see also generic_categorical_patterns above for regex; this section lists category names for validator lookup",
+    "category_names": [
+      "obvious_responsibility_constatation",
+      "everything_fell_on_shoulders",
+      "accepted_calmly",
+      "required_strength_and_character",
+      "was_not_easy_in_those_years",
+      "this_required_dedication",
+      "had_to_show_X"
+    ]
+  }
+}

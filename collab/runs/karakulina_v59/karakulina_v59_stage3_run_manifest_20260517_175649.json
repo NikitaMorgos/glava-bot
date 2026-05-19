@@ -1,0 +1,161 @@
+{
+  "project_id": "karakulina_stage3",
+  "stage": "stage3",
+  "timestamp": "20260517_175649",
+  "generated_at": "2026-05-17T15:07:44.908589Z",
+  "git_sha": "7e1f6b6",
+  "config_file": "C:\\Users\\user\\Dropbox\\Public\\Cursor\\GLAVA\\prompts\\pipeline_config.json",
+  "config_sha256": "50c45ec0902c1cb75606ef72d2769c27c357258e6a0e6fe2dbb0a6ba705cdf96",
+  "active_prompts": {
+    "cleaner": {
+      "prompt_file": "01_cleaner_v1.md",
+      "prompt_exists": true,
+      "prompt_sha256": "e5a7f11402313b21bcb4b44668a06704cc5c36f57c89965e4bebbae2f6f9e413",
+      "model": "claude-haiku-4-5-20251001",
+      "max_tokens": 32000,
+      "temperature": 0.1
+    },
+    "fact_extractor": {
+      "prompt_file": "02_fact_extractor_v3.4.md",
+      "prompt_exists": true,
+      "prompt_sha256": "a863422a7676dab7ce098b2a7cf6fa4ec7dfc9a6cb17197a4e201b4210ddf26f",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 32000,
+      "temperature": 0.15
+    },
+    "historian": {
+      "prompt_file": "12_historian_v3.md",
+      "prompt_exists": true,
+      "prompt_sha256": "3e316c1468738ceb22b4f8ce2cea1defd7918ac04180b2551b3e59f0f8a76a22",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 64000,
+      "temperature": 0.3
+    },
+    "ghostwriter": {
+      "prompt_file": "03_ghostwriter_v2.20.md",
+      "prompt_exists": true,
+      "prompt_sha256": "4a9a2b7914bdec9598175327aca1d0b91622a2934ed4752bf25c4294e3bf5dfb",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 32000,
+      "temperature": 0.4
+    },
+    "fact_checker": {
+      "prompt_file": "04_fact_checker_v2.13.md",
+      "prompt_exists": true,
+      "prompt_sha256": "c5737c58eaebcd7ed099167505488e5d394a45647a6f774bc1b82b8a5c219d62",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 64000,
+      "temperature": 0.1
+    },
+    "literary_editor": {
+      "prompt_file": "05_literary_editor_v3.1.md",
+      "prompt_exists": true,
+      "prompt_sha256": "7c4fd75b6b2fdb423de3224c060c81657c648ac5f7642e66f91b70f568aa9d90",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 32000,
+      "temperature": 0.5
+    },
+    "proofreader": {
+      "prompt_file": "06_proofreader_v1.md",
+      "prompt_exists": true,
+      "prompt_sha256": "5c600132d206cdc62876661662b917b17922e3779047de366485a78703758d79",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 32000,
+      "temperature": 0.0
+    },
+    "photo_editor": {
+      "prompt_file": "07_photo_editor_v1.md",
+      "prompt_exists": true,
+      "prompt_sha256": "0d55f58677f5c2568566b4cff82d0faccf9cea6af0d6f413830fa86a363a4179",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 32000,
+      "temperature": 0.25
+    },
+    "layout_designer": {
+      "prompt_file": "08_layout_designer_v3.22.md",
+      "prompt_exists": true,
+      "prompt_sha256": "125d198bcafdba0e121d2216943062e788e7bfb2481a4ce8ab24c90c9162b858",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 64000,
+      "temperature": 0.25
+    },
+    "qa_layout": {
+      "prompt_file": "09_qa_layout_v1.md",
+      "prompt_exists": true,
+      "prompt_sha256": "04a0b4137d947ef287a3e78de08f8dd0e024c3da836a3bafb8ab9bb08e1a4c92",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 32000,
+      "temperature": 0.05
+    },
+    "cover_designer": {
+      "prompt_file": "13_cover_designer_v2.6.md",
+      "prompt_exists": true,
+      "prompt_sha256": "38c4330f89f693ca8928b75e5a43822a9b64223238d0a3eaabac1df1199bdcf4",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 32000,
+      "temperature": 0.65
+    },
+    "layout_art_director": {
+      "prompt_file": "15_layout_art_director_v1.8.md",
+      "prompt_exists": true,
+      "prompt_sha256": "f04d0ab80ad4c86298503cd38b23e32f9608613957b79fa04c37dd2e2b6d49ea",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 64000,
+      "temperature": 0.45
+    },
+    "interview_architect": {
+      "prompt_file": "11_interview_architect_v4.1.md",
+      "prompt_exists": true,
+      "prompt_sha256": "1b4ed8ee4ea676987bae4b88f075349ad5872e57574cda5233ef4ce4f2cde3f9",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 32000,
+      "temperature": 0.5
+    },
+    "completeness_auditor": {
+      "prompt_file": "16_completeness_auditor_v1.4.md",
+      "prompt_exists": true,
+      "prompt_sha256": "715e14e20548473ffcc7a876038d9dca8e168b840409fb40d3cdccea2aa55bfd",
+      "model": "claude-haiku-4-5-20251001",
+      "max_tokens": 32000,
+      "temperature": 0.1
+    }
+  },
+  "inputs": {
+    "book_draft_path": "exports\\karakulina_v59\\karakulina_book_FINAL_20260517_172906.json",
+    "fc_report_path": "exports\\karakulina_v59\\karakulina_fc_report_iter3_20260517_172906.json",
+    "fact_map_source": "exports\\karakulina_v59\\karakulina_fact_map_20260517_164818.json",
+    "warnings_count": 1
+  },
+  "inputs_sha256": {
+    "book_draft_path": "sha256:2af94f8b00ec88ed",
+    "fc_report_path": "sha256:9c75180dfee4fb03",
+    "fact_map_source": "sha256:da188d9eed6899e7"
+  },
+  "outputs": {
+    "liteditor_report_path": "exports\\karakulina_v59\\karakulina_v59_liteditor_report_20260517_175649.json",
+    "book_after_liteditor": "exports\\karakulina_v59\\karakulina_v59_book_stage3_liteditor_20260517_175649.json",
+    "proofreader_report_path": "exports\\karakulina_v59\\karakulina_v59_proofreader_report_20260517_175649.json",
+    "book_final_stage3_path": "exports\\karakulina_v59\\karakulina_v59_book_FINAL_stage3_20260517_175649.json",
+    "final_txt_path": "exports\\karakulina_v59\\karakulina_v59_FINAL_stage3_20260517_175649.txt",
+    "ready_for_layout": true,
+    "text_gates_path": "exports\\karakulina_v59\\karakulina_v59_stage3_text_gates_20260517_175649.json",
+    "text_gates_passed": true,
+    "bio_data_integrity_path": "exports\\karakulina_v59\\karakulina_v59_bio_data_integrity_20260517_175649.json",
+    "topo_normalize_report_path": "exports\\karakulina_v59\\karakulina_v59_topo_normalize_report_20260517_175649.json",
+    "relation_overrides_applied_path": "exports\\karakulina_v59\\karakulina_v59_relation_overrides_applied_20260517_175649.json",
+    "persona_notes_enforced_path": "exports\\karakulina_v59\\karakulina_v59_persona_notes_enforced_20260517_175649.json",
+    "timeline_anchors_path": "exports\\karakulina_v59\\karakulina_v59_timeline_anchors_20260517_175649.json",
+    "style_checks_path": "exports\\karakulina_v59\\karakulina_v59_style_checks_20260517_175649.json",
+    "gw_grounding_check_path": "exports\\karakulina_v59\\karakulina_v59_gw_grounding_check_20260517_175649.json",
+    "pin_coverage_path": "exports\\karakulina_v59\\karakulina_v59_pin_coverage_20260517_175649.json",
+    "chronology_check_path": "exports\\karakulina_v59\\karakulina_v59_chronology_check_20260517_175649.json",
+    "discourse_markers_path": "exports\\karakulina_v59\\karakulina_v59_discourse_markers_20260517_175649.json",
+    "pin_list_depth_path": "exports\\karakulina_v59\\karakulina_v59_pin_list_depth_20260517_175649.json",
+    "pin_list_compliance_path": "exports\\karakulina_v59\\karakulina_v59_pin_list_compliance_20260517_175649.json"
+  },
+  "checkpoints": {},
+  "notes": {
+    "strict_gates_enabled": true,
+    "variant_b": false
+  }
+}

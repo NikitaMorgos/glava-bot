@@ -1,0 +1,58 @@
+[
+  {
+    "status": "rejected",
+    "field": "persons",
+    "candidate_a": "Рудая Пелагея Алексеевна",
+    "candidate_id_a": "person_002",
+    "candidate_b": "Полина",
+    "candidate_id_b": "person_004",
+    "shared_variants": [
+      "пелагея",
+      "полина",
+      "поля"
+    ],
+    "blocked_reason": "relation_group_mismatch (parent:'мать' vs sibling:'старшая сестра')"
+  },
+  {
+    "status": "rejected",
+    "field": "persons",
+    "candidate_a": "Рудая Пелагея Алексеевна",
+    "candidate_id_a": "person_002",
+    "candidate_b": "Амельченко Полина",
+    "candidate_id_b": "person_018",
+    "shared_variants": [
+      "пелагея",
+      "полина",
+      "поля"
+    ],
+    "blocked_reason": "relation_group_mismatch (parent:'мать' vs sibling:'старшая сестра')"
+  },
+  {
+    "status": "merged",
+    "field": "persons",
+    "canonical": "Маргось Владимир",
+    "canonical_id": "person_009",
+    "merged": "Владимир Маргось",
+    "merged_id": "person_auto_003",
+    "overlap": 0.548,
+    "shared_variants": [
+      "владимир",
+      "владимир маргось",
+      "вова"
+    ]
+  },
+  {
+    "status": "rejected",
+    "field": "persons",
+    "candidate_a": "тётя Маша",
+    "candidate_id_a": "person_017",
+    "candidate_b": "тётя Маня",
+    "candidate_id_b": "person_019",
+    "shared_variants": [
+      "маня",
+      "мария",
+      "маша"
+    ],
+    "blocked_reason": "relation_group_mismatch (non_family:'знакомая/соседка' vs sibling:'старшая сестра')"
+  }
+]

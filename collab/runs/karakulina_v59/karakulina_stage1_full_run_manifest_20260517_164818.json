@@ -1,0 +1,317 @@
+{
+  "project_id": "karakulina",
+  "stage": "stage1_full",
+  "timestamp": "20260517_164818",
+  "generated_at": "2026-05-17T14:03:03.441582Z",
+  "git_sha": "7e1f6b6",
+  "config_file": "C:\\Users\\user\\Dropbox\\Public\\Cursor\\GLAVA\\prompts\\pipeline_config.json",
+  "config_sha256": "50c45ec0902c1cb75606ef72d2769c27c357258e6a0e6fe2dbb0a6ba705cdf96",
+  "active_prompts": {
+    "cleaner": {
+      "prompt_file": "01_cleaner_v1.md",
+      "prompt_exists": true,
+      "prompt_sha256": "e5a7f11402313b21bcb4b44668a06704cc5c36f57c89965e4bebbae2f6f9e413",
+      "model": "claude-haiku-4-5-20251001",
+      "max_tokens": 32000,
+      "temperature": 0.1
+    },
+    "fact_extractor": {
+      "prompt_file": "02_fact_extractor_v3.4.md",
+      "prompt_exists": true,
+      "prompt_sha256": "a863422a7676dab7ce098b2a7cf6fa4ec7dfc9a6cb17197a4e201b4210ddf26f",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 32000,
+      "temperature": 0.15
+    },
+    "historian": {
+      "prompt_file": "12_historian_v3.md",
+      "prompt_exists": true,
+      "prompt_sha256": "3e316c1468738ceb22b4f8ce2cea1defd7918ac04180b2551b3e59f0f8a76a22",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 64000,
+      "temperature": 0.3
+    },
+    "ghostwriter": {
+      "prompt_file": "03_ghostwriter_v2.20.md",
+      "prompt_exists": true,
+      "prompt_sha256": "4a9a2b7914bdec9598175327aca1d0b91622a2934ed4752bf25c4294e3bf5dfb",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 32000,
+      "temperature": 0.4
+    },
+    "fact_checker": {
+      "prompt_file": "04_fact_checker_v2.13.md",
+      "prompt_exists": true,
+      "prompt_sha256": "c5737c58eaebcd7ed099167505488e5d394a45647a6f774bc1b82b8a5c219d62",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 64000,
+      "temperature": 0.1
+    },
+    "literary_editor": {
+      "prompt_file": "05_literary_editor_v3.1.md",
+      "prompt_exists": true,
+      "prompt_sha256": "7c4fd75b6b2fdb423de3224c060c81657c648ac5f7642e66f91b70f568aa9d90",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 32000,
+      "temperature": 0.5
+    },
+    "proofreader": {
+      "prompt_file": "06_proofreader_v1.md",
+      "prompt_exists": true,
+      "prompt_sha256": "5c600132d206cdc62876661662b917b17922e3779047de366485a78703758d79",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 32000,
+      "temperature": 0.0
+    },
+    "photo_editor": {
+      "prompt_file": "07_photo_editor_v1.md",
+      "prompt_exists": true,
+      "prompt_sha256": "0d55f58677f5c2568566b4cff82d0faccf9cea6af0d6f413830fa86a363a4179",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 32000,
+      "temperature": 0.25
+    },
+    "layout_designer": {
+      "prompt_file": "08_layout_designer_v3.22.md",
+      "prompt_exists": true,
+      "prompt_sha256": "125d198bcafdba0e121d2216943062e788e7bfb2481a4ce8ab24c90c9162b858",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 64000,
+      "temperature": 0.25
+    },
+    "qa_layout": {
+      "prompt_file": "09_qa_layout_v1.md",
+      "prompt_exists": true,
+      "prompt_sha256": "04a0b4137d947ef287a3e78de08f8dd0e024c3da836a3bafb8ab9bb08e1a4c92",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 32000,
+      "temperature": 0.05
+    },
+    "cover_designer": {
+      "prompt_file": "13_cover_designer_v2.6.md",
+      "prompt_exists": true,
+      "prompt_sha256": "38c4330f89f693ca8928b75e5a43822a9b64223238d0a3eaabac1df1199bdcf4",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 32000,
+      "temperature": 0.65
+    },
+    "layout_art_director": {
+      "prompt_file": "15_layout_art_director_v1.8.md",
+      "prompt_exists": true,
+      "prompt_sha256": "f04d0ab80ad4c86298503cd38b23e32f9608613957b79fa04c37dd2e2b6d49ea",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 64000,
+      "temperature": 0.45
+    },
+    "interview_architect": {
+      "prompt_file": "11_interview_architect_v4.1.md",
+      "prompt_exists": true,
+      "prompt_sha256": "1b4ed8ee4ea676987bae4b88f075349ad5872e57574cda5233ef4ce4f2cde3f9",
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 32000,
+      "temperature": 0.5
+    },
+    "completeness_auditor": {
+      "prompt_file": "16_completeness_auditor_v1.4.md",
+      "prompt_exists": true,
+      "prompt_sha256": "715e14e20548473ffcc7a876038d9dca8e168b840409fb40d3cdccea2aa55bfd",
+      "model": "claude-haiku-4-5-20251001",
+      "max_tokens": 32000,
+      "temperature": 0.1
+    }
+  },
+  "inputs": {
+    "transcript1": "collab\\transcripts\\01_karakulina_original_assemblyai_20260326.txt",
+    "transcript2": "collab/transcripts/02_karakulina_nikita_tatyana_interview.txt",
+    "pin_list_used": "collab/context/known_episodes_karakulina.md",
+    "pin_list_episodes_count": 35,
+    "pin_list_required_persons_count": 3
+  },
+  "inputs_sha256": {
+    "transcript1": "sha256:3555b3d0cb4da1ea",
+    "transcript2": "sha256:e5a1c8e149ed51c7",
+    "pin_list_used": "sha256:5429b3496a3b8146"
+  },
+  "outputs": {
+    "cleaned": "exports\\karakulina_v59\\karakulina_combined_cleaned_20260517_164818.txt",
+    "fact_map_full": "exports\\karakulina_v59\\karakulina_fact_map_full_20260517_164818.json",
+    "fact_map_clean": "exports\\karakulina_v59\\karakulina_fact_map_20260517_164818.json",
+    "completeness_audit": "exports\\karakulina_v59\\karakulina_completeness_audit_20260517_164818.json",
+    "normalization_log": "exports\\karakulina_v59\\karakulina_normalization_log_20260517_164818.json"
+  },
+  "checkpoints": {},
+  "notes": {
+    "completeness_audit": {
+      "completeness_status": "incomplete",
+      "auto_enriched": {
+        "persons": 3,
+        "events": 12,
+        "locations": 1,
+        "traits": 12
+      },
+      "log_only_gaps": {
+        "missing_persons": [
+          {
+            "mention_in_transcript": "брат Зима",
+            "transcript_quote": "Или, а если еще история про то, что брат Зима, он всегда посуду моет, то один прием пищи, он превращался в такие, типа, какую-то конфликтную историю",
+            "likely_relation": "брат Никиты (внука Валентины), сын Татьяны",
+            "reason_low_confidence": "Упомянут вскользь как 'брат Зима' в контексте конфликтов за столом. Возможно, это прозвище или сокращение имени. Не ясно, является ли он сыном Татьяны или кем-то ещё. Требует уточнения.",
+            "was_in_pin_list": false
+          },
+          {
+            "mention_in_transcript": "знакомая, которая предложила сервиз",
+            "transcript_quote": "Это ее там знакомая какая-то ей предложила, и вот то, что она вот купила, это не пожалев денег на что-то",
+            "likely_relation": "знакомая Валентины",
+            "reason_low_confidence": "Упомянута очень вскользь как 'знакомая какая-то', которая предложила купить дорогой сервиз. Нет имени, нет других деталей. Может быть, это соседка или коллега по работе.",
+            "was_in_pin_list": true
+          }
+        ],
+        "missing_events": [
+          {
+            "keyword": "непрошенные советы в сторону Володи Маргася",
+            "transcript_quote": "когда ты говорила про непрошенные советы в сторону Володи Маргася, то я точно вспоминаю ситуацию, когда я тебе говорю, что непрошенные советы ты сама себе советуй",
+            "suggested_title": "Татьяна критикует Никиту за непрошенные советы, как Валентина критиковала Владимира",
+            "reason_low_confidence": "Это не событие из жизни Валентины, а скорее рефлексия Татьяны о том, что она сама повторяет поведение матери. Требует уточнения, есть ли конкретный эпизод."
+          },
+          {
+            "keyword": "авоська, сшитая из зонтика",
+            "transcript_quote": "Например, когда она уже была бабушкой, её внуки вспоминают авоську, сшитую из зонтика",
+            "suggested_title": "Авоська, сшитая из зонтика — пример экономности и находчивости",
+            "reason_low_confidence": "Упомянуто как пример находчивости Валентины, но нет конкретного контекста, когда это произошло, почему она это сделала. Требует развёрнутого рассказа."
+          },
+          {
+            "keyword": "курсы кройки и шитья при доме офицеров",
+            "transcript_quote": "Валентина хорошо шила, вышивала, закончила курсы кройки и шитья при доме офицеров",
+            "suggested_title": "Обучение кройке и шитью при доме офицеров",
+            "reason_low_confidence": "Упомянуто в первом интервью, но нет деталей о том, когда это было, где находился дом офицеров, как долго она училась. Требует уточнения."
+          },
+          {
+            "keyword": "пение в хоре в Венгрии",
+            "transcript_quote": "В Венгрии пела в хоре. Вроде даже за столом пела. Точно был голос и точно любила петь",
+            "suggested_title": "Пение в хоре в Венгрии",
+            "reason_low_confidence": "Упомянуто, что она пела в хоре в Венгрии, но нет деталей о названии хора, какие песни пела, как долго, почему потом перестала. Требует развёрнутого рассказа."
+          },
+          {
+            "keyword": "отпуска в Сочи и Гаграх",
+            "transcript_quote": "Отпуска проводили то в Сочи, то в Гаграх с Валериком. Валерик — это её сын. Татьяну особо не брали, дочку Татьяну",
+            "suggested_title": "Отпуска в Сочи и Гаграх с сыном Валерием",
+            "reason_low_confidence": "Упомянуто, что они ездили в отпуск в Сочи и Грахи, но нет деталей о том, когда, как долго, какие впечатления. Требует развёрнутого рассказа."
+          },
+          {
+            "keyword": "поездки в Кирсаны к сестре деда Дмитрия",
+            "transcript_quote": "Ездили иногда в Кирсанах на машине к сестре деда Дмитрия, то есть мужа Валентины",
+            "suggested_title": "Поездки в Кирсаны к тёте Шуре",
+            "reason_low_confidence": "Упомянуто, что они ездили в Кирсаны к сестре деда (тёте Шуре), но нет деталей о том, как часто, какие впечатления, что они там делали. Требует развёрнутого рассказа."
+          },
+          {
+            "keyword": "поездки в Питер с дочкой",
+            "transcript_quote": "И с Татьяной, дочкой, ездили в Питер",
+            "suggested_title": "Поездка в Санкт-Петербург с дочкой Татьяной",
+            "reason_low_confidence": "Упомянуто очень вскользь, что они ездили в Питер с дочкой, но нет деталей о том, когда, как долго, какие впечатления. Требует развёрнутого рассказа."
+          },
+          {
+            "keyword": "красивое постельное бельё",
+            "transcript_quote": "И всегда у неё должно было быть красивое постельное бельё",
+            "suggested_title": "Любовь к красивому постельному белью",
+            "reason_low_confidence": "Упомянуто как черта характера, но нет конкретного эпизода или истории. Требует развёрнутого рассказа."
+          },
+          {
+            "keyword": "украшение салатов из варенья",
+            "transcript_quote": "Она же всегда эти салаты все украшала, да, вот какие-то там из варенья, украшения делала, еще что-то",
+            "suggested_title": "Украшение блюд и салатов при сервировке стола",
+            "reason_low_confidence": "Упомянуто как пример её любви к красивой сервировке, но нет конкретного эпизода. Требует развёрнутого рассказа."
+          },
+          {
+            "keyword": "скатерть на крахмале, льняная, красивая",
+            "transcript_quote": "На крахмалиное, льняное, красивое. На это она тоже денег не жалела и все время покупала",
+            "suggested_title": "Покупка красивых скатертей из льна",
+            "reason_low_confidence": "Упомянуто как пример её любви к красивым вещам, но нет конкретного эпизода. Требует развёрнутого рассказа."
+          },
+          {
+            "keyword": "расчёска на столе — порядок в доме",
+            "transcript_quote": "Не дай бог, чтобы расчёска лежала на столе. И это очень понятно. Вот здесь я очень на ее стороне, да, да. А другому всё равно, где лежит расчёска",
+            "suggested_title": "Требование порядка — расчёска должна быть на месте, а не на столе",
+            "reason_low_confidence": "Упомянуто как пример её педантичности, но это скорее черта характера, чем событие. Требует развёрнутого рассказа о конкретном эпизоде.",
+            "was_in_pin_list": false
+          }
+        ],
+        "missing_locations": [],
+        "missing_traits": [
+          {
+            "trait": "любила красиво накрывать стол",
+            "transcript_quote": "она же любила красиво накрыть на стол. Для нее это тоже важно всегда было, чтобы это все было красиво",
+            "reason_low_confidence": "Упомянуто в fact_map как character_trait, но в интервью 2 это подтверждается с большим количеством деталей (украшение салатов, красивая посуда, скатерти). Может быть, требует расширения описания."
+          },
+          {
+            "trait": "непрошенные советы дочери зятю",
+            "transcript_quote": "Видимо, и папа твой не любил, не то чтобы ему указывали, командовали, давали советы",
+            "reason_low_confidence": "Это уже есть в fact_map как часть описания конфликта с зятем, но в интервью 2 это раскрывается более подробно с конкретным примером (замечание про счётчик)."
+          }
+        ]
+      }
+    },
+    "name_normalization": {
+      "merged_pairs": [
+        {
+          "status": "merged",
+          "field": "persons",
+          "canonical": "Маргось Владимир",
+          "canonical_id": "person_009",
+          "merged": "Владимир Маргось",
+          "merged_id": "person_auto_003",
+          "overlap": 0.548,
+          "shared_variants": [
+            "владимир",
+            "владимир маргось",
+            "вова"
+          ]
+        }
+      ],
+      "rejected_pairs": [
+        {
+          "status": "rejected",
+          "field": "persons",
+          "candidate_a": "Рудая Пелагея Алексеевна",
+          "candidate_id_a": "person_002",
+          "candidate_b": "Полина",
+          "candidate_id_b": "person_004",
+          "shared_variants": [
+            "пелагея",
+            "полина",
+            "поля"
+          ],
+          "blocked_reason": "relation_group_mismatch (parent:'мать' vs sibling:'старшая сестра')"
+        },
+        {
+          "status": "rejected",
+          "field": "persons",
+          "candidate_a": "Рудая Пелагея Алексеевна",
+          "candidate_id_a": "person_002",
+          "candidate_b": "Амельченко Полина",
+          "candidate_id_b": "person_018",
+          "shared_variants": [
+            "пелагея",
+            "полина",
+            "поля"
+          ],
+          "blocked_reason": "relation_group_mismatch (parent:'мать' vs sibling:'старшая сестра')"
+        },
+        {
+          "status": "rejected",
+          "field": "persons",
+          "candidate_a": "тётя Маша",
+          "candidate_id_a": "person_017",
+          "candidate_b": "тётя Маня",
+          "candidate_id_b": "person_019",
+          "shared_variants": [
+            "маня",
+            "мария",
+            "маша"
+          ],
+          "blocked_reason": "relation_group_mismatch (non_family:'знакомая/соседка' vs sibling:'старшая сестра')"
+        }
+      ],
+      "normalized_count": 1
+    }
+  }
+}

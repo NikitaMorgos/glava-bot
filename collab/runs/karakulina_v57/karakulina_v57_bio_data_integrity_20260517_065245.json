@@ -1,0 +1,12 @@
+{
+  "filtered_non_family": [],
+  "required_field_issues": [
+    {
+      "type": "missing_award",
+      "entity": "Присвоение звания «Ударник коммунистического труда»",
+      "source": "event_029"
+    }
+  ],
+  "issues_count": 1,
+  "filtered_count": 0
+}

@@ -18,8 +18,12 @@ from pipeline_utils import (
     load_config, run_cleaner, run_fact_extractor, save_run_manifest,
     clean_fact_map_for_downstream, run_completeness_auditor,
     apply_completeness_enrichment, merge_fact_maps,
+    enrich_timeline_with_subject_age, normalize_fact_map_topo,
+    parse_pin_list_from_markdown, validate_pin_list_in_auto_enrich,
 )
 from scripts.normalize_named_entities import normalize_named_entities
+
+GAZETEER_PATH = ROOT / "collab" / "context" / "gazeteer_karakulina.json"
 
 CHARACTER_NAME   = "Каракулина Валентина Ивановна"
 NARRATOR_NAME    = "Татьяна Каракулина"
@@ -54,11 +58,36 @@ def main():
              "(огурцы Молдавия, счётчик 1977, Нинвана — v54 регрессия). "
              "Применимо только при --transcript2.",
     )
+    parser.add_argument(
+        "--known-episodes",
+        default=None,
+        help="Task 041b: путь к known_episodes_<subject>.md. "
+             "Если не указан — ищется автоматически как "
+             "collab/context/known_episodes_<subject>.md. "
+             "Pin-list передаётся в CA для bypass strict + compliance check.",
+    )
     args = parser.parse_args()
 
     api_key = os.getenv("ANTHROPIC_API_KEY", "")
     if not api_key:
         print("[ERROR] ANTHROPIC_API_KEY не задан"); sys.exit(1)
+
+    # Task 041b: load pin-list from known_episodes_<subject>.md
+    _known_ep_path = args.known_episodes
+    if not _known_ep_path:
+        _auto_path = ROOT / "collab" / "context" / f"known_episodes_{PROJECT_ID}.md"
+        if _auto_path.exists():
+            _known_ep_path = str(_auto_path)
+            print(f"[STAGE1] Auto-detected pin-list: {_auto_path.name}")
+        else:
+            print(f"[STAGE1] ⚠️ Pin-list не найден ({_auto_path}) — CA без pin-list bypass")
+
+    pin_list_episodes: dict | None = None
+    if _known_ep_path:
+        pin_list_episodes = parse_pin_list_from_markdown(_known_ep_path)
+        ep_count = len(pin_list_episodes.get("episodes", []))
+        rp_count = len(pin_list_episodes.get("required_persons", []))
+        print(f"[STAGE1] Pin-list загружен: {ep_count} эпизодов, {rp_count} required_persons")
 
     prev_fact_map: dict | None = None
     if args.prev_fact_map:
@@ -257,7 +286,34 @@ def main():
         fm_path.write_text(json.dumps(fact_map, ensure_ascii=False, indent=2), encoding="utf-8")
         print(f"[SAVED] {fm_path.name}")
 
-    # Completeness Auditor (агент 16)
+    # Task 042: subject_age enrichment
+    print(f"\n>>> ШАГ 2.5: SUBJECT AGE ENRICHMENT (task 042)")
+    fact_map = enrich_timeline_with_subject_age(fact_map)
+
+    # Task 040: gazeteer topo normalize на fact_map
+    gazeteer: dict = {}
+    if GAZETEER_PATH.exists():
+        with open(GAZETEER_PATH, encoding="utf-8") as _gf:
+            gazeteer = json.load(_gf)
+        print(f"[TOPO-NORMALIZE] gazeteer загружен: {GAZETEER_PATH.name} "
+              f"({len(gazeteer.get('topo_corrections', {}))} замен)")
+        fact_map, _topo_reps = normalize_fact_map_topo(fact_map, gazeteer)
+        topo_norm_path = out_dir / f"karakulina_topo_normalize_factmap_{ts}.json"
+        topo_norm_path.write_text(
+            json.dumps({"replacements": _topo_reps, "gazeteer_version": gazeteer.get("version", "?")},
+                       ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+        print(f"[SAVED] {topo_norm_path.name}")
+    else:
+        print(f"[TOPO-NORMALIZE] gazeteer не найден ({GAZETEER_PATH}) — пропускаем.")
+
+    # Сохраняем enriched fact_map (до CA) для диагностики
+    fm_enriched_path = out_dir / f"karakulina_fact_map_enriched_{ts}.json"
+    fm_enriched_path.write_text(json.dumps(fact_map, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"[SAVED] {fm_enriched_path.name} (enriched fact_map: subject_age + topo normalize)")
+
+    # Completeness Auditor (агент 16) — task 038b: pin_list_episodes for bypass strict
     print(f"\n>>> ШАГ 3: COMPLETENESS AUDITOR {cfg.get('completeness_auditor', {}).get('prompt_file', 'N/A')}")
     audit_result = run_completeness_auditor(
         client, cleaned,
@@ -267,9 +323,16 @@ def main():
         narrator_relation=NARRATOR_RELATION,
         project_id=PROJECT_ID,
         pin_list_fact_map=prev_fact_map,
+        pin_list_episodes=pin_list_episodes,
         cfg=cfg,
     )
     fact_map, enrichment_stats = apply_completeness_enrichment(fact_map, audit_result)
+
+    # Task 038b: pin-list compliance check
+    if pin_list_episodes:
+        _compliance = validate_pin_list_in_auto_enrich(audit_result, pin_list_episodes)
+        print(f"[STAGE1] Pin-list compliance: missing_events={len(_compliance.get('pin_list_event_missing', []))}, "
+              f"missing_persons={len(_compliance.get('pin_list_person_missing', []))}")
 
     # Сохраняем audit-отчёт
     audit_path = out_dir / f"karakulina_completeness_audit_{ts}.json"
@@ -335,6 +398,10 @@ def main():
         inputs={
             "transcript1": str(tr1),
             "transcript2": str(args.transcript2) if args.transcript2 else None,
+            # task 041b: pin-list tracking
+            "pin_list_used": _known_ep_path or "none",
+            "pin_list_episodes_count": len((pin_list_episodes or {}).get("episodes", [])),
+            "pin_list_required_persons_count": len((pin_list_episodes or {}).get("required_persons", [])),
         },
         outputs={
             "cleaned": str(cleaned_path),

@@ -1,0 +1,27 @@
+{
+  "subject_id": "karakulina",
+  "description": "Discourse markers config for Karakulina biography (task 049). Rapporteurs + thresholds.",
+  "rapporteurs": [
+    {
+      "name": "Татьяна",
+      "aliases": ["дочь", "Татьяна Каракулина"],
+      "primary": true
+    },
+    {
+      "name": "Никита",
+      "aliases": ["внук", "Никита Моргос"],
+      "secondary": true
+    }
+  ],
+  "thresholds": {
+    "ch_02": 8,
+    "ch_03": 5,
+    "ch_04": 3
+  },
+  "baseline_version": "v57",
+  "baseline_counts": {
+    "ch_02": 12,
+    "ch_03": 6,
+    "ch_04": 4
+  }
+}

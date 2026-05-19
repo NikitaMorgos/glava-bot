@@ -20,20 +20,56 @@
 
 ---
 
-## 1. Объём текста
+## 1. Объём текста (Distribution gate)
 
-| Критерий | Цель | Как проверить | Статус |
-|---|---|---|---|
-| Total chars в book_FINAL_stage3 | **20K+** (Никитино решение 2026-05-18 после v61: для 90-минутного интервью; ранее было 14-18K) | сводка в начале MD | |
-| ch_02 chars | ≥7K (самая объёмная глава, биографическая) | сводка | |
-| ch_03 chars | ≥4K (портрет с разделами включая «Гостеприимство и кулинария») | сводка | |
-| ch_04 chars | ≥2.5K (5-8 эпизодов) | сводка | |
-| epilogue chars | 800-1500 (без stop phrases) | сводка | |
-| ch_01 паспорт | timeline ≥7 этапов (включая widowhood 1978-1996 отдельно) | сводка | |
+**Новый target формат (Никитин 2026-05-18, развилка 2b, после v63 «нагон объёма»):**
 
-**Если drop по объёму vs предыдущая good-версия** (см. `karakulina-versions-metrics.md` + `run_registry.md`) — это сильный триггер ретро.
+Target 20K Total = **15K narrative + 3K paspart + 2K historical_notes**
 
-**Обновление таргета (v62a meta fix):** target изменён с 14-18K на **20K+** (Никитино решение после v61 — «должен быть таргет не меньше 20тыс знаков на таком объеме исходного материала»). v60 (17K) и v61 (20K) — оба теперь в свете нового таргета: v61 PASS, v60 FAIL.
+Distribution gate — все три компонента **measurable независимо**, чтобы избежать
+GW padding через narrative-многословие. Если narrative <15K — добивать
+**historical_notes** (objective context от историка), НЕ narrative-truism.
+
+| Component | Цель | Как считать | Статус |
+|-----------|------|-------------|--------|
+| **Narrative (ch_02..epilogue)** | ≥ 15 000 chars | sum chars глав ch_02 + ch_03 + ch_04 + epilogue | |
+| **Paspart (ch_01)** | ~ 3 000 chars | `len(ch_01.content)` + bio_data rendered | |
+| **Historical_notes** | ≥ 2 000 chars | sum field texts + inline `***...***` | |
+| **Total** | ≥ 20 000 chars | sum выше | |
+
+### Per-chapter floors (внутри narrative)
+
+| Глава | Floor |
+|-------|-------|
+| ch_02 (хронология) | ≥ 7 000 chars (главная глава) |
+| ch_03 (портрет) | ≥ 4 000 chars |
+| ch_04 (эпизоды) | ≥ 2 500 chars |
+| epilogue | 800–1 500 chars (узкий диапазон) |
+
+Sum floors = 14 300 — допускает 700 chars buffer до 15K цели.
+
+### Historical_notes минимумы (per task 046d)
+
+- **Field:** ≥ 3 historical_notes
+- **Inline (`***...***`):** ≥ 5 inline markers (восстановление v62a уровня)
+- **Avg note length:** 150-250 chars per note
+
+### Anti-padding принцип
+
+Если narrative <15K и есть свободное место до 20K:
+- ✅ **МОЖНО** добивать через `enrich_historical_notes_inline` (task 046d) — objective context от historian
+- ✅ **МОЖНО** разворачивать pin-list events до depth ≥3 sentences (per ПРАВИЛО 12)
+- ❌ **НЕЛЬЗЯ** padding через narrative-многословие (Class 17 detector flag)
+- ❌ **НЕЛЬЗЯ** padding через пафос (Class 6 detector flag)
+
+### Tolerance
+
+- 14-15K narrative → warning (не error если total ≥20K)
+- <14K narrative → error (даже если total 20K — distribution unhealthy)
+- Если narrative 17K + historical 0K + paspart 3K = 20K → **NOT pass** (historical missing)
+- Если narrative 14K + historical 3K + paspart 3K = 20K → **PASS** (within tolerance)
+
+**Обновление таргета v62a → v64:** target изменён c «20K+» (single number) на distribution gate (Никитин feedback v63: «нагон объёма»). v61 (narrative ~17K + hist ~3K) — образец правильной distribution.
 
 ---
 
@@ -147,13 +183,14 @@ GW v2.17 ЗАПРЕТ 8: первый абзац каждой главы/под�
 
 | Категория | Кол-во ✅ | Кол-во ⚠️ | Кол-во ❌ |
 |---|---|---|---|
-| 1. Объём | / | / | / |
+| 1. Объём (distribution gate: narrative 15K / paspart 3K / hist 2K) | / | / | / |
 | 2. Bio_data | / | / | / |
 | 3. Известные эпизоды | / | / | / |
-| 4. Стилистика | / | / | / |
+| 4. Стилистика (incl. Class 17 narrative truism) | / | / | / |
 | 5. Структура | / | / | / |
 | 6. Cross-chapter dedup | / | / | / |
-| 7. Дашина категория | / | / | / |
+| 7. Voice (Class 18 personal-historical) | / | / | / |
+| 8. Дашина категория (по возвращении) | / | / | / |
 
 **Решение:** ☐ PASS (все ✅) / ☐ RETRO (>3 ❌ разных категорий) / ☐ POINT_FIX (1-3 ❌)
 
@@ -168,4 +205,5 @@ GW v2.17 ЗАПРЕТ 8: первый абзац каждой главы/под�
 | Версия | Дата | Изменение | Кто |
 |---|---|---|---|
 | v1 | 2026-05-08 | Создание черновика (6 категорий + Дашина) | Опус |
+| v2 | 2026-05-18 | Distribution gate: target 20K Total = 15K narrative + 3K paspart + 2K historical_notes (Никитин decision развилка 2b после v63 «нагон объёма»). Class 17 truism + Class 18 voice добавлены в финальное решение | Опус |
 | | | Дополнение от Даши | Даша |

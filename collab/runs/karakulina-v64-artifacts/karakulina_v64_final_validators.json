@@ -1,0 +1,132 @@
+{
+  "chronology": {
+    "issues": [
+      {
+        "chapter_id": "ch_01",
+        "type": "named_child_before_birth",
+        "child_stem": "валери",
+        "child_birth_year": 1948,
+        "event_year": 1946,
+        "snippet": "В 1946 году вышла замуж за Дмитрия Каракулина после двух недель знакомства. Жили в Германии, Вышнем Волочке, Калинине, Венгрии. Родились дети: Валерий в 1948 году, Татьяна в 1956 году.",
+        "severity": "error"
+      },
+      {
+        "chapter_id": "ch_01",
+        "type": "named_child_before_birth",
+        "child_stem": "татьян",
+        "child_birth_year": 1956,
+        "event_year": 1946,
+        "snippet": "В 1946 году вышла замуж за Дмитрия Каракулина после двух недель знакомства. Жили в Германии, Вышнем Волочке, Калинине, Венгрии. Родились дети: Валерий в 1948 году, Татьяна в 1956 году.",
+        "severity": "error"
+      },
+      {
+        "chapter_id": "ch_02",
+        "type": "named_child_before_birth",
+        "child_stem": "валери",
+        "child_birth_year": 1948,
+        "event_year": 1946,
+        "snippet": "В Германии жили с 1946 по 1948 год. Валентина не работала, сидела дома. В 1948 году семья вернулась в Вышний Волочёк, где родился сын Валерий.",
+        "severity": "error"
+      },
+      {
+        "chapter_id": "epilogue",
+        "type": "named_child_before_birth",
+        "child_stem": "валери",
+        "child_birth_year": 1948,
+        "event_year": 1920,
+        "snippet": "Родившись в украинском селе в 1920 году, она потеряла семью в 13 лет, но не сломалась. Война стала для неё школой жизни — четыре года в госпиталях, боевые награды, партийность. После войны создала сем",
+        "severity": "error"
+      },
+      {
+        "chapter_id": "epilogue",
+        "type": "named_child_before_birth",
+        "child_stem": "татьян",
+        "child_birth_year": 1956,
+        "event_year": 1920,
+        "snippet": "Родившись в украинском селе в 1920 году, она потеряла семью в 13 лет, но не сломалась. Война стала для неё школой жизни — четыре года в госпиталях, боевые награды, партийность. После войны создала сем",
+        "severity": "error"
+      },
+      {
+        "chapter_id": "epilogue",
+        "type": "grandchild_before_child_mature",
+        "min_child_birth_plus_16": 1964,
+        "event_year": 1920,
+        "snippet": "Родившись в украинском селе в 1920 году, она потеряла семью в 13 лет, но не сломалась. Война стала для неё школой жизни — четыре года в госпиталях, боевые награды, партийность. После войны создала сем",
+        "severity": "warning"
+      }
+    ],
+    "errors_count": 5,
+    "warnings_count": 1
+  },
+  "narrative_truism": {
+    "issues": [],
+    "errors_count": 0,
+    "warnings_count": 0
+  },
+  "stop_phrases": {
+    "issues": [],
+    "errors_count": 0,
+    "warnings_count": 0
+  },
+  "personal_historical_voice": {
+    "markers_found_per_chapter": {
+      "ch_02": 0,
+      "ch_03": 0,
+      "ch_04": 0,
+      "epilogue": 0
+    },
+    "thresholds": {
+      "ch_02": 3,
+      "ch_03": 2,
+      "ch_04": 1,
+      "epilogue": 0
+    },
+    "issues": [
+      {
+        "type": "personal_historical_voice",
+        "category": "below_threshold",
+        "chapter_id": "ch_02",
+        "found": 0,
+        "expected": 3,
+        "severity": "warning",
+        "suggestion": "Добавить ≥3 personal-historical voice markers в ch_02. Examples: 'как [rapporteur] помнит, в [период]...', 'тогда у нас в семье...', 'когда [rapporteur] был ребёнком, ...'. Использовать narrator_voice_anchors из pin-list.",
+        "reason": "Class 18 personal-historical voice — рассказчик помещает личную память в исторический контекст"
+      },
+      {
+        "type": "personal_historical_voice",
+        "category": "below_threshold",
+        "chapter_id": "ch_03",
+        "found": 0,
+        "expected": 2,
+        "severity": "warning",
+        "suggestion": "Добавить ≥2 personal-historical voice markers в ch_03. Examples: 'как [rapporteur] помнит, в [период]...', 'тогда у нас в семье...', 'когда [rapporteur] был ребёнком, ...'. Использовать narrator_voice_anchors из pin-list.",
+        "reason": "Class 18 personal-historical voice — рассказчик помещает личную память в исторический контекст"
+      },
+      {
+        "type": "personal_historical_voice",
+        "category": "below_threshold",
+        "chapter_id": "ch_04",
+        "found": 0,
+        "expected": 1,
+        "severity": "warning",
+        "suggestion": "Добавить ≥1 personal-historical voice markers в ch_04. Examples: 'как [rapporteur] помнит, в [период]...', 'тогда у нас в семье...', 'когда [rapporteur] был ребёнком, ...'. Использовать narrator_voice_anchors из pin-list.",
+        "reason": "Class 18 personal-historical voice — рассказчик помещает личную память в исторический контекст"
+      }
+    ],
+    "errors_count": 0,
+    "warnings_count": 3
+  },
+  "epilogue": {
+    "ok": false,
+    "quote_count": 1,
+    "total_sentences": 10,
+    "generic_pct": 0.9,
+    "issues": [
+      {
+        "type": "epilogue_too_many_generic",
+        "generic_pct": 0.9,
+        "severity": "warning"
+      }
+    ]
+  }
+}

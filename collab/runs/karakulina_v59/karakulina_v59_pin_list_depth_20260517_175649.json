@@ -1,0 +1,96 @@
+{
+  "depth_issues": [
+    {
+      "episode_id": "ep_002",
+      "title": "Фельдшерско-акушерская школа Кировоград",
+      "min_required": 3,
+      "actual_sentences": 1,
+      "chapter_id": "ch_01",
+      "paragraph_snippet": "**1938–1940** — Кировоградская фельдшерско-акушерская школа, специальность акушерки",
+      "severity": "error"
+    },
+    {
+      "episode_id": "ep_008",
+      "title": "Рождение Валерия (Вышний Волочёк, 1948)",
+      "min_required": 3,
+      "actual_sentences": 1,
+      "chapter_id": "ch_02",
+      "paragraph_snippet": "С 1946 по 1948 год семья жила в Германии по службе мужа. ***После войны советские войска остались в Германии как оккупационные силы, и семьи офицеров ",
+      "severity": "error"
+    },
+    {
+      "episode_id": "ep_011",
+      "title": "Операция на желудке 1960, после стала мало есть и не ела молочного",
+      "min_required": 3,
+      "actual_sentences": 2,
+      "chapter_id": "ch_02",
+      "paragraph_snippet": "В Венгрии Валентина пела в хоре — у неё был хороший голос, и она любила петь. В 1960 году перенесла операцию на желудке, после которой стала мало есть",
+      "severity": "error"
+    },
+    {
+      "episode_id": "ep_012",
+      "title": "Валерий остался у тёти Шуры в Кирсанове (1961) — мать спокойно приняла",
+      "min_required": 3,
+      "actual_sentences": 2,
+      "chapter_id": "ch_02",
+      "paragraph_snippet": "В 1961 году произошло событие, которое изменило семейную ситуацию: сын Валерий не захотел возвращаться в интернат в Венгрии и остался у тёти Шуры в го",
+      "severity": "error"
+    },
+    {
+      "episode_id": "ep_018",
+      "title": "Звание «Ударник коммунистического труда» 1965",
+      "min_required": 3,
+      "actual_sentences": 1,
+      "chapter_id": "ch_01",
+      "paragraph_snippet": "**1965** — звание «Ударник коммунистического труда»",
+      "severity": "error"
+    },
+    {
+      "episode_id": "ep_021",
+      "title": "Брак Татьяны с Маргось Владимир 1977",
+      "min_required": 3,
+      "actual_sentences": 1,
+      "chapter_id": "ch_01",
+      "paragraph_snippet": "**Зять:** Маргось Владимир, первый муж Татьяны (женился в 1977 году)",
+      "severity": "error"
+    },
+    {
+      "episode_id": "ep_023",
+      "title": "Смерть мужа Дмитрия 1978",
+      "min_required": 3,
+      "actual_sentences": 1,
+      "chapter_id": "ch_01",
+      "paragraph_snippet": "**Муж:** Каракулин Дмитрий, военный (умер в 1978 году)",
+      "severity": "warning"
+    },
+    {
+      "episode_id": "ep_027",
+      "title": "Выход на пенсию август 1994",
+      "min_required": 3,
+      "actual_sentences": 1,
+      "chapter_id": "ch_02",
+      "paragraph_snippet": "В августе 1994 года Валентина ушла на пенсию после более чем тридцати лет работы в поликлинике. ***1994 год — время экономического кризиса, когда мног",
+      "severity": "error"
+    },
+    {
+      "episode_id": "ep_028",
+      "title": "Татьяна замуж за Кужбу Олега, переезд на площадь Капошвара 1996",
+      "min_required": 3,
+      "actual_sentences": 2,
+      "chapter_id": "ch_02",
+      "paragraph_snippet": "В сентябре 1996 года дочь Татьяна вышла замуж за Олега Кужбу и переехала с детьми в центр Твери, на улицу Капошвара. Валентина осталась одна в двухком",
+      "severity": "error"
+    },
+    {
+      "episode_id": "ep_030",
+      "title": "Перелом ноги 2005, переезд к дочери на Капошвара",
+      "min_required": 3,
+      "actual_sentences": 2,
+      "chapter_id": "ch_01",
+      "paragraph_snippet": "**2005. Последние годы**",
+      "severity": "warning"
+    }
+  ],
+  "errors_count": 8,
+  "warnings_count": 2
+}

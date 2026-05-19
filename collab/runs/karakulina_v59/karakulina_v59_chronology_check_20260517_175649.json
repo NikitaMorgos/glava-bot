@@ -1,0 +1,33 @@
+{
+  "issues": [
+    {
+      "chapter_id": "ch_01",
+      "type": "person_mentioned_before_birth",
+      "person_name": "татьяна",
+      "person_birth_year_min": 1956,
+      "event_year_range": "1946",
+      "snippet": "В 1946 году вышла замуж за Дмитрия Каракулина после двух недель знакомства. Жили в Германии, затем в Вышнем Волочке, Калинине и Венгрии. Родились дети: Валерий (1948) и Татьяна (1956).",
+      "severity": "error"
+    },
+    {
+      "chapter_id": "ch_02",
+      "type": "person_mentioned_before_birth",
+      "person_name": "сын...",
+      "person_birth_year_min": 1948,
+      "event_year_range": "1946",
+      "snippet": "С 1946 по 1948 год семья жила в Германии по службе мужа. ***После войны советские войска остались в Германии как оккупационные силы, и семьи офицеров жили там в отдельных военных городках.*** В 1948 г",
+      "severity": "error"
+    },
+    {
+      "chapter_id": "ch_02",
+      "type": "person_mentioned_before_birth",
+      "person_name": "татьяна",
+      "person_birth_year_min": 1956,
+      "event_year_range": "1950",
+      "snippet": "В 1950-е годы семья жила в Калинине в коммунальной квартире на Советской улице, на углу с Тверской. В 1956 году в Твери родилась дочь Татьяна.",
+      "severity": "error"
+    }
+  ],
+  "errors_count": 3,
+  "warnings_count": 0
+}

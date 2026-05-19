@@ -1,0 +1,63 @@
+{
+  "project_id": "karakulina_stage2_test",
+  "iteration": 3,
+  "verdict": "pass",
+  "errors": [],
+  "warnings": [
+    {
+      "id": "warn_001",
+      "type": "style_concern",
+      "chapter_id": "ch_04",
+      "description": "В главе 4 есть несколько оценочных обобщений ('готовность жертвовать', 'типичная находчивость'), которые являются интерпретацией Писателя, но не противоречат фактам",
+      "recommendation": "Передать Литредактору для стилистической оценки — возможно, стоит смягчить некоторые оценочные формулировки"
+    }
+  ],
+  "completeness_check": {
+    "total_facts_in_map": 156,
+    "facts_referenced_in_text": 142,
+    "facts_verified_ok": 142,
+    "facts_with_errors": 0,
+    "facts_missing_from_text": [
+      {
+        "fact_id": "person_003",
+        "fact_description": "Младший брат Валентины",
+        "was_in_facts_omitted": true,
+        "omission_justified": true,
+        "recommendation": "Допустимо пропустить — упомянут в контексте голода 1933 года"
+      },
+      {
+        "fact_id": "person_013",
+        "fact_description": "Племянник Амельченко",
+        "was_in_facts_omitted": true,
+        "omission_justified": true,
+        "recommendation": "Допустимо пропустить — недостаточно информации для развёрнутого описания"
+      },
+      {
+        "fact_id": "quote_002",
+        "fact_description": "Цитата 'всё дорого, всё дорого'",
+        "was_in_facts_omitted": true,
+        "omission_justified": true,
+        "recommendation": "Допустимо пропустить — слишком общая для включения в нарратив"
+      }
+    ]
+  },
+  "regression_check": {
+    "performed": false,
+    "chapters_checked": [],
+    "issues_found": []
+  },
+  "summary": {
+    "critical_errors": 0,
+    "major_errors": 0,
+    "minor_errors": 0,
+    "warnings_count": 1,
+    "overall_assessment": "Текст книги соответствует источникам и готов к передаче Литредактору. Все критические и major ошибки из предыдущих итераций устранены. Структура ch_01 корректна, timeline содержит 7 этапов, bio_data заполнен полностью."
+  },
+  "stats": {
+    "facts_checked": 142,
+    "facts_passed": 142,
+    "facts_failed": 0,
+    "coverage_percent": 91,
+    "needs_verification_flagged": 0
+  }
+}

@@ -1,0 +1,188 @@
+{
+  "project_id": "karakulina_stage2_test",
+  "iteration": 1,
+  "verdict": "fail",
+  "errors": [
+    {
+      "id": "err_001",
+      "type": "omission",
+      "severity": "critical",
+      "chapter_id": "ch_01",
+      "location": "bio_data.family - отсутствуют ключевые родственники",
+      "what_is_written": "В bio_data.family указано 18 записей о родственниках",
+      "what_should_be": "Должны быть включены все родственники из fact_map.persons с relation_to_subject ∈ {отец, мать, брат, сестра, муж, сын, дочь, зять, внук, внучка, бабушка}",
+      "source": {
+        "type": "fact_map",
+        "reference": "fact_map.persons: всего 24 персоны, из них 15 прямых родственников"
+      },
+      "fix_instruction": "Добавить в bio_data.family недостающих родственников: person_auto_002 (баба Аня - свекровь), person_022 (Римма - племянница), person_023 (Зина - племянница). Каждый родственник должен быть отдельной строкой с правильным label.",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_002",
+      "type": "omission",
+      "severity": "critical",
+      "chapter_id": "ch_01",
+      "location": "bio_data.awards - пропущены награды",
+      "what_is_written": "Указано 7 наград, но 2 без года",
+      "what_should_be": "Все награды из fact_map.timeline должны быть включены с указанием года",
+      "source": {
+        "type": "fact_map",
+        "reference": "event_009 (медаль за боевые заслуги 1943), event_010 (орден Красная Звезда 1945), event_024 (Ударник коммунистического труда 1965), event_025 (медаль за доблестный труд 1970)"
+      },
+      "fix_instruction": "Заполнить пустые поля label для медали 25 лет победы (1970), медали 30 лет победы (1975), медали 50 лет ВС СССР (1968). Проверить полноту всех наград из fact_map.",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_003",
+      "type": "distortion",
+      "severity": "major",
+      "chapter_id": "ch_04",
+      "location": "Абзац о покупке пианино за счёт продажи шубы",
+      "what_is_written": "В 1962 году Валентина продала шикарную немецкую шубу, привезённую из Венгрии",
+      "what_should_be": "Шуба была привезена из Венгрии, но продажа произошла в 1990-е годы, не в 1962",
+      "source": {
+        "type": "fact_map",
+        "reference": "event_auto_009: дата ~1990, не 1962. Венгрия 1958-1962, но продажа позже"
+      },
+      "fix_instruction": "Исправить дату продажи шубы с 1962 на 1990-е годы. Шуба действительно была из Венгрии, но продана намного позже для покупки пианино дочери.",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_004",
+      "type": "hallucination",
+      "severity": "major",
+      "chapter_id": "ch_02",
+      "location": "Абзац о системе распределения выпускников",
+      "what_is_written": "молодые специалисты отрабатывали три года там, куда их направляло государство",
+      "what_should_be": "Информация о трёхлетней отработке отсутствует в источниках",
+      "source": {
+        "type": "historical_context",
+        "reference": "ctx_002 упоминает систему распределения, но без конкретного срока отработки"
+      },
+      "fix_instruction": "Убрать конкретное упоминание 'три года' или заменить на общую формулировку 'отрабатывали назначенный срок там, куда их направляло государство'.",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_005",
+      "type": "hallucination",
+      "severity": "major",
+      "chapter_id": "ch_02",
+      "location": "Описание жизни в Германии",
+      "what_is_written": "продукты по карточкам, немецкие товары в военторге, отдельные квартиры",
+      "what_should_be": "Детали о карточках и военторге отсутствуют в источниках",
+      "source": {
+        "type": "transcript",
+        "reference": "int_001: упоминается только проживание в Германии 1946-1948, без деталей быта"
+      },
+      "fix_instruction": "Убрать конкретные детали о карточках и военторге, оставить общую информацию о проживании в Германии по службе мужа.",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_006",
+      "type": "confidence_inflation",
+      "severity": "major",
+      "chapter_id": "ch_02",
+      "location": "Описание направления в село Глинск",
+      "what_is_written": "получила направление в Кировоградскую область, Светловолодский район, село Глинск",
+      "what_should_be": "Факт имеет needs_verification: true в fact_map",
+      "source": {
+        "type": "fact_map",
+        "reference": "event_006: confidence: medium, needs_verification: true"
+      },
+      "fix_instruction": "Добавить оговорку неопределённости: 'предположительно была направлена' или 'по данным автобиографии была направлена'.",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_007",
+      "type": "omission",
+      "severity": "major",
+      "chapter_id": "ch_02",
+      "location": "Отсутствует эпизод с огурцами из Молдавии",
+      "what_is_written": "Эпизод отсутствует в ch_02",
+      "what_should_be": "event_auto_024 должен быть включён как значимый семейный эпизод",
+      "source": {
+        "type": "fact_map",
+        "reference": "event_auto_024: эпизод с огурцами из Молдавии, чемодан, конфликт с зятем"
+      },
+      "fix_instruction": "Включить эпизод с огурцами из Молдавии в хронологическое повествование ch_02 в период 1990-х годов.",
+      "legitimate_deletion": false
+    },
+    {
+      "id": "err_008",
+      "type": "framing_distortion",
+      "severity": "major",
+      "chapter_id": "ch_04",
+      "location": "Эпизод с огурцами из Молдавии дублируется",
+      "what_is_written": "В 1990-е годы произошёл эпизод с огурцами из Молдавии. Зять Владимир привёз огурцы в хорошем чешском чемодане...",
+      "what_should_be": "Эпизод должен быть в одной главе - либо в ch_02 как часть хронологии, либо в ch_04 как интересный факт",
+      "source": {
+        "type": "fact_map",
+        "reference": "event_auto_024: один эпизод не должен дублироваться между главами"
+      },
+      "fix_instruction": "Перенести эпизод об огурцах в ch_02 в хронологическом контексте 1990-х годов, убрать из ch_04 или оставить только краткое упоминание без пересказа.",
+      "legitimate_deletion": true,
+      "evidence_in_other_chapter": {
+        "chapter_id": "ch_02",
+        "quote": "Эпизод отсутствует в ch_02 - требуется добавление"
+      }
+    }
+  ],
+  "warnings": [
+    {
+      "id": "warn_001",
+      "type": "possible_omission",
+      "chapter_id": "ch_03",
+      "description": "Характерные слова рассказчика могут быть недостаточно использованы",
+      "recommendation": "Проверить использование ярких выражений из транскрипта: 'выковыривал', 'зарубиться на пустом месте', 'зажиточные ребята'"
+    },
+    {
+      "id": "warn_002",
+      "type": "style_concern",
+      "chapter_id": "ch_02",
+      "description": "Исторические вставки могут нарушать повествовательный поток",
+      "recommendation": "Проверить органичность интеграции исторического контекста в нарратив"
+    }
+  ],
+  "completeness_check": {
+    "total_facts_in_map": 156,
+    "facts_referenced_in_text": 142,
+    "facts_verified_ok": 134,
+    "facts_with_errors": 8,
+    "facts_missing_from_text": [
+      {
+        "fact_id": "event_auto_024",
+        "fact_description": "Эпизод с огурцами из Молдавии",
+        "was_in_facts_omitted": false,
+        "omission_justified": false,
+        "recommendation": "Включить в хронологию ch_02"
+      },
+      {
+        "fact_id": "person_auto_002",
+        "fact_description": "Баба Аня - свекровь",
+        "was_in_facts_omitted": false,
+        "omission_justified": false,
+        "recommendation": "Добавить в bio_data.family"
+      }
+    ]
+  },
+  "regression_check": {
+    "performed": false,
+    "chapters_checked": [],
+    "issues_found": []
+  },
+  "summary": {
+    "critical_errors": 2,
+    "major_errors": 6,
+    "minor_errors": 0,
+    "warnings_count": 2,
+    "overall_assessment": "Текст содержит критические ошибки в структуре ch_01 (неполные bio_data и awards) и несколько значимых фактических неточностей. Требуется доработка перед передачей Литредактору."
+  },
+  "stats": {
+    "facts_checked": 142,
+    "facts_passed": 134,
+    "facts_failed": 8,
+    "coverage_percent": 91,
+    "needs_verification_flagged": 1
+  }
+}
