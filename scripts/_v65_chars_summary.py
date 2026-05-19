@@ -12,8 +12,13 @@ chapters = book.get('chapters', [])
 ch_chars = {}
 total_content_chars = 0
 for ch in chapters:
-    c = ch.get('content', '') or ''
-    ch_chars[ch['id']] = len(c)
+    cid = ch.get('id', '?')
+    c = ch.get('content') or ''
+    if cid == 'ch_01' and not c:
+        # ch_01 uses bio_data structure — render it for char count
+        bio = ch.get('bio_data', {})
+        c = json.dumps(bio, ensure_ascii=False)
+    ch_chars[cid] = len(c)
     total_content_chars += len(c)
 
 hist_notes = book.get('historical_notes', [])
