@@ -5716,10 +5716,13 @@ def preserve_root_level_metadata(book_processed: dict, book_pre_processing: dict
     - revision_log
     - metadata
 
+    For writing_notes: also merges sub-keys from pre-processing that are missing in processed
+    (e.g. rule13_revision_applied added by revision pass is not present in Stage 3 output).
     Does NOT overwrite non-empty post-LE values.
     """
     METADATA_FIELDS = ["writing_notes", "facts_used", "revision_log", "metadata"]
     restored = []
+    merged = []
     for field in METADATA_FIELDS:
         pre_val = book_pre_processing.get(field)
         if not pre_val:
@@ -5729,7 +5732,16 @@ def preserve_root_level_metadata(book_processed: dict, book_pre_processing: dict
             book_processed[field] = pre_val
             restored.append(field)
             print(f"[preserve_root_level_metadata] Restored '{field}' from pre-LE snapshot")
-    if not restored:
+        elif field == "writing_notes" and isinstance(post_val, dict) and isinstance(pre_val, dict):
+            # Merge sub-keys that are missing in stage3 (e.g. rule13_* from revision pass)
+            missing_subkeys = [k for k in pre_val if k not in post_val or post_val[k] is None]
+            for subkey in missing_subkeys:
+                if pre_val[subkey] is not None:
+                    book_processed[field][subkey] = pre_val[subkey]
+                    merged.append(f"writing_notes.{subkey}")
+            if missing_subkeys:
+                print(f"[preserve_root_level_metadata] Merged writing_notes sub-keys: {missing_subkeys}")
+    if not restored and not merged:
         print("[preserve_root_level_metadata] OK — no metadata fields needed restoration")
     return book_processed
 
