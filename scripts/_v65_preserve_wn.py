@@ -16,9 +16,14 @@ if not book_files:
 book_s3_raw = json.load(open(book_files[0], encoding='utf-8'))
 book_s3 = book_s3_raw.get('book_draft') or book_s3_raw.get('book_final') or book_s3_raw
 
-# Source writing_notes from last stage2 revised (skip enriched/draft)
-stage2_files = sorted(glob.glob(os.path.join(STAGE2_DIR, 'karakulina_book_FINAL_*.json')), reverse=True)
-stage2_files = [f for f in stage2_files if '_enriched' not in f and 'draft' not in f]
+# Source writing_notes from stage2 revised book (prefer _revised > plain FINAL, skip draft/enriched)
+stage2_files_all = sorted(glob.glob(os.path.join(STAGE2_DIR, 'karakulina_book_FINAL_*.json')), reverse=True)
+# Prioritize _revised files (they have writing_notes.rule13_revision_applied as list)
+revised_files = [f for f in stage2_files_all if '_revised' in f and 'draft' not in f]
+other_files = [f for f in stage2_files_all if '_revised' not in f and '_enriched' not in f and 'draft' not in f]
+stage2_files = revised_files + other_files
+if not stage2_files:
+    print("ERROR: no stage2 source book found"); sys.exit(1)
 book_s2_raw = json.load(open(stage2_files[0], encoding='utf-8'))
 book_s2 = book_s2_raw.get('book_draft') or book_s2_raw.get('book_final') or book_s2_raw
 
