@@ -5985,7 +5985,9 @@ def validate_historical_notes_distribution(book: dict, config: dict | None = Non
 
     issues = []
     for chid, expected in thresholds.items():
-        if expected == 0:
+        if chid.startswith("_"):  # skip _comment_* keys in config
+            continue
+        if not isinstance(expected, (int, float)) or expected == 0:
             continue
         found = per_chapter.get(chid, {"total": 0})["total"]
         if found < expected:
