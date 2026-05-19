@@ -41,20 +41,85 @@
 
 ---
 
-## Timing — когда делаем v66
+## Timing — после v65 verify, **независимо от outcome** (зафиксировано 2026-05-19)
 
-**Зависимость:** v65 в работе у Курсора (bugfix v64 implementation). Логика:
+**Решение:** v66 запускается после v65 verified-on-run, **независимо** от outcome v65.
 
-| v65 outcome | v66 timing |
-|-------------|------------|
-| **v65 PASS** Ворот 1 на Каракулиной | v66 universality refactor → проверка на следующем прогоне Каракулиной. Если quality сохранилось — RP-1 + Королькова |
-| **v65 НЕ PASS** | Решить: либо v65b (узкий bugfix v65) → потом v66 универсальность; либо v66 (содержит и universality, и узкие bugfix) — risk bundle |
+**Логика (single-axis sprints):**
+- v65 решает **bugs реализации v64** + **recurring classes** (одна ось — quality Каракулиной narrative)
+- v66 решает **универсальность** (другая ось — pipeline architecture, ортогональна quality bugs)
 
-**Рекомендация (моя):** v66 = универсальность **независимо** от v65 outcome. Никитин принцип «test bed на Каракулиной» — universality fix должен пройти прогон Каракулиной для verification. Если v65 не закроет Ворот 1 — v67 узко fixит оставшееся, **уже на универсальном pipeline**.
+| v65 outcome | Что после v66 |
+|-------------|---------------|
+| v65 PASS Ворот 1 на Каракулиной | v66 → проверка что universality не убивает quality → RP-1 + Королькова |
+| v65 НЕ PASS | v66 → потом v67 узко fix'ит оставшееся **уже на универсальном pipeline** (clean diagnostic) |
+
+Никитин принцип «test bed на Каракулиной» работает в любом случае: universality refactor на текущем subject = proof что pipeline работает с обобщёнными правилами.
+
+**Не bundle v66 + v65b:** universality refactor — architectural change, узкие bugfix — другая семантика. Single-axis isolation per sprint.
 
 ---
 
-## 2 опции реализации v66
+## Формат реализации: **Опция B — Split v66a/b/c** (зафиксировано 2026-05-19)
+
+**Решение:** 3 раздельных sub-sprints, $12-18 total.
+
+**Обоснование (per Правило 7):**
+- v63 combined Опция X — прямой precedent: 10 scripted + 1 GW rule + 1 CA + pin-list в одном прогоне = невозможна диагностика; v64 = архитектурный ход который надо было делать в v63 (выкинутый sprint)
+- Universality refactor = **architectural change** на 3 LLM agents, не bugfix известного эффекта. Risk regression high (5 sprints мы держали захардкоженными examples — они могли «работать» именно потому что были subject-specific)
+- $12-18 vs $4-6 — относительно небольшая дельта; разовая инвестиция в proof универсальности
+- Per Правилу 7 «сейчас нам важней результат стабильный получить»
+
+---
+
+## Раздельные sub-sprints
+
+### v66a — GW v2.25 universality + test infrastructure + B3
+
+**Tasks:**
+1. **test_universality_infrastructure**: `tests/test_universality.py` + `tests/data/subject_specific_terms.txt` (уже создан) — pytest CI gate
+2. **GW v2.24 → v2.25**: refactor ПРАВИЛ 3, 8, 9, 10 + PIN_LIST антитриггеры (lines 260-460, 2010-2014). Все examples → placeholders ([Имя_близкого], [Локация_X], [YYYY], [объект_X]). Дополнить task 049h v65 (только ПРАВИЛО 2 был refactored)
+3. **B3 — pipeline_utils.py NOMINATIVE_CITY_RE generic**: `pipeline_utils.py:4977` — generic morpho check либо расширение из gazeteer
+
+**Прогон:** 1 шт. v66a — $4-6.
+
+**Verify:** GW работает на placeholders на Каракулиной → quality сохранена.
+- Total chars vs v65 stable (±5%)
+- discourse markers / pin-list depth / recurring classes — не хуже v65
+- `tests/test_universality.py` GW v2.25 PASS
+- `grep` команда GW v2.25 body — 0 matches
+
+### v66b — CA v1.6 universality + B1 + B2
+
+**Tasks:**
+1. **CA v1.5 → v1.6**: refactor ПРАВИЛ 1, 2, 4, 6, 7 + JSON schema events example. Lines 14, 64, 94-96, 134-136, 284-306, 329-336, 374-379, 391-400
+2. **B1 — pipeline_utils.py validate_children_before_birth parametrize**: `pipeline_utils.py:4692-4695` — извлекать `child_name_stem` из `chronology_periods_<subject>.json`, не hardcoded
+3. **B2 — pipeline_utils.py validate_entity_substitution config**: `pipeline_utils.py:4900-4904` — `substitution_pairs` → `entity_substitution_<subject>.json` (новый config) либо расширение fact_map.place_canonical
+
+**Прогон:** 1 шт. v66b — $4-6.
+
+**Verify:** CA + validators универсальные.
+- Pin-list events coverage на Каракулиной не упал
+- chronology + entity_substitution работают на configs (не hardcoded)
+- `tests/test_universality.py` CA v1.6 PASS
+
+### v66c — FC v2.14 + FE v3.5 + C1 generic Stage runner
+
+**Tasks:**
+1. **FC v2.13 → v2.14**: refactor block lines 853-1031 (~150 строк «огурцы Object Markers Test») → placeholder example + 6 BUG examples (lines 62, 324, 545-546, 775-776, 1037-1039). **Самый большой fix**
+2. **FE v3.4 → v3.5**: minor refactor (lines 343-358, 547 → placeholders)
+3. **C1 — generic Stage 1 runner (task 053)**: `scripts/run_stage1.py` (новый, generic) — `--subject=<name>`, `--project-id=<id>` CLI args; per-subject defaults config
+
+**Прогон:** 1 шт. v66c — $4-6.
+
+**Verify:** FC + FE универсальные; generic runner работает на Каракулиной (заменяет `test_stage1_karakulina_full.py` либо параллельно).
+- FC verdict на Каракулиной не хуже v65
+- `tests/test_universality.py` FC v2.14 + FE v3.5 PASS
+- Generic runner с `--subject=karakulina` даёт идентичный output старому
+
+---
+
+## Что НЕ делаем в v66 (явный список)
 
 ### Опция A — Combined sprint (1 прогон $4-6)
 
@@ -86,34 +151,6 @@
 - Task 1 (test infrastructure) + Task 2 (GW v2.25) + Task 8 (B3) + минор generic Stage runner stub
 - 1 прогон $4-6
 - Проверка: GW работает на placeholders на Каракулиной → quality сохранена
-
-**v66b — CA v1.6 + B1 validate_children_before_birth + B2 validate_entity_substitution:**
-- Task 3 (CA v1.6) + Task 6 (B1) + Task 7 (B2)
-- 1 прогон $4-6
-- Проверка: CA работает универсально + validators параметризованные
-
-**v66c — FC v2.14 + FE v3.5 + C1 generic Stage runner:**
-- Task 4 (FC v2.14) + Task 5 (FE v3.5) + Task 9 (C1)
-- 1 прогон $4-6
-- Проверка: FC + FE универсальные; generic runner работает (либо проверка через mock Корольковой subject)
-
-**Плюсы:** Per Правило 7 — каждый prompt-bump verified отдельно. Точная диагностика если что-то сломается. Меньший risk per sprint.
-
-**Минусы:** 3 прогона $12-18 total. Длиннее по времени (3-4 дня вместо 1-2).
-
-**Risk:** low per sprint.
-
----
-
-## Моя рекомендация
-
-**Опция B (split sprints)** — соответствует Правилу 7 («не экономим на тестовых прогонах»). Универсальность — серьёзный архитектурный refactor, не bugfix. Каждое prompt-bump = риск регрессии в **другом** месте (cognitive shift при изменении examples может изменить attention LLM в неожиданных направлениях).
-
-**Cost:** $12-18 total — приемлемо per Никитино «сейчас нам важней результат стабильный».
-
-**Time:** 3-4 дня (vs 1-2 для combined) — приемлемо, цели Корольковой это того стоит.
-
----
 
 ## Что НЕ делаем в v66 (явный список)
 
@@ -233,9 +270,9 @@ def test_prompt_universality(prompt_name, filename):
 
 **Mitigation:** Это **именно то что мы тестируем**. Если quality снизилась — значит мы compensated subject-specific конкретикой. Никитин принцип: лучше знать сейчас на Каракулиной чем при подключении Корольковой.
 
-**Risk C:** Combined sprint v66 даёт regression — не диагностируем что fix виноват.
+**Risk C:** Один из 3 sub-sprints (v66a/b/c) даёт regression на Каракулиной.
 
-**Mitigation:** Split (Опция B) — каждый prompt-bump verified отдельно.
+**Mitigation:** Split sprints — точная диагностика per prompt-bump; rollback узкого fix не trog other agents. Per Правилу 7.
 
 **Risk D:** Тест `tests/test_universality.py` даёт false positive (legitimate match в comment dev / objection).
 
@@ -243,11 +280,24 @@ def test_prompt_universality(prompt_name, filename):
 
 ---
 
-## Что нужно от Никиты
+## Решения зафиксированы 2026-05-19
 
-1. **Выбор Опция A (combined $4-6) vs Опция B (split $12-18)**
-2. **Timing:** делать v66 сразу после v65 verify (независимо от v65 outcome) либо ждать v65 PASS Ворот 1?
-3. **Sign-off:** на изменение Правила 4 в `dev-review-protocol.md` (B.1+B.2+B.3 procedural enforcement)
+1. ✅ **Формат:** Опция B — split v66a/b/c, 3 прогона $12-18 (per Правило 7)
+2. ✅ **Timing:** после v65 verified-on-run, независимо от outcome
+3. ✅ **Правило 4** УЖЕСТОЧЕНО в `dev-review-protocol.md` — A (мысленный test) + B (procedural enforcement: grep команда + pytest CI gate + pre-sprint checklist + audit-driven cleanup)
+
+Никита делегировал выбор Опусу (2026-05-19) с обоснованием через v63 combined precedent (выкинутый sprint из-за невозможности диагностики).
+
+---
+
+## Следующие шаги
+
+1. **Сейчас:** ждать v65 verified-on-run от Курсора
+2. **После v65 verify:** Опус делает independent verify v65 + обновляет run_registry v5
+3. **Затем v66a:** Опус пишет 3 spec'a (test infrastructure + GW v2.25 + B3) + handoff Курсору
+4. **Курсор реализует v66a** → verify
+5. **v66b → v66c** аналогично с verify между
+6. **После v66c verify:** если quality на Каракулиной сохранена — tag RP-1 + подключение Корольковой (task 053 generic runner уже готов в v66c)
 
 ---
 
