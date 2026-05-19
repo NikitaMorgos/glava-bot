@@ -26,12 +26,8 @@ HINTS_COUNT=$(python -c "import json; h=json.load(open('$REVISION_HINTS',encodin
 echo "revision_hints loaded: $HINTS_COUNT hints"
 
 echo ""
-echo "=== STAGE 2 revision pass (GW v2.24 call_type=revision) ==="
-python scripts/test_stage2_pipeline.py \
-  --fact-map "$FM65" \
-  --output-dir "$STAGE2_DIR" \
-  --revision-pass "$REVISION_HINTS" \
-  --allow-fc-fail || echo "NOTE: revision pass flag not supported — using book_draft as final"
+echo "=== STAGE 2 revision pass (GW v2.24 call_type=revision, _v65_revision_pass.py) ==="
+python scripts/_v65_revision_pass.py
 
 echo ""
 echo "=== 049e-2: schema validation — rule13_revision_applied must be list of dicts ==="
@@ -47,9 +43,12 @@ python scripts/_v65_hist_enrich.py
 
 echo ""
 echo "=== STAGE 3 (LE + Proofreader + validators + 049g preserve_writing_notes) ==="
-BOOK_V65=$(ls -t "$STAGE2_DIR/karakulina_book_FINAL_*_enriched.json" 2>/dev/null | head -1)
+BOOK_V65=$(ls -t ${STAGE2_DIR}/karakulina_book_FINAL_*_revised.json 2>/dev/null | head -1)
 if [ -z "$BOOK_V65" ]; then
-    BOOK_V65=$(ls -t "$STAGE2_DIR/karakulina_book_FINAL_*.json" | grep -v draft | head -1)
+    BOOK_V65=$(ls -t ${STAGE2_DIR}/karakulina_book_FINAL_*_enriched.json 2>/dev/null | head -1)
+fi
+if [ -z "$BOOK_V65" ]; then
+    BOOK_V65=$(ls -t ${STAGE2_DIR}/karakulina_book_FINAL_*.json 2>/dev/null | grep -v draft | head -1)
 fi
 echo "book for stage3: $BOOK_V65"
 
