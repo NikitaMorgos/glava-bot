@@ -1,0 +1,38 @@
+{
+  "markers_found": {
+    "ch_01": 0,
+    "ch_02": 2,
+    "ch_03": 3,
+    "ch_04": 2
+  },
+  "thresholds": {
+    "ch_02": 8,
+    "ch_03": 5,
+    "ch_04": 3
+  },
+  "issues": [
+    {
+      "chapter_id": "ch_02",
+      "type": "below_threshold",
+      "found": 2,
+      "expected": 8,
+      "severity": "warning"
+    },
+    {
+      "chapter_id": "ch_03",
+      "type": "below_threshold",
+      "found": 3,
+      "expected": 5,
+      "severity": "warning"
+    },
+    {
+      "chapter_id": "ch_04",
+      "type": "below_threshold",
+      "found": 2,
+      "expected": 3,
+      "severity": "warning"
+    }
+  ],
+  "errors_count": 0,
+  "warnings_count": 3
+}

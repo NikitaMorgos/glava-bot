@@ -1,0 +1,32 @@
+{
+  "epilogue_stop_phrases": {
+    "issues": [
+      {
+        "phrase": "судьба распорядилась",
+        "chapter_id": "ch_02",
+        "severity": "warning"
+      }
+    ],
+    "errors_count": 0,
+    "warnings_count": 1
+  },
+  "awkward_formulation": {
+    "issues": [
+      {
+        "type": "example_instead_of_generalization",
+        "chapter_id": "ch_03",
+        "severity": "warning",
+        "matched_text": "не любил советов про электричество или поездки.",
+        "suggestion": "Обобщение первым, затем примеры: «не любил советов; например, по ...»"
+      }
+    ],
+    "issues_count": 1
+  },
+  "errors_count": 0,
+  "warnings_count": 2,
+  "narrative_stop_phrases": {
+    "issues": [],
+    "errors_count": 0,
+    "warnings_count": 0
+  }
+}
