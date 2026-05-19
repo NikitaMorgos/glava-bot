@@ -1,0 +1,346 @@
+{
+  "required_episodes": [
+    {
+      "episode_id": "ep_001",
+      "title": "Голод 1933, мать умерла + младший брат умер + отец ушёл на заработки, Валентина 13 лет → детдом → Полина забрала",
+      "found": true,
+      "mentions": 3,
+      "chapter": "ch_02"
+    },
+    {
+      "episode_id": "ep_005",
+      "title": "Знакомство с Дмитрием → свадьба 12.07.1946 в Старобельске",
+      "found": true,
+      "mentions": 6,
+      "chapter": "ch_02"
+    },
+    {
+      "episode_id": "ep_006",
+      "title": "Документы украдены на вокзале, солдат «выковыривал» через КПП в Германию",
+      "found": true,
+      "mentions": 1,
+      "chapter": "ch_02"
+    },
+    {
+      "episode_id": "ep_007",
+      "title": "Жизнь в Германии 1946-48",
+      "found": true,
+      "mentions": 4,
+      "chapter": "ch_02"
+    },
+    {
+      "episode_id": "ep_008",
+      "title": "Рождение Валерия (Вышний Волочёк, 1948)",
+      "found": true,
+      "mentions": 3,
+      "chapter": "ch_02"
+    },
+    {
+      "episode_id": "ep_009",
+      "title": "Рождение Татьяны (Тверь/Калинин, 1956)",
+      "found": false,
+      "mentions": 0,
+      "chapter": null
+    },
+    {
+      "episode_id": "ep_011",
+      "title": "Операция на желудке 1960, после стала мало есть и не ела молочного",
+      "found": true,
+      "mentions": 1,
+      "chapter": "ch_02"
+    },
+    {
+      "episode_id": "ep_012",
+      "title": "Валерий остался у тёти Шуры в Кирсанове (1961) — мать спокойно приняла",
+      "found": true,
+      "mentions": 3,
+      "chapter": "ch_02"
+    },
+    {
+      "episode_id": "ep_013",
+      "title": "Сахалин-развилка 1962 (Дмитрий выбрал увольнение → квартира в Химинституте)",
+      "found": true,
+      "mentions": 1,
+      "chapter": "ch_02"
+    },
+    {
+      "episode_id": "ep_014",
+      "title": "Химинститут — посёлок городского типа на окраине Калинина, двухкомнатная квартира",
+      "found": true,
+      "mentions": 5,
+      "chapter": "ch_02"
+    },
+    {
+      "episode_id": "ep_016",
+      "title": "Работа в поликлинике с 1962-63, 40 лет к работе впервые",
+      "found": true,
+      "mentions": 4,
+      "chapter": "ch_02"
+    },
+    {
+      "episode_id": "ep_017",
+      "title": "Дача появилась в 60-х",
+      "found": true,
+      "mentions": 1,
+      "chapter": "ch_02"
+    },
+    {
+      "episode_id": "ep_018",
+      "title": "Звание «Ударник коммунистического труда» 1965",
+      "found": true,
+      "mentions": 1,
+      "chapter": "ch_02"
+    },
+    {
+      "episode_id": "ep_022",
+      "title": "Замечание про счётчик 1977 (конфликт с зятем)",
+      "found": false,
+      "mentions": 0,
+      "chapter": null
+    },
+    {
+      "episode_id": "ep_023",
+      "title": "Смерть мужа Дмитрия 1978",
+      "found": true,
+      "mentions": 1,
+      "chapter": "ch_02"
+    },
+    {
+      "episode_id": "ep_024",
+      "title": "Огурцы из Молдавии в чемодане (испорчены, Татьяна выкинула) — развёрнутый эпизод",
+      "found": true,
+      "mentions": 3,
+      "chapter": "ch_02"
+    },
+    {
+      "episode_id": "ep_027",
+      "title": "Выход на пенсию август 1994",
+      "found": true,
+      "mentions": 3,
+      "chapter": "ch_02"
+    },
+    {
+      "episode_id": "ep_028",
+      "title": "Татьяна замуж за Кужбу Олега, переезд на площадь Капошвара 1996",
+      "found": true,
+      "mentions": 1,
+      "chapter": "ch_02"
+    },
+    {
+      "episode_id": "ep_029",
+      "title": "Продажа дачи (до 1990-х по уточнению Никиты), Валентина жалела, тётя Маша повлияла",
+      "found": false,
+      "mentions": 0,
+      "chapter": null
+    },
+    {
+      "episode_id": "?",
+      "title": "Шуба → пианино для Татьяны 1962",
+      "found": false,
+      "mentions": 0,
+      "chapter": null
+    },
+    {
+      "episode_id": "?",
+      "title": "Авоська из зонтика",
+      "found": false,
+      "mentions": 0,
+      "chapter": null
+    },
+    {
+      "episode_id": "?",
+      "title": "Немецкий фарфор сервиз на 12 персон за 120 руб (месячная зарплата)",
+      "found": false,
+      "mentions": 0,
+      "chapter": null
+    },
+    {
+      "episode_id": "?",
+      "title": "Пение в хоре в Венгрии",
+      "found": false,
+      "mentions": 0,
+      "chapter": null
+    },
+    {
+      "episode_id": "?",
+      "title": "Не любила грибы/ягоды; тётя Маша-соседка любила",
+      "found": false,
+      "mentions": 0,
+      "chapter": null
+    },
+    {
+      "episode_id": "?",
+      "title": "Зависимость от авторитета врача Нинваны Полсачевой",
+      "found": false,
+      "mentions": 0,
+      "chapter": null
+    },
+    {
+      "episode_id": "?",
+      "title": "Карты и домино с внуками",
+      "found": false,
+      "mentions": 0,
+      "chapter": null
+    },
+    {
+      "episode_id": "?",
+      "title": "«Посидеть на дорожку» — святая семейная традиция (НЕ привязывать к конкретному отъезду)",
+      "found": false,
+      "mentions": 0,
+      "chapter": null
+    }
+  ],
+  "covered_count": 16,
+  "missing_count": 11,
+  "total_required": 27,
+  "optional_total": 28,
+  "issues": [
+    {
+      "type": "required_episodes_coverage",
+      "category": "missing_required_episode",
+      "episode_id": "ep_009",
+      "title": "Рождение Татьяны (Тверь/Калинин, 1956)",
+      "markers": [
+        "Татьян.*1956\\"
+      ],
+      "severity": "error",
+      "snippet": "[episode ep_009 not found in narrative]",
+      "suggestion": "Episode [ep_009] «Рождение Татьяны (Тверь/Калинин, 1956)» — required_in_narrative, отсутствует. Развернуть в ch_03 или ch_04 на ≥3 sentences. Маркеры: ['Татьян.*1956\\\\'].",
+      "reason": "Required episode missing from narrative"
+    },
+    {
+      "type": "required_episodes_coverage",
+      "category": "missing_required_episode",
+      "episode_id": "ep_022",
+      "title": "Замечание про счётчик 1977 (конфликт с зятем)",
+      "markers": [
+        "счётчик\\"
+      ],
+      "severity": "error",
+      "snippet": "[episode ep_022 not found in narrative]",
+      "suggestion": "Episode [ep_022] «Замечание про счётчик 1977 (конфликт с зятем)» — required_in_narrative, отсутствует. Развернуть в ch_03 или ch_04 на ≥3 sentences. Маркеры: ['счётчик\\\\'].",
+      "reason": "Required episode missing from narrative"
+    },
+    {
+      "type": "required_episodes_coverage",
+      "category": "missing_required_episode",
+      "episode_id": "ep_029",
+      "title": "Продажа дачи (до 1990-х по уточнению Никиты), Валентина жалела, тётя Маша повлияла",
+      "markers": [
+        "продал.*дач\\"
+      ],
+      "severity": "error",
+      "snippet": "[episode ep_029 not found in narrative]",
+      "suggestion": "Episode [ep_029] «Продажа дачи (до 1990-х по уточнению Никиты), Вале» — required_in_narrative, отсутствует. Развернуть в ch_03 или ch_04 на ≥3 sentences. Маркеры: ['продал.*дач\\\\'].",
+      "reason": "Required episode missing from narrative"
+    },
+    {
+      "type": "required_episodes_coverage",
+      "category": "missing_required_episode",
+      "episode_id": "?",
+      "title": "Шуба → пианино для Татьяны 1962",
+      "markers": [
+        "TR2"
+      ],
+      "severity": "error",
+      "snippet": "[episode ? not found in narrative]",
+      "suggestion": "Episode [?] «Шуба → пианино для Татьяны 1962» — required_in_narrative, отсутствует. Развернуть в ch_03 или ch_04 на ≥3 sentences. Маркеры: ['TR2'].",
+      "reason": "Required episode missing from narrative"
+    },
+    {
+      "type": "required_episodes_coverage",
+      "category": "missing_required_episode",
+      "episode_id": "?",
+      "title": "Авоська из зонтика",
+      "markers": [
+        "TR1",
+        "TR2"
+      ],
+      "severity": "error",
+      "snippet": "[episode ? not found in narrative]",
+      "suggestion": "Episode [?] «Авоська из зонтика» — required_in_narrative, отсутствует. Развернуть в ch_03 или ch_04 на ≥3 sentences. Маркеры: ['TR1', 'TR2'].",
+      "reason": "Required episode missing from narrative"
+    },
+    {
+      "type": "required_episodes_coverage",
+      "category": "missing_required_episode",
+      "episode_id": "?",
+      "title": "Немецкий фарфор сервиз на 12 персон за 120 руб (месячная зарплата)",
+      "markers": [
+        "TR2"
+      ],
+      "severity": "error",
+      "snippet": "[episode ? not found in narrative]",
+      "suggestion": "Episode [?] «Немецкий фарфор сервиз на 12 персон за 120 руб (ме» — required_in_narrative, отсутствует. Развернуть в ch_03 или ch_04 на ≥3 sentences. Маркеры: ['TR2'].",
+      "reason": "Required episode missing from narrative"
+    },
+    {
+      "type": "required_episodes_coverage",
+      "category": "missing_required_episode",
+      "episode_id": "?",
+      "title": "Пение в хоре в Венгрии",
+      "markers": [
+        "TR1",
+        "TR2"
+      ],
+      "severity": "error",
+      "snippet": "[episode ? not found in narrative]",
+      "suggestion": "Episode [?] «Пение в хоре в Венгрии» — required_in_narrative, отсутствует. Развернуть в ch_03 или ch_04 на ≥3 sentences. Маркеры: ['TR1', 'TR2'].",
+      "reason": "Required episode missing from narrative"
+    },
+    {
+      "type": "required_episodes_coverage",
+      "category": "missing_required_episode",
+      "episode_id": "?",
+      "title": "Не любила грибы/ягоды; тётя Маша-соседка любила",
+      "markers": [
+        "TR1"
+      ],
+      "severity": "error",
+      "snippet": "[episode ? not found in narrative]",
+      "suggestion": "Episode [?] «Не любила грибы/ягоды; тётя Маша-соседка любила» — required_in_narrative, отсутствует. Развернуть в ch_03 или ch_04 на ≥3 sentences. Маркеры: ['TR1'].",
+      "reason": "Required episode missing from narrative"
+    },
+    {
+      "type": "required_episodes_coverage",
+      "category": "missing_required_episode",
+      "episode_id": "?",
+      "title": "Зависимость от авторитета врача Нинваны Полсачевой",
+      "markers": [
+        "TR2"
+      ],
+      "severity": "error",
+      "snippet": "[episode ? not found in narrative]",
+      "suggestion": "Episode [?] «Зависимость от авторитета врача Нинваны Полсачевой» — required_in_narrative, отсутствует. Развернуть в ch_03 или ch_04 на ≥3 sentences. Маркеры: ['TR2'].",
+      "reason": "Required episode missing from narrative"
+    },
+    {
+      "type": "required_episodes_coverage",
+      "category": "missing_required_episode",
+      "episode_id": "?",
+      "title": "Карты и домино с внуками",
+      "markers": [
+        "TR1"
+      ],
+      "severity": "error",
+      "snippet": "[episode ? not found in narrative]",
+      "suggestion": "Episode [?] «Карты и домино с внуками» — required_in_narrative, отсутствует. Развернуть в ch_03 или ch_04 на ≥3 sentences. Маркеры: ['TR1'].",
+      "reason": "Required episode missing from narrative"
+    },
+    {
+      "type": "required_episodes_coverage",
+      "category": "missing_required_episode",
+      "episode_id": "?",
+      "title": "«Посидеть на дорожку» — святая семейная традиция (НЕ привязывать к конкретному отъезду)",
+      "markers": [
+        "TR2"
+      ],
+      "severity": "error",
+      "snippet": "[episode ? not found in narrative]",
+      "suggestion": "Episode [?] ««Посидеть на дорожку» — святая семейная традиция (» — required_in_narrative, отсутствует. Развернуть в ch_03 или ch_04 на ≥3 sentences. Маркеры: ['TR2'].",
+      "reason": "Required episode missing from narrative"
+    }
+  ],
+  "errors_count": 11,
+  "warnings_count": 0
+}
