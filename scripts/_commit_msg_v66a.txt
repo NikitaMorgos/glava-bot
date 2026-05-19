@@ -1,0 +1,32 @@
+feat(v66a): universality refactor sub-sprint 1 — GW v2.24→v2.25 + CI gate
+
+Task 1: tests/test_universality.py — universality CI gate (Правило 4 B.2)
+Parses pipeline_config.json for active prompts, splits header/body,
+regex checks against tests/data/subject_specific_terms.txt.
+GW v2.25 = 0 body matches (PASS); CA/FC/FE/LE/Hist/Layout = xfail (v66b/c).
+Result: 9 passed, 6 xfailed (green).
+
+Task 2: prompts/03_ghostwriter_v2.25.md — universality refactor
+ПРАВИЛО 3: stop-phrase examples replaced with generic placeholders.
+ПРАВИЛО 9: Маргось/Дашин зять example replaced with [Имя_родственника].
+ПРАВИЛО 10: 1978/Венгрии temporal-connector examples replaced with [событие_X]/[YYYY_X].
+ПРАВИЛО 12: «ум. 1978» example replaced with neutral years.
+PIN_LIST: «Эпизод про огурцы» replaced with «Эпизод из pin_list».
+All «Дашин feedback» replaced with «reviewer feedback».
+pipeline_config.json: ghostwriter.prompt_file updated to 03_ghostwriter_v2.25.md.
+
+Task 3: pipeline_utils.py NOMINATIVE_CITY_RE generic (Правило 4 B.3)
+Was: hardcoded re.compile(r"\bв\s+(Калинин|Москва|Ленинград|Тверь)\b").
+Now: derives city set from config["gazeteer"]["temporal_place_names"]
+plus universal base set. Falls back to base when no gazeteer passed.
+
+Also: tests/data/subject_specific_terms.txt — word boundaries on name patterns
+(Аня, Маня, Шура, Коля, Толя) to prevent false positives in Russian verbs.
+
+scripts/_run_v66a_full.sh — v66a run script extending _run_v65_full.sh.
+Includes pytest test_universality.py as mandatory first step.
+
+Verified:
+grep check: GW v2.25 body = 0 matches (7 header-only allowed references).
+pytest test_universality.py: 9 passed, 6 xfailed (exit 0).
+NOMINATIVE_CITY_RE: loads from gazeteer temporal_place_names.

@@ -1,6 +1,6 @@
 {
   "_comment": "Единый конфиг пайплайна Glava. Изменения здесь автоматически применяются во всех скриптах.",
-  "_updated": "2026-05-18",
+  "_updated": "2026-05-19",
 
   "blitz_questions": [
     "Как реагировал, когда злился — кричал, молчал, уходил?",
@@ -67,7 +67,7 @@
     "model": "claude-sonnet-4-20250514",
     "max_tokens": 32000,
     "temperature": 0.4,
-    "prompt_file": "03_ghostwriter_v2.24.md",
+    "prompt_file": "03_ghostwriter_v2.25.md",
     "_notes": "v2.23 (2026-05-18, task 049e, v64 sprint): +ПРАВИЛО 13 REVISION COMPLIANCE — при revision pass с revision_hints из validators GW обязан переписать flagged sentences. Архитектурный ход закрывающий класс «validators detect, GW игнорирует» (5 sprints v60-v63 recurring). Per Правило 6 — одно правило per bump. v2.22 (2026-05-18, task 049d, v63): +ПРАВИЛО 12 NARRATIVE DEPTH+VOICE+ОБЪЁМ."
   },
 
@@ -167,6 +167,7 @@
   "ghostwriter_v2_22_note": "v2.22 (2026-05-18, v63 sprint): +ПРАВИЛО 12 (narrative depth + voice + объём). Base=v2.20. v2.21 откатана в v60 — НЕ использовать.",
   "ghostwriter_v2_23_note": "v2.23 (2026-05-19, v64 sprint): +ПРАВИЛО 13 (revision compliance — LLM-driven fix of validator findings). Base=v2.22.",
   "ghostwriter_v2_24_note": "v2.24 (2026-05-19, v65 bugfix sprint): HOT-FIX ПРАВИЛО 13 (rule13_revision_applied as list of dicts). HOT-FIX ПРАВИЛО 2 (universality — hardcoded examples replaced with placeholders + characteristic_words wired). 0 new rules (per Правило 6).",
+  "ghostwriter_v2_25_note": "v2.25 (2026-05-19, v66a universality sub-sprint): universality refactor — ПРАВИЛО 3/9/10/12 examples → generic placeholders; PIN_LIST anti-triggers → generic. 0 new rules. Per Правило 4 B архитектора: grep+pytest verified, 0 body matches.",
   "completeness_auditor_v1_4_note": "v1.4 (2026-05-17, Batch 2-fix task 038b): ПРАВИЛО 6 — pin-list bypass strict (pin-list events not blocked by ПРАВИЛО 4).",
   "completeness_auditor_v1_5_note": "v1.5 (2026-05-18, v63 sprint task 038c): ПРАВИЛО 7 — named entity preservation. Universality check passed."
 }

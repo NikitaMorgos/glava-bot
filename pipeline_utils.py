@@ -5079,7 +5079,24 @@ def validate_bio_data_family_format(bio_data: dict, config: dict = None) -> dict
                 "relation_term": rel, "severity": "warning",
             })
 
-    NOMINATIVE_CITY_RE = re.compile(r"\bв\s+(Калинин|Москва|Ленинград|Тверь)\b")
+    # Build nominative-city set: start from universal known cities, then extend
+    # from gazeteer (Option A: config["gazeteer"]["temporal_place_names"] if present).
+    # This makes the check generic — no hardcoded subject-specific city names.
+    _nominative_cities = {"Москва", "Ленинград", "Санкт-Петербург", "Петроград"}
+    _gazeteer = (config or {}).get("gazeteer") if config else None
+    if _gazeteer and isinstance(_gazeteer, dict):
+        for tpn in _gazeteer.get("temporal_place_names", []):
+            for key in ("modern_name", "historical_name"):
+                city = tpn.get(key, "")
+                if city:
+                    _nominative_cities.add(city)
+        for corr in _gazeteer.get("topo_corrections", {}).values():
+            # canonical replacement city names
+            if corr and corr[0].isupper() and " " not in corr:
+                _nominative_cities.add(corr)
+    _city_alts = "|".join(re.escape(c) for c in sorted(_nominative_cities, key=len, reverse=True))
+    NOMINATIVE_CITY_RE = re.compile(rf"\bв\s+({_city_alts})\b")
+
     for field in ("birth_place", "death_place", "lived_in"):
         val = bio_data.get(field) or ""
         if isinstance(val, list):
@@ -5091,7 +5108,7 @@ def validate_bio_data_family_format(bio_data: dict, config: dict = None) -> dict
             issues.append({
                 "type": "locative_case_error", "field": field,
                 "value": val, "match": m.group(0), "severity": "error",
-                "hint": "Use prepositional: в Калинине not в Калинин",
+                "hint": f"Use prepositional case: «в {m.group(1)}е/и» not «в {m.group(1)}»",
             })
 
     malformed = sum(1 for i in issues if i.get("type") == "malformed_entry")
