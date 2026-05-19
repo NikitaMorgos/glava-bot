@@ -3404,29 +3404,46 @@ def parse_pin_list_from_markdown(md_path: str) -> dict:
     traits = []
     char_words = []
     required_persons = []
+    required_episode_ids: list = []   # task 044i v7: required_in_narrative list
+    descendants_info: list = []       # task 048f v7: for Class 12 extend
+    characteristic_words_dicts: list = []  # task 049h v7: word + context + source
 
     current_table_type = None
     header_seen = False
     # Track column index for min_sentences in the current table header
     min_sentences_col_idx: dict = {}  # table_type -> col index
+    in_required_list = False  # for bullet-list parsing of required episodes
 
     for line in lines:
         line_stripped = line.strip()
 
         if "## Хронологические эпизоды" in line_stripped:
-            current_table_type = "episodes"; header_seen = False; min_sentences_col_idx = {}; continue
+            current_table_type = "episodes"; header_seen = False; min_sentences_col_idx = {}; in_required_list = False; continue
         elif "## Бытовые эпизоды" in line_stripped:
-            current_table_type = "bytovye"; header_seen = False; min_sentences_col_idx = {}; continue
+            current_table_type = "bytovye"; header_seen = False; min_sentences_col_idx = {}; in_required_list = False; continue
         elif "## Характеристики" in line_stripped:
-            current_table_type = "traits"; header_seen = False; min_sentences_col_idx = {}; continue
+            current_table_type = "traits"; header_seen = False; min_sentences_col_idx = {}; in_required_list = False; continue
         elif "## Голос рассказчика" in line_stripped:
-            current_table_type = "char_words"; header_seen = False; min_sentences_col_idx = {}; continue
+            current_table_type = "char_words"; header_seen = False; min_sentences_col_idx = {}; in_required_list = False; continue
         elif ("## Прямые родственники" in line_stripped or "## Обязательные персоны" in line_stripped):
-            current_table_type = "required_persons"; header_seen = False; min_sentences_col_idx = {}; continue
+            current_table_type = "required_persons"; header_seen = False; min_sentences_col_idx = {}; in_required_list = False; continue
+        elif "## Обязательные эпизоды" in line_stripped:
+            current_table_type = "required_episodes"; header_seen = False; min_sentences_col_idx = {}; in_required_list = True; continue
+        elif "## Племянники и племянницы" in line_stripped:
+            current_table_type = "descendants"; header_seen = False; min_sentences_col_idx = {}; in_required_list = False; continue
+        elif "## Characteristic words" in line_stripped:
+            current_table_type = "char_words_v7"; header_seen = False; min_sentences_col_idx = {}; in_required_list = False; continue
         elif line_stripped.startswith("## "):
-            current_table_type = None; header_seen = False; min_sentences_col_idx = {}; continue
+            current_table_type = None; header_seen = False; min_sentences_col_idx = {}; in_required_list = False; continue
 
         if current_table_type is None:
+            continue
+
+        # Required episodes — bullet list (task 044i)
+        if current_table_type == "required_episodes":
+            m = re.match(r'^[-*]\s+(ep_\w+|byt_\w+)', line_stripped)
+            if m:
+                required_episode_ids.append(m.group(1).strip())
             continue
 
         if re.match(r"^\|[-|\s]+\|$", line_stripped):
@@ -3502,6 +3519,30 @@ def parse_pin_list_from_markdown(md_path: str) -> dict:
             if word and word not in ("#", "Слово", "слово"):
                 char_words.append(word)
 
+        elif current_table_type == "char_words_v7":
+            # task 049h v7: word + context + source_quote table
+            word = _clean(cells[0])
+            context = _clean(cells[1]) if len(cells) > 1 else ""
+            source_quote = _clean(cells[2]) if len(cells) > 2 else ""
+            if word and word not in ("#", "word", "слово"):
+                char_words.append(word)
+                characteristic_words_dicts.append({
+                    "word": word, "context": context, "source_quote": source_quote
+                })
+
+        elif current_table_type == "descendants":
+            # task 048f v7: name + relation + parent + profession + notes
+            name = _clean(cells[0])
+            relation = _clean(cells[1]) if len(cells) > 1 else ""
+            parent = _clean(cells[2]) if len(cells) > 2 else ""
+            profession = _clean(cells[3]) if len(cells) > 3 else ""
+            notes = _clean(cells[4]) if len(cells) > 4 else ""
+            if name and name not in ("#", "name"):
+                descendants_info.append({
+                    "name": name, "relation_to_subject": relation,
+                    "parent": parent, "profession": profession, "notes": notes,
+                })
+
         elif current_table_type == "required_persons":
             # task 044b: раздел «Прямые родственники»
             # Ожидается: | # | name | relation | note/aliases |
@@ -3520,15 +3561,29 @@ def parse_pin_list_from_markdown(md_path: str) -> dict:
                     entry["aliases"] = aliases
                 required_persons.append(entry)
 
+    # task 044i v7: mark required_in_narrative for matched episodes
+    if required_episode_ids:
+        req_set = set(required_episode_ids)
+        for ep in episodes:
+            if ep.get("episode_id") in req_set:
+                ep["required_in_narrative"] = True
+        for byt in bytovye:
+            if byt.get("byt_id") in req_set:
+                byt["required_in_narrative"] = True
+
     print(
-        f"[PIN-LIST-PARSER] Загружено: {len(episodes)} эпизодов, "
-        f"{len(bytovye)} бытовых, {len(traits)} характеристик, {len(char_words)} слов, "
-        f"{len(required_persons)} required_persons."
+        f"[PIN-LIST-PARSER] Загружено: {len(episodes)} эпизодов ({sum(1 for e in episodes if e.get('required_in_narrative'))} required), "
+        f"{len(bytovye)} бытовых ({sum(1 for b in bytovye if b.get('required_in_narrative'))} required), "
+        f"{len(traits)} характеристик, {len(char_words)} слов, "
+        f"{len(required_persons)} required_persons, {len(descendants_info)} descendants."
     )
     return {
         "episodes": episodes, "bytovye": bytovye,
         "traits": traits, "characteristic_words": char_words,
+        "characteristic_words_detail": characteristic_words_dicts,
         "required_persons": required_persons,
+        "descendants": descendants_info,
+        "required_episode_ids": required_episode_ids,
     }
 
 
@@ -4242,13 +4297,21 @@ def validate_pin_list_depth(book: dict, pin_list: dict) -> dict:
     return {"depth_issues": depth_issues, "errors_count": errors, "warnings_count": warnings}
 
 
-def validate_chronological_consistency(book: dict, fact_map: dict) -> dict:
-    """Task 048: Класс 12 — проверить хронологическую согласованность persons и событий.
+def validate_chronological_consistency(book: dict, fact_map: dict, config: dict | None = None) -> dict:
+    """Task 048 / 048e: Класс 12 — проверить хронологическую согласованность persons и событий.
+
+    v65 (048e): ch_01 skipped (паспортичка = factual summary), epilogue child refs skipped,
+    birth_declaration_self_skip — sentence declaring child's birth year not flagged.
 
     Returns {issues: [...], errors_count, warnings_count}.
     Idempotent.
     """
     import re
+
+    cfg = config or {}
+    SKIP_CHAPTERS = cfg.get("skip_chapters", ["ch_01"])
+    EPILOGUE_SKIP_CHILD_REFS = cfg.get("epilogue_skip_child_refs", True)
+    BIRTH_DECLARATION_SKIP = cfg.get("sentence_birth_self_declaration_skip", True)
 
     person_years = {}
     for p in fact_map.get("persons", []):
@@ -4274,10 +4337,23 @@ def validate_chronological_consistency(book: dict, fact_map: dict) -> dict:
 
     YEAR_RE = re.compile(r'\b((?:19|20)\d{2})\b')
     COLLECTIVE_RE = re.compile(r'\b(дет\w{0,4}|сын\w{0,2}|доч\w{0,4}|внук\w{0,4})\b', re.IGNORECASE)
+    GENERIC_FAMILY_RE = re.compile(
+        r'\b(семь\w{0,4}|создал\w*\s+семь\w*|семейн\w+|родственник\w*)\b', re.IGNORECASE
+    )
+
+    def _birth_declaration_sentence(sentence: str, birth_year: int) -> bool:
+        """True if sentence explicitly declares birth_year — skip FP check."""
+        if not BIRTH_DECLARATION_SKIP:
+            return False
+        years_in_sentence = [int(m) for m in YEAR_RE.findall(sentence)]
+        return birth_year in years_in_sentence
 
     issues = []
     for chapter in book.get("chapters", []):
         ch_id = chapter.get("id") or ""
+        if ch_id in SKIP_CHAPTERS:
+            continue  # паспортичка содержит legitimate factual summaries
+        is_epilogue = ch_id == "epilogue"
         paras = chapter.get("paragraphs", [])
         para_texts = [p.get("text", "") for p in paras] if paras else re.split(
             r"\n\n+", chapter.get("content", "") or ""
@@ -4295,6 +4371,9 @@ def validate_chronological_consistency(book: dict, fact_map: dict) -> dict:
                 stem = col_m.group(0)[:4].lower()
                 birth = collective_births.get(stem)
                 if birth and min_year < birth:
+                    # 048e: skip epilogue generic family refs
+                    if is_epilogue and EPILOGUE_SKIP_CHILD_REFS:
+                        continue
                     issues.append({
                         "chapter_id": ch_id, "type": "person_mentioned_before_birth",
                         "person_name": stem + "...", "person_birth_year_min": birth,
@@ -4305,6 +4384,12 @@ def validate_chronological_consistency(book: dict, fact_map: dict) -> dict:
                 if len(name) < 4 or name not in para_lower:
                     continue
                 if birth and min_year < birth:
+                    # 048e: skip if sentence itself declares birth (factual summary)
+                    if _birth_declaration_sentence(para, birth):
+                        continue
+                    # 048e: skip epilogue generic family refs (not named children)
+                    if is_epilogue and EPILOGUE_SKIP_CHILD_REFS and GENERIC_FAMILY_RE.search(para):
+                        continue
                     issues.append({
                         "chapter_id": ch_id, "type": "person_mentioned_before_birth",
                         "person_name": name, "person_birth_year_min": birth,
@@ -4318,20 +4403,16 @@ def validate_chronological_consistency(book: dict, fact_map: dict) -> dict:
                     })
 
     # v62a-048c: grandchild check — inferred min birth = max(parent.marriage_year+1, parent.birth_year+16)
-    # Детектирует упоминание внука/внучки в контексте года раньше чем мог родиться.
     grandchild_persons = [
         p for p in fact_map.get("persons", [])
         if "внук" in (p.get("relation_to_subject") or "").lower()
         and not (p.get("birth_year") or p.get("born"))
     ]
     if grandchild_persons:
-        # Find parent persons (сын/дочь of subject)
         parent_persons = [
             p for p in fact_map.get("persons", [])
             if any(kw in (p.get("relation_to_subject") or "").lower() for kw in ("сын", "дочь"))
         ]
-        # Per-grandchild: compute inferred min birth using the parent most likely to be their parent
-        # Generic: use max(earliest_parent.birth_year+16, earliest_parent.marriage_year+1)
         parent_births = [int(p["birth_year"]) for p in parent_persons if p.get("birth_year")]
         parent_marriages = [int(p["marriage_year"]) for p in parent_persons
                             if p.get("marriage_year")]
@@ -4342,7 +4423,6 @@ def validate_chronological_consistency(book: dict, fact_map: dict) -> dict:
             by_marriage = min(parent_marriages) + 1 if parent_marriages else by_birth
             min_gc_birth = max(by_birth, by_marriage)
 
-        # v62a-048c: activity pattern — catch "встречал внучку после школы" + year
         GRANDCHILD_ACTIVITY_RE = re.compile(
             r'\b(встреча\w*|воспит\w*|играл\w*|видел\w*|школ\w*|из\s+школ\w*|сад\w*)\b',
             re.IGNORECASE,
@@ -4355,6 +4435,8 @@ def validate_chronological_consistency(book: dict, fact_map: dict) -> dict:
             gc_names = [gc_name] + gc_aliases
             for chapter in book.get("chapters", []):
                 ch_id = chapter.get("id") or ""
+                if ch_id in SKIP_CHAPTERS:
+                    continue
                 paras = chapter.get("paragraphs", [])
                 para_texts = [p.get("text", "") for p in paras] if paras else re.split(
                     r"\n\n+", chapter.get("content", "") or ""
@@ -4666,15 +4748,20 @@ def validate_anti_facts(book: dict, anti_facts_config: dict) -> dict:
 # ─────────────────────────────────────────────────────────────────
 
 
-def validate_children_before_birth(book: dict, chronology_config: dict) -> dict:
-    """Task 048d: Class 12 extension — check that children are not mentioned
-    in contexts before they could have been born.
+def validate_children_before_birth(book: dict, chronology_config: dict, config: dict | None = None) -> dict:
+    """Task 048d / 048e: Class 12 extension — check children not mentioned before birth.
 
+    v65 (048e): ch_01 skipped; birth_declaration_self_skip applied;
+    epilogue generic child refs skipped.
     chronology_config — chronology_periods_karakulina.json.
     Returns {issues: [...], errors_count, warnings_count}.
     Idempotent.
     """
     import re
+
+    cfg = config or {}
+    SKIP_CHAPTERS = cfg.get("skip_chapters", ["ch_01"])
+    EPILOGUE_SKIP_CHILD_REFS = cfg.get("epilogue_skip_child_refs", True)
 
     subject_birth = None
     for p in chronology_config.get("periods", []):
@@ -4686,7 +4773,6 @@ def validate_children_before_birth(book: dict, chronology_config: dict) -> dict:
     for p in chronology_config.get("periods", []):
         pid = p.get("period_id", "")
         year = p.get("year") or p.get("year_start")
-        # Only match birth periods — not marriage/move/death periods that also contain person names
         if "birth" not in pid.lower():
             continue
         if "valeriy" in pid.lower() or ("son" in pid.lower() and "birth" in pid.lower()):
@@ -4699,10 +4785,23 @@ def validate_children_before_birth(book: dict, chronology_config: dict) -> dict:
         r"\b(дет\w{0,4}|ребят\w{0,2}|детишк\w{0,2})\b", re.IGNORECASE
     )
     GRANDCHILD_RE = re.compile(r"\b(внук\w*|внучк\w*)\b", re.IGNORECASE)
+    GENERIC_FAMILY_RE = re.compile(
+        r'\b(семь\w{0,4}|создал\w*\s+семь\w*|семейн\w+)\b', re.IGNORECASE
+    )
+
+    def _birth_declaration_sentence(sentence: str, birth_year) -> bool:
+        """True if sentence itself contains the child's birth year — skip FP."""
+        if not birth_year:
+            return False
+        years = [int(m) for m in YEAR_RE.findall(sentence)]
+        return int(birth_year) in years
 
     issues = []
     for chapter in book.get("chapters", []):
         ch_id = chapter.get("id") or ""
+        if ch_id in SKIP_CHAPTERS:
+            continue
+        is_epilogue = ch_id == "epilogue"
         paras = chapter.get("paragraphs", [])
         para_texts = (
             [p.get("text", "") for p in paras]
@@ -4718,17 +4817,22 @@ def validate_children_before_birth(book: dict, chronology_config: dict) -> dict:
             min_year = min(years_in_para)
 
             if subject_birth and min_year < subject_birth and CHILDREN_GENERAL_RE.search(para):
-                issues.append({
-                    "chapter_id": ch_id, "type": "children_before_subject_birth",
-                    "subject_birth_year": subject_birth, "event_year": min_year,
-                    "snippet": para[:200], "severity": "error", "rule": "children_before_birth",
-                })
+                if not (is_epilogue and EPILOGUE_SKIP_CHILD_REFS):
+                    issues.append({
+                        "chapter_id": ch_id, "type": "children_before_subject_birth",
+                        "subject_birth_year": subject_birth, "event_year": min_year,
+                        "snippet": para[:200], "severity": "error", "rule": "children_before_birth",
+                    })
 
             para_lower = para.lower()
             for child_stem, child_birth in child_birth_years.items():
                 if not child_birth:
                     continue
                 if child_stem in para_lower and min_year < child_birth:
+                    if _birth_declaration_sentence(para, child_birth):
+                        continue  # 048e: birth declaration self-skip
+                    if is_epilogue and EPILOGUE_SKIP_CHILD_REFS and GENERIC_FAMILY_RE.search(para):
+                        continue  # 048e: generic family refs in epilogue
                     issues.append({
                         "chapter_id": ch_id, "type": "named_child_before_birth",
                         "child_stem": child_stem, "child_birth_year": child_birth,
@@ -4738,11 +4842,12 @@ def validate_children_before_birth(book: dict, chronology_config: dict) -> dict:
             if GRANDCHILD_RE.search(para):
                 min_cb = min((y for y in child_birth_years.values() if y), default=None)
                 if min_cb and min_year < min_cb + 16:
-                    issues.append({
-                        "chapter_id": ch_id, "type": "grandchild_before_child_mature",
-                        "min_child_birth_plus_16": min_cb + 16, "event_year": min_year,
-                        "snippet": para[:200], "severity": "warning",
-                    })
+                    if not (is_epilogue and EPILOGUE_SKIP_CHILD_REFS):
+                        issues.append({
+                            "chapter_id": ch_id, "type": "grandchild_before_child_mature",
+                            "min_child_birth_plus_16": min_cb + 16, "event_year": min_year,
+                            "snippet": para[:200], "severity": "warning",
+                        })
 
     errors = sum(1 for i in issues if i.get("severity") == "error")
     warnings = sum(1 for i in issues if i.get("severity") == "warning")
@@ -5148,12 +5253,34 @@ def validate_personal_historical_voice(
     }
 
 
+_KNOWN_VALIDATORS = [
+    "chronology_check",
+    "pin_list_depth",
+    "discourse_markers",
+    "narrative_stop_phrases",
+    "narrative_truism",
+    "anti_facts",
+    "epilogue_stop_phrases",
+    "epilogue_quote_density",
+    "personal_historical_voice",
+    "timeline_anchors",
+    "entity_substitution",
+    "cross_paragraph_duplication",
+    "historical_notes_distribution",
+    "required_episodes_coverage",
+    "descendants_in_early_context",
+]
+
+
 def collect_revision_hints(
     book_draft: dict,
     validator_outputs: dict,
     config: dict | None = None,
 ) -> list:
-    """Collect revision_hints from validator outputs for GW revision pass (task 049f).
+    """Collect revision_hints from validator outputs for GW revision pass (task 049f/049f-2).
+
+    v65 fix: covers ALL validators (not subset); warning-level findings included with
+    must_apply=False; missing validators logged explicitly (not silently skipped).
 
     validator_outputs: dict of {validator_name: output_dict}
     Each output_dict should have "issues" list.
@@ -5162,7 +5289,30 @@ def collect_revision_hints(
     hints = []
     hint_counter = 0
 
+    for validator_name in _KNOWN_VALIDATORS:
+        output = validator_outputs.get(validator_name)
+        if output is None:
+            print(f"[collect_revision_hints] WARNING: validator '{validator_name}' not present in outputs — skipped")
+            continue
+        if not isinstance(output, dict):
+            print(f"[collect_revision_hints] WARNING: validator '{validator_name}' output is not a dict")
+            continue
+        issues = output.get("issues", [])
+        for issue in issues:
+            hint_counter += 1
+            hint = _build_revision_hint(
+                hint_id=f"h_{hint_counter:03d}",
+                validator=validator_name,
+                issue=issue,
+                book_draft=book_draft,
+            )
+            if hint:
+                hints.append(hint)
+
+    # Also include any additional validators passed but not in _KNOWN_VALIDATORS
     for validator_name, output in validator_outputs.items():
+        if validator_name in _KNOWN_VALIDATORS:
+            continue
         if not isinstance(output, dict):
             continue
         issues = output.get("issues", [])
@@ -5181,10 +5331,16 @@ def collect_revision_hints(
 
 
 def _build_revision_hint(hint_id: str, validator: str, issue: dict, book_draft: dict) -> dict | None:
-    """Convert single validator issue to GW revision_hint format (task 049f internal)."""
+    """Convert single validator issue to GW revision_hint format (task 049f/049f-2).
+
+    v65: Do NOT silently drop hints with no snippet — use a placeholder so GW can still apply.
+    """
     snippet = issue.get("snippet") or _extract_snippet_from_book(book_draft, issue)
     if not snippet:
-        return None
+        # v65 fix: don't drop — build a generic chapter-context snippet from issue fields
+        ch_id = issue.get("chapter_id", "unknown")
+        ep_id = issue.get("episode_id") or issue.get("person_name") or issue.get("type") or "issue"
+        snippet = f"[chapter {ch_id} — {ep_id}: see validator output]"
 
     hint = {
         "hint_id": hint_id,
@@ -5228,7 +5384,7 @@ def _build_revision_reason(validator: str, issue: dict) -> str:
 
 
 def _build_revision_suggestion(validator: str, issue: dict) -> str:
-    """Generate concrete suggestion per validator category."""
+    """Generate concrete suggestion per validator category (task 049f/049f-2 extended)."""
     cat = issue.get("category") or issue.get("type") or ""
 
     if validator == "chronology_check":
@@ -5242,7 +5398,7 @@ def _build_revision_suggestion(validator: str, issue: dict) -> str:
             )
 
     if validator == "narrative_truism":
-        return "delete_sentence"
+        return issue.get("suggestion") or "delete_sentence"
 
     if validator in ("narrative_stop_phrases", "style_checks"):
         if "speciality_defined_life" in cat:
@@ -5255,14 +5411,19 @@ def _build_revision_suggestion(validator: str, issue: dict) -> str:
         if "typical_for_generation" in cat:
             return "delete_sentence (целиком, без замены)"
         if "class11_not_loved" in cat:
-            return ("Переписать обобщённо: «не любил советов» / «не любил [X]», "
-                    "без перечисления частных категорий.")
+            return (
+                "Переписать обобщённо: «не любил советов» / «не любил [X]», "
+                "без перечисления частных категорий. Семантическое правило — убрать перечисление, "
+                "оставить только обобщение либо ОДНУ конкретную деталь из source_quote."
+            )
+        return issue.get("suggestion") or "Переписать без causal claim / generic listing / truism."
 
     if validator == "pin_list_depth":
         ep_id = issue.get("episode_id", "")
         actual = issue.get("actual_sentences", "?")
+        min_req = issue.get("min_required", 3)
         return (
-            f"Развернуть эпизод [{ep_id}] на \u22653 sentences per ПРАВИЛО 12. "
+            f"Развернуть эпизод [{ep_id}] на \u2265{min_req} sentences per ПРАВИЛО 12. "
             f"Текущая глубина: {actual} sent. "
             f"Добавить: setup год+место+кто / детали действия / последствие."
         )
@@ -5295,6 +5456,63 @@ def _build_revision_suggestion(validator: str, issue: dict) -> str:
                 f"'когда [rapporteur] был ребёнком, в [период], ...'. "
                 f"Использовать narrator_voice_anchors из pin-list."
             )
+        return issue.get("suggestion", "Добавить personal-historical voice anchors из pin-list.")
+
+    if validator == "epilogue_stop_phrases":
+        phrase = issue.get("phrase") or issue.get("snippet", "...")[:60]
+        return f"Удалить epilogue stop-фразу: '{phrase}'."
+
+    if validator == "epilogue_quote_density":
+        return (
+            "Снизить density cited phrases в epilogue. "
+            "Распределить характерные слова по ch_02/ch_03/ch_04, в epilogue оставить spokoyno."
+        )
+
+    if validator == "timeline_anchors":
+        if cat == "anchor_absorbed":
+            return (
+                f"Период '{issue.get('anchor_id')}' поглощён другим. "
+                f"Разделить как отдельный block в ch_01 markdown."
+            )
+
+    if validator == "entity_substitution":
+        return f"Replace '{issue.get('from')}' → '{issue.get('to')}' в snippet (на {issue.get('chapter_id')})."
+
+    if validator == "cross_paragraph_duplication":
+        orig_ch = issue.get("original_chapter_id", "?")
+        orig_idx = issue.get("original_paragraph_index", "?")
+        return (
+            f"Дословный повтор paragraph из {orig_ch} (paragraph index {orig_idx}). "
+            f"Удалить дубликат либо переписать со ссылкой (без повтора)."
+        )
+
+    if validator == "historical_notes_distribution":
+        chid = issue.get("chapter_id", "?")
+        found = issue.get("found", 0)
+        expected = issue.get("expected", 1)
+        return (
+            f"Добавить \u2265{expected - found} historical_note inline в {chid} (***текст***). "
+            f"Контекст: исторический фон эпохи, контекст характеристик или эпизодов."
+        )
+
+    if validator == "required_episodes_coverage":
+        ep_id = issue.get("episode_id", "?")
+        title = issue.get("title", "?")
+        return (
+            f"Episode [{ep_id}] «{title[:50]}» — required_in_narrative, отсутствует. "
+            f"Развернуть в ch_03 или ch_04 на \u22653 sentences. "
+            f"Маркеры: {issue.get('markers', [])}. Source quote из pin-list."
+        )
+
+    if validator == "descendants_in_early_context":
+        name = issue.get("person_name", "?")
+        year = issue.get("event_year_in_paragraph", "?")
+        min_birth = issue.get("inferred_min_birth", "?")
+        return (
+            f"Удалить упоминание [{name}] в paragraph про {year} год — "
+            f"этот родственник родился ~{min_birth}+. "
+            f"Альтернатива: переписать через generic 'старшая сестра' / 'её родственники' без named descendants."
+        )
 
     return issue.get("suggestion") or "Переписать или удалить flagged sentence."
 
@@ -5481,3 +5699,427 @@ def enrich_historical_notes_inline(
 
     return book
 
+
+# ─────────────────────────────────────────────────────────────────
+# Task 049g: preserve_root_level_metadata — Stage 3 writing_notes fix
+# ─────────────────────────────────────────────────────────────────
+
+def preserve_root_level_metadata(book_processed: dict, book_pre_processing: dict) -> dict:
+    """Restore root-level metadata fields if post-processing removed them (task 049g).
+
+    v64 bug: writing_notes = {} in book_FINAL_stage3 though GW wrote it in book_REVISED.
+    This function is called AFTER all Stage 3 post-processing steps.
+
+    Fields preserved (only if empty/missing in processed, but present in pre-processing):
+    - writing_notes (GW proof of attention + rule13_revision_applied)
+    - facts_used
+    - revision_log
+    - metadata
+
+    Does NOT overwrite non-empty post-LE values.
+    """
+    METADATA_FIELDS = ["writing_notes", "facts_used", "revision_log", "metadata"]
+    restored = []
+    for field in METADATA_FIELDS:
+        pre_val = book_pre_processing.get(field)
+        if not pre_val:
+            continue
+        post_val = book_processed.get(field)
+        if not post_val or post_val == {} or post_val == [] or post_val == "":
+            book_processed[field] = pre_val
+            restored.append(field)
+            print(f"[preserve_root_level_metadata] Restored '{field}' from pre-LE snapshot")
+    if not restored:
+        print("[preserve_root_level_metadata] OK — no metadata fields needed restoration")
+    return book_processed
+
+
+# ─────────────────────────────────────────────────────────────────
+# Task 048f: Class 12 extend — descendants in ancestor early context
+# ─────────────────────────────────────────────────────────────────
+
+def _find_parent_via_relation_pattern(descendant: dict, fact_map: dict) -> str | None:
+    """Heuristic: try to find parent name via fact_map persons by relation matching."""
+    rel = (descendant.get("relation_to_subject") or "").lower()
+    persons = fact_map.get("persons", [])
+    if "племянник" in rel or "племянниц" in rel:
+        # Parent should be a sibling of subject
+        for p in persons:
+            p_rel = (p.get("relation_to_subject") or "").lower()
+            if "сестра" in p_rel or "брат" in p_rel:
+                return p.get("name")
+    if "внук" in rel:
+        # Parent should be a child of subject
+        for p in persons:
+            p_rel = (p.get("relation_to_subject") or "").lower()
+            if "сын" in p_rel or "дочь" in p_rel:
+                return p.get("name")
+    return None
+
+
+def validate_descendants_in_early_context(
+    book: dict,
+    fact_map: dict,
+    config: dict | None = None,
+) -> dict:
+    """Task 048f: Class 12 extend — named descendants mentioned in ancestor's early-age context.
+
+    Checks if a nephew/niece/grandchild is named in a paragraph about the subject's early years
+    (years < descendant's inferred min birth). Warning level — heuristic-based.
+
+    Generic algorithm: relation-based descendant chain, profession-based age hints,
+    works for any subject.
+
+    Returns {issues: [...], errors_count: 0, warnings_count: N}.
+    Idempotent.
+    """
+    import re
+
+    cfg = config or {}
+    DESCENDANT_RELATIONS = cfg.get("descendant_relations", [
+        "племянник", "племянница", "внук", "внучка",
+        "внучатый племянник", "правнук", "правнучка",
+    ])
+    AGE_ADJ = cfg.get("default_age_adjustment", 18)
+    SKIP_CHAPTERS = cfg.get("skip_chapters", ["ch_01", "epilogue"])
+
+    persons = fact_map.get("persons", [])
+    descendants = [
+        p for p in persons
+        if any(r in (p.get("relation_to_subject") or "").lower() for r in DESCENDANT_RELATIONS)
+    ]
+    if not descendants:
+        return {"issues": [], "errors_count": 0, "warnings_count": 0}
+
+    YEAR_RE = re.compile(r'\b(?:19|20)\d{2}\b')
+
+    def _infer_descendant_min_birth(desc: dict) -> int | None:
+        candidates = []
+        parent_link = desc.get("parent") or _find_parent_via_relation_pattern(desc, fact_map)
+        if parent_link:
+            parent = next((p for p in persons if p.get("name") == parent_link), None)
+            if parent:
+                if parent.get("marriage_year"):
+                    candidates.append(int(parent["marriage_year"]) + 1)
+                if parent.get("birth_year"):
+                    candidates.append(int(parent["birth_year"]) + AGE_ADJ)
+        prof = (desc.get("profession") or "").lower()
+        if any(kw in prof for kw in ["лётчик", "военный", "врач", "инженер", "учител"]):
+            subject_birth = fact_map.get("subject", {}).get("birth_year")
+            if subject_birth:
+                candidates.append(int(subject_birth) + 30)
+        return max(candidates) if candidates else None
+
+    issues = []
+    for ch in book.get("chapters", []):
+        if ch.get("id") in SKIP_CHAPTERS:
+            continue
+        content = ch.get("content", "") or ""
+        for paragraph in content.split("\n\n"):
+            if not paragraph.strip():
+                continue
+            years = [int(m) for m in YEAR_RE.findall(paragraph)]
+            if not years:
+                continue
+            min_year_in_para = min(years)
+            para_lower = paragraph.lower()
+            for desc in descendants:
+                name = (desc.get("name") or "").strip()
+                if len(name) < 3 or name.lower() not in para_lower:
+                    continue
+                inferred_min = _infer_descendant_min_birth(desc)
+                if inferred_min and min_year_in_para < inferred_min:
+                    issues.append({
+                        "type": "descendant_in_ancestor_early_context",
+                        "category": "class12_extend",
+                        "chapter_id": ch["id"],
+                        "person_name": name,
+                        "inferred_min_birth": inferred_min,
+                        "event_year_in_paragraph": min_year_in_para,
+                        "snippet": paragraph[:200],
+                        "severity": "warning",
+                        "suggestion": (
+                            f"Удалить упоминание [{name}] в paragraph про "
+                            f"{min_year_in_para} год — этот родственник родился ≥{inferred_min}. "
+                            f"Альтернатива: переписать через generic 'старшая сестра' / "
+                            f"'её родственники' без named descendants."
+                        ),
+                        "reason": "Class 12 extend — потомок упомянут в context раннего возраста предка",
+                    })
+                    break  # one flag per paragraph per chapter per person
+    return {
+        "issues": issues,
+        "errors_count": 0,
+        "warnings_count": len(issues),
+    }
+
+
+# ─────────────────────────────────────────────────────────────────
+# Task 048g: Class 19 NEW — cross-paragraph text duplication
+# ─────────────────────────────────────────────────────────────────
+
+def _normalize_for_dedup(text: str) -> str:
+    """Normalize text for duplicate detection (task 048g)."""
+    import re
+    text = re.sub(r'\*+|_+|`+|#+', '', text)
+    text = re.sub(r'\s+', ' ', text.lower().strip())
+    return text.strip(' .,;:!?-\u2014\u2013')
+
+
+def _text_similarity(a: str, b: str) -> float:
+    """SequenceMatcher ratio — lightweight, no extra deps (task 048g)."""
+    from difflib import SequenceMatcher
+    return SequenceMatcher(None, a, b).ratio()
+
+
+def validate_cross_paragraph_duplication(book: dict, config: dict | None = None) -> dict:
+    """Task 048g: Class 19 NEW — detect cross-paragraph дословный повтор.
+
+    Algorithm: extract all paragraphs >= min_chars, compare pairwise with SequenceMatcher.
+    If similarity >= threshold — flag duplicate.
+
+    Generic: text similarity — no subject knowledge required.
+    Returns {issues: [...], errors_count: N, warnings_count: 0}.
+    Idempotent.
+    """
+    cfg = config or {}
+    min_chars = cfg.get("min_paragraph_chars", 100)
+    threshold = cfg.get("similarity_threshold", 0.85)
+    skip_chapters = cfg.get("skip_chapters", ["ch_01"])
+
+    paragraphs = []
+    for ch in book.get("chapters", []):
+        if ch.get("id") in skip_chapters:
+            continue
+        content = ch.get("content", "") or ""
+        for idx, para in enumerate(content.split("\n\n")):
+            normalized = _normalize_for_dedup(para)
+            if len(normalized) >= min_chars:
+                paragraphs.append({
+                    "chapter_id": ch["id"],
+                    "paragraph_index": idx,
+                    "text": para,
+                    "normalized": normalized,
+                })
+
+    issues = []
+    seen: list = []
+    for p in paragraphs:
+        duplicate_found = False
+        for prev in seen:
+            sim = _text_similarity(prev["normalized"], p["normalized"])
+            if sim >= threshold:
+                issues.append({
+                    "type": "cross_paragraph_duplication",
+                    "category": "duplicate_paragraph",
+                    "similarity": round(sim, 3),
+                    "original_chapter_id": prev["chapter_id"],
+                    "original_paragraph_index": prev["paragraph_index"],
+                    "duplicate_chapter_id": p["chapter_id"],
+                    "duplicate_paragraph_index": p["paragraph_index"],
+                    "chapter_id": p["chapter_id"],
+                    "snippet": p["text"][:200],
+                    "severity": "error",
+                    "suggestion": (
+                        f"Удалить duplicate paragraph (index {p['paragraph_index']} в "
+                        f"{p['chapter_id']}). Оригинал в {prev['chapter_id']} "
+                        f"(index {prev['paragraph_index']}). "
+                        f"Если содержит уникальный fact — переписать без дословного повтора."
+                    ),
+                    "reason": "Class 19 — cross-paragraph дословное повторение текста",
+                })
+                duplicate_found = True
+                break
+        if not duplicate_found:
+            seen.append(p)
+
+    return {
+        "issues": issues,
+        "errors_count": len(issues),
+        "warnings_count": 0,
+    }
+
+
+# ─────────────────────────────────────────────────────────────────
+# Task 046f: historical_notes per-chapter distribution validator
+# ─────────────────────────────────────────────────────────────────
+
+def validate_historical_notes_distribution(book: dict, config: dict | None = None) -> dict:
+    """Task 046f: Check per-chapter distribution of historical_notes (field + inline ***.
+
+    Default thresholds: ch_02≥3, ch_03≥2, ch_04≥1, epilogue=0.
+    Warning level — distribution hint for historian enrichment and GW revision.
+    Returns {per_chapter, thresholds, issues, total_field, total_inline, errors_count, warnings_count}.
+    Idempotent.
+    """
+    import re
+
+    cfg = config or {}
+    thresholds = cfg.get("thresholds_per_chapter", {
+        "ch_02": 3,
+        "ch_03": 2,
+        "ch_04": 1,
+        "epilogue": 0,
+    })
+
+    per_chapter: dict = {}
+    # Field-level notes attribution
+    for note in book.get("historical_notes", []):
+        ch_id = note.get("chapter_id", "ch_02")
+        per_chapter.setdefault(ch_id, {"field": 0, "inline": 0, "total": 0})
+        per_chapter[ch_id]["field"] += 1
+
+    # Inline notes: count *** patterns per chapter
+    INLINE_RE = re.compile(r'\*{3}[^*]+\*{3}')
+    for ch in book.get("chapters", []):
+        chid = ch.get("id")
+        if chid == "ch_01":
+            continue
+        content = ch.get("content", "") or ""
+        inline_count = len(INLINE_RE.findall(content))
+        per_chapter.setdefault(chid, {"field": 0, "inline": 0, "total": 0})
+        per_chapter[chid]["inline"] += inline_count
+
+    for chid, counts in per_chapter.items():
+        counts["total"] = counts["field"] + counts["inline"]
+
+    issues = []
+    for chid, expected in thresholds.items():
+        if expected == 0:
+            continue
+        found = per_chapter.get(chid, {"total": 0})["total"]
+        if found < expected:
+            issues.append({
+                "type": "historical_notes_distribution",
+                "category": "below_threshold_per_chapter",
+                "chapter_id": chid,
+                "found": found,
+                "expected": expected,
+                "severity": "warning",
+                "suggestion": (
+                    f"Добавить \u2265{expected - found} historical_note inline в {chid} (***текст***). "
+                    f"Контекст: исторический фон эпохи, социальный контекст."
+                ),
+                "reason": "Class 9 historical_notes underutilization per chapter",
+            })
+
+    total_field = sum(c["field"] for c in per_chapter.values())
+    total_inline = sum(c["inline"] for c in per_chapter.values())
+    return {
+        "per_chapter": per_chapter,
+        "thresholds": thresholds,
+        "issues": issues,
+        "total_field": total_field,
+        "total_inline": total_inline,
+        "errors_count": sum(1 for i in issues if i["severity"] == "error"),
+        "warnings_count": sum(1 for i in issues if i["severity"] == "warning"),
+    }
+
+
+# ─────────────────────────────────────────────────────────────────
+# Task 044i: validate_required_episodes_coverage
+# ─────────────────────────────────────────────────────────────────
+
+def validate_required_episodes_coverage(
+    book: dict,
+    pin_list: dict | list,
+    config: dict | None = None,
+) -> dict:
+    """Task 044i: Check that required_in_narrative episodes are present in book.
+
+    pin_list: dict (with 'episodes' and 'bytovye' keys) or list of episode dicts.
+    Each episode with required_in_narrative=True must be found in narrative chapters
+    via at least one of its markers (regex search).
+
+    Returns {required_episodes, covered_count, missing_count, total_required, issues}.
+    Idempotent.
+    """
+    import re
+
+    if isinstance(pin_list, list):
+        episodes = pin_list
+    else:
+        episodes = (pin_list.get("episodes") or []) + (pin_list.get("bytovye") or [])
+
+    required = [e for e in episodes if e.get("required_in_narrative")]
+    if not required:
+        return {
+            "required_episodes": [], "covered_count": 0, "missing_count": 0,
+            "total_required": 0, "issues": [], "errors_count": 0, "warnings_count": 0,
+        }
+
+    # Build full text per chapter (non-ch_01)
+    book_text = ""
+    for ch in book.get("chapters", []):
+        if ch.get("id") == "ch_01":
+            continue
+        book_text += " " + (ch.get("content") or "")
+    book_text_lower = book_text.lower()
+
+    result_episodes = []
+    issues = []
+    covered = 0
+    for ep in required:
+        ep_id = ep.get("episode_id", "?")
+        title = ep.get("title", "?")
+        markers = ep.get("markers") or []
+        found = False
+        found_chapter = None
+        mentions = 0
+        for ch in book.get("chapters", []):
+            if ch.get("id") == "ch_01":
+                continue
+            ch_content = (ch.get("content") or "").lower()
+            for marker in markers:
+                try:
+                    if re.search(marker, ch_content, re.IGNORECASE):
+                        found = True
+                        found_chapter = ch.get("id")
+                        mentions += len(re.findall(marker, ch_content, re.IGNORECASE))
+                        break
+                except re.error:
+                    if marker.lower() in ch_content:
+                        found = True
+                        found_chapter = ch.get("id")
+                        mentions += ch_content.count(marker.lower())
+                        break
+            if found:
+                break
+
+        ep_result = {
+            "episode_id": ep_id,
+            "title": title,
+            "found": found,
+            "mentions": mentions,
+            "chapter": found_chapter,
+        }
+        result_episodes.append(ep_result)
+        if found:
+            covered += 1
+        else:
+            issues.append({
+                "type": "required_episodes_coverage",
+                "category": "missing_required_episode",
+                "episode_id": ep_id,
+                "title": title,
+                "markers": markers,
+                "severity": "error",
+                "snippet": f"[episode {ep_id} not found in narrative]",
+                "suggestion": (
+                    f"Episode [{ep_id}] «{title[:50]}» — required_in_narrative, отсутствует. "
+                    f"Развернуть в ch_03 или ch_04 на \u22653 sentences. "
+                    f"Маркеры: {markers}."
+                ),
+                "reason": "Required episode missing from narrative",
+            })
+
+    return {
+        "required_episodes": result_episodes,
+        "covered_count": covered,
+        "missing_count": len(required) - covered,
+        "total_required": len(required),
+        "optional_total": len(episodes) - len(required),
+        "issues": issues,
+        "errors_count": len(issues),
+        "warnings_count": 0,
+    }

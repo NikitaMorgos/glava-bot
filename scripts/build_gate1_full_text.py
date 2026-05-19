@@ -413,17 +413,50 @@ def _build_summary(book: dict, reports: dict | None = None) -> list[str]:
         "",
     ]
 
-    # Pin-list coverage
+    # Pin-list coverage — v65 enhanced (task v65-meta-build_gate1 + 044i)
     pin_cov = reports.get("pin_coverage_json") or {}
+    req_cov = reports.get("required_episodes_coverage_json") or {}
+
+    out += ["## Pin-list coverage", ""]
+
+    # Required vs optional breakdown (task 044i + v65-meta-build_gate1)
+    if req_cov and req_cov.get("total_required", 0) > 0:
+        covered = req_cov.get("covered_count", 0)
+        total_req = req_cov.get("total_required", 0)
+        missing_count = req_cov.get("missing_count", 0)
+        optional_mentioned = req_cov.get("optional_mentioned", 0)
+        optional_total = req_cov.get("optional_total", 0)
+        ok_sym = "✅" if missing_count == 0 else "⚠️"
+        out.append(f"- **Required in narrative: {covered} / {total_req} covered** {ok_sym}")
+        if missing_count > 0:
+            missing_eps = [
+                ep for ep in req_cov.get("required_episodes", [])
+                if not ep.get("found")
+            ]
+            missing_names = ", ".join(
+                f"`{e['episode_id']}` «{e['title'][:40]}»" for e in missing_eps[:5]
+            )
+            out.append(f"  - Missing ({missing_count}): {missing_names}")
+            if missing_count > 5:
+                out.append(f"  - + {missing_count - 5} more (см. required_episodes_coverage.json)")
+        out.append(f"- Optional episodes: {optional_mentioned} / {optional_total} mentioned (informational)")
+        out.append("")
+
+    # Legacy metric (backward compat)
     if pin_cov and pin_cov.get("summary"):
         s = pin_cov["summary"]
+        out.append(
+            f"- Legacy metric: full={s.get('full',0)} / partial={s.get('partial',0)} / "
+            f"skipped={s.get('skipped',0)} (total {s.get('total',0)})"
+        )
+    elif not req_cov:
         out += [
-            "## Pin-list coverage",
-            f"- **Episodes full:** {s.get('full',0)} / {s.get('total',0)}",
-            f"- **Episodes partial:** {s.get('partial',0)} / {s.get('total',0)}",
-            f"- **Episodes skipped:** {s.get('skipped',0)} / {s.get('total',0)}",
-            "",
+            "- **Episodes full:** ?",
+            "- **Episodes partial:** ?",
+            "- **Episodes skipped:** ?",
         ]
+
+    out.append("")
 
     # Quality flags
     quality_lines = ["## Quality flags"]
@@ -675,6 +708,7 @@ def main():
             "discourse_markers_json": f"{args.prefix}_discourse_markers_",
             "timeline_anchors_json": f"{args.prefix}_timeline_anchors_",
             "pin_list_depth_json": f"{args.prefix}_pin_list_depth_",
+            "required_episodes_coverage_json": f"{args.prefix}_required_episodes_coverage_",
         }
         for key, prefix in _report_keys.items():
             _candidates = sorted(_rd.glob(f"{prefix}*.json"))

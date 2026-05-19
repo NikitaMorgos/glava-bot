@@ -1,0 +1,12 @@
+{
+  "_version": "v1 (2026-05-19, task 048g, v65 sprint)",
+  "_description": "Config for validate_cross_paragraph_duplication (Class 19 NEW). Generic — works for any subject.",
+  "min_paragraph_chars": 100,
+  "_comment_min_chars": "Short phrases (< 100 chars) may legitimately repeat — skip",
+  "similarity_threshold": 0.85,
+  "_comment_threshold": "SequenceMatcher.ratio() >= 0.85 = near-verbatim duplicate. v64 Власьево duplicate was ~0.98",
+  "skip_chapters": ["ch_01"],
+  "_comment_skip": "ch_01 paspart may have structural repeats by design",
+  "skip_quoted_only": true,
+  "exempt_callouts": true
+}

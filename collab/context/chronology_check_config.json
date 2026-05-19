@@ -1,0 +1,12 @@
+{
+  "_version": "v1 (2026-05-19, task 048e, v65 sprint)",
+  "_description": "Config for validate_chronological_consistency and validate_children_before_birth. Generic per-subject — adjust skip_chapters and thresholds per subject.",
+  "skip_chapters": ["ch_01"],
+  "_comment_skip_chapters": "ch_01 = paspart: legitimate factual summaries with multiple birth years — skip FP",
+  "epilogue_skip_child_refs": true,
+  "_comment_epilogue": "Epilogue = lifetime summary. Generic 'создала семью / дети / внуки' — not child-before-birth error",
+  "epilogue_keep_grandchild_specific_dates": true,
+  "_comment_grandchild": "Real hallucination risk: 'встречала внучку Дашу в 1973' — keep checking",
+  "sentence_birth_self_declaration_skip": true,
+  "_comment_birth_decl": "Sentence explicitly listing birth year (e.g. 'родились дети: Валерий в 1948, Татьяна в 1956') — not FP"
+}

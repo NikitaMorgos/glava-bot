@@ -1,0 +1,15 @@
+{
+  "_version": "v1 (2026-05-19, task 046f, v65 sprint)",
+  "_description": "Config for validate_historical_notes_distribution. Thresholds per chapter — calibrate per subject. For 90-min interview with historical context.",
+  "_notes": "Per-chapter distribution for balanced historical context across narrative chapters.",
+  "thresholds_per_chapter": {
+    "ch_02": 3,
+    "_comment_ch02": "Chronology chapter — most historical events, needs ≥3 inline notes",
+    "ch_03": 2,
+    "_comment_ch03": "Portrait chapter — social/era context for traits, needs ≥2",
+    "ch_04": 1,
+    "_comment_ch04": "Episodes chapter — era context for specific events, needs ≥1",
+    "epilogue": 0,
+    "_comment_epilogue": "Epilogue — personal reflection, historical notes optional"
+  }
+}
