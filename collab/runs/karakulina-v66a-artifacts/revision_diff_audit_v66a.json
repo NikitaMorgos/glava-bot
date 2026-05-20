@@ -1,0 +1,33 @@
+{
+  "version": "v66a_orchestrator",
+  "ts": "20260520_120548",
+  "revision_hints_count": 22,
+  "must_apply_count": 16,
+  "chapters": {
+    "ch_01": {
+      "before": 0,
+      "after": 0,
+      "delta": 0
+    },
+    "ch_02": {
+      "before": 6703,
+      "after": 6703,
+      "delta": 0
+    },
+    "ch_03": {
+      "before": 3619,
+      "after": 3624,
+      "delta": 5
+    },
+    "ch_04": {
+      "before": 1999,
+      "after": 2420,
+      "delta": 421
+    },
+    "epilogue": {
+      "before": 989,
+      "after": 963,
+      "delta": -26
+    }
+  }
+}
