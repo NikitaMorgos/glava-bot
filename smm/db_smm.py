@@ -1035,3 +1035,46 @@ def get_recent_topic_titles(limit: int = 500, platform_name: Optional[str] = Non
         )
         rows = cur.fetchall()
         return [r["title"] for r in rows if r.get("title")]
+
+
+# ── Массовый импорт календаря ────────────────────────────────────────────────
+
+def get_platform_by_name(name: str) -> Optional[dict]:
+    """Поиск площадки по имени (без учёта регистра)."""
+    ensure_tables()
+    with _conn() as conn:
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT * FROM smm_platforms WHERE lower(name) = lower(%s) LIMIT 1",
+            (name.strip(),),
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
+def get_rubric_by_name(name: str) -> Optional[dict]:
+    """Поиск рубрики по имени (без учёта регистра)."""
+    ensure_tables()
+    with _conn() as conn:
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT * FROM smm_rubrics WHERE lower(name) = lower(%s) LIMIT 1",
+            (name.strip(),),
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
+def get_existing_calendar_signatures() -> set:
+    """
+    Набор кортежей (platform_id, publish_date_str, lower(title)) для дедупликации
+    при массовом импорте календаря.
+    """
+    ensure_tables()
+    with _conn() as conn:
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT platform_id, publish_date::text, lower(title) AS title_low "
+            "FROM smm_content_calendar"
+        )
+        return {(r["platform_id"], r["publish_date"], r["title_low"]) for r in cur.fetchall()}
