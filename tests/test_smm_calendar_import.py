@@ -1,503 +1,311 @@
 # -*- coding: utf-8 -*-
 """
-Тесты массового импорта контент-календаря.
+Тесты для smm/calendar_import.py (v2 — новая схема smm_content_calendar).
 
-Покрывает:
-- parse_text: pipe, TSV (с заголовком и без), JSON, авто-детект формата
-- _parse_date / _parse_bool: разные форматы
-- resolve_rubric_id / resolve_pformat_id: slug, имя, "platform/format"
-- import_items: создание, дедупликация (внутри пачки и с БД), ошибки резолва,
-  пропуск ошибок парсинга, ошибки коллбэков
-
-Все обращения к БД — через коллбэки, реальный psycopg2 не нужен.
+Запуск: python -m pytest tests/test_smm_calendar_import.py -v
 """
-from __future__ import annotations
-
-import sys
-from datetime import date
-from pathlib import Path
-
 import pytest
-
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-
-from smm import calendar_import as ci
-
-
-# ── Fixtures ─────────────────────────────────────────────────────────────────
-
-
-@pytest.fixture()
-def rubrics():
-    return [
-        {"id": 1, "slug": "family_stories", "name": "Семейные истории"},
-        {"id": 2, "slug": "children", "name": "Дети"},
-        {"id": 3, "slug": "reviews", "name": "Отзывы"},
-    ]
+from datetime import date
+from smm.calendar_import import (
+    parse_text,
+    run_import,
+    ParsedItem,
+    ImportRow,
+    ImportReport,
+)
 
 
-@pytest.fixture()
-def pformats():
-    return [
-        {"id": 10, "slug": "dzen_long", "platform_name": "Дзен", "format_name": "Лонгрид"},
-        {"id": 11, "slug": "vk_short", "platform_name": "VK", "format_name": "Короткий"},
-        {"id": 12, "slug": "tg_post", "platform_name": "Telegram", "format_name": "Пост"},
-    ]
+# ── Хелперы ────────────────────────────────────────────────────────────────────
+
+def _make_platform(pid=1, name="Дзен"):
+    return {"id": pid, "name": name}
+
+def _make_rubric(rid=10, name="советы"):
+    return {"id": rid, "name": name}
+
+def _noop_add(**kwargs) -> int:
+    return 0
 
 
-@pytest.fixture()
-def empty_existing():
-    return []
-
-
-@pytest.fixture()
-def make_callbacks():
-    """Фабрика спай-коллбэков: возвращает (callbacks_dict, captured_state)."""
-    def _factory(plan_id_value: int = 100):
-        state = {
-            "plan_calls": 0,
-            "posts": [],
-            "extras": [],
-            "next_post_id": 500,
-        }
-
-        def create_plan() -> int:
-            state["plan_calls"] += 1
-            return plan_id_value
-
-        def create_post(plan_id, item, rubric_id, pf_id):
-            state["next_post_id"] += 1
-            post_id = state["next_post_id"]
-            state["posts"].append({
-                "post_id": post_id,
-                "plan_id": plan_id,
-                "topic": item.topic,
-                "rubric_id": rubric_id,
-                "pf_id": pf_id,
-            })
-            return post_id
-
-        def apply_extras(post_id, item):
-            state["extras"].append({
-                "post_id": post_id,
-                "publish_date": item.publish_date.isoformat(),
-                "article_title": item.article_title,
-                "image_prompt": item.image_prompt,
-                "initiate_dialog": item.initiate_dialog,
-            })
-
-        return {
-            "create_plan_fn": create_plan,
-            "create_post_fn": create_post,
-            "apply_extras_fn": apply_extras,
-        }, state
-
-    return _factory
-
-
-# ── Тесты парсера: pipe-формат ───────────────────────────────────────────────
-
+# ── parse_text: PIPE ───────────────────────────────────────────────────────────
 
 class TestParsePipe:
-    def test_basic_4_fields(self):
-        text = "2026-06-01 | dzen_long | family_stories | Тема номер один"
-        items, errors = ci.parse_text(text)
-        assert errors == []
-        assert len(items) == 1
-        it = items[0]
-        assert it.publish_date == date(2026, 6, 1)
-        assert it.pf_ref == "dzen_long"
-        assert it.rubric_ref == "family_stories"
-        assert it.topic == "Тема номер один"
-        assert it.article_title == ""
-        assert it.image_prompt == ""
-        assert it.initiate_dialog is False
-        assert it.line_no == 1
+    def test_basic_5_fields(self):
+        rows = parse_text("2026-05-29 | Дзен | статья | советы | Как сохранить воспоминания")
+        assert len(rows) == 1
+        r = rows[0]
+        assert r.status == ""
+        assert r.item.publish_date == date(2026, 5, 29)
+        assert r.item.platform_name == "Дзен"
+        assert r.item.material_type == "статья"
+        assert r.item.rubric_name == "советы"
+        assert r.item.title == "Как сохранить воспоминания"
+        assert r.item.extra_info == ""
 
-    def test_extended_fields(self):
-        text = "2026-06-03 | vk_short | children | Тема | Заголовок | promo prompt | true"
-        items, errors = ci.parse_text(text)
-        assert errors == []
-        assert len(items) == 1
-        it = items[0]
-        assert it.article_title == "Заголовок"
-        assert it.image_prompt == "promo prompt"
-        assert it.initiate_dialog is True
+    def test_6_fields_with_extra_info(self):
+        rows = parse_text("2026-06-01 | Дзен | статья | практика | Тема | Подробности здесь")
+        assert rows[0].item.extra_info == "Подробности здесь"
 
-    def test_multiple_lines_and_comments(self):
-        text = """
-2026-06-01 | dzen_long | family_stories | Первая тема
-# это комментарий
-2026-06-02 | dzen_long | family_stories | Вторая тема
+    def test_multiple_lines(self):
+        text = (
+            "2026-05-29 | Дзен | статья | советы | Тема 1\n"
+            "2026-05-30 | Дзен | пост   | история | Тема 2\n"
+        )
+        rows = parse_text(text)
+        assert len(rows) == 2
+        assert all(r.status == "" for r in rows)
 
-2026-06-03 | dzen_long | family_stories | Третья тема
-"""
-        items, errors = ci.parse_text(text)
-        assert errors == []
-        assert len(items) == 3
-        assert [i.topic for i in items] == ["Первая тема", "Вторая тема", "Третья тема"]
+    def test_skips_blank_lines(self):
+        text = "2026-05-29 | Дзен | статья | советы | Тема 1\n\n\n2026-05-30 | Дзен | пост | история | Тема 2"
+        rows = parse_text(text)
+        assert len(rows) == 2
 
-    def test_blank_text_returns_empty(self):
-        assert ci.parse_text("") == ([], [])
-        assert ci.parse_text("   \n\n  ") == ([], [])
+    def test_skips_comment_lines(self):
+        text = "# это комментарий\n2026-05-29 | Дзен | статья | советы | Тема 1"
+        rows = parse_text(text)
+        assert len(rows) == 1
 
-    def test_too_few_fields_is_error(self):
-        text = "2026-06-01 | dzen_long | family_stories"
-        items, errors = ci.parse_text(text)
-        assert items == []
-        assert len(errors) == 1
-        assert "ожидалось 4+" in errors[0].message
-        assert errors[0].status == "error"
-        assert errors[0].line_no == 1
+    def test_error_on_4_fields(self):
+        rows = parse_text("2026-05-29 | Дзен | статья | советы")
+        assert rows[0].status == "error"
+        assert "5" in rows[0].message
 
-    def test_bad_date_is_error(self):
-        text = "2026/06/01 invalid | dzen_long | family_stories | Тема"
-        items, errors = ci.parse_text(text)
-        assert items == []
-        assert len(errors) == 1
-        assert "некорректная дата" in errors[0].message
+    def test_error_on_bad_date(self):
+        rows = parse_text("не-дата | Дзен | статья | советы | Тема")
+        assert rows[0].status == "error"
+        assert "дату" in rows[0].message.lower()
 
-    def test_empty_required_field_is_error(self):
-        text = "2026-06-01 |  | family_stories | Тема"
-        items, errors = ci.parse_text(text)
-        assert items == []
-        assert len(errors) == 1
-        assert "пустое" in errors[0].message
+    def test_error_empty_platform(self):
+        rows = parse_text("2026-05-29 |  | статья | советы | Тема")
+        assert rows[0].status == "error"
 
-    def test_ddmmyyyy_date_accepted(self):
-        text = "01.06.2026 | dzen_long | family_stories | Тема"
-        items, errors = ci.parse_text(text)
-        assert errors == []
-        assert items[0].publish_date == date(2026, 6, 1)
+    def test_error_empty_title(self):
+        rows = parse_text("2026-05-29 | Дзен | статья | советы |  ")
+        assert rows[0].status == "error"
 
-    def test_mixed_good_and_bad_lines(self):
-        text = """\
-2026-06-01 | dzen_long | family_stories | Тема 1
-bad_date | dzen_long | family_stories | Тема 2
-2026-06-03 | dzen_long | family_stories | Тема 3"""
-        items, errors = ci.parse_text(text)
-        assert len(items) == 2
-        assert len(errors) == 1
-        assert errors[0].line_no == 2
+    def test_date_formats(self):
+        for date_str in ("2026-05-29", "29.05.2026", "29/05/2026"):
+            rows = parse_text(f"{date_str} | Дзен | статья | советы | Тема")
+            assert rows[0].item.publish_date == date(2026, 5, 29), f"Ошибка для {date_str}"
+
+    def test_empty_rubric_allowed(self):
+        rows = parse_text("2026-05-29 | Дзен | статья |  | Тема без рубрики")
+        assert rows[0].status == ""
+        assert rows[0].item.rubric_name == ""
+
+    def test_empty_text_returns_empty(self):
+        assert parse_text("") == []
+        assert parse_text("   ") == []
 
 
-# ── Тесты парсера: TSV ───────────────────────────────────────────────────────
+# ── parse_text: JSON ───────────────────────────────────────────────────────────
 
-
-class TestParseTsv:
-    def test_basic_tsv(self):
-        text = "2026-06-01\tdzen_long\tfamily_stories\tТема одна"
-        items, errors = ci.parse_text(text)
-        assert errors == []
-        assert len(items) == 1
-        assert items[0].topic == "Тема одна"
-
-    def test_header_row_skipped(self):
-        text = "date\tplatform\trubric\ttopic\n2026-06-01\tdzen_long\tfamily_stories\tТема"
-        items, errors = ci.parse_text(text)
-        assert errors == []
-        assert len(items) == 1
-        assert items[0].publish_date == date(2026, 6, 1)
-
-    def test_no_header_works_without_skip(self):
-        text = "2026-06-01\tdzen_long\tfamily_stories\tТема A\n2026-06-02\tdzen_long\tfamily_stories\tТема B"
-        items, errors = ci.parse_text(text)
-        assert errors == []
-        assert len(items) == 2
-
-
-# ── Тесты парсера: JSON ──────────────────────────────────────────────────────
-
-
-class TestParseJson:
+class TestParseJSON:
     def test_basic_json(self):
-        text = '[{"date": "2026-06-01", "platform_format": "dzen_long", "rubric": "family_stories", "topic": "Тема"}]'
-        items, errors = ci.parse_text(text)
-        assert errors == []
-        assert len(items) == 1
-        assert items[0].publish_date == date(2026, 6, 1)
+        text = '[{"date": "2026-05-29", "platform": "Дзен", "material_type": "статья", "rubric": "советы", "title": "Тема"}]'
+        rows = parse_text(text)
+        assert len(rows) == 1
+        assert rows[0].status == ""
+        assert rows[0].item.title == "Тема"
 
-    def test_alias_keys(self):
-        text = '[{"publish_date": "2026-06-01", "pf": "dzen_long", "rubric": "family_stories", "topic": "T", "article_title": "Z", "initiate_dialog": true}]'
-        items, errors = ci.parse_text(text)
-        assert errors == []
-        assert items[0].article_title == "Z"
-        assert items[0].initiate_dialog is True
+    def test_json_alias_publish_date(self):
+        text = '[{"publish_date": "2026-05-29", "platform": "Дзен", "material_type": "пост", "rubric": "", "title": "Тема"}]'
+        rows = parse_text(text)
+        assert rows[0].item.publish_date == date(2026, 5, 29)
 
-    def test_missing_required_field(self):
-        text = '[{"date": "2026-06-01", "platform_format": "dzen_long", "rubric": "family_stories"}]'
-        items, errors = ci.parse_text(text)
-        assert items == []
-        assert len(errors) == 1
-        assert "topic" in errors[0].message
+    def test_json_alias_topic(self):
+        text = '[{"date": "2026-06-01", "platform": "ВК", "material_type": "пост", "rubric": "", "topic": "Тема 2"}]'
+        rows = parse_text(text)
+        assert rows[0].item.title == "Тема 2"
 
-    def test_invalid_json(self):
-        text = '[{"date": "2026-06-01", "platform_format": '
-        items, errors = ci.parse_text(text)
-        assert items == []
-        assert errors and "JSON" in errors[0].message
+    def test_json_error_not_list(self):
+        # JSON-массив, но из примитивов — не объекты
+        rows = parse_text('[1, 2, 3]')
+        assert rows[0].status == "error"
 
-    def test_not_array(self):
-        text = '{"date": "2026-06-01"}'
-        items, errors = ci.parse_text(text)
-        assert items == []
-        assert errors and "массив" in errors[0].message
+    def test_json_error_bad_date(self):
+        rows = parse_text('[{"date": "abc", "platform": "Дзен", "material_type": "", "rubric": "", "title": "T"}]')
+        assert rows[0].status == "error"
 
+    def test_json_error_missing_platform(self):
+        rows = parse_text('[{"date": "2026-05-29", "material_type": "", "rubric": "", "title": "T"}]')
+        assert rows[0].status == "error"
 
-# ── Резолв ───────────────────────────────────────────────────────────────────
+    def test_json_error_missing_title(self):
+        rows = parse_text('[{"date": "2026-05-29", "platform": "Дзен", "material_type": "", "rubric": ""}]')
+        assert rows[0].status == "error"
 
 
-class TestResolve:
-    def test_rubric_by_slug(self, rubrics):
-        assert ci.resolve_rubric_id("family_stories", rubrics) == 1
+# ── parse_text: TSV ────────────────────────────────────────────────────────────
 
-    def test_rubric_by_name(self, rubrics):
-        assert ci.resolve_rubric_id("Семейные истории", rubrics) == 1
+class TestParseTSV:
+    def test_tsv_with_header(self):
+        text = "Дата\tПлощадка\tТип\tРубрика\tНазвание\n2026-05-29\tДзен\tстатья\tсоветы\tТема TSV"
+        rows = parse_text(text)
+        assert len(rows) == 1
+        assert rows[0].item.title == "Тема TSV"
+        assert rows[0].item.platform_name == "Дзен"
 
-    def test_rubric_case_insensitive(self, rubrics):
-        assert ci.resolve_rubric_id("FAMILY_STORIES", rubrics) == 1
-
-    def test_rubric_not_found(self, rubrics):
-        assert ci.resolve_rubric_id("missing", rubrics) is None
-
-    def test_pformat_by_slug(self, pformats):
-        assert ci.resolve_pformat_id("dzen_long", pformats) == 10
-
-    def test_pformat_by_platform_slash_format(self, pformats):
-        assert ci.resolve_pformat_id("Дзен/Лонгрид", pformats) == 10
-        assert ci.resolve_pformat_id("дзен/лонгрид", pformats) == 10
-
-    def test_pformat_by_platform_only(self, pformats):
-        assert ci.resolve_pformat_id("Telegram", pformats) == 12
-
-    def test_pformat_not_found(self, pformats):
-        assert ci.resolve_pformat_id("instagram/story", pformats) is None
+    def test_tsv_without_header(self):
+        text = "2026-05-29\tДзен\tстатья\tсоветы\tТема TSV 2"
+        rows = parse_text(text)
+        assert len(rows) == 1
+        assert rows[0].item.publish_date == date(2026, 5, 29)
 
 
-# ── Импорт ───────────────────────────────────────────────────────────────────
+# ── run_import ─────────────────────────────────────────────────────────────────
 
+class TestRunImport:
+    def _make_deps(self, platform=None, rubric=None, existing=None, added=None):
+        if added is None:
+            added = []
 
-class TestImportItems:
-    def test_basic_import(self, rubrics, pformats, empty_existing, make_callbacks):
-        text = "2026-06-01 | dzen_long | family_stories | Тема 1"
-        items, errs = ci.parse_text(text)
-        cbs, state = make_callbacks()
-        report = ci.import_items(
-            items, errs, rubrics=rubrics, pformats=pformats,
-            existing_posts=empty_existing, **cbs,
+        def get_platform(name):
+            return platform if platform else None
+
+        def get_rubric(name):
+            return rubric if rubric else None
+
+        def get_sigs():
+            return existing or set()
+
+        def add_entry(**kwargs):
+            added.append(kwargs)
+            return len(added)
+
+        return get_platform, get_rubric, get_sigs, add_entry
+
+    def test_successful_import(self):
+        added = []
+        gp, gr, gs, ae = self._make_deps(
+            platform=_make_platform(), rubric=_make_rubric(), added=added
+        )
+        report = run_import(
+            "2026-05-29 | Дзен | статья | советы | Тема",
+            get_platform_by_name=gp, get_rubric_by_name=gr,
+            get_existing_signatures=gs, add_entry=ae,
         )
         assert report.created == 1
-        assert report.duplicate == 0
-        assert report.error == 0
-        assert state["plan_calls"] == 1
-        assert state["posts"][0]["topic"] == "Тема 1"
-        assert state["posts"][0]["rubric_id"] == 1
-        assert state["posts"][0]["pf_id"] == 10
+        assert report.errors == 0
+        assert len(added) == 1
+        assert added[0]["title"] == "Тема"
+        assert added[0]["platform_id"] == 1
+        assert added[0]["rubric_id"] == 10
 
-    def test_plan_created_once_for_batch(self, rubrics, pformats, empty_existing, make_callbacks):
-        text = """\
-2026-06-01 | dzen_long | family_stories | A
-2026-06-02 | dzen_long | family_stories | B
-2026-06-03 | dzen_long | family_stories | C"""
-        items, errs = ci.parse_text(text)
-        cbs, state = make_callbacks()
-        report = ci.import_items(
-            items, errs, rubrics=rubrics, pformats=pformats,
-            existing_posts=empty_existing, **cbs,
+    def test_platform_not_found(self):
+        gp, gr, gs, ae = self._make_deps(platform=None)
+        report = run_import(
+            "2026-05-29 | НеизвестнаяПлощадка | статья | советы | Тема",
+            get_platform_by_name=gp, get_rubric_by_name=gr,
+            get_existing_signatures=gs, add_entry=ae,
         )
-        assert report.created == 3
-        assert state["plan_calls"] == 1
-
-    def test_intra_batch_duplicate_skipped(self, rubrics, pformats, empty_existing, make_callbacks):
-        text = """\
-2026-06-01 | dzen_long | family_stories | Тема одинаковая
-2026-06-02 | dzen_long | family_stories | Другая тема
-2026-06-01 | dzen_long | family_stories | Тема одинаковая"""
-        items, errs = ci.parse_text(text)
-        cbs, state = make_callbacks()
-        report = ci.import_items(
-            items, errs, rubrics=rubrics, pformats=pformats,
-            existing_posts=empty_existing, **cbs,
-        )
-        assert report.created == 2
-        assert report.duplicate == 1
-        # дубль — это 3-я запись
-        dup_rows = [r for r in report.rows if r.status == "duplicate"]
-        assert len(dup_rows) == 1
-        assert dup_rows[0].line_no == 3
-
-    def test_existing_in_db_treated_as_duplicate(self, rubrics, pformats, make_callbacks):
-        existing = [{
-            "publish_date": date(2026, 6, 1),
-            "platform_format_id": 10,
-            "rubric_id": 1,
-            "topic": "Уже была такая тема",
-        }]
-        text = "2026-06-01 | dzen_long | family_stories | Уже была такая тема"
-        items, errs = ci.parse_text(text)
-        cbs, state = make_callbacks()
-        report = ci.import_items(
-            items, errs, rubrics=rubrics, pformats=pformats,
-            existing_posts=existing, **cbs,
-        )
+        assert report.errors == 1
         assert report.created == 0
-        assert report.duplicate == 1
-        assert state["plan_calls"] == 0
-        assert state["posts"] == []
+        assert "не найдена" in report.rows[0].message.lower()
 
-    def test_duplicate_topic_case_insensitive(self, rubrics, pformats, make_callbacks):
-        existing = [{
-            "publish_date": date(2026, 6, 1),
-            "platform_format_id": 10,
-            "rubric_id": 1,
-            "topic": "Семейные традиции",
-        }]
-        text = "2026-06-01 | dzen_long | family_stories | СЕМЕЙНЫЕ ТРАДИЦИИ"
-        items, errs = ci.parse_text(text)
-        cbs, _ = make_callbacks()
-        report = ci.import_items(
-            items, errs, rubrics=rubrics, pformats=pformats,
-            existing_posts=existing, **cbs,
+    def test_rubric_not_found(self):
+        gp, gr, gs, ae = self._make_deps(platform=_make_platform(), rubric=None)
+        report = run_import(
+            "2026-05-29 | Дзен | статья | неизвестная рубрика | Тема",
+            get_platform_by_name=gp, get_rubric_by_name=gr,
+            get_existing_signatures=gs, add_entry=ae,
         )
-        assert report.duplicate == 1
-        assert report.created == 0
+        assert report.errors == 1
 
-    def test_unknown_rubric_is_error(self, rubrics, pformats, empty_existing, make_callbacks):
-        text = "2026-06-01 | dzen_long | unknown_rubric | Тема"
-        items, errs = ci.parse_text(text)
-        cbs, state = make_callbacks()
-        report = ci.import_items(
-            items, errs, rubrics=rubrics, pformats=pformats,
-            existing_posts=empty_existing, **cbs,
-        )
-        assert report.error == 1
-        assert report.created == 0
-        assert state["plan_calls"] == 0
-        assert "не найдена рубрика" in report.rows[0].message
-
-    def test_unknown_pformat_is_error(self, rubrics, pformats, empty_existing, make_callbacks):
-        text = "2026-06-01 | instagram_story | family_stories | Тема"
-        items, errs = ci.parse_text(text)
-        cbs, _ = make_callbacks()
-        report = ci.import_items(
-            items, errs, rubrics=rubrics, pformats=pformats,
-            existing_posts=empty_existing, **cbs,
-        )
-        assert report.error == 1
-        assert "не найден формат площадки" in report.rows[0].message
-
-    def test_parse_errors_are_in_report(self, rubrics, pformats, empty_existing, make_callbacks):
-        text = """\
-2026-06-01 | dzen_long | family_stories | OK
-broken_line_only_one_field
-2026-06-02 | dzen_long | family_stories | OK2"""
-        items, errs = ci.parse_text(text)
-        cbs, _ = make_callbacks()
-        report = ci.import_items(
-            items, errs, rubrics=rubrics, pformats=pformats,
-            existing_posts=empty_existing, **cbs,
-        )
-        assert report.created == 2
-        assert report.error == 1
-
-    def test_extras_applied(self, rubrics, pformats, empty_existing, make_callbacks):
-        text = "2026-06-01 | dzen_long | family_stories | Тема | Заголовок | картинка-промпт | true"
-        items, errs = ci.parse_text(text)
-        cbs, state = make_callbacks()
-        ci.import_items(
-            items, errs, rubrics=rubrics, pformats=pformats,
-            existing_posts=empty_existing, **cbs,
-        )
-        assert len(state["extras"]) == 1
-        x = state["extras"][0]
-        assert x["publish_date"] == "2026-06-01"
-        assert x["article_title"] == "Заголовок"
-        assert x["image_prompt"] == "картинка-промпт"
-        assert x["initiate_dialog"] is True
-
-    def test_create_post_callback_exception_recorded(self, rubrics, pformats, empty_existing):
-        text = """\
-2026-06-01 | dzen_long | family_stories | A
-2026-06-02 | dzen_long | family_stories | B"""
-        items, errs = ci.parse_text(text)
-        plan_calls = [0]
-        created = []
-
-        def create_plan():
-            plan_calls[0] += 1
-            return 99
-
-        def create_post(plan_id, item, rubric_id, pf_id):
-            if "B" in item.topic:
-                raise RuntimeError("simulated DB failure")
-            created.append(item.topic)
-            return 1
-
-        def apply_extras(post_id, item):
-            pass
-
-        report = ci.import_items(
-            items, errs, rubrics=rubrics, pformats=pformats,
-            existing_posts=empty_existing,
-            create_plan_fn=create_plan,
-            create_post_fn=create_post,
-            apply_extras_fn=apply_extras,
+    def test_empty_rubric_no_rubric_id(self):
+        added = []
+        gp, gr, gs, ae = self._make_deps(platform=_make_platform(), added=added)
+        report = run_import(
+            "2026-05-29 | Дзен | статья |  | Тема без рубрики",
+            get_platform_by_name=gp, get_rubric_by_name=gr,
+            get_existing_signatures=gs, add_entry=ae,
         )
         assert report.created == 1
-        assert report.error == 1
-        assert plan_calls[0] == 1
-        assert "simulated DB failure" in [r.message for r in report.rows if r.status == "error"][0]
+        assert added[0]["rubric_id"] is None
 
-    def test_to_dict_serialization(self, rubrics, pformats, empty_existing, make_callbacks):
-        text = "2026-06-01 | dzen_long | family_stories | Тема"
-        items, errs = ci.parse_text(text)
-        cbs, _ = make_callbacks()
-        report = ci.import_items(
-            items, errs, rubrics=rubrics, pformats=pformats,
-            existing_posts=empty_existing, **cbs,
+    def test_dedup_existing(self):
+        existing = {(1, "2026-05-29", "тема")}
+        gp, gr, gs, ae = self._make_deps(
+            platform=_make_platform(), rubric=_make_rubric(), existing=existing
+        )
+        report = run_import(
+            "2026-05-29 | Дзен | статья | советы | Тема",
+            get_platform_by_name=gp, get_rubric_by_name=gr,
+            get_existing_signatures=gs, add_entry=ae,
+        )
+        assert report.duplicates == 1
+        assert report.created == 0
+
+    def test_dedup_within_batch(self):
+        added = []
+        gp, gr, gs, ae = self._make_deps(
+            platform=_make_platform(), rubric=_make_rubric(), added=added
+        )
+        text = (
+            "2026-05-29 | Дзен | статья | советы | Тема\n"
+            "2026-05-29 | Дзен | статья | советы | Тема\n"
+        )
+        report = run_import(
+            text,
+            get_platform_by_name=gp, get_rubric_by_name=gr,
+            get_existing_signatures=gs, add_entry=ae,
+        )
+        assert report.created == 1
+        assert report.duplicates == 1
+
+    def test_dedup_case_insensitive_title(self):
+        existing = {(1, "2026-05-29", "тема")}
+        gp, gr, gs, ae = self._make_deps(
+            platform=_make_platform(), rubric=_make_rubric(), existing=existing
+        )
+        report = run_import(
+            "2026-05-29 | Дзен | статья | советы | ТЕМА",
+            get_platform_by_name=gp, get_rubric_by_name=gr,
+            get_existing_signatures=gs, add_entry=ae,
+        )
+        assert report.duplicates == 1
+
+    def test_mixed_results(self):
+        added = []
+        gp, gr, gs, ae = self._make_deps(
+            platform=_make_platform(), rubric=_make_rubric(), added=added
+        )
+        text = (
+            "2026-05-29 | Дзен | статья | советы | Тема 1\n"
+            "не-дата | Дзен | статья | советы | Тема 2\n"
+            "2026-05-31 | Дзен | статья | советы | Тема 3\n"
+        )
+        report = run_import(
+            text,
+            get_platform_by_name=gp, get_rubric_by_name=gr,
+            get_existing_signatures=gs, add_entry=ae,
+        )
+        assert report.created == 2
+        assert report.errors == 1
+
+    def test_empty_text_empty_report(self):
+        gp, gr, gs, ae = self._make_deps(platform=_make_platform())
+        report = run_import(
+            "",
+            get_platform_by_name=gp, get_rubric_by_name=gr,
+            get_existing_signatures=gs, add_entry=ae,
+        )
+        assert report.created == 0
+        assert report.errors == 0
+
+    def test_report_to_dict(self):
+        added = []
+        gp, gr, gs, ae = self._make_deps(
+            platform=_make_platform(), rubric=_make_rubric(), added=added
+        )
+        report = run_import(
+            "2026-05-29 | Дзен | статья | советы | Тема",
+            get_platform_by_name=gp, get_rubric_by_name=gr,
+            get_existing_signatures=gs, add_entry=ae,
         )
         d = report.to_dict()
         assert d["created"] == 1
-        assert d["total"] == 1
-        assert isinstance(d["rows"], list)
-        assert d["rows"][0]["status"] == "created"
-
-
-# ── Граничные кейсы ──────────────────────────────────────────────────────────
-
-
-class TestEdgeCases:
-    def test_empty_text_returns_empty_report(self, rubrics, pformats, empty_existing, make_callbacks):
-        items, errs = ci.parse_text("")
-        cbs, state = make_callbacks()
-        report = ci.import_items(
-            items, errs, rubrics=rubrics, pformats=pformats,
-            existing_posts=empty_existing, **cbs,
-        )
-        assert report.total == 0
-        assert state["plan_calls"] == 0
-
-    def test_only_comments(self, rubrics, pformats, empty_existing, make_callbacks):
-        items, errs = ci.parse_text("# header\n# nothing here")
-        cbs, _ = make_callbacks()
-        report = ci.import_items(
-            items, errs, rubrics=rubrics, pformats=pformats,
-            existing_posts=empty_existing, **cbs,
-        )
-        assert report.total == 0
-
-    def test_dedup_does_not_create_plan(self, rubrics, pformats, make_callbacks):
-        existing = [{
-            "publish_date": date(2026, 6, 1),
-            "platform_format_id": 10,
-            "rubric_id": 1,
-            "topic": "Дубль",
-        }]
-        text = "2026-06-01 | dzen_long | family_stories | Дубль"
-        items, errs = ci.parse_text(text)
-        cbs, state = make_callbacks()
-        ci.import_items(
-            items, errs, rubrics=rubrics, pformats=pformats,
-            existing_posts=existing, **cbs,
-        )
-        assert state["plan_calls"] == 0
+        assert d["duplicates"] == 0
+        assert d["errors"] == 0
+        assert len(d["rows"]) == 1
+        assert d["rows"][0]["title"] == "Тема"

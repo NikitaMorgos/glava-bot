@@ -725,6 +725,7 @@ def calendar_view():
         entries = [e for e in entries if e.get("platform_id") == platform_id]
 
     scout_job_key = "calendar_scout"
+    import_report = session.pop("smm_calendar_import_report", None)
     return render_template(
         "smm/calendar.html",
         platforms=platforms,
@@ -733,6 +734,8 @@ def calendar_view():
         active_platform_id=platform_id,
         today=today,
         scout_status=_jobs.get(scout_job_key, ""),
+        calendar_draft=_get_calendar_draft(),
+        import_report=import_report,
     )
 
 
@@ -800,6 +803,47 @@ def calendar_entry_delete(entry_id: int):
     db_smm.delete_calendar_entry(entry_id)
     flash("Запись удалена", "success")
     return redirect(url_for("smm.calendar_view", platform_id=platform_id))
+
+
+# ── Массовый импорт календаря ──────────────────────────────────────────────────
+
+_CALENDAR_DRAFT_KEY = "smm_calendar_bulk_draft"
+
+
+def _get_calendar_draft() -> str:
+    row = dba.get_prompt(_CALENDAR_DRAFT_KEY)
+    return row.get("prompt_text", "") if row else ""
+
+
+def _save_calendar_draft(text: str) -> None:
+    dba.save_prompt(_CALENDAR_DRAFT_KEY, text or "", session.get("username", "system"))
+
+
+@bp.route("/calendar/draft", methods=["POST"])
+@role_required("dev", "lena", "dasha")
+def save_calendar_draft():
+    _save_calendar_draft(request.form.get("calendar_text", ""))
+    flash("Черновик сохранён", "success")
+    return redirect(url_for("smm.calendar_view"))
+
+
+@bp.route("/calendar/import", methods=["POST"])
+@role_required("dev", "lena", "dasha")
+def import_calendar():
+    from smm import calendar_import as ci
+
+    text = request.form.get("calendar_text", "")
+    _save_calendar_draft(text)
+
+    report = ci.run_import(
+        text,
+        get_platform_by_name=db_smm.get_platform_by_name,
+        get_rubric_by_name=db_smm.get_rubric_by_name,
+        get_existing_signatures=db_smm.get_existing_calendar_signatures,
+        add_entry=db_smm.add_calendar_entry,
+    )
+    session["smm_calendar_import_report"] = report.to_dict()
+    return redirect(url_for("smm.calendar_view"))
 
 
 # ── Скаут по календарю ─────────────────────────────────────────────────────────
