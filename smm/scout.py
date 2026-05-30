@@ -251,3 +251,68 @@ def _default_strategy() -> str:
         "Тональность: тёплая, личная, с уважением к старшему поколению.\n"
         "Цель контента: вдохновить читателя на создание семейной книги."
     )
+
+
+def run_calendar_scout(days_ahead: int = 30) -> dict:
+    """
+    Проходит по записям контент-календаря на ``days_ahead`` дней вперёд и создаёт
+    черновики постов для тех записей, у которых поста ещё нет.
+
+    Возвращает словарь {"created": N, "skipped": N}.
+
+    Логика:
+    - has_post=True  → пропускаем (пост уже есть)
+    - content_ready=True, extra_info заполнен → статус "text_ready", текст = extra_info
+    - иначе → статус "draft"
+    """
+    from datetime import date, timedelta
+    from smm.db_smm import create_post, get_calendar_entries_with_post_status
+
+    today     = date.today()
+    date_to   = today + timedelta(days=days_ahead)
+    entries   = get_calendar_entries_with_post_status(
+        date_from=today.isoformat(),
+        date_to=date_to.isoformat(),
+    )
+
+    created = 0
+    skipped = 0
+
+    for entry in entries:
+        if entry.get("has_post"):
+            skipped += 1
+            continue
+
+        # Определяем канал: имя площадки в нижнем регистре или "dzen"
+        channel = (entry.get("platform_name") or "dzen").lower().replace(" ", "_")
+
+        # Если контент готов — сразу text_ready
+        if entry.get("content_ready") and (entry.get("extra_info") or "").strip():
+            status       = "text_ready"
+            article_body = (entry.get("extra_info") or "").strip()
+        else:
+            status       = "draft"
+            article_body = ""
+
+        publish_date = entry.get("publish_date")
+        if publish_date and not isinstance(publish_date, str):
+            publish_date = publish_date.isoformat()
+
+        create_post(
+            plan_id=None,
+            topic=entry.get("title", ""),
+            channel=channel,
+            rubric_id=entry.get("rubric_id"),
+            publish_date=publish_date,
+            calendar_entry_id=entry.get("id"),
+            article_body=article_body,
+            status=status,
+        )
+        created += 1
+        logger.info(
+            "Calendar scout: создан пост для записи id=%d «%s» (%s)",
+            entry["id"], entry.get("title", "")[:60], publish_date,
+        )
+
+    logger.info("Calendar scout: создано=%d пропущено=%d", created, skipped)
+    return {"created": created, "skipped": skipped}
