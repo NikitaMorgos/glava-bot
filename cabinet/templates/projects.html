@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Мои книги{% endblock %}
+{% block content %}
+<div class="page-title">Мои книги</div>
+<div class="page-sub">Все ваши заказы в одном месте. Нажмите на книгу, чтобы продолжить работу.</div>
+
+{% if projects %}
+  {% for p in projects %}
+  <a href="{{ url_for('project_detail', project_id=p.id) }}"
+     class="card" style="display:block; text-decoration:none; color:inherit;">
+    <div style="display:flex; align-items:center; gap:1rem;">
+      <div style="width:48px; height:60px; border-radius:6px;
+                  background:linear-gradient(135deg, var(--warm-light), var(--paper));
+                  display:flex; align-items:center; justify-content:center;
+                  font-size:1.3rem; flex-shrink:0;">📖</div>
+      <div style="flex:1; min-width:0;">
+        <div style="font-size:1.05rem; font-weight:600; color:var(--ink);">
+          {{ p.hero_name or 'Без имени' }}
+        </div>
+        {% if p.hero_relation %}
+        <div style="font-size:0.85rem; color:var(--muted);">{{ p.hero_relation }}</div>
+        {% endif %}
+        <div style="margin-top:0.4rem; display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+          {% if p.book_version %}
+            <span class="badge badge-green">📖 Книга готова · v{{ p.book_version }}</span>
+          {% elif p.voice_count > 0 %}
+            <span class="badge badge-warm">📥 Материалы загружаются</span>
+          {% else %}
+            <span class="badge badge-warm">⏳ Ждём интервью</span>
+          {% endif %}
+          <span style="font-size:0.75rem; color:var(--muted);">
+            {{ p.voice_count }} интервью · {{ p.photo_count }} фото
+          </span>
+          {% if p.book_version and p.book_created_at %}
+            <span style="font-size:0.75rem; color:var(--muted);">·
+              {{ p.book_created_at.strftime('%d.%m.%Y') }}
+            </span>
+          {% elif p.created_at %}
+            <span style="font-size:0.75rem; color:var(--muted);">·
+              {{ p.created_at.strftime('%d.%m.%Y') }}
+            </span>
+          {% endif %}
+        </div>
+      </div>
+      <div style="color:var(--muted); font-size:1.2rem;">→</div>
+    </div>
+  </a>
+  {% endfor %}
+{% else %}
+  <div class="card" style="text-align:center; padding:2.5rem 1.5rem;">
+    <div style="font-size:2rem; margin-bottom:0.8rem; opacity:0.4;">📖</div>
+    <div style="font-weight:500; margin-bottom:0.3rem;">У вас пока нет книг</div>
+    <div class="muted" style="margin-bottom:1.5rem;">Создайте первый заказ — это бесплатно до оплаты</div>
+  </div>
+{% endif %}
+
+<div style="margin-top:1.5rem;">
+  <a href="{{ url_for('project_new') }}" class="btn" style="width:100%; text-align:center;">
+    ➕ Заказать книгу
+  </a>
+  <div class="muted" style="text-align:center; margin-top:0.6rem; font-size:0.8rem;">
+    Каждая книга оформляется отдельно
+  </div>
+</div>
+{% endblock %}

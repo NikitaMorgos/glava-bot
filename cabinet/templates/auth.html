@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Вход в кабинет{% endblock %}
+{% block content %}
+<div style="max-width: 480px; margin: 3rem auto;">
+
+  {% if stage == "form" %}
+    <div class="page-title" style="text-align:center;">Войти в кабинет</div>
+    <div class="page-sub" style="text-align:center;">
+      Введите email — мы отправим ссылку для входа.<br>
+      Если у вас ещё нет аккаунта — он создастся автоматически.
+    </div>
+
+    <form method="POST" action="{{ url_for('auth_request') }}" class="card">
+      {% if error %}<div class="error">{{ error }}</div>{% endif %}
+      <div class="form-group">
+        <label class="form-label" for="email">Email</label>
+        <input type="email" class="form-input" id="email" name="email"
+               placeholder="your@email.com" required autofocus>
+      </div>
+      <button type="submit" class="btn" style="width:100%;">
+        Получить ссылку для входа
+      </button>
+    </form>
+
+    <div style="text-align:center; margin-top:1.5rem; font-size:0.85rem; color:var(--muted);">
+      Уже пользуетесь ботом?
+      <a href="{{ url_for('login') }}">Войти по @username и паролю</a>
+    </div>
+
+  {% elif stage == "sent" %}
+    <div class="card" style="text-align:center; padding:2.5rem 1.5rem;">
+      <div style="font-size:2.5rem; margin-bottom:1rem;">📧</div>
+      <div class="page-title" style="margin-bottom:0.5rem;">Письмо отправлено</div>
+      <div style="color:var(--muted); margin-bottom:1.5rem; line-height:1.7;">
+        Если адрес <strong>{{ email }}</strong> существует, на него пришла<br>
+        ссылка для входа. Перейдите по ней — кабинет откроется.
+      </div>
+      <div style="font-size:0.85rem; color:var(--muted); line-height:1.6;">
+        Не пришло за минуту? Проверьте папку «Спам» или
+        <a href="{{ url_for('auth') }}">попробуйте ещё раз</a>.
+      </div>
+    </div>
+
+  {% elif stage == "expired" %}
+    <div class="card" style="text-align:center; padding:2.5rem 1.5rem;">
+      <div style="font-size:2.5rem; margin-bottom:1rem;">⏳</div>
+      <div class="page-title" style="margin-bottom:0.5rem;">Ссылка не работает</div>
+      <div style="color:var(--muted); margin-bottom:1.5rem; line-height:1.7;">
+        Возможно, она уже была использована или истёкла<br>
+        (срок действия — 30 минут).
+      </div>
+      <a href="{{ url_for('auth') }}" class="btn">Запросить новую ссылку</a>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

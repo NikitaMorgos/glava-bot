@@ -1,17 +1,39 @@
 {% extends "base.html" %}
 {% block title %}Вопросы для интервью{% endblock %}
 {% block content %}
-<p style="margin-bottom: 1.5rem;"><a href="{{ url_for('dashboard') }}">← Назад в кабинет</a></p>
-<h1 style="margin-bottom: 1rem;">Вопросы для интервью</h1>
-<p class="muted" style="margin-bottom: 2rem;">Используй эти темы и вопросы, чтобы не теряться в разговоре.</p>
-{% for title, qs in blocks %}
+<p style="margin-bottom: 1.5rem;"><a href="{{ url_for('projects_list') }}">← Назад к книгам</a></p>
+<h1 style="margin-bottom: 0.4rem;">Вопросы для биографического интервью</h1>
+<p class="muted" style="margin-bottom: 1.5rem;">
+  Используйте эти темы и вопросы, чтобы не теряться в разговоре.
+  Не обязательно отвечать на все — выберите те, что зацепили.
+</p>
+<div style="margin-bottom: 1.5rem;">
+  <a href="{{ url_for('questions_download') }}" class="btn btn-secondary"
+     style="font-size: 0.9rem; padding: 0.5rem 1rem;">📄 Скачать вопросы</a>
+</div>
+
+{% for title, subtitle, qs in blocks %}
 <section style="margin-bottom: 2rem;">
-    <h2 style="font-size: 1.15rem; margin-bottom: 0.75rem; color: var(--accent);">{{ title }}</h2>
+    <h2 style="font-size: 1.15rem; margin-bottom: 0.25rem; color: var(--ink);">{{ title }}</h2>
+    {% if subtitle %}
+    <div class="muted" style="font-style: italic; margin-bottom: 0.8rem; font-size: 0.92rem;">{{ subtitle }}</div>
+    {% endif %}
     <ul style="padding-left: 1.2rem;">
         {% for q in qs %}
-        <li style="margin-bottom: 0.5rem;">{{ q }}</li>
+        <li style="margin-bottom: 0.6rem; line-height: 1.55;">{{ q }}</li>
         {% endfor %}
     </ul>
 </section>
 {% endfor %}
+
+{% if tips %}
+<section style="margin-top: 2.5rem; padding: 1.2rem 1.4rem; background: var(--paper); border-radius: 12px;">
+    <h2 style="font-size: 1.05rem; margin-bottom: 0.8rem; color: var(--ink);">💡 Подсказки для рассказчика</h2>
+    <ul style="padding-left: 1.2rem;">
+        {% for tip in tips %}
+        <li style="margin-bottom: 0.5rem; line-height: 1.55; color: var(--muted);">{{ tip }}</li>
+        {% endfor %}
+    </ul>
+</section>
+{% endif %}
 {% endblock %}

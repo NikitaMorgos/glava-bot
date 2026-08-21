@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}Доп. вопросы — проект #{{ project.id }}{% endblock %}
+{% block content %}
+<div style="font-size:0.75rem; color:var(--muted); margin-bottom:0.4rem;">
+  <a href="{{ url_for('project_detail', project_id=project.id) }}">← Назад к проекту</a>
+</div>
+
+{% if latest %}
+  <div class="page-title">Доп. вопросы готовы 🎉</div>
+  <div class="page-sub">
+    Мы обработали материалы{% if first_hero %} о {{ first_hero.name }}{% endif %} и нашли темы,
+    которые остались нераскрытыми. Запишите ещё одно короткое интервью с ответами на эти вопросы —
+    книга станет полнее и живее.
+  </div>
+
+  <!-- Уточняющие вопросы по темам -->
+  {% if latest.blocks_json %}
+  <div class="card">
+    <div style="font-weight:600; margin-bottom:0.3rem;">🔍 Уточняющие вопросы</div>
+    <div class="muted" style="font-size:0.85rem; margin-bottom:1rem;">
+      Эти темы остались нераскрытыми. Не обязательно отвечать на все — выберите те, что важны.
+    </div>
+    {% for block in latest.blocks_json %}
+    <div style="padding:0.7rem 0.9rem; background:var(--paper); border-radius:10px; margin-bottom:0.6rem;">
+      <div style="font-weight:600; color:var(--ink); margin-bottom:0.3rem;">{{ block.title }}</div>
+      {% if block.questions %}
+      <ul style="list-style:none; padding:0; margin:0;">
+        {% for q in block.questions %}
+        <li style="padding:0.2rem 0; font-size:0.92rem; color:var(--dark);">
+          <span style="color:var(--warm); font-weight:600;">•</span> {{ q }}
+        </li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Блиц -->
+  {% if latest.blitz_json %}
+  <div class="card">
+    <div style="font-weight:600; margin-bottom:0.3rem;">⚡ Блиц-вопросы</div>
+    <div class="muted" style="font-size:0.85rem; margin-bottom:1rem;">
+      Быстрые вопросы — на каждый достаточно одного предложения. За 5–10 минут.
+    </div>
+    <ul style="list-style:none; padding:0; margin:0; line-height:2;">
+      {% for q in latest.blitz_json %}
+      <li style="font-size:0.92rem;">
+        <span style="color:var(--warm); font-weight:600;">•</span> {{ q }}
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  <!-- Действия -->
+  <div style="display:flex; gap:0.7rem; margin-top:2rem; flex-wrap:wrap;">
+    <a href="{{ url_for('project_detail', project_id=project.id) }}" class="btn">
+      🎤 К материалам — догрузить второе интервью
+    </a>
+    <a href="{{ url_for('project_questions_download', project_id=project.id) }}" class="btn btn-secondary">
+      📄 Скачать вопросы
+    </a>
+    <a href="{{ url_for('project_book', project_id=project.id) }}" class="btn btn-secondary">
+      Пропустить — собрать из того что есть
+    </a>
+  </div>
+
+  {% if latest.created_at %}
+  <div class="muted" style="font-size:0.75rem; margin-top:1.5rem; text-align:right;">
+    Вопросы версии {{ latest.version }} ·
+    {{ latest.created_at.strftime('%d.%m.%Y %H:%M') }}
+  </div>
+  {% endif %}
+
+{% else %}
+  <div class="page-title">Доп. вопросы пока не готовы</div>
+  <div class="page-sub">
+    Мы обработаем загруженные материалы и сформируем список тем, которые стоит раскрыть подробнее.
+    Это занимает 1–2 дня. Email придёт.
+  </div>
+  <div class="card" style="text-align:center; padding:2.5rem 1.5rem;">
+    <div style="font-size:2.5rem; margin-bottom:1rem; opacity:0.4;">⏳</div>
+    <div style="font-weight:500; margin-bottom:0.5rem;">Ждём первые материалы</div>
+    <div class="muted" style="margin-bottom:1.5rem;">
+      Сначала загрузите хотя бы одно интервью — потом мы предложим уточняющие вопросы.
+    </div>
+    <a href="{{ url_for('project_detail', project_id=project.id) }}" class="btn">
+      К проекту — загрузить материалы →
+    </a>
+  </div>
+{% endif %}
+{% endblock %}

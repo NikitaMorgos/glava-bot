@@ -6,19 +6,72 @@
     <title>{% block title %}Личный кабинет{% endblock %} — Glava</title>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
-        :root { --cream: #faf8f5; --paper: #f5f2ed; --ink: #2c2419; --accent: #5b7a9e; --muted: #6b5d4d; }
+        :root {
+            --cream: #faf8f5; --paper: #f5f2ed; --ink: #2c2419;
+            --accent: #5b7a9e; --warm: #c8a96e; --warm-light: #e8d5b0;
+            --muted: #6b5d4d; --muted2: #b8b0a4; --border: #ece5d8;
+            --green: #4a9e6a; --red: #c85a5a;
+            --radius: 12px; --radius-lg: 16px;
+        }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: Manrope,sans-serif; background: var(--cream); color: var(--ink); line-height: 1.6; min-height: 100vh; }
-        .container { max-width: 700px; margin: 0 auto; padding: 2rem 1.5rem; }
+        .container { max-width: 800px; margin: 0 auto; padding: 2rem 1.5rem; }
         a { color: var(--accent); text-decoration: none; }
         a:hover { text-decoration: underline; }
-        .btn { display: inline-block; padding: 0.6rem 1.2rem; background: var(--accent); color: #fff; border-radius: 6px; border: none; cursor: pointer; font-size: 1rem; }
-        .btn:hover { opacity: 0.9; }
+        .btn { display: inline-block; padding: 0.7rem 1.4rem; background: var(--ink); color: #fff;
+               border-radius: 10px; border: none; cursor: pointer; font-size: 0.95rem;
+               font-family: inherit; text-decoration: none; }
+        .btn:hover { opacity: 0.9; text-decoration: none; }
+        .btn-secondary { background: #fff; color: var(--ink); border: 1px solid var(--border); }
+        .btn-warm { background: var(--warm); color: #fff; }
         .muted { color: var(--muted); font-size: 0.9rem; }
+        .topbar { background: #fff; border-bottom: 1px solid var(--border); padding: 0.8rem 1.5rem;
+                  display: flex; justify-content: space-between; align-items: center;
+                  position: sticky; top: 0; z-index: 100; }
+        .topbar-inner { max-width: 800px; margin: 0 auto; width: 100%;
+                        display: flex; justify-content: space-between; align-items: center; }
+        .topbar .logo { font-weight: 600; font-size: 1.1rem; color: var(--ink); }
+        .topbar .logo span { color: var(--warm); }
+        .topbar nav a { margin-left: 1.2rem; font-size: 0.9rem; color: var(--muted); }
+        .topbar nav a.active, .topbar nav a:hover { color: var(--ink); text-decoration: none; }
+        .card { background: #fff; border: 1px solid var(--border); border-radius: var(--radius-lg);
+                padding: 1.5rem; margin-bottom: 1rem; transition: border-color .2s; }
+        .card:hover { border-color: var(--warm-light); }
+        .badge { display: inline-block; font-size: 0.7rem; font-weight: 600;
+                 padding: 3px 10px; border-radius: 12px; }
+        .badge-green { background: rgba(78,158,106,.12); color: var(--green); }
+        .badge-warm { background: rgba(200,169,110,.12); color: var(--warm); }
+        .page-title { font-size: 1.5rem; font-weight: 600; margin-bottom: 0.3rem; }
+        .page-sub { color: var(--muted); margin-bottom: 1.5rem; font-size: 0.95rem; }
+        .form-group { margin-bottom: 1.2rem; }
+        .form-label { font-size: 0.85rem; font-weight: 500; color: var(--ink);
+                      margin-bottom: 0.3rem; display: block; }
+        .form-input { width: 100%; padding: 0.7rem 1rem; border: 1px solid var(--border);
+                      border-radius: 8px; font-size: 0.95rem; font-family: inherit;
+                      color: var(--ink); background: #fff; outline: none; transition: border-color .2s; }
+        .form-input:focus { border-color: var(--warm); }
+        .form-input::placeholder { color: var(--muted2); }
+        .error { color: var(--red); font-size: 0.9rem; margin-bottom: 1rem; }
     </style>
     {% block head %}{% endblock %}
 </head>
 <body>
+    {% if session.user_id %}
+    <div class="topbar">
+      <div class="topbar-inner">
+        <div class="logo">Глава<span>.</span></div>
+        <nav>
+          <a href="{{ url_for('projects_list') }}"
+             class="{% if request.endpoint == 'projects_list' or request.endpoint == 'project_new' or request.endpoint == 'project_detail' %}active{% endif %}">Мои книги</a>
+          <a href="{{ url_for('dashboard') }}"
+             class="{% if request.endpoint == 'dashboard' %}active{% endif %}">Материалы</a>
+          <a href="{{ url_for('questions') }}"
+             class="{% if request.endpoint == 'questions' %}active{% endif %}">Вопросы</a>
+          <a href="{{ url_for('logout') }}">Выйти</a>
+        </nav>
+      </div>
+    </div>
+    {% endif %}
     <div class="container">
         {% block content %}{% endblock %}
     </div>

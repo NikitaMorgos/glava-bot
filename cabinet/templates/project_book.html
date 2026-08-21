@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block title %}Книга{% if first_hero %} о {{ first_hero.name }}{% endif %}{% endblock %}
+{% block content %}
+<div style="font-size:0.75rem; color:var(--muted); margin-bottom:0.4rem;">
+  <a href="{{ url_for('project_detail', project_id=project.id) }}">← Назад к проекту</a>
+</div>
+
+{% if latest %}
+  <div class="page-title">
+    Книга {% if first_hero %}о {{ first_hero.name }}{% endif %} готова 📖
+  </div>
+  <div class="page-sub">
+    Посмотрите результат. Если хотите что-то изменить — напишите в поддержку.
+  </div>
+
+  <!-- PDF embed (для современных браузеров; на мобиле может не работать — есть кнопка скачать) -->
+  <div class="card" style="padding:0; overflow:hidden;">
+    <div style="padding:1rem 1.4rem; display:flex; justify-content:space-between;
+                align-items:center; border-bottom:1px solid var(--border); background:#fff;">
+      <div>
+        <strong>{% if first_hero %}{{ first_hero.name }}{% else %}Книга #{{ project.id }}{% endif %}</strong>
+        <div style="font-size:0.8rem; color:var(--muted); margin-top:0.2rem;">
+          Версия {{ latest.version }} ·
+          {{ latest.created_at.strftime('%d.%m.%Y') if latest.created_at else '' }}
+          {% if latest.page_count %} · {{ latest.page_count }} стр.{% endif %}
+          {% if latest.size_bytes %} ·
+            {% if latest.size_bytes > 1048576 %}
+              {{ "%.1f"|format(latest.size_bytes / 1048576) }} МБ
+            {% else %}
+              {{ "%.0f"|format(latest.size_bytes / 1024) }} КБ
+            {% endif %}
+          {% endif %}
+        </div>
+      </div>
+      <div style="display:flex; gap:0.5rem;">
+        {% if latest.html_storage_key %}
+        <a href="{{ url_for('project_book_edit', project_id=project.id) }}"
+           class="btn btn-secondary">✏️ Редактировать</a>
+        {% endif %}
+        <a href="{{ url_for('project_book_download', project_id=project.id) }}"
+           class="btn">📄 Скачать PDF</a>
+      </div>
+    </div>
+    <div style="height:640px; background:var(--paper);">
+      {% if html_url %}
+        <iframe src="{{ html_url }}"
+                style="width:100%; height:100%; border:0; background:#fff;"
+                sandbox="allow-same-origin allow-popups"></iframe>
+      {% else %}
+        <embed src="{{ pdf_url }}#toolbar=1&navpanes=0"
+               type="application/pdf"
+               style="width:100%; height:100%; border:0;">
+      {% endif %}
+    </div>
+    <div style="padding:0.8rem 1.4rem; font-size:0.8rem; color:var(--muted); background:#fff;
+                border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+      <span>
+        {% if html_url %}
+          Превью книги. Редактирование появится в следующем обновлении.
+        {% else %}
+          Если просмотр не открылся — нажмите «Скачать PDF» выше.
+        {% endif %}
+      </span>
+      {% if html_url and pdf_url %}
+        <a href="{{ pdf_url }}" target="_blank" style="font-size:0.8rem;">Открыть PDF в новой вкладке</a>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if latest.notes %}
+  <div class="card" style="margin-top:1rem;">
+    <div style="font-size:0.85rem; font-weight:500; margin-bottom:0.3rem;">О версии {{ latest.version }}</div>
+    <div style="font-size:0.9rem; color:var(--muted);">{{ latest.notes }}</div>
+  </div>
+  {% endif %}
+
+  {% if books|length > 1 %}
+  <h2 style="font-size:1.05rem; margin:2rem 0 0.8rem;">История версий</h2>
+  <div class="card">
+    {% for b in books %}
+    <div style="display:flex; justify-content:space-between; align-items:center;
+                padding:0.6rem 0; {% if not loop.last %}border-bottom:1px solid var(--border);{% endif %}">
+      <div>
+        <strong>Версия {{ b.version }}</strong>
+        {% if loop.first %}<span class="badge badge-green" style="margin-left:0.4rem;">актуальная</span>{% endif %}
+        <div style="font-size:0.8rem; color:var(--muted); margin-top:0.2rem;">
+          {{ b.created_at.strftime('%d.%m.%Y %H:%M') if b.created_at else '' }}
+          {% if b.notes %} · {{ b.notes[:60] }}{% if b.notes|length > 60 %}…{% endif %}{% endif %}
+        </div>
+      </div>
+      <a href="{{ url_for('project_book_version_download', project_id=project.id, version=b.version) }}"
+         class="btn btn-secondary" style="font-size:0.85rem; padding:0.4rem 0.8rem;">скачать</a>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+{% else %}
+  <!-- Книга ещё не готова -->
+  <div class="page-title">Книга ещё не собрана</div>
+  <div class="page-sub">Книга появится здесь, как только мы её соберём.</div>
+
+  <div class="card" style="text-align:center; padding:2.5rem 1.5rem;">
+    <div style="font-size:2.5rem; margin-bottom:1rem; opacity:0.4;">⏳</div>
+    <div style="font-weight:500; margin-bottom:0.5rem;">Готовой версии пока нет</div>
+    <div class="muted" style="margin-bottom:1.5rem; line-height:1.7;">
+      Все этапы — на странице проекта.<br>
+      Когда книга будет готова, мы пришлём email со ссылкой.
+    </div>
+    <a href="{{ url_for('project_detail', project_id=project.id) }}" class="btn">
+      ← Вернуться к проекту
+    </a>
+  </div>
+{% endif %}
+{% endblock %}

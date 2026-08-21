@@ -47,3 +47,6 @@ scikit-learn>=1.0.0
 
 # Replicate AI — генерация обложки книги (FLUX Schnell)
 replicate>=0.34.0
+
+# Для регенерации PDF в редакторе (счёт страниц)
+pypdf>=4.0.0

@@ -1,0 +1,888 @@
+{% extends "base.html" %}
+{% block title %}Проект #{{ project.id }}{% endblock %}
+{% block content %}
+{% if current_step == 'processing' %}
+<!-- Автообновление страницы для живого прогресса -->
+<script>
+  setTimeout(() => location.reload(), 8000);
+</script>
+{% endif %}
+
+{% if not is_editable %}
+<style>
+  /* Read-only режим: прячем всё что меняет данные */
+  .ro-hide,
+  .inline-upload-zone,
+  .edit-btn,
+  form[action$="/delete"],
+  form[action$="/update"],
+  form[action$="/heroes"],
+  form[action*="/heroes/"] {
+    display: none !important;
+  }
+</style>
+{% endif %}
+
+<div style="font-size:0.75rem; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:0.4rem;">
+  <a href="{{ url_for('projects_list') }}">← Все книги</a>
+</div>
+
+<div class="page-title">
+  Книга о {{ subject.name if subject else 'неизвестно' }}
+</div>
+<div class="page-sub">
+  {% if subject and subject.relation %}{{ subject.relation }} ·{% endif %}
+  Создана {{ project.created_at.strftime('%d.%m.%Y') if project.created_at else '' }}
+</div>
+
+<!-- ═══ Следующий шаг (CTA по статусу) — наверху, чтобы клиент сразу видел что делать ═══ -->
+{% set questions_url = url_for('project_questions', project_id=project.id) %}
+{% set book_url = url_for('project_book', project_id=project.id) %}
+
+<div style="margin-bottom:1.5rem;">
+  {% if current_step == 'upload' %}
+    <div class="card" style="background:rgba(200,169,110,.06); border-color:var(--warm-light);">
+      <div style="font-weight:600; font-size:1.05rem; margin-bottom:0.4rem;">
+        Начните — запишите первое интервью
+      </div>
+      <div class="muted" style="font-size:0.9rem; margin-bottom:0.8rem;">
+        Не знаете, о чём спросить? Раскройте подсказки — типовые вопросы для биографического интервью.
+        Когда запишете — добавьте рассказчика ниже и загрузите аудио или текст прямо в его карточку.
+      </div>
+      <details style="border:1px solid var(--border); border-radius:10px; background:#fff;">
+        <summary style="padding:0.7rem 1rem; cursor:pointer; font-weight:500; font-size:0.95rem;
+                        list-style:none; display:flex; justify-content:space-between; align-items:center;">
+          <span>📋 Подсказки для интервью</span>
+          <span style="font-size:0.8rem; color:var(--muted);">▾</span>
+        </summary>
+        <div style="padding:0 1rem 1rem;">
+          {% for title, subtitle, qs in interview_question_blocks %}
+          <div style="margin-top:1.2rem;">
+            <div style="font-weight:600; font-size:0.95rem; color:var(--ink); margin-bottom:0.2rem;">{{ title }}</div>
+            {% if subtitle %}
+            <div class="muted" style="font-size:0.82rem; font-style:italic; margin-bottom:0.5rem;">{{ subtitle }}</div>
+            {% endif %}
+            <ul style="list-style:none; padding:0; margin:0;">
+              {% for q in qs %}
+              <li style="padding:0.3rem 0; font-size:0.88rem; color:var(--dark); line-height:1.5;">
+                <span style="color:var(--warm); font-weight:600;">•</span> {{ q }}
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% endfor %}
+          {% if interview_tips %}
+          <div style="margin-top:1.5rem; padding-top:1rem; border-top:1px solid var(--border);">
+            <div style="font-weight:600; font-size:0.9rem; color:var(--ink); margin-bottom:0.5rem;">
+              💡 Подсказки для рассказчика
+            </div>
+            <ul style="list-style:none; padding:0; margin:0;">
+              {% for tip in interview_tips %}
+              <li style="padding:0.3rem 0; font-size:0.85rem; color:var(--muted); line-height:1.5;">
+                <span style="color:var(--warm); font-weight:600;">•</span> {{ tip }}
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% endif %}
+          <div style="margin-top:1rem;">
+            <a href="{{ url_for('questions_download') }}" class="btn btn-secondary"
+               style="font-size:0.85rem; padding:0.5rem 1rem;">📄 Скачать подсказки</a>
+          </div>
+        </div>
+      </details>
+    </div>
+
+  {% elif current_step == 'ready_to_submit' %}
+    <div class="card" style="background:rgba(200,169,110,.06); border-color:var(--warm-light);">
+      <div style="font-weight:600; font-size:1.05rem; margin-bottom:0.5rem;">
+        Готовы передать материалы нам?
+      </div>
+      <div class="muted" style="font-size:0.9rem; margin-bottom:1rem;">
+        У вас загружено: {{ voice_count }} интервью · {{ photo_count }} фото.<br>
+        Когда нажмёте «Начать обработку» — мы возьмём в работу.
+        Через 1–2 дня придёт email с уточняющими вопросами — на их основе вы сможете
+        дозаписать второе интервью, и тогда мы соберём книгу.
+      </div>
+      <form method="POST" action="{{ url_for('project_submit_materials', project_id=project.id) }}"
+            style="display:inline;">
+        <button type="submit" class="btn"
+                style="font-size:1rem; padding:0.9rem 1.8rem;">✅ Начать обработку</button>
+      </form>
+    </div>
+
+  {% elif current_step == 'processing' %}
+    <div class="card" style="background:rgba(200,169,110,.06); border-color:var(--warm-light);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.6rem;">
+        <div style="font-weight:600; font-size:1.05rem;">⚙️ Готовим вашу книгу</div>
+        <div style="font-size:0.85rem; color:var(--warm); font-weight:600;">{{ processing_progress }}%</div>
+      </div>
+      <!-- Прогресс-бар -->
+      <div style="height:8px; background:var(--paper); border-radius:4px; overflow:hidden; margin-bottom:1rem;">
+        <div style="height:100%; width:{{ processing_progress }}%; background:var(--warm);
+                    border-radius:4px; transition:width .6s;
+                    background-image:linear-gradient(90deg,
+                      var(--warm-light) 0%, var(--warm) 50%, var(--warm-light) 100%);
+                    background-size:200% 100%; animation:progressShimmer 2.4s linear infinite;"></div>
+      </div>
+      <style>
+        @keyframes progressShimmer {
+          from { background-position: 200% 0; }
+          to { background-position: -200% 0; }
+        }
+      </style>
+      <!-- Этапы — реальные данные из БД -->
+      <div style="display:flex; flex-direction:column; gap:0.4rem; margin-bottom:1rem;">
+        {% if job_stages %}
+          {% for s in job_stages %}
+          <div style="display:flex; align-items:center; gap:0.6rem; font-size:0.88rem;
+                      {% if s.status == 'done' %}color:var(--ink);
+                      {% elif s.status == 'running' %}color:var(--warm);
+                      {% elif s.status == 'failed' %}color:var(--red);
+                      {% else %}color:var(--muted);{% endif %}">
+            <div style="width:18px; height:18px; border-radius:50%; flex-shrink:0;
+                        display:flex; align-items:center; justify-content:center; font-size:0.7rem;
+                        {% if s.status == 'done' %}background:var(--green); color:#fff;
+                        {% elif s.status == 'running' %}background:#fff; border:2px solid var(--warm);
+                          animation: stagePulse 1.4s ease-in-out infinite;
+                        {% elif s.status == 'failed' %}background:var(--red); color:#fff;
+                        {% else %}background:#fff; border:1px solid var(--border);{% endif %}">
+              {% if s.status == 'done' %}✓{% elif s.status == 'failed' %}✕{% endif %}
+            </div>
+            <span style="{% if s.status == 'running' %}font-weight:600;{% endif %}">
+              {{ s.stage_label or s.stage_key }}
+            </span>
+            {% if s.status == 'failed' and s.error_message %}
+              <span style="font-size:0.75rem; color:var(--muted);">— {{ s.error_message[:60] }}</span>
+            {% endif %}
+          </div>
+          {% endfor %}
+          <style>
+            @keyframes stagePulse {
+              0%, 100% { box-shadow: 0 0 0 0 rgba(200,169,110,.4); }
+              50% { box-shadow: 0 0 0 6px rgba(200,169,110,0); }
+            }
+          </style>
+        {% else %}
+          <div class="muted" style="font-size:0.85rem;">⏳ Запускаем обработку…</div>
+        {% endif %}
+      </div>
+      <div class="muted" style="font-size:0.8rem; margin-bottom:1rem;">
+        {% if project.materials_submitted_at %}
+          Начато {{ project.materials_submitted_at.strftime('%d.%m.%Y %H:%M') }}.
+        {% endif %}
+        {% if has_questions %}
+          Когда книга будет готова — пришлём email и покажем её здесь.
+        {% else %}
+          Когда уточняющие вопросы будут готовы — пришлём email и покажем их здесь.
+        {% endif %}
+      </div>
+
+      {% if latest_questions %}
+      <details style="border:1px solid var(--border); border-radius:10px; background:#fff;">
+        <summary style="padding:0.7rem 1rem; cursor:pointer; font-weight:500; font-size:0.95rem;
+                        list-style:none; display:flex; justify-content:space-between; align-items:center;">
+          <span>📋 Уточняющие вопросы (из прошлого раунда)</span>
+          <span style="font-size:0.8rem; color:var(--muted);">▾</span>
+        </summary>
+        <div style="padding:0 1rem 1rem;">
+          {% for block in latest_questions.blocks_json %}
+          <div style="margin-top:0.8rem;">
+            <div style="font-weight:600; font-size:0.9rem; color:var(--ink); margin-bottom:0.3rem;">{{ block.title }}</div>
+            <ul style="list-style:none; padding:0; margin:0;">
+              {% for q in block.questions %}
+              <li style="padding:0.25rem 0; font-size:0.88rem; color:var(--dark); line-height:1.5;">
+                <span style="color:var(--warm); font-weight:600;">•</span> {{ q }}
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% endfor %}
+          {% if latest_questions.blitz_json %}
+          <div style="margin-top:1rem; padding-top:0.8rem; border-top:1px solid var(--border);">
+            <div style="font-weight:600; font-size:0.9rem; color:var(--ink); margin-bottom:0.3rem;">⚡ Блиц-вопросы</div>
+            <ul style="list-style:none; padding:0; margin:0;">
+              {% for q in latest_questions.blitz_json %}
+              <li style="padding:0.25rem 0; font-size:0.88rem; color:var(--dark); line-height:1.5;">
+                <span style="color:var(--warm); font-weight:600;">•</span> {{ q }}
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% endif %}
+          <div style="margin-top:1rem;">
+            <a href="{{ url_for('project_questions_download', project_id=project.id) }}"
+               class="btn btn-secondary" style="font-size:0.85rem; padding:0.5rem 1rem;">📄 Скачать вопросы</a>
+          </div>
+        </div>
+      </details>
+      {% endif %}
+    </div>
+
+  {% elif current_step == 'questions' %}
+    <div class="card" style="background:rgba(200,169,110,.06); border-color:var(--warm-light);">
+      <div style="font-weight:600; font-size:1.05rem; margin-bottom:0.4rem;">
+        Появились уточняющие вопросы
+      </div>
+      <div class="muted" style="font-size:0.9rem; margin-bottom:0.8rem;">
+        Посмотрите, что осталось раскрыть подробнее, и догрузите ответы прямо в карточки рассказчиков.
+        Когда будете готовы — нажмите «Собрать книгу».
+      </div>
+      {% if latest_questions %}
+      <details style="border:1px solid var(--border); border-radius:10px; background:#fff; margin-bottom:1rem;">
+        <summary style="padding:0.7rem 1rem; cursor:pointer; font-weight:500; font-size:0.95rem;
+                        list-style:none; display:flex; justify-content:space-between; align-items:center;">
+          <span>📋 Уточняющие вопросы</span>
+          <span style="font-size:0.8rem; color:var(--muted);">▾</span>
+        </summary>
+        <div style="padding:0 1rem 1rem;">
+          {% for block in latest_questions.blocks_json %}
+          <div style="margin-top:0.8rem;">
+            <div style="font-weight:600; font-size:0.9rem; color:var(--ink); margin-bottom:0.3rem;">{{ block.title }}</div>
+            <ul style="list-style:none; padding:0; margin:0;">
+              {% for q in block.questions %}
+              <li style="padding:0.25rem 0; font-size:0.88rem; color:var(--dark); line-height:1.5;">
+                <span style="color:var(--warm); font-weight:600;">•</span> {{ q }}
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% endfor %}
+          {% if latest_questions.blitz_json %}
+          <div style="margin-top:1rem; padding-top:0.8rem; border-top:1px solid var(--border);">
+            <div style="font-weight:600; font-size:0.9rem; color:var(--ink); margin-bottom:0.3rem;">⚡ Блиц-вопросы</div>
+            <ul style="list-style:none; padding:0; margin:0;">
+              {% for q in latest_questions.blitz_json %}
+              <li style="padding:0.25rem 0; font-size:0.88rem; color:var(--dark); line-height:1.5;">
+                <span style="color:var(--warm); font-weight:600;">•</span> {{ q }}
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% endif %}
+          <div style="margin-top:1rem;">
+            <a href="{{ url_for('project_questions_download', project_id=project.id) }}"
+               class="btn btn-secondary" style="font-size:0.85rem; padding:0.5rem 1rem;">📄 Скачать вопросы</a>
+          </div>
+        </div>
+      </details>
+      {% endif %}
+
+      <!-- Доп. загрузка прямо в карточке (необязательная) -->
+      {% if narrators %}
+      <details style="border:1px solid var(--border); border-radius:10px; background:#fff; margin-bottom:1rem;">
+        <summary style="padding:0.7rem 1rem; cursor:pointer; font-weight:500; font-size:0.95rem;
+                        list-style:none; display:flex; justify-content:space-between; align-items:center;">
+          <span>🎤 Загрузить ещё интервью (необязательно)</span>
+          <span style="font-size:0.8rem; color:var(--muted);">▾</span>
+        </summary>
+        <div style="padding:0 1rem 1rem;">
+          <div class="muted" style="font-size:0.85rem; margin:0.8rem 0;">
+            Если запишете второе интервью с ответами на вопросы выше — книга получится полнее.
+            Это необязательно, можно сразу нажать «Собрать книгу».
+          </div>
+          <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center; margin-bottom:0.5rem;">
+            <label class="muted" style="font-size:0.85rem;">Чей это материал:</label>
+            <select id="extraUploadHero" class="form-input"
+                    style="flex:1; min-width:160px; padding:0.4rem 0.6rem; font-size:0.9rem;">
+              {% for n in narrators %}
+              <option value="{{ n.id }}">{{ n.name }}{% if n.relation %} ({{ n.relation }}){% endif %}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="inline-upload-zone" id="extraUploadZone" data-hero-id="{{ narrators[0].id }}"
+               style="border:1px dashed var(--border); border-radius:8px;
+                      padding:0.8rem 1rem; text-align:center; cursor:pointer; position:relative;
+                      transition:all .2s; font-size:0.9rem; color:var(--muted);">
+            <span class="upload-zone-label">+ Перетащите аудио/текст или нажмите</span>
+            <input type="file" multiple
+                   accept=".mp3,.ogg,.m4a,.wav,.opus,.oga,.txt,.docx,.doc,.pdf,.rtf,.md"
+                   style="position:absolute; inset:0; opacity:0; cursor:pointer;">
+          </div>
+          <script>
+            (function() {
+              const sel = document.getElementById('extraUploadHero');
+              const zone = document.getElementById('extraUploadZone');
+              if (sel && zone) {
+                sel.addEventListener('change', () => {
+                  zone.dataset.heroId = sel.value;
+                });
+              }
+            })();
+          </script>
+        </div>
+      </details>
+      {% endif %}
+
+      <form method="POST" action="{{ url_for('project_submit_materials', project_id=project.id) }}"
+            style="display:inline;">
+        <button type="submit" class="btn"
+                style="font-size:1rem; padding:0.9rem 1.8rem;">✅ Собрать книгу</button>
+      </form>
+    </div>
+
+  {% elif current_step == 'book' %}
+    <div class="card" style="background:rgba(78,158,106,.06); border-color:rgba(78,158,106,.25);">
+      <div style="font-weight:600; font-size:1.05rem; margin-bottom:0.4rem;">
+        📖 Книга готова
+      </div>
+      <div class="muted" style="font-size:0.9rem; margin-bottom:1rem;">
+        Посмотрите, скачайте или отредактируйте при желании.
+      </div>
+      <a href="{{ book_url }}" class="btn"
+         style="font-size:1rem; padding:0.9rem 1.8rem;">📖 Открыть книгу</a>
+    </div>
+  {% endif %}
+
+  <!-- Вспомогательные кнопки — только если есть что показать -->
+  {% if has_book and current_step != 'book' %}
+  <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.6rem;">
+    <a href="{{ book_url }}" class="btn btn-secondary"
+       style="font-size:0.85rem; padding:0.5rem 1rem;">📖 Книга</a>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Сводка -->
+<div class="card" style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:1rem;">
+  <div>
+    <div style="font-size:0.75rem; color:var(--muted); text-transform:uppercase;">Интервью</div>
+    <div style="font-size:1.4rem; font-weight:600;">{{ voice_count }}</div>
+  </div>
+  <div>
+    <div style="font-size:0.75rem; color:var(--muted); text-transform:uppercase;">Фото</div>
+    <div style="font-size:1.4rem; font-weight:600;">{{ photo_count }}</div>
+  </div>
+  <div>
+    <div style="font-size:0.75rem; color:var(--muted); text-transform:uppercase;">Рассказчиков</div>
+    <div style="font-size:1.4rem; font-weight:600;">{{ narrators|length }}</div>
+  </div>
+</div>
+
+<!-- ═══ Персонаж книги (subject) — отдельной карточкой ═══ -->
+{% if subject %}
+<h2 style="font-size:1.05rem; margin:1.8rem 0 0.8rem; color:var(--warm);
+           text-transform:uppercase; letter-spacing:1.5px; font-weight:600;">
+  Персонаж книги
+</h2>
+
+<div class="card" id="hero-card-{{ subject.id }}" style="border-color:var(--warm-light);">
+  <!-- View mode -->
+  <div id="hero-view-{{ subject.id }}" style="display:flex; align-items:center; gap:0.8rem;">
+    <div style="width:48px; height:48px; border-radius:50%; background:var(--warm-light);
+                display:flex; align-items:center; justify-content:center;
+                font-weight:600; color:var(--ink); font-size:1.1rem;">
+      {{ subject.name[:1] | upper }}
+    </div>
+    <div style="flex:1;">
+      <div style="font-weight:600; font-size:1.05rem;">{{ subject.name }}</div>
+      {% if subject.relation %}<div class="muted" style="font-size:0.85rem;">{{ subject.relation }}</div>{% endif %}
+    </div>
+    <button type="button" class="edit-btn" title="Изменить"
+            onclick="document.getElementById('hero-view-{{ subject.id }}').style.display='none';document.getElementById('hero-edit-{{ subject.id }}').style.display='flex';document.querySelector('#hero-edit-{{ subject.id }} input[name=name]').focus()"
+            style="background:none; border:1px solid var(--border); border-radius:6px;
+                   padding:0.3rem 0.7rem; font-size:0.85rem; color:var(--muted); cursor:pointer;">
+      ✏️ Изменить
+    </button>
+  </div>
+
+  <!-- Edit mode -->
+  <form id="hero-edit-{{ subject.id }}" method="POST"
+        action="{{ url_for('project_update_hero', project_id=project.id, hero_id=subject.id) }}"
+        style="display:none; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+    <input type="text" name="name" class="form-input" value="{{ subject.name }}"
+           placeholder="Имя" required
+           style="flex:1; min-width:140px; padding:0.5rem 0.7rem; font-size:0.9rem;">
+    <input type="text" name="relation" class="form-input" value="{{ subject.relation or '' }}"
+           placeholder="Кем приходится"
+           style="flex:1; min-width:140px; padding:0.5rem 0.7rem; font-size:0.9rem;">
+    <button type="submit" class="btn" style="font-size:0.85rem; padding:0.5rem 0.9rem;">Сохранить</button>
+    <button type="button" class="btn btn-secondary"
+            onclick="document.getElementById('hero-view-{{ subject.id }}').style.display='flex';document.getElementById('hero-edit-{{ subject.id }}').style.display='none'"
+            style="font-size:0.85rem; padding:0.5rem 0.9rem;">Отмена</button>
+  </form>
+
+  {% set bucket = by_hero.get(subject.id) %}
+  {% if bucket and bucket.voices %}
+  <div style="margin-top:0.8rem; padding-top:0.8rem; border-top:1px solid var(--border);">
+    {% for v in bucket.voices %}
+      <div style="padding:0.4rem 0.7rem; background:var(--paper); border-radius:6px; margin-top:0.3rem;
+                  display:flex; justify-content:space-between; align-items:center; gap:0.5rem; font-size:0.85rem;">
+        <span style="flex:1;">🎵 {{ v.created_at.strftime('%d.%m %H:%M') if v.created_at else '' }}</span>
+        <a href="{{ v.download_url }}" target="_blank" title="Скачать"
+           style="display:inline-flex; align-items:center; justify-content:center;
+                  width:28px; height:28px; border:1px solid var(--border); border-radius:6px;
+                  color:var(--muted); text-decoration:none;">⬇</a>
+        <form method="POST" action="{{ url_for('project_delete_voice', project_id=project.id, voice_id=v.id) }}"
+              onsubmit="return confirm('Удалить это голосовое?')" style="display:inline;">
+          <button type="submit" title="Удалить"
+                  style="background:none; border:1px solid var(--border); border-radius:6px;
+                         width:28px; height:28px; font-size:0.8rem; color:var(--red);
+                         cursor:pointer; line-height:1;">✕</button>
+        </form>
+      </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+<!-- ═══ Рассказчики (narrators) ═══ -->
+<h2 style="font-size:1.05rem; margin:1.8rem 0 0.8rem; color:var(--muted);
+           text-transform:uppercase; letter-spacing:1.5px; font-weight:600;">
+  Кто будет рассказывать
+</h2>
+
+{% if narrators %}
+  {% for h in narrators %}
+  {% set bucket = by_hero.get(h.id) %}
+  <div class="card" id="hero-card-{{ h.id }}">
+    <!-- View mode -->
+    <div id="hero-view-{{ h.id }}" style="display:flex; align-items:center; gap:0.8rem;">
+      <div style="width:36px; height:36px; border-radius:50%; background:var(--paper);
+                  display:flex; align-items:center; justify-content:center;
+                  font-weight:600; color:var(--ink);">
+        {{ h.name[:1] | upper }}
+      </div>
+      <div style="flex:1;">
+        <div style="font-weight:600;">{{ h.name }}</div>
+        {% if h.relation %}<div class="muted" style="font-size:0.8rem;">{{ h.relation }}</div>{% endif %}
+      </div>
+      <div class="muted" style="font-size:0.8rem;">
+        {{ bucket.voices|length if bucket else 0 }} интервью ·
+        {{ bucket.photos|length if bucket else 0 }} фото
+      </div>
+      <div style="display:flex; gap:0.3rem;">
+        <button type="button" class="edit-btn" title="Изменить"
+                onclick="document.getElementById('hero-view-{{ h.id }}').style.display='none';document.getElementById('hero-edit-{{ h.id }}').style.display='flex';document.querySelector('#hero-edit-{{ h.id }} input[name=name]').focus()"
+                style="background:none; border:1px solid var(--border); border-radius:6px;
+                       padding:0.3rem 0.55rem; font-size:0.85rem; color:var(--muted); cursor:pointer;">
+          ✏️
+        </button>
+        <form method="POST" action="{{ url_for('project_delete_hero', project_id=project.id, hero_id=h.id) }}"
+              onsubmit="return confirm('Удалить рассказчика «{{ h.name }}»? Загруженные аудио и фото останутся в проекте, но потеряют привязку.')"
+              style="display:inline;">
+          <button type="submit" title="Удалить"
+                  style="background:none; border:1px solid var(--border); border-radius:6px;
+                         padding:0.3rem 0.55rem; font-size:0.85rem; color:var(--red); cursor:pointer;">
+            ✕
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Edit mode -->
+    <form id="hero-edit-{{ h.id }}" method="POST"
+          action="{{ url_for('project_update_hero', project_id=project.id, hero_id=h.id) }}"
+          style="display:none; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+      <input type="text" name="name" class="form-input" value="{{ h.name }}"
+             placeholder="Имя" required
+             style="flex:1; min-width:140px; padding:0.5rem 0.7rem; font-size:0.9rem;">
+      <input type="text" name="relation" class="form-input" value="{{ h.relation or '' }}"
+             placeholder="Кем приходится"
+             style="flex:1; min-width:140px; padding:0.5rem 0.7rem; font-size:0.9rem;">
+      <button type="submit" class="btn" style="font-size:0.85rem; padding:0.5rem 0.9rem;">Сохранить</button>
+      <button type="button" class="btn btn-secondary"
+              onclick="document.getElementById('hero-view-{{ h.id }}').style.display='flex';document.getElementById('hero-edit-{{ h.id }}').style.display='none'"
+              style="font-size:0.85rem; padding:0.5rem 0.9rem;">Отмена</button>
+    </form>
+
+    {% if bucket and bucket.voices %}
+      <div style="margin-top:0.6rem;">
+        {% for v in bucket.voices %}
+        <div style="padding:0.4rem 0.7rem; background:var(--paper); border-radius:6px; margin-top:0.3rem;
+                    display:flex; justify-content:space-between; align-items:center; gap:0.5rem; font-size:0.85rem;">
+          <div style="flex:1; min-width:0;">
+          <div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+            🎵 {{ v.original_filename or 'Без названия' }}
+          </div>
+          <div class="muted" style="font-size:0.72rem; margin-top:0.1rem;">
+            {{ v.created_at.strftime('%d.%m.%Y %H:%M') if v.created_at else '' }}{% if v.duration %} · {{ v.duration }}с{% endif %}
+          </div>
+        </div>
+          <a href="{{ v.download_url }}" target="_blank" title="Скачать"
+             style="display:inline-flex; align-items:center; justify-content:center;
+                    width:28px; height:28px; border:1px solid var(--border); border-radius:6px;
+                    color:var(--muted); text-decoration:none;">⬇</a>
+          <form method="POST" action="{{ url_for('project_delete_voice', project_id=project.id, voice_id=v.id) }}"
+                onsubmit="return confirm('Удалить это голосовое?')" style="display:inline;">
+            <button type="submit" title="Удалить"
+                    style="background:none; border:1px solid var(--border); border-radius:6px;
+                           width:28px; height:28px; font-size:0.8rem; color:var(--red);
+                           cursor:pointer; line-height:1;">✕</button>
+          </form>
+        </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+    <!-- inline mini upload zone -->
+    <div class="inline-upload-zone" data-hero-id="{{ h.id }}"
+         style="margin-top:0.6rem; border:1px dashed var(--border); border-radius:8px;
+                padding:0.6rem 0.8rem; text-align:center; cursor:pointer; position:relative;
+                transition:all .2s; font-size:0.85rem; color:var(--muted);">
+      <span class="upload-zone-label">+ Загрузить интервью (аудио или текст)</span>
+      <input type="file" multiple
+             accept=".mp3,.ogg,.m4a,.wav,.opus,.oga,.txt,.docx,.doc,.pdf,.rtf,.md"
+             style="position:absolute; inset:0; opacity:0; cursor:pointer;">
+    </div>
+  </div>
+  {% endfor %}
+{% else %}
+  <div class="card muted" style="text-align:center;">
+    Ещё нет рассказчиков. Добавьте первого ниже.
+  </div>
+{% endif %}
+
+<!-- Добавить рассказчика -->
+<form method="POST" action="{{ url_for('project_add_hero', project_id=project.id) }}"
+      class="card" style="margin-top:1rem;">
+  <div style="font-weight:500; margin-bottom:0.8rem;">➕ Добавить рассказчика</div>
+  <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+    <input class="form-input" name="name" placeholder="Имя" required style="flex:1; min-width:140px;">
+    <input class="form-input" name="relation" placeholder="Кем приходится" style="flex:1; min-width:140px;">
+    <button type="submit" class="btn">Добавить</button>
+  </div>
+</form>
+
+<!-- Голосовые и фото без привязки к рассказчику -->
+{% set orphan = by_hero.get(None) or {'voices': [], 'photos': []} %}
+{# Секция «Фото и документы» отрисовывается ВСЕГДА, чтобы JS-обработчики upload-зон точно подключились #}
+<div style="display:flex; justify-content:space-between; align-items:center; margin:1.8rem 0 0.8rem;">
+  <h2 style="font-size:1.05rem; color:var(--muted);
+             text-transform:uppercase; letter-spacing:1.5px; font-weight:600; margin:0;">
+    Фото и документы
+  </h2>
+  <div style="display:flex; gap:0.3rem; background:var(--paper); border-radius:8px; padding:0.2rem;">
+    <button type="button" id="mediaModeListBtn"
+            onclick="setMediaMode('list')"
+            style="background:#fff; border:none; border-radius:6px; padding:0.3rem 0.7rem;
+                   font-size:0.8rem; cursor:pointer; font-family:inherit;">☰ Список</button>
+    <button type="button" id="mediaModeGridBtn"
+            onclick="setMediaMode('grid')"
+            style="background:none; border:none; border-radius:6px; padding:0.3rem 0.7rem;
+                   font-size:0.8rem; cursor:pointer; color:var(--muted); font-family:inherit;">▦ Превью</button>
+  </div>
+</div>
+
+<div class="card" id="mediaContainer">
+  <!-- Inline-зоны: фото (иллюстрации книги) и документы (награды, грамоты, аттестаты) -->
+  <div style="display:flex; gap:0.5rem; margin-bottom:0.8rem; flex-wrap:wrap;">
+    <div class="inline-upload-zone" data-kind="photo" data-photo-type="photo"
+         style="flex:1; min-width:220px; border:1px dashed var(--border); border-radius:8px;
+                padding:0.6rem 0.8rem; text-align:center; cursor:pointer; position:relative;
+                transition:all .2s; font-size:0.85rem; color:var(--muted);">
+      <span class="upload-zone-label">📸 + Добавить фото</span>
+      <div style="font-size:0.72rem; opacity:0.8; margin-top:0.15rem;">иллюстрации в книгу</div>
+      <input type="file" multiple accept="image/*"
+             style="position:absolute; inset:0; opacity:0; cursor:pointer;">
+    </div>
+    <div class="inline-upload-zone" data-kind="photo" data-photo-type="document"
+         style="flex:1; min-width:220px; border:1px dashed var(--border); border-radius:8px;
+                padding:0.6rem 0.8rem; text-align:center; cursor:pointer; position:relative;
+                transition:all .2s; font-size:0.85rem; color:var(--muted);">
+      <span class="upload-zone-label">📜 + Добавить документ</span>
+      <div style="font-size:0.72rem; opacity:0.8; margin-top:0.15rem;">награды, грамоты, аттестаты</div>
+      <input type="file" multiple accept="image/*,.pdf"
+             style="position:absolute; inset:0; opacity:0; cursor:pointer;">
+    </div>
+  </div>
+
+  <!-- Аудио без рассказчика (всегда списком) -->
+  {% for v in orphan.voices %}
+    <div style="padding:0.5rem 0.8rem; background:var(--paper); border-radius:8px;
+                margin-bottom:0.4rem; display:flex; justify-content:space-between; align-items:center; gap:0.5rem;">
+      <div style="flex:1; min-width:0; font-size:0.85rem;">
+        <div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+          🎵 {{ v.original_filename or 'Без названия' }}
+        </div>
+        <div class="muted" style="font-size:0.72rem; margin-top:0.1rem;">
+          {{ v.created_at.strftime('%d.%m.%Y %H:%M') if v.created_at else '' }}
+        </div>
+      </div>
+      <a href="{{ v.download_url }}" target="_blank" title="Скачать"
+         style="display:inline-flex; align-items:center; justify-content:center;
+                width:28px; height:28px; border:1px solid var(--border); border-radius:6px;
+                color:var(--muted); text-decoration:none;">⬇</a>
+      <form method="POST" action="{{ url_for('project_delete_voice', project_id=project.id, voice_id=v.id) }}"
+            onsubmit="return confirm('Удалить это голосовое?')" style="display:inline;">
+        <button type="submit" title="Удалить"
+                style="background:none; border:1px solid var(--border); border-radius:6px;
+                       width:28px; height:28px; font-size:0.8rem; color:var(--red);
+                       cursor:pointer; line-height:1;">✕</button>
+      </form>
+    </div>
+  {% endfor %}
+
+  <!-- Фото и документы: переключаемые режимы -->
+  <div id="mediaList" style="display:block;">
+    {% for p in orphan.photos %}
+    <div class="media-row" data-photo-id="{{ p.id }}"
+         style="padding:0.5rem 0.8rem; background:var(--paper); border-radius:8px;
+                margin-bottom:0.4rem;">
+      <div style="display:flex; align-items:center; gap:0.6rem;">
+        <span style="font-size:1rem;">{% if p.photo_type == 'document' %}📜{% else %}📸{% endif %}</span>
+        <span class="caption-display" style="flex:1; font-size:0.85rem; {% if not p.caption %}color:var(--muted);{% endif %}">
+          {{ p.caption or 'без подписи' }}
+        </span>
+        <button type="button" class="edit-btn" title="Изменить подпись"
+                onclick="toggleCaptionEdit({{ p.id }})"
+                style="display:inline-flex; align-items:center; justify-content:center;
+                       width:28px; height:28px; border:1px solid var(--border); border-radius:6px;
+                       background:none; color:var(--muted); cursor:pointer;">✏️</button>
+        <a href="{{ p.download_url }}" target="_blank" title="Скачать"
+           style="display:inline-flex; align-items:center; justify-content:center;
+                  width:28px; height:28px; border:1px solid var(--border); border-radius:6px;
+                  color:var(--muted); text-decoration:none;">⬇</a>
+        <form method="POST" action="{{ url_for('project_delete_photo', project_id=project.id, photo_id=p.id) }}"
+              onsubmit="return confirm('Удалить это фото?')" style="display:inline;">
+          <button type="submit" title="Удалить"
+                  style="background:none; border:1px solid var(--border); border-radius:6px;
+                         width:28px; height:28px; font-size:0.8rem; color:var(--red);
+                         cursor:pointer; line-height:1;">✕</button>
+        </form>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Превью режим (grid миниатюр) -->
+  <div id="mediaGrid" style="display:none; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr));
+                              gap:0.8rem;">
+    {% for p in orphan.photos %}
+    <div class="media-tile" data-photo-id="{{ p.id }}"
+         style="background:var(--paper); border-radius:8px; overflow:hidden; padding-bottom:0.5rem;">
+      <a href="{{ p.download_url }}" target="_blank"
+         style="display:block; width:100%; aspect-ratio:1; background:var(--cream2);
+                background-image:url('{{ p.download_url }}'); background-size:cover;
+                background-position:center; text-decoration:none;"></a>
+      <div style="padding:0.5rem 0.6rem;">
+        <div class="caption-display-tile" style="font-size:0.75rem; line-height:1.3;
+                                                 min-height:1.7rem; margin-bottom:0.4rem;
+                                                 {% if not p.caption %}color:var(--muted);{% endif %}">
+          {{ p.caption or 'без подписи' }}
+        </div>
+        <div style="display:flex; gap:0.3rem;">
+          <button type="button" class="edit-btn" title="Подпись"
+                  onclick="toggleCaptionEdit({{ p.id }})"
+                  style="flex:1; background:none; border:1px solid var(--border); border-radius:6px;
+                         padding:0.25rem; font-size:0.7rem; color:var(--muted); cursor:pointer;">✏️</button>
+          <a href="{{ p.download_url }}" target="_blank" title="Скачать"
+             style="flex:1; display:inline-flex; align-items:center; justify-content:center;
+                    border:1px solid var(--border); border-radius:6px; padding:0.25rem;
+                    font-size:0.7rem; color:var(--muted); text-decoration:none;">⬇</a>
+          <form method="POST" action="{{ url_for('project_delete_photo', project_id=project.id, photo_id=p.id) }}"
+                onsubmit="return confirm('Удалить это фото?')" style="flex:1;">
+            <button type="submit" title="Удалить"
+                    style="width:100%; background:none; border:1px solid var(--border); border-radius:6px;
+                           padding:0.25rem; font-size:0.7rem; color:var(--red); cursor:pointer;">✕</button>
+          </form>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<script>
+function setMediaMode(mode) {
+  const list = document.getElementById('mediaList');
+  const grid = document.getElementById('mediaGrid');
+  const btnList = document.getElementById('mediaModeListBtn');
+  const btnGrid = document.getElementById('mediaModeGridBtn');
+  if (mode === 'grid') {
+    list.style.display = 'none';
+    grid.style.display = 'grid';
+    btnGrid.style.background = '#fff';
+    btnGrid.style.color = 'var(--ink)';
+    btnList.style.background = 'none';
+    btnList.style.color = 'var(--muted)';
+  } else {
+    list.style.display = 'block';
+    grid.style.display = 'none';
+    btnList.style.background = '#fff';
+    btnList.style.color = 'var(--ink)';
+    btnGrid.style.background = 'none';
+    btnGrid.style.color = 'var(--muted)';
+  }
+  localStorage.setItem('media_mode', mode);
+}
+// Запоминаем выбор режима
+(function() {
+  const saved = localStorage.getItem('media_mode');
+  if (saved) setMediaMode(saved);
+})();
+
+// Модальное окно редактирования подписи — работает в обоих режимах одинаково
+let currentEditPhotoId = null;
+
+function toggleCaptionEdit(photoId) {
+  currentEditPhotoId = photoId;
+  // Берём текущую подпись из DOM (для предзаполнения input)
+  const sourceEl = document.querySelector(`.media-row[data-photo-id="${photoId}"] .caption-display`)
+                || document.querySelector(`.media-tile[data-photo-id="${photoId}"] .caption-display-tile`);
+  const current = sourceEl && sourceEl.textContent.trim() !== 'без подписи'
+    ? sourceEl.textContent.trim() : '';
+  const modal = document.getElementById('captionModal');
+  const input = document.getElementById('captionModalInput');
+  input.value = current;
+  modal.style.display = 'flex';
+  setTimeout(() => { input.focus(); input.select(); }, 50);
+}
+
+function closeCaptionModal() {
+  document.getElementById('captionModal').style.display = 'none';
+  currentEditPhotoId = null;
+}
+
+async function saveCaptionModal() {
+  if (!currentEditPhotoId) return;
+  const photoId = currentEditPhotoId;
+  const caption = document.getElementById('captionModalInput').value.trim();
+  try {
+    const r = await fetch(`/projects/{{ project.id }}/photo/${photoId}/caption`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
+      body: JSON.stringify({caption: caption}),
+    });
+    const d = await r.json();
+    if (r.ok && d.ok) {
+      document.querySelectorAll(
+        `.media-row[data-photo-id="${photoId}"] .caption-display, .media-tile[data-photo-id="${photoId}"] .caption-display-tile`
+      ).forEach(el => {
+        el.textContent = d.caption || 'без подписи';
+        el.style.color = d.caption ? '' : 'var(--muted)';
+      });
+      closeCaptionModal();
+    } else {
+      alert('Не удалось сохранить подпись');
+    }
+  } catch (e) {
+    alert('Ошибка сети');
+  }
+}
+
+// Закрытие модалки по Escape и по клику на фон
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && document.getElementById('captionModal').style.display !== 'none') {
+    closeCaptionModal();
+  }
+});
+
+// ─── Inline-загрузка интервью прямо в карточке рассказчика ───────────────────
+const PROJECT_ID = {{ project.id }};
+const VOICE_EXT = ['.mp3','.ogg','.m4a','.wav','.opus','.oga','.txt','.docx','.doc','.pdf','.rtf','.md'];
+const PHOTO_EXT = ['.jpg','.jpeg','.png','.webp','.heic','.heif'];
+
+function fmtSize(b) {
+  if (b < 1024) return b + ' Б';
+  if (b < 1048576) return (b/1024).toFixed(1) + ' КБ';
+  return (b/1048576).toFixed(1) + ' МБ';
+}
+
+function uploadOne(zone, file, kind) {
+  const heroId = zone.dataset.heroId || '';
+  const isPhoto = kind === 'photo';
+  const ext = '.' + file.name.split('.').pop().toLowerCase();
+  const allowed = isPhoto ? PHOTO_EXT : VOICE_EXT;
+  if (!allowed.includes(ext)) {
+    alert('Формат ' + ext + ' не поддерживается');
+    return;
+  }
+  // Создаём прогресс-плашку рядом с зоной
+  const row = document.createElement('div');
+  row.style.cssText = 'padding:0.4rem 0.7rem; background:rgba(78,158,106,.08); border-radius:6px; margin-top:0.3rem; display:flex; gap:0.5rem; align-items:center; font-size:0.85rem;';
+  row.innerHTML = `
+    <span>${isPhoto ? '📸' : '🎤'}</span>
+    <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${file.name}</span>
+    <span style="color:var(--muted); font-size:0.75rem;">${fmtSize(file.size)}</span>
+    <span class="st">…</span>`;
+  zone.parentNode.insertBefore(row, zone);
+  const st = row.querySelector('.st');
+
+  const form = new FormData();
+  form.append('file', file);
+  if (heroId) form.append('hero_id', heroId);
+  const url = isPhoto
+    ? `/projects/${PROJECT_ID}/upload/photo`
+    : `/projects/${PROJECT_ID}/upload/voice`;
+
+  const xhr = new XMLHttpRequest();
+  xhr.open('POST', url);
+  xhr.upload.addEventListener('progress', ev => {
+    if (ev.lengthComputable) {
+      st.textContent = Math.round(ev.loaded / ev.total * 100) + '%';
+    }
+  });
+  xhr.onload = () => {
+    try {
+      const d = JSON.parse(xhr.responseText);
+      if (xhr.status === 200 && d.ok) {
+        st.textContent = '✓';
+        st.style.color = 'var(--green)';
+        // Перезагружаем страницу, чтобы файл появился в нужном месте
+        setTimeout(() => location.reload(), 400);
+      } else {
+        row.style.background = 'rgba(200,90,90,.1)';
+        st.textContent = '✕';
+        st.title = d.error || 'Ошибка';
+      }
+    } catch (e) {
+      row.style.background = 'rgba(200,90,90,.1)';
+      st.textContent = '✕';
+    }
+  };
+  xhr.onerror = () => {
+    row.style.background = 'rgba(200,90,90,.1)';
+    st.textContent = '✕';
+    st.title = 'Ошибка сети';
+  };
+  xhr.send(form);
+}
+
+// Привязываем drag&drop + change ко всем inline-зонам
+document.querySelectorAll('.inline-upload-zone').forEach(zone => {
+  const input = zone.querySelector('input[type=file]');
+  const kind = zone.dataset.kind || 'voice';
+
+  ['dragenter','dragover'].forEach(e => zone.addEventListener(e, ev => {
+    ev.preventDefault();
+    zone.style.borderColor = 'var(--warm)';
+    zone.style.background = 'rgba(200,169,110,.06)';
+  }));
+  ['dragleave','drop'].forEach(e => zone.addEventListener(e, ev => {
+    ev.preventDefault();
+    zone.style.borderColor = '';
+    zone.style.background = '';
+  }));
+  zone.addEventListener('drop', ev => {
+    for (const f of ev.dataTransfer.files) uploadOne(zone, f, kind);
+  });
+  input.addEventListener('change', () => {
+    for (const f of input.files) uploadOne(zone, f, kind);
+    input.value = '';
+  });
+});
+</script>
+
+<!-- Модальное окно редактирования подписи -->
+<div id="captionModal"
+     onclick="if(event.target===this) closeCaptionModal()"
+     style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4);
+            z-index:1000; align-items:center; justify-content:center; padding:1rem;">
+  <div style="background:#fff; border-radius:14px; padding:1.5rem; max-width:480px; width:100%;
+              box-shadow:0 8px 32px rgba(0,0,0,0.18);">
+    <div style="font-weight:600; font-size:1.05rem; margin-bottom:0.3rem;">Подпись к фото</div>
+    <div class="muted" style="font-size:0.85rem; margin-bottom:1rem;">
+      Помогает AI правильно разместить фото в книге. Например: «Бабушка с внуками, 1985, дача».
+    </div>
+    <input type="text" id="captionModalInput" class="form-input"
+           placeholder="Кто, где, когда…"
+           onkeydown="if(event.key==='Enter') saveCaptionModal()">
+    <div style="display:flex; gap:0.5rem; justify-content:flex-end; margin-top:1rem;">
+      <button type="button" class="btn btn-secondary" onclick="closeCaptionModal()">Отмена</button>
+      <button type="button" class="btn" onclick="saveCaptionModal()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

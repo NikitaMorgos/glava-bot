@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Новая книга{% endblock %}
+{% block content %}
+<div class="page-title">О ком будет книга?</div>
+<div class="page-sub">Расскажите нам о человеке, историю которого хотите сохранить.</div>
+
+<form method="POST" class="card" style="max-width:520px;">
+  {% if error %}<div class="error">{{ error }}</div>{% endif %}
+
+  <div class="form-group">
+    <label class="form-label" for="hero_name">Имя персонажа *</label>
+    <input class="form-input" id="hero_name" name="hero_name"
+           placeholder="Елена Андреевна" autofocus required>
+  </div>
+
+  <div class="form-group">
+    <label class="form-label" for="hero_relation">Кем вам приходится</label>
+    <input class="form-input" id="hero_relation" name="hero_relation"
+           placeholder="бабушка, мама, отец…">
+  </div>
+
+  <div style="display:flex; gap:0.6rem; margin-top:0.5rem;">
+    <button type="submit" class="btn">Создать книгу →</button>
+    <a href="{{ url_for('projects_list') }}" class="btn btn-secondary">Отмена</a>
+  </div>
+</form>
+{% endblock %}

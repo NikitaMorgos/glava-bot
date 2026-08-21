@@ -1,0 +1,299 @@
+{% extends "base.html" %}
+{% block title %}Загрузка — проект #{{ project.id }}{% endblock %}
+{% block head %}
+<style>
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.8rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all .2s;
+    position: relative;
+  }
+  .upload-zone:hover, .upload-zone.drag-over {
+    border-color: var(--warm);
+    background: rgba(200,169,110,.04);
+  }
+  .upload-zone input[type="file"] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer;
+  }
+  .upload-icon { font-size: 1.8rem; margin-bottom: 0.4rem; opacity: 0.4; }
+  .upload-title { font-size: 0.95rem; font-weight: 500; margin-bottom: 0.2rem; }
+  .upload-hint { font-size: 0.8rem; color: var(--muted); }
+  .file-item {
+    display: flex; align-items: center; gap: 0.7rem; padding: 0.6rem 0.9rem;
+    background: rgba(78,158,106,.08); border-radius: 8px; margin-top: 0.5rem;
+    font-size: 0.85rem;
+  }
+  .file-item.error { background: rgba(200,90,90,.08); color: var(--red); }
+  .progress {
+    height: 4px; background: var(--paper); border-radius: 2px;
+    overflow: hidden; margin-top: 0.5rem;
+  }
+  .progress-bar { height: 100%; background: var(--warm); width: 0; transition: width .2s; }
+  .hero-pill {
+    display: inline-block; padding: 0.3rem 0.7rem; border-radius: 20px;
+    background: var(--paper); font-size: 0.8rem; color: var(--muted);
+  }
+  .photo-row {
+    display: flex; gap: 0.8rem; align-items: flex-start;
+    padding: 0.7rem; background: var(--paper); border-radius: 10px;
+    margin-top: 0.5rem;
+  }
+  .photo-thumb {
+    width: 60px; height: 60px; border-radius: 8px;
+    background: linear-gradient(135deg, var(--warm-light), var(--paper));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem; flex-shrink: 0;
+  }
+</style>
+{% endblock %}
+{% block content %}
+<div style="font-size:0.75rem; color:var(--muted); margin-bottom:0.4rem;">
+  <a href="{{ url_for('project_detail', project_id=project.id) }}">← Назад к проекту</a>
+</div>
+<div class="page-title">Загрузка материалов</div>
+<div class="page-sub">
+  Перетащите файлы или нажмите на зону. Можно загружать несколько за раз.
+</div>
+
+{% if not heroes %}
+  <div class="card" style="text-align:center;">
+    <div class="upload-icon">👥</div>
+    <div style="margin-bottom:0.8rem; font-weight:500;">Сначала добавьте рассказчика</div>
+    <div class="muted" style="margin-bottom:1rem;">
+      Файлы привязываются к конкретному рассказчику, чтобы AI понимал кто говорит.
+    </div>
+    <a href="{{ url_for('project_detail', project_id=project.id) }}" class="btn">
+      Добавить рассказчика →
+    </a>
+  </div>
+{% else %}
+
+<!-- ─── Аудио по рассказчикам ─── -->
+<h2 style="font-size:1.1rem; margin:1.5rem 0 0.8rem;">🎤 Интервью</h2>
+<div class="muted" style="font-size:0.85rem; margin-bottom:0.8rem;">
+  Можно загрузить аудио или текстовый файл — что удобнее. AI обработает оба формата.
+</div>
+
+{% for h in heroes %}
+<div class="card">
+  <div style="display:flex; align-items:center; gap:0.7rem; margin-bottom:0.8rem;">
+    <div style="width:32px; height:32px; border-radius:50%; background:var(--warm-light);
+                display:flex; align-items:center; justify-content:center; font-weight:600;">
+      {{ h.name[:1] | upper }}
+    </div>
+    <div>
+      <div style="font-weight:600;">{{ h.name }}</div>
+      {% if h.relation %}<div class="muted" style="font-size:0.8rem;">{{ h.relation }}</div>{% endif %}
+    </div>
+  </div>
+  <div class="upload-zone" data-kind="voice" data-hero-id="{{ h.id }}">
+    <div class="upload-icon">🎤</div>
+    <div class="upload-title">Перетащите аудио или текст</div>
+    <div class="upload-hint">аудио (mp3, m4a, wav…) или текст (txt, docx, pdf) · до 500 МБ</div>
+    <input type="file" accept=".mp3,.ogg,.m4a,.wav,.opus,.oga,.txt,.docx,.doc,.pdf,.rtf,.md">
+  </div>
+  <div class="uploads-list" id="uploads-voice-{{ h.id }}"></div>
+</div>
+{% endfor %}
+
+<!-- Аудио без рассказчика -->
+<div class="card" style="border-style:dashed;">
+  <div style="font-weight:500; margin-bottom:0.5rem;">Запись общая / неизвестно кто</div>
+  <div class="muted" style="font-size:0.8rem; margin-bottom:0.8rem;">
+    Если на записи несколько голосов или вы не уверены — загрузите сюда, AI определит.
+  </div>
+  <div class="upload-zone" data-kind="voice" data-hero-id="">
+    <div class="upload-icon">🎵</div>
+    <div class="upload-title">Загрузить без привязки</div>
+    <div class="upload-hint">Можно привязать позже</div>
+    <input type="file" accept=".mp3,.ogg,.m4a,.wav,.opus,.oga">
+  </div>
+  <div class="uploads-list" id="uploads-voice-none"></div>
+</div>
+
+<!-- ─── Фотографии ─── -->
+<h2 style="font-size:1.1rem; margin:2rem 0 0.8rem;">📸 Фотографии</h2>
+<div class="card">
+  <div class="muted" style="font-size:0.85rem; margin-bottom:0.8rem;">
+    Подписи помогают AI правильно разместить фото в книге. Можно дописать позже.
+  </div>
+  <div class="upload-zone" data-kind="photo" data-photo-type="photo">
+    <div class="upload-icon">📸</div>
+    <div class="upload-title">Перетащите фото или нажмите</div>
+    <div class="upload-hint">jpg · png · webp · heic · до 20 МБ</div>
+    <input type="file" accept="image/*" multiple>
+  </div>
+  <div class="uploads-list" id="uploads-photo"></div>
+</div>
+
+<!-- ─── Документы ─── -->
+<h2 style="font-size:1.1rem; margin:2rem 0 0.8rem;">📄 Документы</h2>
+<div class="card">
+  <div class="muted" style="font-size:0.85rem; margin-bottom:0.8rem;">
+    Грамоты, удостоверения, письма — отображаются отдельно от фото.
+  </div>
+  <div class="upload-zone" data-kind="photo" data-photo-type="document">
+    <div class="upload-icon">📜</div>
+    <div class="upload-title">Перетащите документ или нажмите</div>
+    <div class="upload-hint">jpg · png · pdf</div>
+    <input type="file" accept=".jpg,.jpeg,.png,.webp,.pdf" multiple>
+  </div>
+  <div class="uploads-list" id="uploads-document"></div>
+</div>
+
+<div style="margin-top:2rem; display:flex; gap:0.7rem;">
+  <a href="{{ url_for('project_detail', project_id=project.id) }}" class="btn">
+    Готово → к проекту
+  </a>
+</div>
+
+<script>
+const PROJECT_ID = {{ project.id }};
+
+// Все зоны с drag&drop + click
+document.querySelectorAll('.upload-zone').forEach(zone => {
+  const input = zone.querySelector('input[type=file]');
+
+  ['dragenter','dragover'].forEach(e => zone.addEventListener(e, ev => {
+    ev.preventDefault(); zone.classList.add('drag-over');
+  }));
+  ['dragleave','drop'].forEach(e => zone.addEventListener(e, ev => {
+    ev.preventDefault(); zone.classList.remove('drag-over');
+  }));
+  zone.addEventListener('drop', ev => {
+    for (const file of ev.dataTransfer.files) handleFile(zone, file);
+  });
+  input.addEventListener('change', () => {
+    for (const file of input.files) handleFile(zone, file);
+    input.value = '';
+  });
+});
+
+function formatSize(b) {
+  if (b < 1024) return b + ' Б';
+  if (b < 1048576) return (b/1024).toFixed(1) + ' КБ';
+  return (b/1048576).toFixed(1) + ' МБ';
+}
+
+function getListContainer(zone) {
+  const kind = zone.dataset.kind;
+  if (kind === 'voice') {
+    const heroId = zone.dataset.heroId;
+    return document.getElementById('uploads-voice-' + (heroId || 'none'));
+  }
+  return document.getElementById('uploads-' + (zone.dataset.photoType || 'photo'));
+}
+
+function handleFile(zone, file) {
+  const kind = zone.dataset.kind;
+  const heroId = zone.dataset.heroId || '';
+  const photoType = zone.dataset.photoType || 'photo';
+  const list = getListContainer(zone);
+
+  const row = document.createElement('div');
+  row.className = 'file-item';
+  row.innerHTML = `
+    <span>${kind === 'voice' ? '🎵' : (photoType === 'document' ? '📜' : '📸')}</span>
+    <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${file.name}</span>
+    <span style="color:var(--muted); font-size:0.75rem;">${formatSize(file.size)}</span>
+    <span class="status" style="font-size:0.8rem;">…</span>
+    <button class="delete-btn" type="button" title="Удалить" style="display:none;
+            background:none; border:1px solid var(--border); border-radius:6px;
+            padding:0.15rem 0.45rem; font-size:0.85rem; color:var(--red);
+            cursor:pointer; line-height:1;">✕</button>
+  `;
+  const progress = document.createElement('div');
+  progress.className = 'progress';
+  progress.innerHTML = '<div class="progress-bar"></div>';
+  row.appendChild(progress);
+  list.appendChild(row);
+  const status = row.querySelector('.status');
+  const bar = row.querySelector('.progress-bar');
+
+  const url = kind === 'voice'
+    ? `/projects/${PROJECT_ID}/upload/voice`
+    : `/projects/${PROJECT_ID}/upload/photo`;
+
+  const form = new FormData();
+  form.append('file', file);
+  if (heroId) form.append('hero_id', heroId);
+  if (kind === 'photo') form.append('photo_type', photoType);
+  // подпись для фото: добавим поле inline
+  if (kind === 'photo') {
+    const captionInput = document.createElement('input');
+    captionInput.className = 'form-input';
+    captionInput.placeholder = 'Подпись (необязательно, добавьте позже)';
+    captionInput.style.cssText = 'margin-top:0.5rem; font-size:0.85rem; padding:0.5rem 0.7rem;';
+    row.parentNode.insertBefore(captionInput, row.nextSibling);
+    captionInput.addEventListener('change', () => {
+      // на этом MVP подпись хранится локально, после загрузки можно расширить
+      // API-методом для редактирования caption уже загруженного фото
+      captionInput.dataset.dirty = '1';
+    });
+  }
+
+  const xhr = new XMLHttpRequest();
+  xhr.open('POST', url);
+  xhr.upload.addEventListener('progress', ev => {
+    if (ev.lengthComputable) {
+      const pct = Math.round(ev.loaded / ev.total * 100);
+      bar.style.width = pct + '%';
+      status.textContent = pct + '%';
+    }
+  });
+  xhr.onload = () => {
+    try {
+      const data = JSON.parse(xhr.responseText);
+      if (xhr.status === 200 && data.ok) {
+        bar.style.width = '100%';
+        status.textContent = '✓';
+        status.style.color = 'var(--green)';
+        // Показываем кнопку удаления + вешаем обработчик
+        const delBtn = row.querySelector('.delete-btn');
+        const itemId = kind === 'voice' ? data.voice_id : data.photo_id;
+        if (delBtn && itemId) {
+          delBtn.style.display = '';
+          delBtn.addEventListener('click', async () => {
+            if (!confirm('Удалить «' + file.name + '»?')) return;
+            const url = `/projects/${PROJECT_ID}/${kind === 'voice' ? 'voice' : 'photo'}/${itemId}/delete`;
+            try {
+              const r = await fetch(url, {
+                method: 'POST',
+                headers: {'X-Requested-With': 'XMLHttpRequest'},
+              });
+              const d = await r.json();
+              if (r.ok && d.ok) {
+                row.remove();
+              } else {
+                alert('Не удалось удалить: ' + (d.error || 'ошибка'));
+              }
+            } catch (e) {
+              alert('Ошибка сети при удалении');
+            }
+          });
+        }
+      } else {
+        row.classList.add('error');
+        status.textContent = '✕';
+        status.title = data.error || 'Ошибка';
+      }
+    } catch (e) {
+      row.classList.add('error');
+      status.textContent = '✕';
+      status.title = 'Ошибка сервера';
+    }
+  };
+  xhr.onerror = () => {
+    row.classList.add('error');
+    status.textContent = '✕';
+    status.title = 'Ошибка сети';
+  };
+  xhr.send(form);
+}
+</script>
+
+{% endif %}
+{% endblock %}

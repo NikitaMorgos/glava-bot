@@ -1,0 +1,1417 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Редактор книги — Glava</title>
+<style>
+  :root {
+    --cream: #faf8f5; --paper: #f5f2ed; --ink: #2c2419;
+    --warm: #c8a96e; --warm-light: #e8d5b0;
+    --muted: #6b5d4d; --border: #ece5d8;
+    --green: #4a9e6a; --red: #c85a5a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+    padding-top: 56px;
+  }
+  body.has-preview-banner { padding-top: 96px; }
+  body.has-preview-banner .sidebar { top: 112px; max-height: calc(100vh - 128px); }
+  body.has-preview-banner .history-panel { top: 100px !important; }
+  body.has-preview-banner .readonly-mark { display: none; }
+
+  /* Preview banner */
+  .preview-banner {
+    position: fixed; top: 56px; left: 0; right: 0; height: 40px; z-index: 90;
+    background: #fff8e1; border-bottom: 1px solid var(--warm-light);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 1.2rem; font-size: 0.85rem; color: #7a5f2a;
+  }
+  .preview-banner .msg { display: flex; align-items: center; gap: 0.5rem; }
+  .preview-banner .msg strong { color: var(--ink); font-weight: 600; }
+  .preview-banner .actions { display: flex; gap: 0.4rem; }
+  .preview-banner .actions a,
+  .preview-banner .actions button {
+    padding: 0.3rem 0.8rem; font-size: 0.8rem; border-radius: 6px;
+    text-decoration: none; border: 1px solid var(--warm); background: #fff;
+    color: var(--ink); cursor: pointer; font-family: inherit;
+  }
+  .preview-banner .actions .primary { background: var(--warm); color: #fff; border-color: var(--warm); }
+  .preview-banner .actions button:hover, .preview-banner .actions a:hover { opacity: 0.85; }
+  .editor-toolbar {
+    position: fixed; top: 0; left: 0; right: 0; height: 56px;
+    background: #fff; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 1.2rem; z-index: 100;
+    box-shadow: 0 1px 4px rgba(0,0,0,.04);
+  }
+  .editor-toolbar .left { display: flex; align-items: center; gap: 1rem; font-size: 0.9rem; }
+  .editor-toolbar .left a { color: var(--muted); text-decoration: none; font-size: 0.85rem; }
+  .editor-toolbar .left a:hover { color: var(--ink); }
+  .editor-toolbar .title { font-weight: 600; }
+  .editor-toolbar .right { display: flex; align-items: center; gap: 0.5rem; }
+  .btn {
+    padding: 0.45rem 0.95rem; background: var(--ink); color: #fff;
+    border: none; border-radius: 8px; font-size: 0.85rem; cursor: pointer;
+    font-family: inherit; text-decoration: none; display: inline-flex; align-items: center;
+  }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-secondary { background: #fff; color: var(--ink); border: 1px solid var(--border); }
+
+  /* Icon-only tool button (undo/redo) */
+  .btn-icon {
+    width: 34px; height: 34px; padding: 0;
+    background: #fff; color: var(--ink); border: 1px solid var(--border);
+    border-radius: 8px; font-size: 1.1rem; line-height: 1;
+    display: inline-flex; align-items: center; justify-content: center;
+    cursor: pointer; font-family: inherit;
+  }
+  .btn-icon:hover:not(:disabled) { background: var(--paper); }
+  .btn-icon:disabled { opacity: 0.35; cursor: not-allowed; }
+  .btn-group { display: inline-flex; gap: 0.25rem; margin-right: 0.5rem; }
+
+  /* Кликабельный «версия N» → открытие панели истории */
+  .version-btn {
+    background: none; border: none; padding: 0; font: inherit; color: inherit;
+    cursor: pointer; border-radius: 4px;
+  }
+  .version-btn:hover { background: var(--paper); padding: 0.1rem 0.35rem; margin: -0.1rem -0.35rem; }
+
+  /* Панель истории — dropdown под кнопкой «версия N» в тулбаре */
+  .history-panel {
+    position: fixed; top: 60px; width: 380px; max-height: calc(100vh - 80px);
+    background: #fff; border: 1px solid var(--border); border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.12);
+    display: none; flex-direction: column; overflow: hidden; z-index: 150;
+  }
+  .history-panel.open { display: flex; }
+  .history-panel .head {
+    padding: 0.8rem 1rem; border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .history-panel .head h4 { font-size: 0.95rem; margin: 0; }
+  .history-panel .head .close {
+    background: none; border: none; font-size: 1.2rem; color: var(--muted);
+    cursor: pointer; padding: 0 0.3rem; line-height: 1;
+  }
+  .history-panel .body { overflow-y: auto; padding: 0.4rem 0; }
+  .history-panel .empty { padding: 1rem; color: var(--muted); font-size: 0.85rem; text-align: center; }
+  .history-item {
+    padding: 0.7rem 1rem; border-bottom: 1px solid var(--border);
+    display: flex; flex-direction: column; gap: 0.25rem;
+  }
+  .history-item:last-child { border-bottom: none; }
+  .history-item .row1 { display: flex; justify-content: space-between; align-items: baseline; }
+  .history-item .v { font-weight: 600; font-size: 0.95rem; }
+  .history-item .v .cur { font-size: 0.7rem; color: var(--green); margin-left: 0.4rem; }
+  .history-item .ts { font-size: 0.75rem; color: var(--muted); }
+  .history-item .meta { font-size: 0.78rem; color: var(--muted); }
+  .history-item .notes { font-size: 0.82rem; color: var(--ink); font-style: italic; }
+  .history-item .actions { margin-top: 0.3rem; display: flex; gap: 0.4rem; }
+  .history-item .restore {
+    background: none; border: 1px solid var(--border); border-radius: 6px;
+    padding: 0.3rem 0.7rem; font-size: 0.8rem; cursor: pointer; color: var(--ink);
+    font-family: inherit;
+  }
+  .history-item .restore:hover:not(:disabled) { background: var(--paper); }
+  .history-item .restore:disabled { opacity: 0.4; cursor: not-allowed; }
+  .history-item .dl {
+    color: var(--muted); text-decoration: none; font-size: 0.8rem;
+    padding: 0.3rem 0.5rem;
+  }
+  .history-item .dl:hover { color: var(--ink); }
+
+  /* Индикатор статуса сохранения */
+  .save-status {
+    font-size: 0.8rem; color: var(--muted);
+    transition: color .2s;
+  }
+  .save-status.dirty { color: var(--warm); }
+  .save-status.saving { color: var(--warm); }
+  .save-status.saved { color: var(--green); }
+  .save-status.error { color: var(--red); }
+
+  /* Редактируемые блоки */
+  [contenteditable="true"] {
+    outline: none;
+    border-radius: 4px;
+    padding: 0.2rem 0.4rem;
+    margin: -0.2rem -0.4rem;
+    transition: background .15s;
+  }
+  [contenteditable="true"]:hover { background: rgba(200,169,110,.06); }
+  [contenteditable="true"]:focus {
+    background: rgba(200,169,110,.10);
+    outline: 1px dashed var(--warm-light);
+    outline-offset: 2px;
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%);
+    background: var(--ink); color: #fff; padding: 0.7rem 1.2rem; border-radius: 8px;
+    font-size: 0.85rem; opacity: 0; transition: opacity .2s; z-index: 200;
+    display: inline-flex; align-items: center; gap: 0.9rem; pointer-events: none;
+  }
+  .toast.show { opacity: 1; pointer-events: auto; }
+  .toast.error { background: var(--red); }
+  .toast button {
+    background: none; border: none; color: var(--warm-light); font-family: inherit;
+    font-size: 0.85rem; cursor: pointer; padding: 0; text-decoration: underline;
+  }
+  .toast button:hover { color: #fff; }
+
+  /* Layout: sidebar + main */
+  .layout {
+    display: grid; grid-template-columns: 220px 1fr;
+    gap: 1.5rem; max-width: 1100px; margin: 1.5rem auto; padding: 0 1rem;
+  }
+  .sidebar {
+    position: sticky; top: 72px; align-self: flex-start; max-height: calc(100vh - 88px);
+    overflow-y: auto;
+    background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 0.8rem;
+  }
+  .sidebar h3 {
+    font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1px;
+    color: var(--muted); margin-bottom: 0.5rem; font-weight: 600;
+  }
+  .sidebar a {
+    display: block; padding: 0.5rem 0.7rem; border-radius: 6px;
+    color: var(--ink); text-decoration: none; font-size: 0.88rem;
+    margin-bottom: 0.2rem;
+  }
+  .sidebar a:hover { background: var(--paper); }
+
+  /* Chapter card */
+  .chapter {
+    background: #fff; border-radius: 12px; padding: 1.5rem 1.8rem; margin-bottom: 1.2rem;
+    border: 1px solid var(--border);
+  }
+  .chapter-header {
+    display: flex; align-items: baseline; gap: 0.8rem;
+    padding-bottom: 0.8rem; margin-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .chapter-header .h {
+    font-size: 1.3rem; font-weight: 600;
+  }
+  .chapter-header .badge {
+    font-size: 0.7rem; padding: 2px 8px; border-radius: 10px;
+    background: var(--paper); color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px;
+  }
+
+  /* Block types */
+  .block {
+    padding: 0.5rem 0; margin-bottom: 0.6rem; line-height: 1.65;
+    position: relative;
+  }
+  .block-paragraph { font-size: 0.95rem; color: var(--ink); }
+  .block-subsection {
+    font-size: 1.05rem; font-weight: 600; color: var(--ink);
+    margin-top: 1.2rem; padding-top: 0.4rem;
+  }
+  .block-pull-quote {
+    background: rgba(200,169,110,.08); border-left: 3px solid var(--warm);
+    padding: 0.9rem 1.2rem; border-radius: 6px; margin: 0.8rem 0;
+    font-style: italic; color: var(--ink);
+  }
+  .block-pull-quote .attr {
+    font-style: normal; font-size: 0.8rem; color: var(--muted); margin-top: 0.4rem;
+  }
+
+  /* Кнопка удаления блока */
+  .block-delete {
+    position: absolute; top: 0.4rem; right: 0.4rem;
+    width: 24px; height: 24px; border-radius: 50%;
+    background: rgba(200,90,90,.9); color: #fff; border: none;
+    font-size: 0.85rem; line-height: 24px; text-align: center;
+    cursor: pointer; opacity: 0; transition: opacity .15s;
+    padding: 0; font-family: inherit;
+  }
+  .block:hover > .block-delete { opacity: 1; }
+  .block-delete:hover { background: var(--red); }
+  .block-callout {
+    background: rgba(90,126,184,.06); border-left: 3px solid #5b7a9e;
+    padding: 0.9rem 1.2rem; border-radius: 6px; margin: 0.8rem 0;
+    color: var(--muted); font-size: 0.9rem;
+  }
+  .block-callout .year { font-weight: 600; color: #5b7a9e; margin-right: 0.5rem; }
+
+  .readonly-mark {
+    display: inline-block; margin-left: 0.5rem;
+    font-size: 0.7rem; padding: 1px 6px; border-radius: 8px;
+    background: var(--paper); color: var(--muted);
+  }
+
+  /* Cover, tables, photo album — schematic view */
+  .block-schematic {
+    padding: 0.9rem 1.2rem; background: var(--paper); border-radius: 8px;
+    color: var(--muted); font-size: 0.85rem; margin: 0.4rem 0;
+    border: 1px dashed var(--border);
+  }
+  .block-schematic .type {
+    display: inline-block; padding: 2px 8px; background: #fff; border-radius: 8px;
+    font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px;
+    color: var(--muted); margin-right: 0.5rem; border: 1px solid var(--border);
+  }
+
+  /* Редактируемые таблицы (родственники / награды / хронология) */
+  .block-table {
+    margin: 0.4rem 0 0.8rem; overflow-x: auto;
+  }
+  .block-table .table-label {
+    font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px;
+    color: var(--muted); margin-bottom: 0.4rem; font-weight: 600;
+  }
+  .block-table table {
+    width: 100%; border-collapse: collapse; font-size: 0.9rem;
+  }
+  .block-table th {
+    text-align: left; font-weight: 600; color: var(--muted);
+    font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.3px;
+    padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--border);
+  }
+  .block-table td {
+    padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .block-table td[contenteditable="true"] { min-width: 60px; }
+  .block-table td.year-col { white-space: nowrap; color: #7a5f2a; font-weight: 500; }
+  .block-table tr { position: relative; }
+  .block-table tr .row-delete {
+    opacity: 0; position: absolute; right: -30px; top: 50%; transform: translateY(-50%);
+    width: 22px; height: 22px; border-radius: 50%;
+    background: rgba(200,90,90,.85); color: #fff; border: none;
+    font-size: 0.75rem; line-height: 22px; text-align: center;
+    cursor: pointer; padding: 0; transition: opacity .15s; font-family: inherit;
+  }
+  .block-table tr:hover .row-delete { opacity: 1; }
+  .block-table tr .row-delete:hover { background: var(--red); }
+  .block-table .empty { color: var(--muted); font-size: 0.85rem; padding: 0.5rem; font-style: italic; }
+
+  /* Фотогалерея */
+  .block-photos { margin: 0.4rem 0 0.8rem; }
+  .block-photos .empty {
+    color: var(--muted); font-size: 0.85rem; padding: 0.8rem; font-style: italic;
+    border: 1px dashed var(--border); border-radius: 8px; text-align: center;
+  }
+  .photo-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 0.9rem;
+  }
+  .photo-item { margin: 0; display: flex; flex-direction: column; gap: 0.4rem; }
+  .photo-thumb {
+    position: relative; aspect-ratio: 4/3; overflow: hidden;
+    border-radius: 8px; background: var(--paper);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .photo-thumb img {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+  }
+  .photo-thumb img[data-loading] { opacity: 0; }
+  .photo-thumb::before {
+    content: attr(data-status); color: var(--muted); font-size: 0.75rem;
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+  .photo-thumb .row-delete {
+    opacity: 0; position: absolute; top: 6px; right: 6px;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: rgba(200,90,90,.9); color: #fff; border: none;
+    font-size: 0.75rem; line-height: 22px; text-align: center;
+    cursor: pointer; padding: 0; transition: opacity .15s; font-family: inherit;
+  }
+  .photo-item:hover .photo-thumb .row-delete { opacity: 1; }
+  .photo-thumb .row-delete:hover { background: var(--red); }
+  .photo-item figcaption {
+    font-size: 0.8rem; color: var(--muted); text-align: center;
+    line-height: 1.4; padding: 0 0.3rem;
+  }
+  .photo-item figcaption[contenteditable="true"]:empty::before,
+  .photo-item figcaption[contenteditable="true"]:hover:empty::before {
+    content: 'без подписи'; color: var(--muted); opacity: 0.5;
+  }
+
+  /* Кнопка добавления фото — плашка "+ Добавить" в grid */
+  .photo-add {
+    display: flex; align-items: center; justify-content: center;
+    aspect-ratio: 4/3; border: 2px dashed var(--warm-light); border-radius: 8px;
+    background: transparent; color: var(--muted); font-size: 0.85rem;
+    cursor: pointer; font-family: inherit;
+    transition: all .15s;
+  }
+  .photo-add:hover { border-color: var(--warm); color: var(--warm); background: rgba(200,169,110,.05); }
+  .photo-add.uploading { opacity: 0.5; cursor: wait; }
+
+  /* Drag'n'drop */
+  .photo-item { cursor: grab; }
+  .photo-item.dragging { opacity: 0.4; cursor: grabbing; }
+  .photo-item.drop-before { box-shadow: -4px 0 0 var(--warm); }
+  .photo-item.drop-after  { box-shadow:  4px 0 0 var(--warm); }
+  .photo-grid.drop-target-empty { outline: 2px dashed var(--warm); outline-offset: 4px; }
+  .photo-item figcaption { user-select: text; }
+  .photo-item figcaption[contenteditable="true"] { cursor: text; }
+
+  .empty-state {
+    background: #fff; border: 1px solid var(--border); border-radius: 12px;
+    padding: 3rem 2rem; text-align: center;
+    max-width: 520px; margin: 3rem auto;
+  }
+  .empty-state .icon { font-size: 3rem; margin-bottom: 1rem; opacity: 0.4; }
+  .empty-state h2 { font-size: 1.1rem; margin-bottom: 0.5rem; }
+  .empty-state p { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+</style>
+</head>
+<body{% if is_preview %} class="has-preview-banner"{% endif %}>
+
+<div class="editor-toolbar">
+  <div class="left">
+    <a href="{{ url_for('project_book', project_id=project.id) }}">← К книге</a>
+    <span class="title">
+      {% if is_preview %}
+        Просмотр · <button id="historyBtn" class="version-btn"
+          title="История версий">версия <span id="currentVersion">{{ preview_version }}</span> ▾</button>
+      {% else %}
+        Редактор · <button id="historyBtn" class="version-btn"
+          title="История версий">версия <span id="currentVersion">{{ latest.version }}</span> ▾</button>
+      {% endif %}
+    </span>
+  </div>
+  <div class="right">
+    {% if book and not is_preview %}
+      <span id="saveStatus" class="save-status">без изменений</span>
+      <span class="btn-group">
+        <button id="undoBtn" class="btn-icon" type="button"
+                title="Отменить (Ctrl+Z)" disabled>↶</button>
+        <button id="redoBtn" class="btn-icon" type="button"
+                title="Повторить (Ctrl+Y)" disabled>↷</button>
+      </span>
+    {% endif %}
+    <a href="{{ url_for('project_book_download', project_id=project.id) }}"
+       class="btn btn-secondary">📄 Скачать PDF</a>
+    {% if book and not is_preview %}
+      <button id="saveBtn" class="btn" disabled>Сохранить</button>
+    {% endif %}
+  </div>
+</div>
+
+{% if is_preview %}
+<div class="preview-banner">
+  <div class="msg">
+    Вы смотрите старую версию <strong>v{{ preview_version }}</strong>.
+    Правки в этом режиме недоступны — текущая версия <strong>v{{ latest.version }}</strong>.
+  </div>
+  <div class="actions">
+    <a href="{{ url_for('project_book_edit', project_id=project.id) }}">
+      ← Вернуться к v{{ latest.version }}
+    </a>
+    <button type="button" class="primary" id="previewRestoreBtn"
+            data-version="{{ preview_version }}">Восстановить v{{ preview_version }}</button>
+  </div>
+</div>
+{% endif %}
+
+{% if not book %}
+  <div class="empty-state">
+    <div class="icon">📖</div>
+    <h2>Редактор пока недоступен</h2>
+    <p>
+      Эта версия книги была собрана до появления редактора и не содержит структурного файла.
+      Пересоберите книгу (кнопка «Собрать книгу» на странице проекта) — редактор откроется автоматически.
+    </p>
+    <a href="{{ url_for('project_detail', project_id=project.id) }}" class="btn">← К проекту</a>
+  </div>
+{% else %}
+  <div class="layout">
+    <!-- Sidebar: chapters navigation -->
+    <nav class="sidebar">
+      <h3>Главы</h3>
+      {% for ch in book.chapters %}
+        <a href="#ch-{{ ch.id }}">{{ ch.title or ch.id }}</a>
+      {% endfor %}
+    </nav>
+
+    <!-- Main: chapters with blocks -->
+    {% set ce = 'false' if is_preview else 'true' %}
+    <main>
+      {% for ch in book.chapters %}
+      {% set chapter_idx = loop.index0 %}
+      <section class="chapter" id="ch-{{ ch.id }}"
+               data-chapter-id="{{ ch.id }}" data-chapter-idx="{{ chapter_idx }}">
+        <div class="chapter-header">
+          <div class="h" contenteditable="{{ ce }}" data-editable="chapter_title"
+               data-chapter-idx="{{ chapter_idx }}">{{ ch.title or ch.id }}</div>
+          <div class="badge">{{ ch.blocks|length }} блок{% if ch.blocks|length != 1 %}ов{% endif %}</div>
+        </div>
+
+        {% for b in ch.blocks %}
+          {% set block_idx = loop.index0 %}
+          {% if b.type == 'paragraph' %}
+            <div class="block block-paragraph" contenteditable="{{ ce }}"
+                 data-editable="paragraph"
+                 data-chapter-idx="{{ chapter_idx }}"
+                 data-block-uid="{{ block_idx }}">{{ b.text }}</div>
+
+          {% elif b.type == 'subsection_title' %}
+            <div class="block block-subsection" contenteditable="{{ ce }}"
+                 data-editable="subsection_title"
+                 data-chapter-idx="{{ chapter_idx }}"
+                 data-block-uid="{{ block_idx }}">{{ b.title or b.text }}</div>
+
+          {% elif b.type == 'pull_quote' %}
+            <div class="block block-pull-quote"
+                 data-chapter-idx="{{ chapter_idx }}"
+                 data-block-uid="{{ block_idx }}">
+              {% if not is_preview %}
+              <button class="block-delete" type="button"
+                      data-delete-block title="Удалить цитату">✕</button>
+              {% endif %}
+              <div contenteditable="{{ ce }}"
+                   data-editable="pull_quote_text">{{ b.text }}</div>
+              {% if b.attribution %}
+                <div class="attr" contenteditable="{{ ce }}"
+                     data-editable="pull_quote_attribution">— {{ b.attribution }}</div>
+              {% endif %}
+            </div>
+
+          {% elif b.type == 'callout_historical' %}
+            <div class="block block-callout"
+                 data-chapter-idx="{{ chapter_idx }}"
+                 data-block-uid="{{ block_idx }}">
+              {% if b.year %}<span class="year">{{ b.year }}</span>{% endif %}
+              {{ b.text }}
+              <span class="readonly-mark">🔒 read-only</span>
+            </div>
+
+          {% elif b.type == 'cover' %}
+            <div class="block block-schematic"
+                 data-chapter-idx="{{ chapter_idx }}"
+                 data-block-uid="{{ block_idx }}">
+              <span class="type">Обложка</span>
+              {{ b.hero_name }} · {{ b.dates }}
+              {% if b.sketch_path %} · со скетчем: {{ b.sketch_path }}{% endif %}
+              <span class="readonly-mark">🔒 read-only</span>
+            </div>
+
+          {% elif b.type == 'relatives_table' %}
+            <div class="block block-table"
+                 data-chapter-idx="{{ chapter_idx }}"
+                 data-block-uid="{{ block_idx }}"
+                 data-block-type="relatives_table">
+              <div class="table-label">Родственники</div>
+              <table>
+                <thead><tr>
+                  <th style="width:34%">Имя</th>
+                  <th style="width:18%">Кем приходится</th>
+                  <th style="width:22%">Годы жизни</th>
+                  <th>Примечания</th>
+                </tr></thead>
+                <tbody>
+                  {% for r in (b.rows or []) %}
+                    <tr data-row-idx="{{ loop.index0 }}">
+                      <td contenteditable="{{ ce }}" data-field="name">{{ r.name or '' }}</td>
+                      <td contenteditable="{{ ce }}" data-field="relation">{{ r.relation or '' }}</td>
+                      <td contenteditable="{{ ce }}" data-field="dates">{{ r.dates or '' }}</td>
+                      <td contenteditable="{{ ce }}" data-field="notes">{{ r.notes or '' }}</td>
+                      {% if not is_preview %}
+                      <td style="width:0; padding:0; border:none;">
+                        <button type="button" class="row-delete" data-delete-row title="Удалить строку">✕</button>
+                      </td>
+                      {% endif %}
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+              {% if not (b.rows or []) %}<div class="empty">— пусто —</div>{% endif %}
+            </div>
+
+          {% elif b.type == 'awards_table' %}
+            <div class="block block-table"
+                 data-chapter-idx="{{ chapter_idx }}"
+                 data-block-uid="{{ block_idx }}"
+                 data-block-type="awards_table">
+              <div class="table-label">Награды</div>
+              <table>
+                <thead><tr>
+                  <th style="width:15%">Год</th>
+                  <th style="width:45%">Название</th>
+                  <th>Примечание</th>
+                </tr></thead>
+                <tbody>
+                  {% for r in (b.rows or []) %}
+                    <tr data-row-idx="{{ loop.index0 }}">
+                      <td contenteditable="{{ ce }}" data-field="year" class="year-col">{{ r.year or '' }}</td>
+                      <td contenteditable="{{ ce }}" data-field="name">{{ r.name or '' }}</td>
+                      <td contenteditable="{{ ce }}" data-field="note">{{ r.note or '' }}</td>
+                      {% if not is_preview %}
+                      <td style="width:0; padding:0; border:none;">
+                        <button type="button" class="row-delete" data-delete-row title="Удалить строку">✕</button>
+                      </td>
+                      {% endif %}
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+              {% if not (b.rows or []) %}<div class="empty">— пусто —</div>{% endif %}
+            </div>
+
+          {% elif b.type == 'timeline_visual' %}
+            <div class="block block-table"
+                 data-chapter-idx="{{ chapter_idx }}"
+                 data-block-uid="{{ block_idx }}"
+                 data-block-type="timeline_visual">
+              <div class="table-label">Хронология</div>
+              <table>
+                <thead><tr>
+                  <th style="width:15%">Год</th>
+                  <th>Событие</th>
+                </tr></thead>
+                <tbody>
+                  {% for e in (b.events or []) %}
+                    <tr data-row-idx="{{ loop.index0 }}">
+                      <td contenteditable="{{ ce }}" data-field="year" class="year-col">{{ e.year or '' }}</td>
+                      <td contenteditable="{{ ce }}" data-field="event">{{ e.event or '' }}</td>
+                      {% if not is_preview %}
+                      <td style="width:0; padding:0; border:none;">
+                        <button type="button" class="row-delete" data-delete-row title="Удалить строку">✕</button>
+                      </td>
+                      {% endif %}
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+              {% if not (b.events or []) %}<div class="empty">— пусто —</div>{% endif %}
+            </div>
+
+          {% elif b.type == 'contributors_list' %}
+            <div class="block block-schematic"
+                 data-chapter-idx="{{ chapter_idx }}"
+                 data-block-uid="{{ block_idx }}">
+              <span class="type">Рассказчики</span>
+              {{ b.contributors|length if b.contributors else 0 }} чел.
+              <span class="readonly-mark">🔒 read-only</span>
+            </div>
+
+          {% elif b.type == 'photo_album' %}
+            <div class="block block-photos"
+                 data-chapter-idx="{{ chapter_idx }}"
+                 data-block-uid="{{ block_idx }}"
+                 data-block-type="photo_album">
+              <div class="table-label">Фотоальбом ({{ (b.photos or [])|length }})</div>
+              <div class="photo-grid"{% if not is_preview %} data-photo-dropzone{% endif %}>
+                {% for p in (b.photos or []) %}
+                  <figure class="photo-item"
+                          data-photo-file="{{ p.file }}"
+                          {% if not is_preview %}draggable="true"{% endif %}>
+                    <div class="photo-thumb">
+                      <img alt="{{ p.caption or '' }}" data-photo-src="{{ p.file }}">
+                      {% if not is_preview %}
+                      <button type="button" class="row-delete" data-delete-photo
+                              title="Удалить фото">✕</button>
+                      {% endif %}
+                    </div>
+                    <figcaption contenteditable="{{ ce }}"
+                                data-photo-caption>{{ p.caption or 'без подписи' }}</figcaption>
+                  </figure>
+                {% endfor %}
+                {% if not is_preview %}
+                  <button type="button" class="photo-add" data-add-photo
+                          title="Загрузить новое фото">➕ Добавить фото</button>
+                {% endif %}
+              </div>
+              {% if not (b.photos or []) and is_preview %}
+                <div class="empty">В этом альбоме нет фото.</div>
+              {% endif %}
+            </div>
+
+          {% else %}
+            <div class="block block-schematic"
+                 data-chapter-idx="{{ chapter_idx }}"
+                 data-block-uid="{{ block_idx }}">
+              <span class="type">{{ b.type }}</span>
+              (неизвестный тип блока, будет показан по-умолчанию)
+            </div>
+          {% endif %}
+        {% endfor %}
+
+        {% if not ch.blocks %}
+          <div style="color:var(--muted); font-size:0.85rem; padding:1rem 0;">
+            В этой главе пока нет блоков.
+          </div>
+        {% endif %}
+      </section>
+      {% endfor %}
+    </main>
+  </div>
+
+  <div id="toast" class="toast"></div>
+  <input type="file" id="photoUploadInput" accept="image/*" multiple
+         style="display:none">
+
+
+  <aside id="historyPanel" class="history-panel" aria-hidden="true">
+    <div class="head">
+      <h4>История версий</h4>
+      <button type="button" class="close" id="historyClose" aria-label="Закрыть">✕</button>
+    </div>
+    <div class="body" id="historyBody">
+      <div class="empty">Загружаем…</div>
+    </div>
+  </aside>
+
+  <script id="bookJson" type="application/json">{{ book|tojson }}</script>
+  <script>
+  (function() {
+    const IS_PREVIEW = {{ 'true' if is_preview else 'false' }};
+    const PROJECT_ID = {{ project.id | tojson }};
+
+    // ------- Загружаем исходную структуру книги -------
+    const bookRaw = document.getElementById('bookJson').textContent;
+    let book;
+    try { book = JSON.parse(bookRaw); } catch(e) { console.error('bad book json', e); return; }
+
+    const mainEl     = document.querySelector('main');
+    const toast      = document.getElementById('toast');
+    // В preview кнопок save/undo/redo нет — переменные могут быть null.
+    const saveBtn    = document.getElementById('saveBtn');
+    const saveStatus = document.getElementById('saveStatus');
+    const undoBtn    = document.getElementById('undoBtn');
+    const redoBtn    = document.getElementById('redoBtn');
+
+    let saving = false;
+
+    function setStatus(kind, text) {
+      if (!saveStatus) return;
+      saveStatus.className = 'save-status ' + kind;
+      saveStatus.textContent = text;
+    }
+    function refreshDirtyUI() {
+      if (IS_PREVIEW) return;
+      const clean = (mainEl.innerHTML === savedSnapshot);
+      saveBtn.disabled = clean || saving;
+      // Кнопки Undo/Redo — активны в зависимости от стеков + pending debounce.
+      const hasUndo = undoStack.length > 0 || commitTimer !== null;
+      undoBtn.disabled = !hasUndo;
+      redoBtn.disabled = redoStack.length === 0;
+      if (saving) return; // статус выставляет saveBook()
+      if (clean) setStatus('saved', 'без изменений');
+      else       setStatus('dirty', 'не сохранено');
+    }
+    let toastTimer = null;
+    function hideToast() {
+      toast.className = 'toast';
+      if (toastTimer) { clearTimeout(toastTimer); toastTimer = null; }
+    }
+    function showToast(msg, isError) {
+      hideToast();
+      toast.textContent = msg;
+      toast.className = 'toast show' + (isError ? ' error' : '');
+      toastTimer = setTimeout(hideToast, 2200);
+    }
+    function showUndoToast(msg) {
+      hideToast();
+      toast.textContent = '';
+      toast.appendChild(document.createTextNode(msg + ' · '));
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = 'Отменить';
+      btn.addEventListener('click', function() { hideToast(); doUndo(); });
+      toast.appendChild(btn);
+      toast.className = 'toast show';
+      toastTimer = setTimeout(hideToast, 6000);
+    }
+
+    // ===================================================================
+    //  UNDO / REDO — как в Word
+    //  Стратегия: снапшоты innerHTML основного контейнера.
+    //  - Текстовые правки коммитятся с debounce (по-умолчанию 700 мс
+    //    или при потере фокуса) — так серия символов схлопывается в
+    //    один снапшот, а не в 200.
+    //  - Структурные изменения (удаление блока) коммитятся сразу.
+    //  - Ctrl+Z — undo, Ctrl+Y / Ctrl+Shift+Z — redo.
+    // ===================================================================
+    let currentSnapshot = mainEl.innerHTML;   // последнее закоммиченное состояние
+    let savedSnapshot   = mainEl.innerHTML;   // состояние в БД (для dirty-detection)
+    const undoStack     = [];
+    const redoStack     = [];
+    let commitTimer     = null;
+    const MAX_HISTORY   = 200;
+
+    function commitSnapshot(force) {
+      if (commitTimer) { clearTimeout(commitTimer); commitTimer = null; }
+      const snap = mainEl.innerHTML;
+      if (!force && snap === currentSnapshot) return false;
+      undoStack.push(currentSnapshot);
+      if (undoStack.length > MAX_HISTORY) undoStack.shift();
+      currentSnapshot = snap;
+      redoStack.length = 0;
+      refreshDirtyUI();
+      return true;
+    }
+    function scheduleCommit(delayMs) {
+      if (commitTimer) clearTimeout(commitTimer);
+      commitTimer = setTimeout(function(){ commitSnapshot(false); }, delayMs != null ? delayMs : 700);
+      refreshDirtyUI();
+    }
+    function restoreSnapshot(html) {
+      // Сохраняем фокус на главе, чтобы undo не бросал скролл наверх
+      const activeChapterId = document.activeElement && document.activeElement.closest
+        ? (document.activeElement.closest('.chapter') || {}).id
+        : null;
+      mainEl.innerHTML = html;
+      bindMainEvents();
+      if (activeChapterId) {
+        const el = document.getElementById(activeChapterId);
+        if (el) el.scrollIntoView({block: 'nearest'});
+      }
+    }
+    function doUndo() {
+      if (commitTimer) commitSnapshot(true);  // сначала сохраним недокоммиченные правки
+      if (undoStack.length === 0) return;
+      redoStack.push(currentSnapshot);
+      currentSnapshot = undoStack.pop();
+      restoreSnapshot(currentSnapshot);
+      refreshDirtyUI();
+    }
+    function doRedo() {
+      if (commitTimer) commitSnapshot(true);
+      if (redoStack.length === 0) return;
+      undoStack.push(currentSnapshot);
+      currentSnapshot = redoStack.pop();
+      restoreSnapshot(currentSnapshot);
+      refreshDirtyUI();
+    }
+
+    // ------- Утилиты для блоков -------
+    function updateChapterBadge(chapterEl) {
+      const n = chapterEl.querySelectorAll(':scope > .block').length;
+      const badge = chapterEl.querySelector('.chapter-header .badge');
+      if (badge) {
+        const word = n === 1 ? 'блок' : 'блоков';
+        badge.textContent = n + ' ' + word;
+      }
+    }
+    function deleteBlock(block) {
+      const chapter = block.closest('.chapter');
+      if (!chapter) return;
+      // Сначала коммитим любые несохранённые текстовые правки — чтобы undo
+      // делил историю на «правки текста» и «удаление» как две ступени.
+      if (commitTimer) commitSnapshot(true);
+      block.remove();
+      updateChapterBadge(chapter);
+      commitSnapshot(true);   // удаление — сразу в историю
+      showUndoToast('Блок удалён');
+    }
+
+    // ------- Биндинг событий на contenteditable и delete-кнопки -------
+    // Вызывается после каждого restoreSnapshot(), поэтому listeners
+    // «переезжают» на новые DOM-ноды.
+    function bindMainEvents() {
+      mainEl.querySelectorAll('[contenteditable="true"]').forEach(function(el) {
+        el.addEventListener('input',   function(){ scheduleCommit(700); });
+        el.addEventListener('blur',    function(){ if (commitTimer) commitSnapshot(true); });
+        el.addEventListener('keydown', function(e) {
+          // Enter в одностроковых блоках — просто blur
+          if (e.key === 'Enter' && !e.shiftKey && el.dataset.editable !== 'paragraph') {
+            e.preventDefault();
+            el.blur();
+          }
+        });
+        el.addEventListener('paste', function(e) {
+          e.preventDefault();
+          const text = (e.clipboardData || window.clipboardData).getData('text');
+          document.execCommand('insertText', false, text);
+        });
+      });
+      mainEl.querySelectorAll('[data-delete-block]').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          const block = btn.closest('.block');
+          if (block) deleteBlock(block);
+        });
+      });
+      // Удаление строки таблицы (даты/родственники/награды)
+      mainEl.querySelectorAll('[data-delete-row]').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          const tr = btn.closest('tr');
+          if (!tr) return;
+          if (commitTimer) commitSnapshot(true);
+          tr.remove();
+          commitSnapshot(true);
+          showUndoToast('Строка удалена');
+        });
+      });
+      // Удаление фото из альбома
+      mainEl.querySelectorAll('[data-delete-photo]').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          const item = btn.closest('.photo-item');
+          if (!item) return;
+          if (commitTimer) commitSnapshot(true);
+          item.remove();
+          commitSnapshot(true);
+          showUndoToast('Фото удалено из главы');
+        });
+      });
+
+      // Кнопка «➕ Добавить фото»
+      mainEl.querySelectorAll('[data-add-photo]').forEach(function(btn) {
+        btn.addEventListener('click', function() { triggerPhotoUpload(btn); });
+      });
+
+      // Drag&drop фото
+      mainEl.querySelectorAll('.photo-item[draggable="true"]').forEach(bindPhotoDrag);
+      mainEl.querySelectorAll('[data-photo-dropzone]').forEach(bindDropzone);
+    }
+
+    // ------- Подгрузка presigned URL'ов для фото -------
+    let PHOTOS_MAP = null;  // {photo_5.jpg: {url, caption}, ...} по имени файла
+    async function loadPhotosMap() {
+      const imgs = mainEl.querySelectorAll('img[data-photo-src]');
+      if (!imgs.length) return;
+      try {
+        const resp = await fetch('/projects/' + PROJECT_ID + '/photos-map');
+        const data = await resp.json();
+        if (!resp.ok || !data.ok) throw new Error(data.error || resp.status);
+        // Сервер отдает по id, нам удобнее по имени файла
+        PHOTOS_MAP = {};
+        Object.values(data.photos || {}).forEach(function(p) {
+          if (p && p.file) PHOTOS_MAP[p.file] = p;
+        });
+        imgs.forEach(function(img) {
+          const rec = PHOTOS_MAP[img.dataset.photoSrc];
+          if (rec && rec.url) {
+            img.src = rec.url;
+            const thumb = img.closest('.photo-thumb');
+            if (thumb) thumb.removeAttribute('data-status');
+          } else {
+            const thumb = img.closest('.photo-thumb');
+            if (thumb) thumb.setAttribute('data-status', 'нет в БД');
+          }
+        });
+      } catch (err) {
+        console.warn('photos map failed', err);
+        mainEl.querySelectorAll('.photo-thumb').forEach(function(t) {
+          t.setAttribute('data-status', 'ошибка загрузки');
+        });
+      }
+    }
+
+    // ------- Загрузка новых фото -------
+    // Один общий <input type="file"> на всю страницу — вешаем click от кнопки,
+    // а в обработчике change знаем какой альбом получил click последним.
+    const uploadInput = document.getElementById('photoUploadInput');
+    let pendingAlbumEl = null;   // .photo-grid, куда положить новые превью
+
+    function triggerPhotoUpload(btn) {
+      pendingAlbumEl = btn.closest('.photo-grid');
+      if (!pendingAlbumEl) return;
+      uploadInput.value = '';   // сброс, чтобы событие change сработало и на тот же файл
+      uploadInput.click();
+    }
+    if (uploadInput) {
+      uploadInput.addEventListener('change', async function() {
+        const files = Array.from(uploadInput.files || []);
+        const grid = pendingAlbumEl;
+        pendingAlbumEl = null;
+        if (!files.length || !grid) return;
+        const addBtn = grid.querySelector('[data-add-photo]');
+        if (addBtn) addBtn.classList.add('uploading');
+        try {
+          for (const file of files) {
+            await uploadOnePhoto(file, grid);
+          }
+          commitSnapshot(true);
+          showToast(files.length === 1 ? 'Фото загружено' : (files.length + ' фото загружено'));
+        } catch (err) {
+          console.error(err);
+          showToast('Не удалось загрузить: ' + err.message, true);
+        } finally {
+          if (addBtn) addBtn.classList.remove('uploading');
+        }
+      });
+    }
+    async function uploadOnePhoto(file, grid) {
+      const fd = new FormData();
+      fd.append('file', file);
+      const resp = await fetch('/projects/' + PROJECT_ID + '/photos/upload', {
+        method: 'POST', body: fd,
+      });
+      const data = await resp.json();
+      if (!resp.ok || !data.ok) throw new Error(data.error || ('HTTP ' + resp.status));
+      // Вставляем новое превью перед кнопкой «Добавить»
+      const addBtn = grid.querySelector('[data-add-photo]');
+      const item = createPhotoItem(data.file, data.url, '');
+      if (addBtn) grid.insertBefore(item, addBtn);
+      else        grid.appendChild(item);
+      if (data.url && PHOTOS_MAP) PHOTOS_MAP[data.file] = { url: data.url, caption: '' };
+    }
+    function createPhotoItem(fileName, url, caption) {
+      const fig = document.createElement('figure');
+      fig.className = 'photo-item';
+      fig.dataset.photoFile = fileName;
+      fig.draggable = true;
+      fig.innerHTML =
+        '<div class="photo-thumb">' +
+          '<img alt="' + (caption || '') + '" data-photo-src="' + fileName + '"' +
+              (url ? ' src="' + url + '"' : '') + '>' +
+          '<button type="button" class="row-delete" data-delete-photo title="Удалить фото">✕</button>' +
+        '</div>' +
+        '<figcaption contenteditable="' + (IS_PREVIEW ? 'false' : 'true') +
+          '" data-photo-caption>' + (caption || 'без подписи') + '</figcaption>';
+      // Событийные listeners
+      fig.querySelector('[data-delete-photo]').addEventListener('click', function(e) {
+        e.stopPropagation();
+        if (commitTimer) commitSnapshot(true);
+        fig.remove();
+        commitSnapshot(true);
+        showUndoToast('Фото удалено из главы');
+      });
+      const cap = fig.querySelector('[data-photo-caption]');
+      cap.addEventListener('input',   function(){ scheduleCommit(700); });
+      cap.addEventListener('blur',    function(){ if (commitTimer) commitSnapshot(true); });
+      cap.addEventListener('paste',   function(e) {
+        e.preventDefault();
+        const text = (e.clipboardData || window.clipboardData).getData('text');
+        document.execCommand('insertText', false, text);
+      });
+      bindPhotoDrag(fig);
+      return fig;
+    }
+
+    // ------- Drag & drop фото (внутри альбома и между главами) -------
+    let dragSrc = null;
+    function bindPhotoDrag(item) {
+      item.addEventListener('dragstart', function(e) {
+        dragSrc = item;
+        item.classList.add('dragging');
+        try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', 'photo'); } catch(_) {}
+      });
+      item.addEventListener('dragend', function() {
+        if (dragSrc) dragSrc.classList.remove('dragging');
+        dragSrc = null;
+        clearDropHints();
+      });
+    }
+    function clearDropHints() {
+      mainEl.querySelectorAll('.photo-item.drop-before,.photo-item.drop-after').forEach(function(el) {
+        el.classList.remove('drop-before', 'drop-after');
+      });
+      mainEl.querySelectorAll('.photo-grid.drop-target-empty').forEach(function(el) {
+        el.classList.remove('drop-target-empty');
+      });
+    }
+    function bindDropzone(grid) {
+      grid.addEventListener('dragover', function(e) {
+        if (!dragSrc) return;
+        e.preventDefault();
+        clearDropHints();
+        // Находим ближайший .photo-item под курсором
+        const items = Array.from(grid.querySelectorAll(':scope > .photo-item'))
+          .filter(function(it) { return it !== dragSrc; });
+        if (items.length === 0) { grid.classList.add('drop-target-empty'); return; }
+        let target = null;
+        for (const it of items) {
+          const rect = it.getBoundingClientRect();
+          if (e.clientY < rect.bottom && e.clientX < rect.right) { target = it; break; }
+        }
+        if (target) {
+          const rect = target.getBoundingClientRect();
+          const before = (e.clientX - rect.left) < rect.width / 2;
+          target.classList.add(before ? 'drop-before' : 'drop-after');
+        } else {
+          items[items.length - 1].classList.add('drop-after');
+        }
+      });
+      grid.addEventListener('dragleave', function(e) {
+        if (!grid.contains(e.relatedTarget)) clearDropHints();
+      });
+      grid.addEventListener('drop', function(e) {
+        if (!dragSrc) return;
+        e.preventDefault();
+        const items = Array.from(grid.querySelectorAll(':scope > .photo-item'))
+          .filter(function(it) { return it !== dragSrc; });
+        let target = null, before = false;
+        for (const it of items) {
+          const rect = it.getBoundingClientRect();
+          if (e.clientY < rect.bottom && e.clientX < rect.right) {
+            target = it;
+            before = (e.clientX - rect.left) < rect.width / 2;
+            break;
+          }
+        }
+        if (commitTimer) commitSnapshot(true);
+        const addBtn = grid.querySelector('[data-add-photo]');
+        if (target) grid.insertBefore(dragSrc, before ? target : target.nextSibling);
+        else if (addBtn) grid.insertBefore(dragSrc, addBtn);
+        else grid.appendChild(dragSrc);
+        clearDropHints();
+        commitSnapshot(true);
+      });
+    }
+    bindMainEvents();  // в preview тоже — для photo-src подстановки; сами listeners noop
+    loadPhotosMap();
+
+    // Ctrl+S — сохранить, Ctrl+Z — undo, Ctrl+Y / Ctrl+Shift+Z — redo.
+    // В preview горячие клавиши правки не работают.
+    if (!IS_PREVIEW) {
+      document.addEventListener('keydown', function(e) {
+        const k = e.key.toLowerCase();
+        if ((e.ctrlKey || e.metaKey) && k === 's') {
+          e.preventDefault();
+          if (!saveBtn.disabled) saveBook();
+          return;
+        }
+        if ((e.ctrlKey || e.metaKey) && !e.shiftKey && k === 'z') {
+          e.preventDefault();
+          doUndo();
+          return;
+        }
+        if ((e.ctrlKey || e.metaKey) && (k === 'y' || (e.shiftKey && k === 'z'))) {
+          e.preventDefault();
+          doRedo();
+          return;
+        }
+      });
+    }
+
+    // ------- Собираем изменённую структуру обратно в JSON -------
+    // Стратегия: идём по DOM (главы → блоки). Для каждого блока берём
+    // его исходную JSON-версию по data-block-uid (индекс в исходном book)
+    // и накладываем правки из contenteditable. Удалённые блоки в DOM
+    // отсутствуют → выпадают из результата.
+    function collectBook() {
+      const out = { hero: book.hero ? JSON.parse(JSON.stringify(book.hero)) : undefined,
+                    chapters: [] };
+      document.querySelectorAll('.chapter[data-chapter-idx]').forEach(function(chapterEl) {
+        const chIdx = parseInt(chapterEl.dataset.chapterIdx, 10);
+        const source = book.chapters[chIdx];
+        if (!source) return;
+        // Клон главы БЕЗ blocks (blocks соберём заново)
+        const chapter = JSON.parse(JSON.stringify(source));
+        chapter.blocks = [];
+        // Заголовок главы (может быть отредактирован)
+        const titleEl = chapterEl.querySelector('.chapter-header .h[data-editable="chapter_title"]');
+        if (titleEl) chapter.title = titleEl.innerText.trim();
+
+        chapterEl.querySelectorAll(':scope > .block[data-block-uid]').forEach(function(blockEl) {
+          const uid = parseInt(blockEl.dataset.blockUid, 10);
+          const src = source.blocks[uid];
+          if (!src) return;
+          const block = JSON.parse(JSON.stringify(src));
+
+          // Табличные блоки: собираем rows/events заново из DOM
+          // (порядок строк = порядок в DOM, удалённые строки выпадают).
+          const blockType = blockEl.dataset.blockType;
+          if (blockType === 'relatives_table' || blockType === 'awards_table') {
+            const rows = [];
+            blockEl.querySelectorAll('tbody tr').forEach(function(tr) {
+              // Клонируем исходную строку по data-row-idx (чтобы сохранить nulls/пустые поля)
+              const rowIdx = parseInt(tr.dataset.rowIdx, 10);
+              const srcRow = (src.rows || [])[rowIdx] || {};
+              const row = JSON.parse(JSON.stringify(srcRow));
+              tr.querySelectorAll('td[data-field]').forEach(function(td) {
+                const val = td.innerText.trim();
+                row[td.dataset.field] = val || null;
+              });
+              rows.push(row);
+            });
+            block.rows = rows;
+            chapter.blocks.push(block);
+            return;
+          }
+          if (blockType === 'timeline_visual') {
+            const events = [];
+            blockEl.querySelectorAll('tbody tr').forEach(function(tr) {
+              const rowIdx = parseInt(tr.dataset.rowIdx, 10);
+              const srcEv = (src.events || [])[rowIdx] || {};
+              const ev = JSON.parse(JSON.stringify(srcEv));
+              tr.querySelectorAll('td[data-field]').forEach(function(td) {
+                const val = td.innerText.trim();
+                ev[td.dataset.field] = val || null;
+              });
+              events.push(ev);
+            });
+            block.events = events;
+            chapter.blocks.push(block);
+            return;
+          }
+          if (blockType === 'photo_album') {
+            const photos = [];
+            blockEl.querySelectorAll('.photo-item').forEach(function(item) {
+              const file = item.dataset.photoFile;
+              const capEl = item.querySelector('[data-photo-caption]');
+              let caption = capEl ? capEl.innerText.trim() : '';
+              // Плейсхолдер «без подписи» не сохраняем как значение
+              if (caption === 'без подписи') caption = '';
+              photos.push({ file: file, caption: caption });
+            });
+            block.photos = photos;
+            chapter.blocks.push(block);
+            return;
+          }
+
+          // Обычные текстовые блоки — как раньше
+          blockEl.querySelectorAll('[contenteditable="true"][data-editable]').forEach(function(el) {
+            const kind = el.dataset.editable;
+            const text = el.innerText.replace(/\s+$/, '').trim();
+            if (kind === 'paragraph') {
+              block.text = text;
+            } else if (kind === 'subsection_title') {
+              if ('title' in block) block.title = text; else block.text = text;
+            } else if (kind === 'pull_quote_text') {
+              block.text = text.replace(/^«\s*/, '').replace(/\s*»$/, '');
+            } else if (kind === 'pull_quote_attribution') {
+              block.attribution = text.replace(/^—\s*/, '');
+            }
+          });
+
+          chapter.blocks.push(block);
+        });
+
+        out.chapters.push(chapter);
+      });
+      return out;
+    }
+
+    async function saveBook() {
+      if (saving) return;
+      // Коммитим недоотложенные текстовые правки, чтобы точно ушли в save.
+      if (commitTimer) commitSnapshot(true);
+      saving = true;
+      setStatus('saving', 'сохраняем и пересобираем PDF…');
+      saveBtn.disabled = true;
+      try {
+        const payload = { blocks_json: collectBook() };
+        const resp = await fetch('{{ url_for("project_book_save", project_id=project.id) }}', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await resp.json();
+        if (!resp.ok || !data.ok) {
+          throw new Error(data.error || ('HTTP ' + resp.status));
+        }
+        // Новая базовая структура + reindex data-block-uid по порядку в DOM
+        // (после удалений массив блоков сжался — uid'ы должны совпасть с ним).
+        book = payload.blocks_json;
+        document.querySelectorAll('.chapter[data-chapter-idx]').forEach(function(chEl) {
+          chEl.querySelectorAll(':scope > .block[data-block-uid]').forEach(function(bEl, idx) {
+            bEl.dataset.blockUid = String(idx);
+          });
+        });
+        // История больше не валидна: uid'ы в её снапшотах указывают на прежний book.
+        undoStack.length = 0;
+        redoStack.length = 0;
+        currentSnapshot = mainEl.innerHTML;
+        savedSnapshot   = currentSnapshot;
+        saving = false;
+        setStatus('saved', 'сохранено · v' + data.version);
+        saveBtn.disabled = true;
+        if (data.warning) {
+          showToast(data.warning, true);
+        } else {
+          const suffix = data.pdf_regenerated ? ' (PDF обновлён)' : '';
+          showToast('Сохранено · v' + data.version + suffix);
+        }
+      } catch (err) {
+        console.error(err);
+        setStatus('error', 'ошибка сохранения');
+        showToast('Не удалось сохранить: ' + err.message, true);
+        saving = false;
+        refreshDirtyUI();
+      }
+    }
+
+    if (!IS_PREVIEW) {
+      saveBtn.addEventListener('click', saveBook);
+      undoBtn.addEventListener('click', doUndo);
+      redoBtn.addEventListener('click', doRedo);
+      refreshDirtyUI();
+    }
+
+    // ===================================================================
+    //  История версий: клик по «версия N» → выпадает панель со списком.
+    //  Каждая версия — timestamp, автор, notes, кнопка «Восстановить»
+    //  (создаёт новую версию поверх текущей с blocks_json из старой).
+    // ===================================================================
+    const historyBtn   = document.getElementById('historyBtn');
+    const historyPanel = document.getElementById('historyPanel');
+    const historyBody  = document.getElementById('historyBody');
+    const historyClose = document.getElementById('historyClose');
+    const currentVerEl = document.getElementById('currentVersion');
+
+    function fmtTs(iso) {
+      if (!iso) return '—';
+      try {
+        const d = new Date(iso);
+        return d.toLocaleString('ru-RU', {
+          day: '2-digit', month: '2-digit', year: 'numeric',
+          hour: '2-digit', minute: '2-digit',
+        });
+      } catch(_) { return iso; }
+    }
+    function fmtSize(bytes) {
+      if (!bytes) return '';
+      if (bytes >= 1048576) return (bytes / 1048576).toFixed(1) + ' МБ';
+      return Math.round(bytes / 1024) + ' КБ';
+    }
+
+    async function loadHistory() {
+      historyBody.innerHTML = '<div class="empty">Загружаем…</div>';
+      try {
+        const resp = await fetch('/projects/' + PROJECT_ID + '/book/versions');
+        const data = await resp.json();
+        if (!resp.ok || !data.ok) throw new Error(data.error || 'HTTP ' + resp.status);
+        renderHistory(data.versions);
+      } catch (err) {
+        historyBody.innerHTML = '<div class="empty">Ошибка: ' + err.message + '</div>';
+      }
+    }
+    function renderHistory(versions) {
+      if (!versions || !versions.length) {
+        historyBody.innerHTML = '<div class="empty">Пока нет ни одной версии.</div>';
+        return;
+      }
+      historyBody.innerHTML = '';
+      versions.forEach(function(v) {
+        const item = document.createElement('div');
+        item.className = 'history-item';
+
+        const row1 = document.createElement('div'); row1.className = 'row1';
+        const vLabel = document.createElement('div'); vLabel.className = 'v';
+        vLabel.textContent = 'v' + v.version;
+        if (v.is_current) {
+          const c = document.createElement('span'); c.className = 'cur'; c.textContent = 'текущая';
+          vLabel.appendChild(c);
+        }
+        const ts = document.createElement('div'); ts.className = 'ts';
+        ts.textContent = fmtTs(v.timestamp);
+        row1.appendChild(vLabel); row1.appendChild(ts);
+
+        const meta = document.createElement('div'); meta.className = 'meta';
+        const parts = [];
+        if (v.edited_by_email) parts.push(v.edited_by_email);
+        if (v.page_count)      parts.push(v.page_count + ' стр.');
+        if (v.size_bytes)      parts.push(fmtSize(v.size_bytes));
+        if (!v.has_blocks_json) parts.push('без структуры');
+        meta.textContent = parts.join(' · ');
+
+        item.appendChild(row1);
+        if (meta.textContent) item.appendChild(meta);
+        if (v.notes) {
+          const notes = document.createElement('div'); notes.className = 'notes';
+          notes.textContent = '«' + v.notes + '»';
+          item.appendChild(notes);
+        }
+
+        const actions = document.createElement('div'); actions.className = 'actions';
+        const dl = document.createElement('a'); dl.className = 'dl';
+        dl.href = '/projects/' + PROJECT_ID + '/book/v' + v.version + '/download';
+        dl.target = '_blank'; dl.textContent = '📄 PDF';
+        actions.appendChild(dl);
+        if (!v.is_current) {
+          // Просмотр — переход на редактор с ?preview=<v>. Работает даже
+          // если у версии нет blocks_json (роут просто редиректнет обратно).
+          const view = document.createElement('button');
+          view.type = 'button'; view.className = 'restore';
+          view.textContent = 'Просмотреть';
+          view.disabled = !v.has_blocks_json;
+          view.addEventListener('click', function() { openPreview(v.version); });
+          actions.appendChild(view);
+
+          const restore = document.createElement('button');
+          restore.type = 'button'; restore.className = 'restore';
+          restore.textContent = 'Восстановить';
+          restore.disabled = !v.has_blocks_json;
+          if (!v.has_blocks_json) restore.title = 'У этой версии нет структуры для восстановления';
+          restore.addEventListener('click', function() { restoreVersion(v.version); });
+          actions.appendChild(restore);
+        }
+        item.appendChild(actions);
+        historyBody.appendChild(item);
+      });
+    }
+
+    function openPreview(version) {
+      // beforeunload сам предупредит, если есть несохранённые правки.
+      window.location.href = '/projects/' + PROJECT_ID + '/book/edit?preview=' + version;
+    }
+
+    async function restoreVersion(version) {
+      if (mainEl.innerHTML !== savedSnapshot) {
+        if (!confirm('У вас есть несохранённые правки — они будут потеряны. Всё равно восстановить v' + version + '?')) return;
+      } else {
+        if (!confirm('Восстановить версию v' + version + '? Будет создана новая версия поверх текущей.')) return;
+      }
+      try {
+        const resp = await fetch('/projects/' + PROJECT_ID + '/book/versions/' + version + '/restore',
+          { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+        const data = await resp.json();
+        if (!resp.ok || !data.ok) throw new Error(data.error || 'HTTP ' + resp.status);
+        showToast('Восстановлено · v' + data.version);
+        // Уходим на «чистый» URL редактора (без ?preview=), чтобы отобразить
+        // свежесозданную версию в редактируемом режиме.
+        setTimeout(function(){
+          window.location.href = '/projects/' + PROJECT_ID + '/book/edit';
+        }, 500);
+      } catch (err) {
+        showToast('Не удалось восстановить: ' + err.message, true);
+      }
+    }
+
+    function toggleHistory(open) {
+      const shouldOpen = (open != null) ? open : !historyPanel.classList.contains('open');
+      if (shouldOpen) {
+        // Позиционируем дропдаун под кнопкой «версия N», не давая ему уехать за край экрана
+        const rect = historyBtn.getBoundingClientRect();
+        const panelWidth = 380;
+        const gap = 6;
+        let left = rect.left;
+        const maxLeft = window.innerWidth - panelWidth - 12;
+        if (left > maxLeft) left = maxLeft;
+        if (left < 8) left = 8;
+        historyPanel.style.left = left + 'px';
+        historyPanel.style.top  = (rect.bottom + gap) + 'px';
+      }
+      historyPanel.classList.toggle('open', shouldOpen);
+      historyPanel.setAttribute('aria-hidden', shouldOpen ? 'false' : 'true');
+      if (shouldOpen) loadHistory();
+    }
+    historyBtn.addEventListener('click', function(e) { e.stopPropagation(); toggleHistory(); });
+    historyClose.addEventListener('click', function(){ toggleHistory(false); });
+
+    // Кнопка «Восстановить vN» в баннере preview
+    const previewRestoreBtn = document.getElementById('previewRestoreBtn');
+    if (previewRestoreBtn) {
+      previewRestoreBtn.addEventListener('click', function() {
+        restoreVersion(parseInt(previewRestoreBtn.dataset.version, 10));
+      });
+    }
+    // Закрытие по клику вне панели
+    document.addEventListener('click', function(e) {
+      if (!historyPanel.classList.contains('open')) return;
+      if (historyPanel.contains(e.target) || historyBtn.contains(e.target)) return;
+      toggleHistory(false);
+    });
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && historyPanel.classList.contains('open')) toggleHistory(false);
+    });
+
+    // Предупреждение при попытке уйти с несохранёнными правками
+    if (!IS_PREVIEW) {
+      window.addEventListener('beforeunload', function(e) {
+        if (mainEl.innerHTML !== savedSnapshot) { e.preventDefault(); e.returnValue = ''; }
+      });
+    }
+  })();
+  </script>
+{% endif %}
+
+</body>
+</html>
