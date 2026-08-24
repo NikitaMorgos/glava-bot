@@ -11,9 +11,9 @@
 Креды (для smtp):
   CABINET_SMTP_HOST     — обычно smtp.yandex.ru
   CABINET_SMTP_PORT     — 465 (SSL) или 587 (STARTTLS)
-  CABINET_SMTP_USER     — полный адрес: hello@glava.family
+  CABINET_SMTP_USER     — полный адрес: info@glava.family
   CABINET_SMTP_PASSWORD — пароль приложения из Яндекс ID
-  CABINET_EMAIL_FROM    — обычно hello@glava.family
+  CABINET_EMAIL_FROM    — обычно info@glava.family
   CABINET_EMAIL_FROM_NAME — отображаемое имя, напр. "Glava"
 """
 
@@ -152,7 +152,7 @@ MAGIC_LINK_TEMPLATE_TEXT = """Здравствуйте!
 Ссылка действительна 30 минут. Если вы её не запрашивали — просто проигнорируйте это письмо.
 
 — Команда Glava
-hello@glava.family
+info@glava.family
 """
 
 MAGIC_LINK_TEMPLATE_HTML = """\
@@ -185,7 +185,7 @@ MAGIC_LINK_TEMPLATE_HTML = """\
     <hr style="border:none;border-top:1px solid #ece5d8;margin:28px 0;">
     <p style="color:#8a8480;font-size:12px;">
       Glava — биографические книги о ваших близких<br>
-      <a href="mailto:hello@glava.family" style="color:#5b7a9e;">hello@glava.family</a>
+      <a href="mailto:info@glava.family" style="color:#5b7a9e;">info@glava.family</a>
     </p>
   </div>
 </body>
@@ -231,7 +231,7 @@ def _render_notification_html(title: str, intro: str, cta_text: str, cta_url: st
     <hr style="border:none;border-top:1px solid #ece5d8;margin:28px 0;">
     <p style="color:#8a8480;font-size:12px;">
       Glava — биографические книги о ваших близких<br>
-      <a href="mailto:hello@glava.family" style="color:#5b7a9e;">hello@glava.family</a>
+      <a href="mailto:info@glava.family" style="color:#5b7a9e;">info@glava.family</a>
     </p>
   </div>
 </body>
@@ -252,7 +252,7 @@ def send_questions_ready(to_email: str, project_id: int, hero_name: str | None =
     text = (
         f"Здравствуйте!\n\n{intro}\n\n"
         f"Открыть проект в кабинете: {url}\n\n"
-        f"— Команда Glava\nhello@glava.family\n"
+        f"— Команда Glava\ninfo@glava.family\n"
     )
     html = _render_notification_html(
         title=f"Уточняющие вопросы готовы",
@@ -278,7 +278,7 @@ def send_book_ready(
     text = (
         f"Здравствуйте!\n\n{intro}\n\n"
         f"Открыть книгу: {url}\n\n"
-        f"— Команда Glava\nhello@glava.family\n"
+        f"— Команда Glava\ninfo@glava.family\n"
     )
     html = _render_notification_html(
         title="Книга готова",
