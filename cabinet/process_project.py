@@ -330,15 +330,21 @@ def _run_extract(workspace: Path, info: dict, project_id: int, round_number: int
             failed.append(f"{local_name} (нет id рассказчика)")
             continue
 
-        rc, _, _ = _run_glava(
-            [
-                "extract-facts", arg,
-                "--respondent-id", respondent_id,
-                "--respondent-name", narrator["name"],
-                "--respondent-relation", narrator.get("relation") or "родственник",
-            ],
-            workspace,
-        )
+        cmd_args = [
+            "extract-facts", arg,
+            "--respondent-id", respondent_id,
+            "--respondent-name", narrator["name"],
+            "--respondent-relation", narrator.get("relation") or "родственник",
+        ]
+        # Прокидываем героя — без --hero-name pipeline упадёт на Hero(name=None)
+        subject = info.get("subject") or {}
+        if subject.get("name"):
+            cmd_args += ["--hero-name", subject["name"]]
+        if subject.get("years"):
+            m = re.search(r"(\d{4})", subject["years"])
+            if m:
+                cmd_args += ["--hero-birth", m.group(1)]
+        rc, _, _ = _run_glava(cmd_args, workspace)
         if rc != 0:
             failed.append(local_name)
     if failed:
