@@ -329,8 +329,12 @@
       <div class="muted" style="font-size:0.9rem; margin-bottom:1rem;">
         Посмотрите, скачайте или отредактируйте при желании.
       </div>
-      <a href="{{ book_url }}" class="btn"
-         style="font-size:1rem; padding:0.9rem 1.8rem;">📖 Открыть книгу</a>
+      <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+        <a href="{{ book_url }}" class="btn"
+           style="font-size:1rem; padding:0.9rem 1.8rem;">📖 Открыть книгу</a>
+        <a href="{{ url_for('project_book_edit', project_id=project.id) }}" class="btn btn-secondary"
+           style="font-size:1rem; padding:0.9rem 1.4rem;">✏️ Редактировать</a>
+      </div>
     </div>
   {% endif %}
 
@@ -339,6 +343,8 @@
   <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.6rem;">
     <a href="{{ book_url }}" class="btn btn-secondary"
        style="font-size:0.85rem; padding:0.5rem 1rem;">📖 Книга</a>
+    <a href="{{ url_for('project_book_edit', project_id=project.id) }}" class="btn btn-secondary"
+       style="font-size:0.85rem; padding:0.5rem 1rem;">✏️ Редактировать</a>
   </div>
   {% endif %}
 </div>
