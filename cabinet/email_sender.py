@@ -105,13 +105,94 @@ class SMTPSender(EmailSender):
         return True
 
 
+class ResendSender(EmailSender):
+    """
+    Отправка через Resend HTTP API (https://resend.com/docs).
+    Работает по HTTPS (порт 443) — не блокируется хостерами, в отличие от SMTP.
+    Env:
+      CABINET_RESEND_API_KEY   — токен из Resend dashboard (начинается с re_)
+      CABINET_EMAIL_FROM       — «Name <mail@domain>» или просто mail@domain
+                                 (домен должен быть подтверждён в Resend)
+      CABINET_EMAIL_FROM_NAME  — если задан, используется как отображаемое имя
+    """
+
+    def __init__(self, api_key: str, from_email: str, from_name: str = ""):
+        self.api_key = api_key
+        self.from_email = from_email
+        self.from_name = from_name
+
+    def send(self, to: str, subject: str, html: str, text: str = "") -> bool:
+        import json
+        import urllib.request
+        import urllib.error
+
+        sender = (
+            f"{self.from_name} <{self.from_email}>" if self.from_name else self.from_email
+        )
+        payload = {
+            "from": sender,
+            "to": [to],
+            "subject": subject,
+            "html": html,
+        }
+        if text:
+            payload["text"] = text
+
+        body = json.dumps(payload).encode("utf-8")
+        req = urllib.request.Request(
+            "https://api.resend.com/emails",
+            data=body,
+            headers={
+                "Authorization": f"Bearer {self.api_key}",
+                "Content-Type": "application/json",
+            },
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=20) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+                logger.info(
+                    "ResendSender: письмо отправлено на %s (id=%s, subject=%s)",
+                    to, data.get("id"), subject,
+                )
+                return True
+        except urllib.error.HTTPError as e:
+            err_body = ""
+            try:
+                err_body = e.read().decode("utf-8")
+            except Exception:
+                pass
+            logger.error(
+                "ResendSender: HTTP %s при отправке на %s: %s",
+                e.code, to, err_body or e.reason,
+            )
+            return False
+        except Exception as e:
+            logger.error("ResendSender: не удалось отправить письмо на %s: %s", to, e)
+            return False
+
+
 def get_sender() -> EmailSender:
     """
     Возвращает настроенный EmailSender согласно env.
-    backend=smtp → SMTPSender (если все креды есть), иначе fallback на LogSender.
-    backend=log  → LogSender.
+    backend=smtp   → SMTPSender (если все креды есть), иначе fallback на LogSender.
+    backend=resend → ResendSender (HTTP API, обходит блокировки SMTP-портов).
+    backend=log    → LogSender.
     """
     backend = (os.environ.get("CABINET_EMAIL_BACKEND") or "log").strip().lower()
+
+    if backend == "resend":
+        api_key = os.environ.get("CABINET_RESEND_API_KEY", "").strip()
+        from_email = os.environ.get("CABINET_EMAIL_FROM", "").strip()
+        from_name = os.environ.get("CABINET_EMAIL_FROM_NAME", "Glava").strip()
+        if not (api_key and from_email):
+            logger.warning(
+                "CABINET_EMAIL_BACKEND=resend, но не заданы CABINET_RESEND_API_KEY "
+                "и/или CABINET_EMAIL_FROM — fallback на LogSender."
+            )
+            return LogSender()
+        return ResendSender(api_key=api_key, from_email=from_email, from_name=from_name)
+
     if backend != "smtp":
         return LogSender()
 
