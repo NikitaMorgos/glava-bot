@@ -357,12 +357,20 @@ def _run_extract(workspace: Path, info: dict, project_id: int, round_number: int
     return True
 
 
-def _run_coverage(workspace: Path, project_id: int, round_number: int) -> bool:
+def _run_coverage(workspace: Path, info: dict, project_id: int, round_number: int) -> bool:
     """
     Запускает glava check-coverage — генерит output/_intermediate/questions.md и review.md.
     """
     db.update_job_stage(project_id, round_number, "coverage", "running")
-    rc, _, _ = _run_glava(["check-coverage"], workspace)
+    cmd_args = ["check-coverage"]
+    subject = info.get("subject") or {}
+    if subject.get("name"):
+        cmd_args += ["--hero-name", subject["name"]]
+    if subject.get("years"):
+        m = re.search(r"(\d{4})", subject["years"])
+        if m:
+            cmd_args += ["--hero-birth", m.group(1)]
+    rc, _, _ = _run_glava(cmd_args, workspace)
     if rc != 0:
         db.update_job_stage(
             project_id, round_number, "coverage", "failed",
@@ -503,7 +511,7 @@ def process(project_id: int) -> int:
             return 1
         if not _run_extract(workspace, info, project_id, round_number):
             return 1
-        if not _run_coverage(workspace, project_id, round_number):
+        if not _run_coverage(workspace, info, project_id, round_number):
             return 1
 
         # Round 1: останавливаемся после coverage. Публикуем только questions.md.
