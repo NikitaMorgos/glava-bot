@@ -323,12 +323,15 @@ def project_detail(project_id: int):
     has_questions = latest_questions is not None
     has_book = db.get_latest_project_book(project_id) is not None
     submitted = project.get("materials_submitted_at") is not None
-    if has_book:
-        current_step = "book"
-    elif submitted:
-        # Клиент нажал «начать обработку» — мы обрабатываем (приоритет!),
-        # независимо от того, есть ли уже опубликованные questions.
+    # Приоритет: submitted (идёт обработка) > book > questions > upload/submit
+    # Это позволяет запустить Round 3+ поверх уже готовой книги:
+    # publish_questions и publish_book сбрасывают submitted → клиент
+    # опять видит step "questions"/"book" с возможностью догрузить материалы
+    # и нажать «Пересобрать книгу» → submit → снова идём в processing.
+    if submitted:
         current_step = "processing"
+    elif has_book:
+        current_step = "book"
     elif has_questions:
         current_step = "questions"
     elif len(voices) == 0:
@@ -338,8 +341,8 @@ def project_detail(project_id: int):
         current_step = "ready_to_submit"
     # Read-only:
     #  - в processing — материалы в работе, правки не повлияют на текущую обработку
-    #  - в book — книга собрана, повторно не пересобираем, менять источник бессмысленно
-    is_editable = current_step not in ("processing", "book")
+    #  - в book — книга собрана; можно догрузить новые материалы для пересборки
+    is_editable = current_step != "processing"
 
     # Реальные стадии обработки (если есть)
     job_stages = []

@@ -314,6 +314,41 @@
       </details>
       {% endif %}
 
+      <!-- Догрузка фото (иллюстрации в книгу) -->
+      <details style="border:1px solid var(--border); border-radius:10px; background:#fff; margin-bottom:1rem;">
+        <summary style="padding:0.7rem 1rem; cursor:pointer; font-weight:500; font-size:0.95rem;
+                        list-style:none; display:flex; justify-content:space-between; align-items:center;">
+          <span>📸 Загрузить ещё фото (необязательно)</span>
+          <span style="font-size:0.8rem; color:var(--muted);">▾</span>
+        </summary>
+        <div style="padding:0 1rem 1rem;">
+          <div class="muted" style="font-size:0.85rem; margin:0.8rem 0;">
+            Добавьте фото — портреты, семейные, документы (грамоты/награды/аттестаты).
+            В книге станут иллюстрациями, при пересборке распределятся по главам.
+          </div>
+          <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+            <div class="inline-upload-zone" data-kind="photo" data-photo-type="photo"
+                 style="flex:1; min-width:220px; border:1px dashed var(--border); border-radius:8px;
+                        padding:0.6rem 0.8rem; text-align:center; cursor:pointer; position:relative;
+                        font-size:0.85rem; color:var(--muted);">
+              <span class="upload-zone-label">📸 + Добавить фото</span>
+              <div style="font-size:0.72rem; opacity:0.8; margin-top:0.15rem;">иллюстрации в книгу</div>
+              <input type="file" multiple accept="image/*"
+                     style="position:absolute; inset:0; opacity:0; cursor:pointer;">
+            </div>
+            <div class="inline-upload-zone" data-kind="photo" data-photo-type="document"
+                 style="flex:1; min-width:220px; border:1px dashed var(--border); border-radius:8px;
+                        padding:0.6rem 0.8rem; text-align:center; cursor:pointer; position:relative;
+                        font-size:0.85rem; color:var(--muted);">
+              <span class="upload-zone-label">📜 + Добавить документ</span>
+              <div style="font-size:0.72rem; opacity:0.8; margin-top:0.15rem;">награды, грамоты, аттестаты</div>
+              <input type="file" multiple accept="image/*,.pdf"
+                     style="position:absolute; inset:0; opacity:0; cursor:pointer;">
+            </div>
+          </div>
+        </div>
+      </details>
+
       <form method="POST" action="{{ url_for('project_submit_materials', project_id=project.id) }}"
             style="display:inline;">
         <button type="submit" class="btn"
@@ -327,7 +362,7 @@
         📖 Книга готова
       </div>
       <div class="muted" style="font-size:0.9rem; margin-bottom:1rem;">
-        Посмотрите, скачайте или отредактируйте при желании.
+        Посмотрите, скачайте или отредактируйте. Хотите — догрузите новые материалы и пересоберите книгу.
       </div>
       <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
         <a href="{{ book_url }}" class="btn"
@@ -335,6 +370,135 @@
         <a href="{{ url_for('project_book_edit', project_id=project.id) }}" class="btn btn-secondary"
            style="font-size:1rem; padding:0.9rem 1.4rem;">✏️ Редактировать</a>
       </div>
+    </div>
+
+    <!-- Возможность запустить новый раунд сборки с догруженными материалами -->
+    <div class="card" style="background:rgba(200,169,110,.04); border-color:var(--warm-light); margin-top:0.8rem;">
+      <div style="font-weight:600; font-size:1rem; margin-bottom:0.4rem;">
+        🔄 Пересобрать книгу с новыми материалами
+      </div>
+      <div class="muted" style="font-size:0.9rem; margin-bottom:0.8rem;">
+        Догрузите ещё интервью или фото — потом нажмите «Пересобрать книгу».
+        Прошлая версия останется в истории.
+      </div>
+
+      {% if latest_questions %}
+      <details style="border:1px solid var(--border); border-radius:10px; background:#fff; margin-bottom:1rem;">
+        <summary style="padding:0.7rem 1rem; cursor:pointer; font-weight:500; font-size:0.95rem;
+                        list-style:none; display:flex; justify-content:space-between; align-items:center;">
+          <span>📋 Уточняющие вопросы (можно ещё ответить)</span>
+          <span style="font-size:0.8rem; color:var(--muted);">▾</span>
+        </summary>
+        <div style="padding:0 1rem 1rem;">
+          {% for block in latest_questions.blocks_json %}
+          <div style="margin-top:0.8rem;">
+            <div style="font-weight:600; font-size:0.9rem; color:var(--ink); margin-bottom:0.3rem;">{{ block.title }}</div>
+            <ul style="list-style:none; padding:0; margin:0;">
+              {% for q in block.questions %}
+              <li style="padding:0.25rem 0; font-size:0.88rem; color:var(--dark); line-height:1.5;">
+                <span style="color:var(--warm); font-weight:600;">•</span> {{ q }}
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% endfor %}
+          {% if latest_questions.blitz_json %}
+          <div style="margin-top:1rem; padding-top:0.8rem; border-top:1px solid var(--border);">
+            <div style="font-weight:600; font-size:0.9rem; color:var(--ink); margin-bottom:0.3rem;">⚡ Блиц-вопросы</div>
+            <ul style="list-style:none; padding:0; margin:0;">
+              {% for q in latest_questions.blitz_json %}
+              <li style="padding:0.25rem 0; font-size:0.88rem; color:var(--dark); line-height:1.5;">
+                <span style="color:var(--warm); font-weight:600;">•</span> {{ q }}
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% endif %}
+          <div style="margin-top:1rem;">
+            <a href="{{ url_for('project_questions_download', project_id=project.id) }}"
+               class="btn btn-secondary" style="font-size:0.85rem; padding:0.5rem 1rem;">📄 Скачать вопросы</a>
+          </div>
+        </div>
+      </details>
+      {% endif %}
+
+      {% if narrators %}
+      <details style="border:1px solid var(--border); border-radius:10px; background:#fff; margin-bottom:1rem;">
+        <summary style="padding:0.7rem 1rem; cursor:pointer; font-weight:500; font-size:0.95rem;
+                        list-style:none; display:flex; justify-content:space-between; align-items:center;">
+          <span>🎤 Загрузить ещё интервью</span>
+          <span style="font-size:0.8rem; color:var(--muted);">▾</span>
+        </summary>
+        <div style="padding:0 1rem 1rem;">
+          <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center; margin:0.8rem 0 0.5rem;">
+            <label class="muted" style="font-size:0.85rem;">Чей это материал:</label>
+            <select id="rebuildUploadHero" class="form-input"
+                    style="flex:1; min-width:160px; padding:0.4rem 0.6rem; font-size:0.9rem;">
+              {% for n in narrators %}
+              <option value="{{ n.id }}">{{ n.name }}{% if n.relation %} ({{ n.relation }}){% endif %}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="inline-upload-zone" id="rebuildUploadZone" data-hero-id="{{ narrators[0].id }}"
+               style="border:1px dashed var(--border); border-radius:8px;
+                      padding:0.8rem 1rem; text-align:center; cursor:pointer; position:relative;
+                      font-size:0.9rem; color:var(--muted);">
+            <span class="upload-zone-label">+ Перетащите аудио/текст или нажмите</span>
+            <input type="file" multiple
+                   accept=".mp3,.ogg,.m4a,.wav,.opus,.oga,.txt,.docx,.doc,.pdf,.rtf,.md"
+                   style="position:absolute; inset:0; opacity:0; cursor:pointer;">
+          </div>
+          <script>
+            (function() {
+              const sel = document.getElementById('rebuildUploadHero');
+              const zone = document.getElementById('rebuildUploadZone');
+              if (sel && zone) {
+                sel.addEventListener('change', () => { zone.dataset.heroId = sel.value; });
+              }
+            })();
+          </script>
+        </div>
+      </details>
+      {% endif %}
+
+      <details style="border:1px solid var(--border); border-radius:10px; background:#fff; margin-bottom:1rem;">
+        <summary style="padding:0.7rem 1rem; cursor:pointer; font-weight:500; font-size:0.95rem;
+                        list-style:none; display:flex; justify-content:space-between; align-items:center;">
+          <span>📸 Загрузить ещё фото</span>
+          <span style="font-size:0.8rem; color:var(--muted);">▾</span>
+        </summary>
+        <div style="padding:0 1rem 1rem;">
+          <div class="muted" style="font-size:0.85rem; margin:0.8rem 0;">
+            Добавьте фото — портреты, семейные, документы. При пересборке войдут в книгу.
+          </div>
+          <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+            <div class="inline-upload-zone" data-kind="photo" data-photo-type="photo"
+                 style="flex:1; min-width:220px; border:1px dashed var(--border); border-radius:8px;
+                        padding:0.6rem 0.8rem; text-align:center; cursor:pointer; position:relative;
+                        font-size:0.85rem; color:var(--muted);">
+              <span class="upload-zone-label">📸 + Добавить фото</span>
+              <div style="font-size:0.72rem; opacity:0.8; margin-top:0.15rem;">иллюстрации в книгу</div>
+              <input type="file" multiple accept="image/*"
+                     style="position:absolute; inset:0; opacity:0; cursor:pointer;">
+            </div>
+            <div class="inline-upload-zone" data-kind="photo" data-photo-type="document"
+                 style="flex:1; min-width:220px; border:1px dashed var(--border); border-radius:8px;
+                        padding:0.6rem 0.8rem; text-align:center; cursor:pointer; position:relative;
+                        font-size:0.85rem; color:var(--muted);">
+              <span class="upload-zone-label">📜 + Добавить документ</span>
+              <div style="font-size:0.72rem; opacity:0.8; margin-top:0.15rem;">награды, грамоты, аттестаты</div>
+              <input type="file" multiple accept="image/*,.pdf"
+                     style="position:absolute; inset:0; opacity:0; cursor:pointer;">
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <form method="POST" action="{{ url_for('project_submit_materials', project_id=project.id) }}"
+            style="display:inline;">
+        <button type="submit" class="btn"
+                style="font-size:0.95rem; padding:0.7rem 1.4rem;">🔄 Пересобрать книгу</button>
+      </form>
     </div>
   {% endif %}
 

@@ -473,6 +473,13 @@ def _publish_book_only(workspace: Path, project_id: int) -> None:
                 book_json_path=book_json_path if book_json_path.exists() else None,
             )
             logger.info("book.pdf опубликован")
+            # Сбрасываем materials_submitted_at → клиент может догрузить
+            # новые материалы и запустить Round 3 (пересборку).
+            try:
+                db.reset_project_submission(project_id)
+                logger.info("materials_submitted_at сброшен — цикл открыт для новых материалов")
+            except Exception as e:
+                logger.warning("reset_project_submission failed: %s", e)
         except Exception as e:
             logger.exception("publish_book failed: %s", e)
     else:
