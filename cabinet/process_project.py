@@ -161,6 +161,21 @@ def _prepare_workspace(project_id: int) -> tuple[Path, dict]:
         logger.error("Не найден .env с API-ключами: %s", GLAVA_PIPELINE_ENV)
         raise RuntimeError(f".env с API-ключами не найден: {GLAVA_PIPELINE_ENV}")
 
+    # Восстанавливаем sketch.png обложки из S3, если он там есть.
+    # sketch.png создаётся при первой сборке через Replicate; чтобы не
+    # генерировать каждый раз заново (workspace в /tmp может теряться),
+    # публикация книги заливает его в S3 → тут читаем обратно.
+    input_dir_for_sketch = workspace / "input"
+    input_dir_for_sketch.mkdir(parents=True, exist_ok=True)
+    sketch_local = input_dir_for_sketch / "sketch.png"
+    if not sketch_local.exists():
+        try:
+            storage.download_file(f"covers/{project_id}/sketch.png", str(sketch_local))
+            logger.info("sketch.png восстановлен из S3")
+        except Exception as e:
+            # Нет обложки в S3 → assemble-cover сгенерит при следующем запуске
+            logger.debug("sketch.png не в S3 (%s) — будет сгенерирован при сборке", e)
+
     # 1. Тянем данные из БД
     subject = None
     heroes = db.get_project_heroes(project_id)
@@ -490,6 +505,16 @@ def _publish_book_only(workspace: Path, project_id: int) -> None:
                 logger.info("materials_submitted_at сброшен — цикл открыт для новых материалов")
             except Exception as e:
                 logger.warning("reset_project_submission failed: %s", e)
+            # Заливаем sketch.png (обложку) в S3, чтобы повторные regen'ы PDF
+            # в редакторе переиспользовали её вместо повторной генерации через
+            # Replicate. workspace/input/sketch.png создан assemble-cover.
+            sketch_local = workspace / "input" / "sketch.png"
+            if sketch_local.exists():
+                try:
+                    storage.upload_file_to_key(str(sketch_local), f"covers/{project_id}/sketch.png")
+                    logger.info("sketch.png загружен в S3 (переиспользуется при регенерации)")
+                except Exception as e:
+                    logger.warning("не удалось залить sketch.png в S3: %s", e)
         except Exception as e:
             logger.exception("publish_book failed: %s", e)
     else:
