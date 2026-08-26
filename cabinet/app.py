@@ -795,10 +795,55 @@ def project_book_save(project_id: int):
         output_dir = workspace / "output"
         output_dir.mkdir(parents=True, exist_ok=True)
 
+        # Sanitize blocks_json: pydantic-модели pipeline требуют строки, не null,
+        # для name/relation в relatives_table и т.п. Полностью пустые строки
+        # выбрасываем (pipeline иногда сам их генерит и потом падает).
+        def _sanitize(book: dict) -> dict:
+            for ch in book.get("chapters", []) or []:
+                new_blocks = []
+                for bl in ch.get("blocks", []) or []:
+                    t = bl.get("type")
+                    if t in ("relatives_table", "awards_table"):
+                        rows = bl.get("rows") or []
+                        filtered = []
+                        for r in rows:
+                            if not isinstance(r, dict):
+                                continue
+                            # Считаем строку "пустой" если все значения None/""
+                            if not any((v is not None and str(v).strip()) for v in r.values()):
+                                continue
+                            # null → "" для всех строковых полей
+                            for k, v in list(r.items()):
+                                if v is None:
+                                    r[k] = ""
+                            filtered.append(r)
+                        bl["rows"] = filtered
+                    elif t == "timeline_visual":
+                        events = bl.get("events") or []
+                        filtered = []
+                        for e in events:
+                            if not isinstance(e, dict):
+                                continue
+                            if not any((v is not None and str(v).strip()) for v in e.values()):
+                                continue
+                            for k, v in list(e.items()):
+                                if v is None:
+                                    e[k] = ""
+                            filtered.append(e)
+                        bl["events"] = filtered
+                    elif t == "pull_quote":
+                        if bl.get("attribution") is None:
+                            bl["attribution"] = ""
+                    new_blocks.append(bl)
+                ch["blocks"] = new_blocks
+            return book
+
+        blocks_json_clean = _sanitize(blocks_json)
+
         # Пишем отредактированный book.json в workspace (перезаписываем старый).
         book_json_path = output_dir / "book.json"
         book_json_path.write_text(
-            _json.dumps(blocks_json, ensure_ascii=False, indent=2),
+            _json.dumps(blocks_json_clean, ensure_ascii=False, indent=2),
             encoding="utf-8",
         )
 
