@@ -781,42 +781,42 @@ def project_book_save(project_id: int):
     page_count = prev.get("page_count")
     render_error: str | None = None
 
-    hero_name = (blocks_json.get("hero") or {}).get("full_name") \
-        if isinstance(blocks_json.get("hero"), dict) else None
-    doc_title = hero_name or project.get("title") or "Книга"
-
+    # Регенерируем PDF через ОРИГИНАЛЬНЫЙ pipeline (glava render-pdf) — тот же
+    # рендер, что делал первую сборку, с полным дизайном (обложка, PT Serif,
+    # шаблоны glava/render/templates/). Требует workspace с фото/обложкой;
+    # если workspace нет — восстанавливаем через _prepare_workspace.
     try:
-        from cabinet.book_to_html import render_book_to_html
-        from cabinet.pdf_render import render_html_to_pdf
-        # Собираем photos_map {filename: {url, caption}} для вставки <img> в PDF
-        photos_map = {}
-        try:
-            for p in db.get_project_photos(project_id):
-                key = p.get("storage_key")
-                ext = os.path.splitext(key or "")[1] or ".jpg"
-                fname = f"photo_{p['id']}{ext}"
-                try:
-                    url = storage.get_presigned_download_url(key, expires_in=3600)
-                except Exception:
-                    url = None
-                if url:
-                    photos_map[fname] = {"url": url, "caption": p.get("caption") or ""}
-        except Exception as e:
-            app.logger.warning("photos_map build failed: %s", e)
-        html_content = render_book_to_html(blocks_json, title=doc_title, photos_map=photos_map)
-        pdf_bytes = render_html_to_pdf(html_content)
-
-        # Заливаем PDF + исходный HTML
+        import json as _json
         import tempfile as _tf, os as _os
-        with _tf.NamedTemporaryFile(suffix=".pdf", delete=False) as ftmp:
-            ftmp.write(pdf_bytes); pdf_tmp = ftmp.name
-        with _tf.NamedTemporaryFile(suffix=".html", delete=False, mode="w", encoding="utf-8") as ftmp:
-            ftmp.write(html_content); html_tmp = ftmp.name
-        try:
-            storage.upload_file_to_key(pdf_tmp, pdf_key)
-            storage.upload_file_to_key(html_tmp, html_key)
-        finally:
-            _os.unlink(pdf_tmp); _os.unlink(html_tmp)
+        from cabinet.process_project import _prepare_workspace, _run_glava
+
+        # Готовим workspace (idempotent — создаст если нет, докачает новые фото).
+        workspace, _info = _prepare_workspace(project_id)
+        output_dir = workspace / "output"
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        # Пишем отредактированный book.json в workspace (перезаписываем старый).
+        book_json_path = output_dir / "book.json"
+        book_json_path.write_text(
+            _json.dumps(blocks_json, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+
+        # Запускаем render-pdf через pipeline
+        pdf_path = output_dir / f"book_edited_v{next_version}.pdf"
+        rc, _out, err = _run_glava(
+            ["render-pdf",
+             "--book-json", "output/book.json",
+             "--output", str(pdf_path.relative_to(workspace)).replace("\\", "/")],
+            workspace,
+        )
+        if rc != 0:
+            raise RuntimeError(f"glava render-pdf rc={rc}: {err[-500:] if err else ''}")
+        if not pdf_path.exists():
+            raise RuntimeError(f"render-pdf прошёл, но PDF не создан: {pdf_path}")
+
+        pdf_bytes = pdf_path.read_bytes()
+        storage.upload_file_to_key(str(pdf_path), pdf_key)
 
         try:
             from pypdf import PdfReader  # type: ignore
@@ -827,6 +827,9 @@ def project_book_save(project_id: int):
     except Exception as e:
         app.logger.exception("project_book_save: PDF regen failed: %s", e)
         render_error = str(e)
+
+    # html_key больше не создаём (pipeline генерит только PDF), храним старый
+    html_key = prev.get("html_storage_key")
 
     # Если PDF не срендерился — фолбэк на прошлые ключи, чтобы «скачать PDF» не сломался.
     stored_pdf_key  = pdf_key  if pdf_bytes else prev["storage_key"]
