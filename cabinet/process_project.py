@@ -275,16 +275,26 @@ def _prepare_workspace(project_id: int) -> tuple[Path, dict]:
 
 
 def _run_transcribe(workspace: Path, info: dict, project_id: int, round_number: int) -> bool:
-    """Прогоняет glava transcribe по каждому аудио."""
+    """
+    Прогоняет glava transcribe по каждому аудио.
+    Для текстовых материалов (.txt/.md/.rtf/.docx/.pdf) — вместо AssemblyAI
+    вызывает glava import-transcript: конвертирует текст в Transcript JSON,
+    чтобы дальнейший extract-facts мог его прочитать одинаково.
+    """
     db.update_job_stage(project_id, round_number, "transcribe", "running")
     audio_exts = {".mp3", ".ogg", ".m4a", ".wav", ".opus", ".oga"}
+    text_exts  = {".txt", ".md", ".rtf", ".docx", ".doc", ".pdf"}
     failed = []
     for local_name, _ in info["voice_files"]:
-        if Path(local_name).suffix.lower() not in audio_exts:
-            logger.info("Skipping non-audio: %s", local_name)
+        suffix = Path(local_name).suffix.lower()
+        if suffix in audio_exts:
+            rc, _, _ = _run_glava(["transcribe", f"input/{local_name}"], workspace)
+        elif suffix in text_exts:
+            # Готовый текст → Transcript JSON без AssemblyAI
+            rc, _, _ = _run_glava(["import-transcript", f"input/{local_name}"], workspace)
+        else:
+            logger.info("Skipping unsupported file: %s", local_name)
             continue
-        # cwd = workspace, файлы лежат в input/<name>
-        rc, _, _ = _run_glava(["transcribe", f"input/{local_name}"], workspace)
         if rc != 0:
             failed.append(local_name)
     if failed:
@@ -307,18 +317,17 @@ def _run_extract(workspace: Path, info: dict, project_id: int, round_number: int
     fallback_narrator = info["narrators"][0] if info["narrators"] else None
 
     for local_name, voice in info["voice_files"]:
-        suffix = Path(local_name).suffix.lower()
-        if suffix in {".mp3", ".ogg", ".m4a", ".wav", ".opus", ".oga"}:
-            transcript_path = (
-                workspace / "output" / "_intermediate" / "transcripts"
-                / (Path(local_name).stem + ".json")
-            )
-            if not transcript_path.exists():
-                failed.append(f"{local_name} (нет транскрипта)")
-                continue
-            arg = str(transcript_path.relative_to(workspace)).replace("\\", "/")
-        else:
-            arg = f"input/{local_name}"
+        # Все интервью — и аудио, и текст — после _run_transcribe уже
+        # имеют JSON-транскрипт в output/_intermediate/transcripts/<stem>.json.
+        # (аудио → через transcribe / AssemblyAI, текст → через import-transcript).
+        transcript_path = (
+            workspace / "output" / "_intermediate" / "transcripts"
+            / (Path(local_name).stem + ".json")
+        )
+        if not transcript_path.exists():
+            failed.append(f"{local_name} (нет транскрипта)")
+            continue
+        arg = str(transcript_path.relative_to(workspace)).replace("\\", "/")
 
         # Подбираем narrator
         narrator = narrators_by_id.get(voice.get("hero_id")) or fallback_narrator
