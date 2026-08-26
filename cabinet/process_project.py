@@ -254,10 +254,11 @@ def _prepare_workspace(project_id: int) -> tuple[Path, dict]:
         yaml_lines.append("photos:")
         for local_name, p in photo_files:
             yaml_lines.append(f"  - file: {local_name}")
-            if p.get("caption"):
-                # экранируем кавычки в caption
-                caption = p["caption"].replace('"', "'")
-                yaml_lines.append(f'    caption: "{caption}"')
+            # pipeline требует caption всегда — если у фото подписи нет,
+            # пишем пустую строку (иначе assemble-cover/render-pdf упадут
+            # ValidationError: Field required).
+            caption = (p.get("caption") or "").replace('"', "'")
+            yaml_lines.append(f'    caption: "{caption}"')
 
     yaml_text = "\n".join(yaml_lines) + "\n"
     (input_dir / "project.yaml").write_text(yaml_text, encoding="utf-8")

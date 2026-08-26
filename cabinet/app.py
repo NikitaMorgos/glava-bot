@@ -847,6 +847,21 @@ def project_book_save(project_id: int):
             encoding="utf-8",
         )
 
+        # Если обложка требует sketch.png, а его нет (workspace очищен) —
+        # регенерим через assemble-cover (использует Replicate, ~$0.01).
+        needs_sketch = any(
+            bl.get("type") == "cover" and bl.get("sketch_path")
+            for ch in (blocks_json_clean.get("chapters") or [])
+            for bl in (ch.get("blocks") or [])
+        )
+        sketch_file = workspace / "input" / "sketch.png"
+        if needs_sketch and not sketch_file.exists():
+            app.logger.info("sketch.png отсутствует — перегенерируем через assemble-cover")
+            rc_c, _oc, err_c = _run_glava(["assemble-cover"], workspace)
+            if rc_c != 0:
+                app.logger.warning("assemble-cover упал rc=%s, продолжаем без обложки: %s",
+                                   rc_c, (err_c or '')[-300:])
+
         # Запускаем render-pdf через pipeline
         pdf_path = output_dir / f"book_edited_v{next_version}.pdf"
         rc, _out, err = _run_glava(
