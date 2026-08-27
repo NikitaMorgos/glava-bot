@@ -738,6 +738,80 @@ def project_book_edit(project_id: int):
     )
 
 
+def _apply_photo_rotations(project_id: int, blocks_json: dict) -> None:
+    """
+    Проходит по всем photo_album блокам, для photos[i] с rotation в {90,180,270}
+    скачивает файл из S3, поворачивает через Pillow, заливает обратно тем же
+    ключом (перезаписывает оригинал). Сбрасывает rotation в 0 после успеха.
+    Используется в /book/save перед render-pdf, чтобы pipeline получил уже
+    правильно ориентированное изображение.
+    """
+    if not isinstance(blocks_json, dict):
+        return
+    # Строим map filename → storage_key через таблицу photos
+    photos_by_file = {}
+    for p in db.get_project_photos(project_id):
+        key = p.get("storage_key")
+        ext = os.path.splitext(key or "")[1] or ".jpg"
+        photos_by_file[f"photo_{p['id']}{ext}"] = key
+    try:
+        from PIL import Image  # type: ignore
+    except ImportError:
+        app.logger.warning("Pillow не установлен — поворот фото пропущен")
+        return
+    import tempfile as _tf, os as _os
+    rotated_count = 0
+    for ch in blocks_json.get("chapters", []) or []:
+        for bl in ch.get("blocks", []) or []:
+            if bl.get("type") != "photo_album":
+                continue
+            for photo in bl.get("photos", []) or []:
+                if not isinstance(photo, dict):
+                    continue
+                rot = photo.get("rotation") or 0
+                try:
+                    rot = int(rot) % 360
+                except (TypeError, ValueError):
+                    rot = 0
+                if rot == 0:
+                    photo.pop("rotation", None)
+                    continue
+                fname = photo.get("file")
+                skey = photos_by_file.get(fname)
+                if not skey:
+                    app.logger.warning("rotate: не нашли storage_key для %s", fname)
+                    photo["rotation"] = 0
+                    continue
+                # Скачиваем → крутим → заливаем обратно
+                suffix = _os.path.splitext(skey)[1] or ".jpg"
+                with _tf.NamedTemporaryFile(suffix=suffix, delete=False) as ftmp:
+                    tmp_path = ftmp.name
+                try:
+                    storage.download_file(skey, tmp_path)
+                    with Image.open(tmp_path) as img:
+                        # expand=True — размер холста подстраивается под новую ориентацию
+                        img.rotate(-rot, expand=True).save(tmp_path)
+                    storage.upload_file_to_key(tmp_path, skey)
+                    photo["rotation"] = 0
+                    rotated_count += 1
+                    # Инвалидируем локальный кэш файла в workspace, чтобы
+                    # _prepare_workspace скачал уже повёрнутый вариант заново.
+                    ws_local = f"/tmp/glava-jobs/project-{project_id}/input/{fname}"
+                    try:
+                        if _os.path.exists(ws_local):
+                            _os.unlink(ws_local)
+                    except Exception:
+                        pass
+                    app.logger.info("photo %s повёрнуто на %d°", fname, rot)
+                except Exception as e:
+                    app.logger.warning("не удалось повернуть %s: %s", fname, e)
+                finally:
+                    try: _os.unlink(tmp_path)
+                    except Exception: pass
+    if rotated_count:
+        app.logger.info("apply_photo_rotations: %d фото повёрнуто", rotated_count)
+
+
 @app.route("/projects/<int:project_id>/book/save", methods=["POST"])
 def project_book_save(project_id: int):
     """
@@ -789,6 +863,16 @@ def project_book_save(project_id: int):
         import json as _json
         import tempfile as _tf, os as _os
         from cabinet.process_project import _prepare_workspace, _run_glava
+
+        # ---- Применяем повороты фото (rotation ∈ {90,180,270}) ----
+        # Клиент в редакторе крутит превью через CSS transform и сохраняет
+        # угол в blocks_json.photos[i].rotation. Здесь скачиваем каждый файл
+        # с rotation != 0 из S3, поворачиваем через Pillow, заливаем обратно.
+        # После этого rotation сбрасываем в 0 (файл уже правильной ориентации).
+        try:
+            _apply_photo_rotations(project_id, blocks_json)
+        except Exception as e:
+            app.logger.warning("apply_photo_rotations failed: %s", e)
 
         # Готовим workspace (idempotent — создаст если нет, докачает новые фото).
         workspace, _info = _prepare_workspace(project_id)

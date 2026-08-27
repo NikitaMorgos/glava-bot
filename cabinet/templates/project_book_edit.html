@@ -311,7 +311,11 @@
   }
   .photo-thumb img {
     width: 100%; height: 100%; object-fit: cover; display: block;
+    transition: transform .2s;
   }
+  .photo-thumb img[data-rotation="90"]  { transform: rotate(90deg); }
+  .photo-thumb img[data-rotation="180"] { transform: rotate(180deg); }
+  .photo-thumb img[data-rotation="270"] { transform: rotate(270deg); }
   .photo-thumb img[data-loading] { opacity: 0; }
   .photo-thumb::before {
     content: attr(data-status); color: var(--muted); font-size: 0.75rem;
@@ -327,6 +331,15 @@
   }
   .photo-item:hover .photo-thumb .row-delete { opacity: 1; }
   .photo-thumb .row-delete:hover { background: var(--red); }
+  .photo-thumb .photo-rotate {
+    opacity: 0; position: absolute; top: 6px; left: 6px;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: rgba(60, 60, 60, .8); color: #fff; border: none;
+    font-size: 0.85rem; line-height: 22px; text-align: center;
+    cursor: pointer; padding: 0; transition: opacity .15s; font-family: inherit;
+  }
+  .photo-item:hover .photo-thumb .photo-rotate { opacity: 1; }
+  .photo-thumb .photo-rotate:hover { background: var(--ink); }
   .photo-item figcaption {
     font-size: 0.8rem; color: var(--muted); text-align: center;
     line-height: 1.4; padding: 0 0.3rem;
@@ -606,10 +619,14 @@
                 {% for p in (b.photos or []) %}
                   <figure class="photo-item"
                           data-photo-file="{{ p.file }}"
+                          data-photo-rotation="{{ p.rotation or 0 }}"
                           {% if not is_preview %}draggable="true"{% endif %}>
                     <div class="photo-thumb">
-                      <img alt="{{ p.caption or '' }}" data-photo-src="{{ p.file }}">
+                      <img alt="{{ p.caption or '' }}" data-photo-src="{{ p.file }}"
+                           data-rotation="{{ p.rotation or 0 }}">
                       {% if not is_preview %}
+                      <button type="button" class="photo-rotate" data-rotate-photo
+                              title="Повернуть на 90° по часовой">⟳</button>
                       <button type="button" class="row-delete" data-delete-photo
                               title="Удалить фото">✕</button>
                       {% endif %}
@@ -859,6 +876,22 @@
         });
       });
 
+      // Поворот фото на 90° по часовой (0→90→180→270→0)
+      mainEl.querySelectorAll('[data-rotate-photo]').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          const item = btn.closest('.photo-item');
+          const img  = item && item.querySelector('img[data-photo-src]');
+          if (!item || !img) return;
+          const cur  = parseInt(item.dataset.photoRotation || '0', 10);
+          const next = (cur + 90) % 360;
+          item.dataset.photoRotation = String(next);
+          img.dataset.rotation = String(next);
+          if (commitTimer) commitSnapshot(true);
+          commitSnapshot(true);
+        });
+      });
+
       // Кнопка «➕ Добавить фото»
       mainEl.querySelectorAll('[data-add-photo]').forEach(function(btn) {
         btn.addEventListener('click', function() { triggerPhotoUpload(btn); });
@@ -955,11 +988,13 @@
       const fig = document.createElement('figure');
       fig.className = 'photo-item';
       fig.dataset.photoFile = fileName;
+      fig.dataset.photoRotation = '0';
       fig.draggable = true;
       fig.innerHTML =
         '<div class="photo-thumb">' +
-          '<img alt="' + (caption || '') + '" data-photo-src="' + fileName + '"' +
+          '<img alt="' + (caption || '') + '" data-photo-src="' + fileName + '" data-rotation="0"' +
               (url ? ' src="' + url + '"' : '') + '>' +
+          '<button type="button" class="photo-rotate" data-rotate-photo title="Повернуть на 90° по часовой">⟳</button>' +
           '<button type="button" class="row-delete" data-delete-photo title="Удалить фото">✕</button>' +
         '</div>' +
         '<figcaption contenteditable="' + (IS_PREVIEW ? 'false' : 'true') +
@@ -971,6 +1006,16 @@
         fig.remove();
         commitSnapshot(true);
         showUndoToast('Фото удалено из главы');
+      });
+      fig.querySelector('[data-rotate-photo]').addEventListener('click', function(e) {
+        e.stopPropagation();
+        const img = fig.querySelector('img[data-photo-src]');
+        const cur = parseInt(fig.dataset.photoRotation || '0', 10);
+        const next = (cur + 90) % 360;
+        fig.dataset.photoRotation = String(next);
+        img.dataset.rotation = String(next);
+        if (commitTimer) commitSnapshot(true);
+        commitSnapshot(true);
       });
       const cap = fig.querySelector('[data-photo-caption]');
       cap.addEventListener('input',   function(){ scheduleCommit(700); });
@@ -1149,7 +1194,10 @@
               let caption = capEl ? capEl.innerText.trim() : '';
               // Плейсхолдер «без подписи» не сохраняем как значение
               if (caption === 'без подписи') caption = '';
-              photos.push({ file: file, caption: caption });
+              const rot = parseInt(item.dataset.photoRotation || '0', 10) % 360;
+              const rec = { file: file, caption: caption };
+              if (rot) rec.rotation = rot;
+              photos.push(rec);
             });
             block.photos = photos;
             chapter.blocks.push(block);
