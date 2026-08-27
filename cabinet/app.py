@@ -140,10 +140,22 @@ PDF_DOCUMENTS = [
 ]
 
 # Каждый блок: (title, subtitle, [questions])
-# Каждый блок — dict:
-#   title, subtitle, intro (опц. HTML-подсказка), либо questions (плоский список),
-#   либо subsections=[{title, questions}, ...] (вложенные подсекции).
-INTERVIEW_QUESTIONS = [
+# Тексты типовых вопросов вынесены в cabinet/interview_content.py
+# (5 пакетов под разные роли: self / child / grandchild / spouse / universal).
+from cabinet.interview_content import (  # noqa: E402
+    INTERVIEW_QUESTIONS as _INTERVIEW_QUESTIONS_BY_MODE,
+    INTERVIEW_MODES,
+    INTERVIEW_TIPS as _INTERVIEW_TIPS,
+    DEFAULT_MODE as DEFAULT_INTERVIEW_MODE,
+    get_blocks as _get_interview_blocks,
+)
+
+# Обратная совместимость для мест, где ждут просто список (используем self).
+INTERVIEW_QUESTIONS = _INTERVIEW_QUESTIONS_BY_MODE[DEFAULT_INTERVIEW_MODE]
+INTERVIEW_TIPS = _INTERVIEW_TIPS
+
+# ↓↓↓ ниже оставлен старый монолитный список — удалю при следующем чистке ↓↓↓
+_LEGACY_INTERVIEW_QUESTIONS = [
     {
         "title": "📖 Биография — по годам жизни",
         "subtitle": "Хронологически: корни → детство → юность → работа → семья → зрелость → сейчас.",
@@ -260,8 +272,8 @@ INTERVIEW_QUESTIONS = [
     },
 ]
 
-# Советы рассказчику — показываются в конце списка вопросов
-INTERVIEW_TIPS = [
+# Устаревшие legacy-определения (список tips — теперь в interview_content.py).
+_LEGACY_INTERVIEW_TIPS = [
     "Не обязательно отвечать на все вопросы — выбирай те, которые «зацепили».",
     "Рассказывай как хочется, а не по порядку. Перескакивай, возвращайся — это нормально.",
     "Мелочи — самое ценное. «Всегда чистил яблоко ножом по спирали» ценнее, чем «родился в 1935 году».",
@@ -272,19 +284,32 @@ INTERVIEW_TIPS = [
 
 @app.route("/questions")
 def questions():
-    """Страница со списком вопросов для интервью."""
+    """
+    Страница со списком вопросов для интервью.
+    Параметр mode=self|child|grandchild|spouse|universal — выбирает пакет.
+    """
     if "user_id" not in session:
         return redirect(url_for("auth"))
-    return render_template("questions.html", blocks=INTERVIEW_QUESTIONS, tips=INTERVIEW_TIPS)
+    mode = (request.args.get("mode") or DEFAULT_INTERVIEW_MODE).strip()
+    blocks = _get_interview_blocks(mode)
+    return render_template(
+        "questions.html",
+        blocks=blocks,
+        tips=INTERVIEW_TIPS,
+        modes=INTERVIEW_MODES,
+        current_mode=mode,
+    )
 
 
 @app.route("/questions/download")
 def questions_download():
-    """Скачать типовые подсказки для интервью как .txt"""
+    """Скачать типовые подсказки для интервью как .txt (mode=... выбирает пакет)."""
     if "user_id" not in session:
         return redirect(url_for("auth"))
+    mode = (request.args.get("mode") or DEFAULT_INTERVIEW_MODE).strip()
+    blocks = _get_interview_blocks(mode)
     lines = ["Вопросы-подсказки для биографического интервью", "=" * 50, ""]
-    for blk in INTERVIEW_QUESTIONS:
+    for blk in blocks:
         lines.append(blk["title"])
         if blk.get("subtitle"):
             lines.append(blk["subtitle"])
@@ -314,7 +339,9 @@ def questions_download():
         body,
         mimetype="text/plain; charset=utf-8",
         headers={
-            "Content-Disposition": 'attachment; filename="glava_interview_tips.txt"',
+            "Content-Disposition": (
+                f'attachment; filename="glava_interview_tips_{mode}.txt"'
+            ),
         },
     )
 

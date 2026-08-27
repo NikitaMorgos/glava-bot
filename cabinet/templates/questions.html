@@ -3,12 +3,31 @@
 {% block content %}
 <p style="margin-bottom: 1.5rem;"><a href="{{ url_for('projects_list') }}">← Назад к книгам</a></p>
 <h1 style="margin-bottom: 0.4rem;">Вопросы для биографического интервью</h1>
-<p class="muted" style="margin-bottom: 1.5rem;">
-  Используйте эти темы и вопросы, чтобы не теряться в разговоре.
-  Не обязательно отвечать на все — выберите те, что зацепили.
+<p class="muted" style="margin-bottom: 1rem;">
+  Пять пакетов под разные роли рассказчика. Выберите подходящий и не старайтесь
+  ответить на всё — выбирайте вопросы, которые зацепили.
 </p>
+
+{% if modes %}
+<div style="display:flex; gap:0.4rem; flex-wrap:wrap; margin-bottom:1.2rem;">
+  {% for m in modes %}
+  <a href="{{ url_for('questions', mode=m.key) }}"
+     title="{{ m.desc }}"
+     style="padding:0.5rem 0.9rem; border-radius:8px; text-decoration:none;
+            font-size:0.9rem; border:1px solid {% if m.key == current_mode %}var(--warm){% else %}var(--border){% endif %};
+            background:{% if m.key == current_mode %}var(--warm){% else %}#fff{% endif %};
+            color:{% if m.key == current_mode %}#fff{% else %}var(--ink){% endif %};">
+    {{ m.label }}
+  </a>
+  {% endfor %}
+</div>
+{% for m in modes %}{% if m.key == current_mode %}
+<div class="muted" style="font-size:0.85rem; margin-bottom:1rem; font-style:italic;">{{ m.desc }}</div>
+{% endif %}{% endfor %}
+{% endif %}
+
 <div style="margin-bottom: 1.5rem;">
-  <a href="{{ url_for('questions_download') }}" class="btn btn-secondary"
+  <a href="{{ url_for('questions_download', mode=current_mode) }}" class="btn btn-secondary"
      style="font-size: 0.9rem; padding: 0.5rem 1rem;">📄 Скачать вопросы</a>
 </div>
 
