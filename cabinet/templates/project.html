@@ -56,19 +56,43 @@
           <span style="font-size:0.8rem; color:var(--muted);">▾</span>
         </summary>
         <div style="padding:0 1rem 1rem;">
-          {% for title, subtitle, qs in interview_question_blocks %}
+          {% for blk in interview_question_blocks %}
           <div style="margin-top:1.2rem;">
-            <div style="font-weight:600; font-size:0.95rem; color:var(--ink); margin-bottom:0.2rem;">{{ title }}</div>
-            {% if subtitle %}
-            <div class="muted" style="font-size:0.82rem; font-style:italic; margin-bottom:0.5rem;">{{ subtitle }}</div>
+            <div style="font-weight:600; font-size:0.95rem; color:var(--ink); margin-bottom:0.2rem;">{{ blk.title }}</div>
+            {% if blk.subtitle %}
+            <div class="muted" style="font-size:0.82rem; font-style:italic; margin-bottom:0.5rem;">{{ blk.subtitle }}</div>
             {% endif %}
-            <ul style="list-style:none; padding:0; margin:0;">
-              {% for q in qs %}
-              <li style="padding:0.3rem 0; font-size:0.88rem; color:var(--dark); line-height:1.5;">
-                <span style="color:var(--warm); font-weight:600;">•</span> {{ q }}
-              </li>
+            {% if blk.intro %}
+            <div style="background:rgba(200,169,110,.08); border-left:2px solid var(--warm);
+                        padding:0.5rem 0.8rem; border-radius:5px; margin-bottom:0.6rem;
+                        font-size:0.82rem; line-height:1.5; color:var(--ink);">
+              {{ blk.intro }}
+            </div>
+            {% endif %}
+            {% if blk.subsections %}
+              {% for sub in blk.subsections %}
+              <div style="margin-top:0.7rem;">
+                <div style="font-weight:600; font-size:0.85rem; color:var(--ink); margin-bottom:0.2rem;">
+                  {{ sub.title }}
+                </div>
+                <ul style="list-style:none; padding:0; margin:0;">
+                  {% for q in sub.questions %}
+                  <li style="padding:0.25rem 0; font-size:0.85rem; color:var(--dark); line-height:1.5;">
+                    <span style="color:var(--warm); font-weight:600;">•</span> {{ q }}
+                  </li>
+                  {% endfor %}
+                </ul>
+              </div>
               {% endfor %}
-            </ul>
+            {% else %}
+              <ul style="list-style:none; padding:0; margin:0;">
+                {% for q in blk.questions %}
+                <li style="padding:0.3rem 0; font-size:0.88rem; color:var(--dark); line-height:1.5;">
+                  <span style="color:var(--warm); font-weight:600;">•</span> {{ q }}
+                </li>
+                {% endfor %}
+              </ul>
+            {% endif %}
           </div>
           {% endfor %}
           {% if interview_tips %}

@@ -12,17 +12,36 @@
      style="font-size: 0.9rem; padding: 0.5rem 1rem;">📄 Скачать вопросы</a>
 </div>
 
-{% for title, subtitle, qs in blocks %}
+{% for blk in blocks %}
 <section style="margin-bottom: 2rem;">
-    <h2 style="font-size: 1.15rem; margin-bottom: 0.25rem; color: var(--ink);">{{ title }}</h2>
-    {% if subtitle %}
-    <div class="muted" style="font-style: italic; margin-bottom: 0.8rem; font-size: 0.92rem;">{{ subtitle }}</div>
+    <h2 style="font-size: 1.15rem; margin-bottom: 0.25rem; color: var(--ink);">{{ blk.title }}</h2>
+    {% if blk.subtitle %}
+    <div class="muted" style="font-style: italic; margin-bottom: 0.8rem; font-size: 0.92rem;">{{ blk.subtitle }}</div>
     {% endif %}
-    <ul style="padding-left: 1.2rem;">
-        {% for q in qs %}
-        <li style="margin-bottom: 0.6rem; line-height: 1.55;">{{ q }}</li>
-        {% endfor %}
-    </ul>
+    {% if blk.intro %}
+    <div style="background: rgba(200,169,110,.08); border-left: 3px solid var(--warm);
+                padding: 0.7rem 1rem; border-radius: 6px; margin-bottom: 1rem; font-size: 0.9rem; line-height: 1.55;">
+      {{ blk.intro }}
+    </div>
+    {% endif %}
+    {% if blk.subsections %}
+      {% for sub in blk.subsections %}
+      <div style="margin-top: 1.2rem;">
+        <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.4rem; color: var(--ink);">{{ sub.title }}</h3>
+        <ul style="padding-left: 1.2rem;">
+          {% for q in sub.questions %}
+          <li style="margin-bottom: 0.5rem; line-height: 1.55;">{{ q }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endfor %}
+    {% else %}
+      <ul style="padding-left: 1.2rem;">
+          {% for q in blk.questions %}
+          <li style="margin-bottom: 0.6rem; line-height: 1.55;">{{ q }}</li>
+          {% endfor %}
+      </ul>
+    {% endif %}
 </section>
 {% endfor %}
 
